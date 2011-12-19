@@ -1,0 +1,26 @@
+
+* Convert bent-laue analyzer images to XANES data
+
+** Synopsis
+
+BLA + Pilatus == lots of work
+
+** Working with Image Magick
+
+I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its [[http://www.imagemagick.org/script/perl-magick.php][Perl interface]] for this project.  As
+delivered to an Ubuntu system, Image Magick cannot handle the TIFF
+files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.  In order to be
+able to use Image Magick, it must be recompiled with a larger bit
+depth.  This is done by downloading and unpacking the tarball, then doing
+
+:      ./configure --with-quantum-depth=32
+
+I also rebuilt the perl wrapper which comes with the Image Magick
+source code.  This also was a bit tricky.  My Ubuntu system has perl
+5.10.1 and therefore has a ~libperl.5.10.1.so~.  It did not, however,
+have a ~libperl.so~ symlinked to it.  To get the perl wrapper to
+build, I had to do
+
+:      sudo ln -s /usr/lib/libperl.5.10.1.so /usr/lib/libperl
+
+Adjust the version number on the perl library as needed.

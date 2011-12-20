@@ -1,0 +1,25 @@
+
+* BLA-XANES to do list
+
+ + Look into using PDL for image processing.  That should be much
+   faster than Image::Magick, if only becuase computation can be
+   pushed into PDL rather than done in perl with repeated calls to
+   Image::Magick's ~Get~ method.
+
+ + Extensive pods
+
+ + Generate properly scaled animated gifs for mask development and for
+   image sequence.  This will require bad pixel removal from the first
+   image in t he mask sequence and from all images in a data set.
+
+ + Jeremy suggested:
+
+   + Higher weak-pixel cutoff for better energy resolution
+
+   + assigned the median pixel value within a particular radius to each
+     point
+
+   + bin with 2x2 or 3x3 bins
+
+ + Interpolate elastic masks so that a single pass over the data can
+   be made to generate the "whole" RIXS plane

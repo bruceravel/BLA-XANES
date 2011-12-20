@@ -3,7 +3,61 @@
 
 ** Synopsis
 
-BLA + Pilatus == lots of work
+An measurement set consists of
+
+ + A column data file with columns of energy and scalars from the
+   measurement 
+
+ + One Pilatus image for each energy containing the HERFD signal at
+   that energy
+
+ + A set of Pilatus images taken at energies around the fluorescence
+   energy.  These are used to make a mask which identifies which
+   pixels contain signal related to specific emission energies.
+
+This software uses perl and Image Magick to process the images into a
+high resolution XANES spectrum.
+
+** Installation
+
+Build scripts have not yet been written.  See below for special
+details regarding Image Magick.
+
+** Mask
+
+At the end of each scan, a series of images are collected with the
+incident beam at energies around the L alpha 1 line.  The XANES can be
+extracted, then, as a function of emission energy by creating a mask
+from the elastic energy which identifies the pixels on the camera
+that are illuminated by photons of that energy.
+
+For a given emission eenrgy, the elastic image is read and processed
+in three steps:
+
+ 1. Set the bad pixels (i.e. those with spuriously large values) to
+    zero.  Also remove all weak pixels, i.e. those with fewer than
+    some cutoff, say 2 counts.
+
+ 2. Remove all "lonely" pixels.  These are the pixels that are
+    illuminated but surrounded by few or no illuminated pixels.
+
+ 3. Add in all "social" pixels.  These are pixels which are dark, but
+    are surrounded by enough illuminated pixels (the default is 4 or
+    more) that it, too, should be illuminated.
+
+This results in a simple AND mask for evaluating the signal at each
+energy point from the Pilatus image.
+
+** Scan conversion
+
+At each energy point, the HERFD signal is computed from the Pilatus
+image using the mask created by the algorithm described above.  The
+counts on each pixel lying within the illuminated portion of the mask
+are summed.  This sum is the HERFD signal at that incident energy.
+
+A column data file is written containing the energy and several
+scalars from the original measurement and a column containing the
+HERFD signal.  This file can be imported directly into Athena.
 
 ** Working with Image Magick
 
@@ -16,8 +70,8 @@ depth.  This is done by downloading and unpacking the tarball, then doing
 :      ./configure --with-quantum-depth=32
 
 I also rebuilt the perl wrapper which comes with the Image Magick
-source code.  This also was a bit tricky.  My Ubuntu system has perl
-5.10.1 and therefore has a ~libperl.5.10.1.so~.  It did not, however,
+source code.  This also was a bit tricky.  My Ubuntu system has 
+perl 5.10.1 and therefore has a ~libperl.5.10.1.so~.  It did not, however,
 have a ~libperl.so~ symlinked to it.  To get the perl wrapper to
 build, I had to do
 

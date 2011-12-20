@@ -8,17 +8,22 @@ use File::Spec;
 my $spectrum = Xray::BLA->new;
 
 my $datalocation = '/home/bruce/Data/NIST/10ID/2011.12/';
-$spectrum->set(scanfolder  => File::Spec->catfile($datalocation, "scan"),
+$spectrum->set(scanfolder  => File::Spec->catfile($datalocation, "scans"),
 	       tiffolder   => File::Spec->catfile($datalocation, "tiffs"),
-	       stub        => "Au3Cltest4",
+	       outfolder   => File::Spec->catfile($datalocation, "processed"),
+	       #stub        => "Au3Cltest4",
 	       #stub        => "Au3MarineCyanos1",
-	       peak_energy => 9715,
+	       stub        => "Au3OH31",
+	       peak_energy => 9713,
 	      );
 
 
-my $elastic = join("_", $spectrum->stub, 'elastic', $spectrum->peak_energy).'_00001.tif';
-$spectrum->elastic_file(File::Spec->catfile($spectrum->tiffolder, $elastic));
+foreach my $e (9703, 9705, 9707, 9709, 9711, 9713, 9715, 9717, 9719) {
+  $spectrum -> peak_energy($e);
+  my $elastic = join("_", $spectrum->stub, 'elastic', $spectrum->peak_energy).'_00001.tif';
+  $spectrum->elastic_file(File::Spec->catfile($spectrum->tiffolder, $elastic));
 
-my $ret = $spectrum->import_elastic_image;
-print $ret->message;
-die if not $ret->status;
+  $spectrum->mask(write=>0, verbose=>1);
+  $spectrum->scan();
+};
+

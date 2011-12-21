@@ -8,9 +8,9 @@
 
  + Extensive pods
 
- + Generate properly scaled animated gifs for mask development and for
-   image sequence.  This will require bad pixel removal from the first
-   image in t he mask sequence and from all images in a data set.
+ + +Generate properly scaled animated gifs for mask development and for+
+   +image sequence.  This will require bad pixel removal from the first+
+   +image in the mask sequence and from all images in a data set.+
 
  + Jeremy suggested:
 
@@ -23,3 +23,6 @@
 
  + Interpolate elastic masks so that a single pass over the data can
    be made to generate the "whole" RIXS plane
+
+ + +Automate setting of file names, such as ~elastic_file~+
+

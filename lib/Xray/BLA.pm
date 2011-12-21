@@ -10,6 +10,19 @@ use MooseX::AttributeHelpers;
 use MooseX::StrictConstructor;
 
 use Image::Magick;
+use File::Spec;
+
+my $ANSIColor_exists = (eval "require Term::ANSIColor");
+if ($ANSIColor_exists) {
+  import Term::ANSIColor qw(:constants);
+} else {
+  sub BOLD    {q{}};
+  sub YELLOW  {q{}};
+  sub GREEN   {q{}};
+  sub CYAN    {q{}};
+  sub RESET   {q{}};
+};
+
 
 with 'MooseX::SetGet';		# this is mine....
 
@@ -21,7 +34,7 @@ has 'outfolder'  => (is => 'rw', isa => 'Str',     default => q{});
 
 has 'peak_energy' => (is => 'rw', isa => 'Int',   default => 0);
 
-has 'bad_pixel_value'  => (is => 'rw', isa => 'Int',      default => 500);
+has 'bad_pixel_value'  => (is => 'rw', isa => 'Int',      default => 400);
 has 'weak_pixel_value' => (is => 'rw', isa => 'Int',      default => 3);
 has 'bad_pixel_list' => (
 			 metaclass => 'Collection::Array',
@@ -34,9 +47,21 @@ has 'bad_pixel_list' => (
 				       'clear' => 'clear_bad_pixel_list',
 				      }
 			);
+has 'mask_pixel_list' => (
+			  metaclass => 'Collection::Array',
+			  is        => 'rw',
+			  isa       => 'ArrayRef',
+			  default   => sub { [] },
+			  provides  => {
+					'push'  => 'push_mask_pixel_list',
+					'pop'   => 'pop_mask_pixel_list',
+					'clear' => 'clear_mask_pixel_list',
+				       }
+			 );
 
 has 'lonely_pixel_value' => (is => 'rw', isa => 'Int',    default => 3);
 has 'social_pixel_value' => (is => 'rw', isa => 'Int',    default => 2);
+has 'npixels'            => (is => 'rw', isa => 'Int',    default => 0);
 
 has 'elastic_file'  => (is => 'rw', isa => 'Str',   default => q{});
 has 'elastic_image' => (is => 'rw', isa => 'Image::Magick');
@@ -49,9 +74,17 @@ has 'rows'     => (is => 'rw', isa => 'Int',   default => 0);
 sub mask {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{write}   || 0;
+  $args{save}    || 0;
   $args{verbose} || 0;
   $args{animate} || 0;
+  $args{write}    = 0;
+  $args{write}    = 1 if ($args{animate} or $args{save});
+
+
+  $self->clear_bad_pixel_list;
+  $self->clear_mask_pixel_list;
+  my $elastic = join("_", $self->stub, 'elastic', $self->peak_energy).'_00001.tif';
+  $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
 
   ## import elastic image and store basic properties
   my @out = ();
@@ -100,11 +133,44 @@ sub mask {
   } else {
     print $ret->message if $args{verbose};
   };
+  $self->npixels($ret->status);
   undef $ret;
+
+  ## bad pixels may have been turned back on in the social pixel pass, so turn them off again
+  foreach my $pix (@{$self->bad_pixel_list}) {
+    my $co = $pix->[0];
+    my $ro = $pix->[1];
+    $self->elastic_image->Set("pixel[$co,$ro]"=>0);
+  };
+  foreach my $co (0 .. $self->columns-1) {
+    foreach my $ro (0 .. $self->rows-1) {
+      next if ($self->elastic_image->Get("pixel[$co,$ro]") eq '0,0,0,0');
+      $self->push_mask_pixel_list([$co,$ro]);
+    };
+  };
+  ##print $#{$self->mask_pixel_list}, $/;
 
   ## construct an animated gif of the mask building process
   if ($args{animate}) {
-
+    my $im = Image::Magick->new;
+    $im -> Read(@out);
+    foreach my $i (0 .. $#out) {
+      foreach my $pix (@{$self->bad_pixel_list}) {
+     	my $co = $pix->[0];
+     	my $ro = $pix->[1];
+     	$im->[$i]->Set("pixel[$co,$ro]"=>0);
+      };
+    };
+    my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_anim").'.tif');
+    my $x = $im -> Write($fname);
+    warn $x if $x;
+    print $self->colorize("Wrote $fname", YELLOW), "\n" if $args{verbose};
+  };
+  if ($args{save}) {
+    my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_N").'.tif');
+    print $self->colorize("Saved stages of mask creation to $fname", YELLOW), "\n" if $args{verbose};
+  } else {
+    unlink $_ foreach @out;
   };
 };
 
@@ -126,12 +192,12 @@ sub import_elastic_image {
 
   $self->columns($self->elastic_image->Get('columns'));
   $self->rows($self->elastic_image->Get('rows'));
-  my $str = "Processing ".$self->elastic_file."\n";
+  my $str = $self->colorize("\nProcessing ".$self->elastic_file, YELLOW);
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
   if ($args{write}) {
     $self->elastic_image->Write($args{write});
-    $str .= "\tSaved initial image to ".$args{write}."\n";
+    #$str .= "\tSaved initial image to ".$args{write}."\n";
   };
   $ret->message($str);
   return $ret;
@@ -143,19 +209,25 @@ sub bad_pixels {
   $args{write} || 0;
   my $ret = Xray::BLA::Return->new;
 
+  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+  my $ei    = $self->elastic_image;
+  my $bpv   = $self->bad_pixel_value;
+  my $wpv   = $self->weak_pixel_value;
+  my $nrows = $self->rows - 1;
+
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
   foreach my $co (0 .. $self->columns-1) {
-    foreach my $ro (0 .. $self->rows-1) {
-      my $str = $self->elastic_image->Get("pixel[$co,$ro]");
+    foreach my $ro (0 .. $nrows) {
+      my $str = $ei->Get("pixel[$co,$ro]");
       my @pix = split(/,/, $str);
       #    print "$co, $ro: $pix[0]\n" if $pix[0]>5;
-      if ($pix[0] > $self->bad_pixel_value) {
+      if ($pix[0] > $bpv) {
 	$self->push_bad_pixel_list([$co,$ro]);
-  	$self->elastic_image->Set("pixel[$co,$ro]"=>0);
+  	$ei->Set("pixel[$co,$ro]"=>0);
   	++$removed;
   	++$off;
-      } elsif ($pix[0] < $self->weak_pixel_value) {
-  	$self->elastic_image->Set("pixel[$co,$ro]"=>0);
+      } elsif ($pix[0] < $wpv) {
+  	$ei->Set("pixel[$co,$ro]"=>0);
   	++$toosmall;
   	++$off;
       } else {
@@ -164,13 +236,13 @@ sub bad_pixels {
     };
   };
 
-  my $str = "First pass\n";
+  my $str = $self->colorize("First pass", CYAN);
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
-    $self->elastic_image->Write($args{write});
-    $str .= "\tSaved first pass image to ".$args{write}."\n";
+    $ei->Write($args{write});
+    #$str .= "\tSaved first pass image to ".$args{write}."\n";
   };
   $ret->message($str);
   return $ret;
@@ -182,31 +254,37 @@ sub lonely_pixels {
   $args{write} || 0;
   my $ret = Xray::BLA::Return->new;
 
-  my ($removed, $on, $off) = (0,0,0);
-  foreach my $co (0 .. $self->columns-1) {
-    foreach my $ro (0 .. $self->rows-1) {
+  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+  my $ei    = $self->elastic_image;
+  my $lpv   = $self->lonely_pixel_value;
+  my $nrows = $self->rows - 1;
+  my $ncols = $self->columns - 1;
 
-      my @pix = split(/,/, $self->elastic_image->Get("pixel[$co,$ro]"));
+  my ($removed, $on, $off) = (0,0,0);
+  foreach my $co (0 .. $ncols) {
+    foreach my $ro (0 .. $nrows) {
+
+      my @pix = split(/,/, $ei->Get("pixel[$co,$ro]"));
 
       ++$off, next if ($pix[0] == 0);
 
       my $count = 0;
-      foreach my $cc (-1 .. 1) {
+    OUTER: foreach my $cc (-1 .. 1) {
 	next if (($co == 0) and ($cc == -1));
-	next if (($co == $self->columns-1) and ($cc == 1));
+	next if (($co == $ncols) and ($cc == 1));
 	foreach my $rr (-1 .. 1) {
 	  next if (($cc == 0) and ($rr == 0));
 	  next if (($ro == 0) and ($rr == -1));
-	  next if (($ro == $self->rows-1) and ($rr == 1));
+	  next if (($ro == $nrows) and ($rr == 1));
 
 	  my $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
-	  my @neighbor = split(/,/, $self->elastic_image->Get($arg));
-
-	  ++$count if ($neighbor[0] > 0);
+	  ++$count if ($ei->Get($arg) ne '0,0,0,0');
+	  #my @neighbor = split(/,/, $self->elastic_image->Get($arg));
+	  #++$count if ($neighbor[0] > 0);
 	};
       };
-      if ($count < $self->lonely_pixel_value) {
-	$self->elastic_image->Set("pixel[$co,$ro]"=>0);
+      if ($count < $lpv) {
+	$ei->Set("pixel[$co,$ro]"=>0);
 	++$removed;
 	++$off;
       } else {
@@ -216,13 +294,13 @@ sub lonely_pixels {
   };
 
 
-  my $str = "Second pass\n";
+  my $str = $self->colorize("Second pass", CYAN);
   $str   .= "\tRemoved $removed lonely pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
-    $self->elastic_image->Write($args{write});
-    $str .= "\tSaved second pass image to ".$args{write}."\n";
+    $ei->Write($args{write});
+    #$str .= "\tSaved second pass image to ".$args{write}."\n";
   };
   $ret->message($str);
   return $ret;
@@ -233,31 +311,42 @@ sub social_pixels {
   my %args = @args;
   my $ret = Xray::BLA::Return->new;
 
-  my ($added, $on, $off) = (0,0,0);
+  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+  my $ei    = $self->elastic_image;
+  my $spv   = $self->social_pixel_value;
+  my $nrows = $self->rows - 1;
+  my $ncols = $self->columns - 1;
+
+  my ($added, $on, $off, $count) = (0,0,0,0);
   my @addlist = ();
-  foreach my $co (0 .. $self->columns-1) {
-    foreach my $ro (0 .. $self->rows-1) {
+  my ($arg, $val) = (q{}, q{});
+  foreach my $co (0 .. $ncols) {
+    foreach my $ro (0 .. $nrows) {
 
-      my @pix = split(/,/, $self->elastic_image->Get("pixel[$co,$ro]"));
+      #my @pix = split(/,/, $ei->Get("pixel[$co,$ro]"));
+      #++$on, next if ($pix[0] > 0);
+      $val = $ei->Get("pixel[$co,$ro]");
+      ++$on, next if ($val ne '0,0,0,0');
 
-      ++$on, next if ($pix[0] > 0);
-
-      my $count = 0;
-      foreach my $cc (-1 .. 1) {
+      $count = 0;
+    OUTER: foreach my $cc (-1 .. 1) {
 	next if (($co == 0) and ($cc == -1));
-	next if (($co == $self->columns-1) and ($cc == 1));
+	next if (($co == $ncols) and ($cc == 1));
 	foreach my $rr (-1 .. 1) {
 	  next if (($cc == 0) and ($rr == 0));
 	  next if (($ro == 0) and ($rr == -1));
-	  next if (($ro == $self->rows-1) and ($rr == 1));
+	  next if (($ro == $nrows) and ($rr == 1));
 
-	  my $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
-	  my @neighbor = split(/,/, $self->elastic_image->Get($arg));
+	  $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
 
-	  ++$count if ($neighbor[0] > 0);
+	  ## string comparison shaved 3 seconds off this step
+	  #my @neighbor = split(/,/, $self->elastic_image->Get($arg));
+	  #++$count if ($neighbor[0] > 0);
+	  ++$count if ($ei->Get($arg) ne '0,0,0,0');
+	  last OUTER if ($count > $spv);
 	};
       };
-      if ($count > $self->social_pixel_value) {
+      if ($count > $spv) {
 	push @addlist, [$co, $ro];
 	++$added;
 	++$on;
@@ -268,17 +357,18 @@ sub social_pixels {
   };
   foreach my $px (@addlist) {
     my $arg = sprintf("pixel[%d,%d]", $px->[0], $px->[1]);
-    $self->elastic_image->Set($arg=>'5,5,5,0');
+    $ei->Set($arg=>'5,5,5,0');
   };
 
-  my $str = "Third pass\n";
+  my $str = $self->colorize("Third pass", CYAN);
   $str   .= "\tAdded $added social pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
-    $self->elastic_image->Write($args{write});
-    $str .= "\tSaved third pass image to ".$args{write}."\n";
+    $ei->Write($args{write});
+    #$str .= "\tSaved third pass image to ".$args{write}."\n";
   };
+  $ret->status($on);
   $ret->message($str);
   return $ret;
 };
@@ -289,63 +379,74 @@ sub social_pixels {
 #     11850.000   20  95.3544291727  1400844   830935   653600   956465      38      18      15      46      1
 
 sub scan {
-  my ($self) = @_;
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
 
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
-  print "Reading scan from $scanfile\n";;
+  print $self->colorize("Reading scan from $scanfile", YELLOW);
   open(my $SCAN, "<", $scanfile);
   my $fname = join("_", $self->stub, $self->peak_energy).'.001';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
   open(my $OUT, ">", $outfile);
-  print $OUT "# HERFD scan on " . $self->stub . "\n";
-  print $OUT "# ---------------------------------\n ";
-  print $OUT "# energy time ring_current i0 it ifl ir herfd\n";
-  #my $count = 0;
+  local $|=1;
+  print  $OUT "# HERFD scan on " . $self->stub . "\n";
+  printf $OUT "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
+  print  $OUT "# ---------------------------------\n";
+  print  $OUT "# energy time ring_current i0 it ifl ir herfd\n";
   while (<$SCAN>) {
     next if m{\A\#};
     next if m{\A\s*\z};
     chomp;
     my @list = split(" ", $_);
     printf $OUT "  %12.3f  %3d  %s  %7d  %7d  %7d  %7d", @list[0..6];
-    #if (! ++$count % 2) {
-    #  local $|=1;
-    #  print STDOUT '.';
-    #};
-    my $ret = $self->apply_mask($list[11]);
+    my $ret = $self->apply_mask($list[11], verbose=>$args{verbose});
     printf $OUT "  %d\n", $ret->status;
   };
-  #print STDOUT "\n";
   close $SCAN;
   close $OUT;
-  print "Wrote $outfile\n";
+  print $self->colorize("Wrote $outfile", BOLD.GREEN);
   return $ret;
 };
 
 
 sub apply_mask {
-  my ($self, $tif) = @_;
+  my ($self, $tif, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
 
   my $fname = sprintf("%s_%5.5d.tif", $self->stub, $tif);
   my $image = File::Spec->catfile($self->tiffolder, $fname);
-  printf "  %3d, %s\n", $tif, $image;
+  printf("  %3d, %s", $tif, $image) if ($args{verbose} and (not $tif % 10));
 
   my $datapoint = Image::Magick->new();
   $datapoint -> Read($image);
   my $sum = 0;
-  foreach my $c (0 .. $self->columns-1) {
-    foreach my $r (0 .. $self->rows-1) {
-      my $str  = $self->elastic_image->Get("pixel[$c,$r]");
-      my @mask = split(/,/, $str);
-      next if not $mask[0];
-      $str     = $datapoint->Get("pixel[$c,$r]");
-      my @data = split(/,/, $str);
-      $sum += $data[0];
-    };
+
+  foreach my $pix (@{$self->mask_pixel_list}) {
+    my $data = $datapoint->Get("pixel[" . $pix->[0] . "," . $pix->[1] . "]");
+    $sum += (split(",", $data))[0];
   };
+
+  ## this is a much slower way to apply the mask:
+  # foreach my $c (0 .. $self->columns-1) {
+  #   foreach my $r (0 .. $self->rows-1) {
+  #     my @mask = split(/,/, $self->elastic_image->Get("pixel[$c,$r]"));
+  #     next if not $mask[0];
+  #     my @data = split(/,/, $datapoint->Get("pixel[$c,$r]"));
+  #     $sum += $data[0];
+  #   };
+  # };
+  printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
   $ret->status($sum);
   return $ret;
+};
+
+sub colorize {
+  my ($self, $message, $color) = @_;
+  return $color . $message . RESET . $/;
 };
 
 
@@ -362,6 +463,17 @@ Xray::BLA - Convert bent-Laue analyzer + areal detector data in XANES spectra
 
 =head1 SYNOPSIS
 
+   my $spectrum = Xray::BLA->new;
+
+   my $datalocation = '/home/bruce/Data/NIST/10ID/2011.12/';
+   $spectrum->set(scanfolder  => File::Spec->catfile($datalocation, "scans"),
+                  tiffolder   => File::Spec->catfile($datalocation, "tiffs"),
+                  outfolder   => File::Spec->catfile($datalocation, "processed"),
+                  stub        => "mydata",
+                  peak_energy => 9713,
+                 );
+   $spectrum->mask(write=>0, verbose=>1, animate=>0);
+   $spectrum->scan(verbose=>1);
 
 =head1 DESCRIPTION
 
@@ -373,11 +485,30 @@ Xray::BLA - Convert bent-Laue analyzer + areal detector data in XANES spectra
 
 =item C<stub>
 
+The basename of the scan and image files.  The scan file is called
+C<E<lt>stubE<gt>.001>, the image files are called
+C<E<lt>stubE<gt>_NNNNN.tif>, and the processed column data files are
+called C<E<lt>stubE<gt>_E<lt>peak_energyE<gt>.001>.
+
 =item C<scanfile>
+
+The fully resolved path to the scan file, as determined from C<stub>
+and C<scanfolder>.
 
 =item C<scanfolder>
 
+The folder containing the scan file.  The scan file name is
+constructed from the value of C<stub>.
+
 =item C<tiffolder>
+
+The folder containing the image files.  The image file names are
+constructed from the value of C<stub>.
+
+=item C<tiffolder>
+
+The folder to which the processed file is written.  The processed file
+name is constructed from the value of C<stub>.
 
 =item C<peak_energy>
 
@@ -437,6 +568,11 @@ image.
 This contains the L<Image::Magick> object corresponding to the mask
 constructed from the elastic image.
 
+=item C<npixels>
+
+The number of illuminated pixels in the mask.  That is, the number of
+pixels contrributing to the HERFD signal.
+
 =item C<columns>
 
 When the elastic file is read, this gets set with the number of
@@ -453,7 +589,46 @@ same number of rows.
 
 =head1 METHODS
 
-=head2 Calibration methods
+All methods return an object of type C<Xray::BLA::Return>.  This
+object has two attributes: C<status> and C<message>.  A successful
+return will have a positive definate C<status>.  Any reporting (for
+example exception reporting) is done via the C<message> attribute.
+
+=head2 API
+
+=over 4
+
+=item C<mask>
+
+Create a mask from the elastic image measured at the energy given by
+C<peak_energy>.
+
+  $spectrum->mask(save=>0, verbose=>0, animate=>0);
+
+When true, the C<verbose> argument causes messages to be printed to
+standard output with information about each stage of mask creation.
+
+When true, the C<save> argument causes a tif file to be saved at
+each stage of processing the mask.
+
+When true, the C<animate> argument causes a properly scaled, animation
+to be written showing the stages of mask creation.  Currently, this is
+a signed 32 bit tiff animation, so only ImageJ or the specially
+modified Image Magick can open it.  Sigh....
+
+=item C<scan>
+
+Rewrite the scan file with a column containing the HERFD signal as
+computed by applying the mask to the image file from each data point.
+
+  $spectrum->scan(verbose=>0);
+
+When true, the C<verbose> argument causes messages to be printed to
+standard output about every data point being processed.
+
+=back
+
+=head2 Internal methods
 
 =over 4
 
@@ -468,6 +643,10 @@ The intermediate image can be saved:
 
   $spectrum -> import_elastic_image(write => "firstpass.tif");
 
+The C<message> attribute of the return object contains information
+regarding mask creation to be displayed if the C<verbose> argument to
+C<mask> is true.
+
 =item C<lonely_pixels>
 
 Make the second pass over the elastic image.  Remove illuminated
@@ -479,27 +658,43 @@ The intermediate image can be saved:
 
   $spectrum -> lonely_pixels(write => "secondpass.tif");
 
+The C<message> attribute of the return object contains information
+regarding mask creation to be displayed if the C<verbose> argument to
+C<mask> is true.
+
 =item C<social_pixels>
 
 Make the third pass over the elastic image.  Include dark pixels which
 are surrounded by enough illuminated pixels.
 
+  $spectrum -> lonely_pixels;
+
+The final mask image can be saved:
+
+  $spectrum -> lonely_pixels(write => "finalpass.tif");
+
+The C<message> attribute of the return object contains information
+regarding mask creation to be displayed if the C<verbose> argument to
+C<mask> is true.
+
+=item C<apply_mask>
+
+Apply the mask to the image for a given data point to obtain the HERFD
+signal for that data point.
+
+  $spectrum -> apply_mask($tif_number, verbose=>1)
+
+The C<status> of the return object contains the photon count from the
+image for this data point.
+
 =back
-
-=head2 Data processing methods
-
-=over 4
-
-=item C<lonely_pixels>
-
-=back
-
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-See L<Demeter> for a description of the configuration system.
 
 =head1 DEPENDENCIES
+
+=head2 CPAN
 
 =over 4
 
@@ -510,6 +705,10 @@ L<Moose>
 =item *
 
 L<Image::Magick>
+
+=item *
+
+L<Term::ANSIColor>
 
 =back
 

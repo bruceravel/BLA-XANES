@@ -12,6 +12,8 @@ use MooseX::StrictConstructor;
 use Image::Magick;
 use File::Spec;
 
+use Xray::XDI;
+
 my $ANSIColor_exists = (eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {
   import Term::ANSIColor qw(:constants);
@@ -384,28 +386,37 @@ sub scan {
   $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
 
+  my (@data, @point);
+
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
   print $self->colorize("Reading scan from $scanfile", YELLOW);
   open(my $SCAN, "<", $scanfile);
-  my $fname = join("_", $self->stub, $self->peak_energy).'.001';
+  my $fname = join("_", $self->stub, $self->peak_energy).'.xdi';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
-  open(my $OUT, ">", $outfile);
-  local $|=1;
-  print  $OUT "# HERFD scan on " . $self->stub . "\n";
-  printf $OUT "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
-  print  $OUT "# ---------------------------------\n";
-  print  $OUT "# energy time ring_current i0 it ifl ir herfd\n";
   while (<$SCAN>) {
     next if m{\A\#};
     next if m{\A\s*\z};
     chomp;
+    @point = ();
     my @list = split(" ", $_);
-    printf $OUT "  %12.3f  %3d  %s  %7d  %7d  %7d  %7d", @list[0..6];
+
     my $ret = $self->apply_mask($list[11], verbose=>$args{verbose});
-    printf $OUT "  %d\n", $ret->status;
+    push @point, $list[0];
+    push @point, $ret->status/$list[3];
+    push @point, @list[3..6];
+    push @point, $ret->status;
+    push @point, @list[1..2];
+    push @data, [@point];
   };
   close $SCAN;
-  close $OUT;
+
+  my $xdi = Xray::XDI->new();
+  $xdi   -> ini('/home/bruce/git/BLA-XANES/share/bla.xdi.ini');
+  $xdi   -> push_comment("HERFD scan on " . $self->stub);
+  $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
+  $xdi   -> data(\@data);
+  $xdi   -> export($outfile);
+
   print $self->colorize("Wrote $outfile", BOLD.GREEN);
   return $ret;
 };
@@ -443,6 +454,7 @@ sub apply_mask {
   $ret->status($sum);
   return $ret;
 };
+
 
 sub colorize {
   my ($self, $message, $color) = @_;

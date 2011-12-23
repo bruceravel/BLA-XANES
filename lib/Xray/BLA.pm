@@ -67,7 +67,6 @@ has 'npixels'            => (is => 'rw', isa => 'Int',    default => 0);
 
 has 'elastic_file'  => (is => 'rw', isa => 'Str',   default => q{});
 has 'elastic_image' => (is => 'rw', isa => 'Image::Magick');
-has 'elastic_mask'  => (is => 'rw', isa => 'Image::Magick');
 
 has 'columns'  => (is => 'rw', isa => 'Int',   default => 0);
 has 'rows'     => (is => 'rw', isa => 'Int',   default => 0);
@@ -384,6 +383,7 @@ sub scan {
   my ($self, @args) = @_;
   my %args = @args;
   $args{verbose} ||= 0;
+  $args{xdiini}  ||= q{};
   my $ret = Xray::BLA::Return->new;
 
   my (@data, @point);
@@ -411,7 +411,7 @@ sub scan {
   close $SCAN;
 
   my $xdi = Xray::XDI->new();
-  $xdi   -> ini('/home/bruce/git/BLA-XANES/share/bla.xdi.ini');
+  $xdi   -> ini($args{xdiini}) if $args{xdiini};
   $xdi   -> push_comment("HERFD scan on " . $self->stub);
   $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
   $xdi   -> data(\@data);
@@ -467,7 +467,7 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Xray::BLA - Convert bent-Laue analyzer + areal detector data in XANES spectra
+Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
@@ -575,11 +575,6 @@ from the values of C<stub>, C<peak_energy>, and C<tiffolder>.
 This contains the L<Image::Magick> object corresponding to the elastic
 image.
 
-=item C<elastic_mask>
-
-This contains the L<Image::Magick> object corresponding to the mask
-constructed from the elastic image.
-
 =item C<npixels>
 
 The number of illuminated pixels in the mask.  That is, the number of
@@ -587,14 +582,14 @@ pixels contrributing to the HERFD signal.
 
 =item C<columns>
 
-When the elastic file is read, this gets set with the number of
-columns in the image.  All images in the measurement are presumed to
-have the same number of columns.
+When the elastic file is read, this is set with the number of columns
+in the image.  All images in the measurement are presumed to have the
+same number of columns.
 
 =item C<rows>
 
-When the elastic file is read, this gets set with the number of rows
-in the image.  All images in the measurement are presumed to have the
+When the elastic file is read, this is set with the number of rows in
+the image.  All images in the measurement are presumed to have the
 same number of rows.
 
 =back
@@ -603,8 +598,11 @@ same number of rows.
 
 All methods return an object of type C<Xray::BLA::Return>.  This
 object has two attributes: C<status> and C<message>.  A successful
-return will have a positive definate C<status>.  Any reporting (for
+return will have a positive definite C<status>.  Any reporting (for
 example exception reporting) is done via the C<message> attribute.
+
+Some methods, for example C<apply_mask>, use the return C<status> to
+return a useful numeric value.
 
 =head2 API
 
@@ -623,7 +621,7 @@ standard output with information about each stage of mask creation.
 When true, the C<save> argument causes a tif file to be saved at
 each stage of processing the mask.
 
-When true, the C<animate> argument causes a properly scaled, animation
+When true, the C<animate> argument causes a properly scaled animation
 to be written showing the stages of mask creation.  Currently, this is
 a signed 32 bit tiff animation, so only ImageJ or the specially
 modified Image Magick can open it.  Sigh....
@@ -633,10 +631,14 @@ modified Image Magick can open it.  Sigh....
 Rewrite the scan file with a column containing the HERFD signal as
 computed by applying the mask to the image file from each data point.
 
-  $spectrum->scan(verbose=>0);
+  $spectrum->scan(verbose=>0, xdiini=>$inifile);
 
 When true, the C<verbose> argument causes messages to be printed to
 standard output about every data point being processed.
+
+The C<xdiini> argument takes the filename of an ini-style
+configuration file for XDI metadata.  If no ini file is supplied, then
+no metadata and no column labels will be written to the output file.
 
 =back
 
@@ -721,6 +723,10 @@ L<Image::Magick>
 =item *
 
 L<Term::ANSIColor>
+
+=item *
+
+L<Xray::XDI>
 
 =back
 

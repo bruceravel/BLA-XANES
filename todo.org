@@ -26,3 +26,6 @@
 
  + +Automate setting of file names, such as ~elastic_file~+
 
+ + +location and access of ini file for XDI output needs to be more graceful+
+
+ + convert animation file to gif for ease of viewing

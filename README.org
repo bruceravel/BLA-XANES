@@ -20,8 +20,13 @@ high resolution XANES spectrum.
 
 ** Installation
 
-Build scripts have not yet been written.  See below for special
-details regarding Image Magick.
+After installing Image Magick, compiled to use signed 32 bit numbers
+(see below), so the following.
+
+:      perl Build.PL
+:      ./Build
+:      ./Build test
+:      sudo ./Build install
 
 ** Mask
 
@@ -75,6 +80,6 @@ perl 5.10.1 and therefore has a ~libperl.5.10.1.so~.  It did not, however,
 have a ~libperl.so~ symlinked to it.  To get the perl wrapper to
 build, I had to do
 
-:      sudo ln -s /usr/lib/libperl.5.10.1.so /usr/lib/libperl
+:      sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
 
 Adjust the version number on the perl library as needed.

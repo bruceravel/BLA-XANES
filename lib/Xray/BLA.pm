@@ -1,6 +1,8 @@
 package Xray::BLA;
 use Xray::BLA::Return;
 
+use strict;
+use warnings;
 use version;
 our $VERSION = version->new('0.1');
 
@@ -14,7 +16,7 @@ use File::Spec;
 
 use Xray::XDI;
 
-my $ANSIColor_exists = (eval "require Term::ANSIColor");
+my $ANSIColor_exists = (eval "no warning; require Term::ANSIColor");
 if ($ANSIColor_exists) {
   import Term::ANSIColor qw(:constants);
 } else {
@@ -165,11 +167,11 @@ sub mask {
     my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_anim").'.tif');
     my $x = $im -> Write($fname);
     warn $x if $x;
-    print $self->colorize("Wrote $fname", YELLOW), "\n" if $args{verbose};
+    print $self->assert("Wrote $fname", YELLOW), "\n" if $args{verbose};
   };
   if ($args{save}) {
     my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_N").'.tif');
-    print $self->colorize("Saved stages of mask creation to $fname", YELLOW), "\n" if $args{verbose};
+    print $self->assert("Saved stages of mask creation to $fname", YELLOW), "\n" if $args{verbose};
   } else {
     unlink $_ foreach @out;
   };
@@ -193,7 +195,7 @@ sub import_elastic_image {
 
   $self->columns($self->elastic_image->Get('columns'));
   $self->rows($self->elastic_image->Get('rows'));
-  my $str = $self->colorize("\nProcessing ".$self->elastic_file, YELLOW);
+  my $str = $self->assert("\nProcessing ".$self->elastic_file, YELLOW);
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
   if ($args{write}) {
@@ -237,7 +239,7 @@ sub bad_pixels {
     };
   };
 
-  my $str = $self->colorize("First pass", CYAN);
+  my $str = $self->assert("First pass", CYAN);
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -295,7 +297,7 @@ sub lonely_pixels {
   };
 
 
-  my $str = $self->colorize("Second pass", CYAN);
+  my $str = $self->assert("Second pass", CYAN);
   $str   .= "\tRemoved $removed lonely pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -361,7 +363,7 @@ sub social_pixels {
     $ei->Set($arg=>'5,5,5,0');
   };
 
-  my $str = $self->colorize("Third pass", CYAN);
+  my $str = $self->assert("Third pass", CYAN);
   $str   .= "\tAdded $added social pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -389,7 +391,7 @@ sub scan {
   my (@data, @point);
 
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
-  print $self->colorize("Reading scan from $scanfile", YELLOW);
+  print $self->assert("Reading scan from $scanfile", YELLOW);
   open(my $SCAN, "<", $scanfile);
   my $fname = join("_", $self->stub, $self->peak_energy).'.xdi';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
@@ -417,7 +419,7 @@ sub scan {
   $xdi   -> data(\@data);
   $xdi   -> export($outfile);
 
-  print $self->colorize("Wrote $outfile", BOLD.GREEN);
+  print $self->assert("Wrote $outfile", BOLD.GREEN);
   return $ret;
 };
 
@@ -456,7 +458,7 @@ sub apply_mask {
 };
 
 
-sub colorize {
+sub assert {
   my ($self, $message, $color) = @_;
   return $color . $message . RESET . $/;
 };

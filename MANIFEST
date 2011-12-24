@@ -5,5 +5,8 @@ lib/Xray/BLA/Return.pm
 MANIFEST			This list of files
 README.org
 share/bla.xdi.ini
-t/00base.t
+SIGNATURE
+t/00signature.t
+t/01base.t
 todo.org
+META.yml

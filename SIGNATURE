@@ -1,0 +1,38 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.68.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It will check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 abdbefb5f26166d9716ff61d817691bde9197646 Build.PL
+SHA1 3767cdb871703170d657aa18a1765d0fd8f00b16 MANIFEST
+SHA1 a089b755bed5bac10d7c0bc3546b0fbf2b06d059 META.yml
+SHA1 fd6ef92856c13a3f02ca0bdca5057022b3383905 README.org
+SHA1 feacadf2bf4a9c3ec5f77ce332012b31c5d387fc bin/process.pl
+SHA1 e29886b3ed4bb422d14342a716dcad91821aa8bc lib/Xray/BLA.pm
+SHA1 11ecd9dd28a5540048707ba4214da722e457359e lib/Xray/BLA/Return.pm
+SHA1 279517ea42ecf7a711237f2ff2bfe18768e4834e share/bla.xdi.ini
+SHA1 7d008227a37f91b5640e78fb36795e475407a407 t/00signature.t
+SHA1 96a2eb5bbd94e021b57d4208eb12dd46548961d5 t/01base.t
+SHA1 69cfe5079b9edd7916777722d37f21221b698c5b todo.org
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iQEcBAEBAgAGBQJO9dVgAAoJEA6d+HbXp2AcbsYH/2Z8JIpqJv3p8eNIFHT3tUAq
+sxhUur3yjCvhSAFK13DDIlGL6CDZejp3mumJ5nvidkEyklvvZeGTAROOYQ+ywkbw
+WEPlN+vDcbcXLTPMpDoNqyi/t79Z12GryXc45KJhtaCFNvw7vciIF2qy7DI2ctiv
+Otk3/zDw8Pjf06plF6BNVGscBgqJ/KryqBaCt527YjQH0nw97QToLD7MJPAbLva2
+WCDZdgB0mifRGeezjLPMPDM7g4c1gt2n5KfV8fhJEHUrYOSkzpKtp4fvlVQHOFH6
+zPoIk8TtHD7NE1XIh3eQtRzVUqyihe3Ct4neosc3HZH0QMPUwCTUFqKLJSSfplM=
+=dmUI
+-----END PGP SIGNATURE-----

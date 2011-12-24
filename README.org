@@ -21,7 +21,7 @@ high resolution XANES spectrum.
 ** Installation
 
 After installing Image Magick, compiled to use signed 32 bit numbers
-(see below), so the following.
+(see below), do the following.
 
 :      perl Build.PL
 :      ./Build
@@ -36,7 +36,7 @@ extracted, then, as a function of emission energy by creating a mask
 from the elastic energy which identifies the pixels on the camera
 that are illuminated by photons of that energy.
 
-For a given emission eenrgy, the elastic image is read and processed
+For a given emission energy, the elastic image is read and processed
 in three steps:
 
  1. Set the bad pixels (i.e. those with spuriously large values) to
@@ -50,8 +50,8 @@ in three steps:
     are surrounded by enough illuminated pixels (the default is 4 or
     more) that it, too, should be illuminated.
 
-This results in a simple AND mask for evaluating the signal at each
-energy point from the Pilatus image.
+This results in a simple logical-AND mask for evaluating the signal at
+each energy point from the Pilatus image.
 
 ** Scan conversion
 

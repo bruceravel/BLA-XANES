@@ -3,3 +3,4 @@ blib/*
 *.bak
 Build
 MYMETA.*
+META.*

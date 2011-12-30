@@ -14,7 +14,7 @@ $spectrum->set(scanfolder	  => File::Spec->catfile($datalocation, "scans"),
 	       stub		  => $ARGV[0],
 	       peak_energy	  => 9713,
 	       weak_pixel_value	  => 2,
-	       social_pixel_value => 1,
+	       social_pixel_value => 2,
 	      );
 
 $spectrum -> mask(save=>0, verbose=>1, animate=>1);

@@ -7,16 +7,16 @@ use version;
 our $VERSION = version->new('0.1');
 
 use Moose;
-use MooseX::Aliases;
+#use MooseX::Aliases;
 use MooseX::AttributeHelpers;
-use MooseX::StrictConstructor;
+#use MooseX::StrictConstructor;
 
 use Image::Magick;
 use File::Spec;
 
 use Xray::XDI;
 
-my $ANSIColor_exists = (eval "no warning; require Term::ANSIColor");
+my $ANSIColor_exists = (eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {
   import Term::ANSIColor qw(:constants);
 } else {
@@ -30,16 +30,25 @@ if ($ANSIColor_exists) {
 
 with 'MooseX::SetGet';		# this is mine....
 
-has 'stub'       => (is => 'rw', isa => 'Str',     default => q{});
-has 'scanfile'   => (is => 'rw', isa => 'Str',     default => q{});
-has 'scanfolder' => (is => 'rw', isa => 'Str',     default => q{});
-has 'tiffolder'  => (is => 'rw', isa => 'Str',     default => q{});
-has 'outfolder'  => (is => 'rw', isa => 'Str',     default => q{});
+has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
+has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
+has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{});
+has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{});
+has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{});
 
-has 'peak_energy' => (is => 'rw', isa => 'Int',   default => 0);
+has 'peak_energy'	 => (is => 'rw', isa => 'Int', default => 0);
+has 'columns'            => (is => 'rw', isa => 'Int', default => 0);
+has 'rows'               => (is => 'rw', isa => 'Int', default => 0);
 
-has 'bad_pixel_value'  => (is => 'rw', isa => 'Int',      default => 400);
-has 'weak_pixel_value' => (is => 'rw', isa => 'Int',      default => 3);
+has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400);
+has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3);
+has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3);
+has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
+has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
+
+has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
+has 'elastic_image'      => (is => 'rw', isa => 'Image::Magick');
+
 has 'bad_pixel_list' => (
 			 metaclass => 'Collection::Array',
 			 is        => 'rw',
@@ -62,16 +71,6 @@ has 'mask_pixel_list' => (
 					'clear' => 'clear_mask_pixel_list',
 				       }
 			 );
-
-has 'lonely_pixel_value' => (is => 'rw', isa => 'Int',    default => 3);
-has 'social_pixel_value' => (is => 'rw', isa => 'Int',    default => 2);
-has 'npixels'            => (is => 'rw', isa => 'Int',    default => 0);
-
-has 'elastic_file'  => (is => 'rw', isa => 'Str',   default => q{});
-has 'elastic_image' => (is => 'rw', isa => 'Image::Magick');
-
-has 'columns'  => (is => 'rw', isa => 'Int',   default => 0);
-has 'rows'     => (is => 'rw', isa => 'Int',   default => 0);
 
 
 sub mask {
@@ -147,7 +146,7 @@ sub mask {
   };
   foreach my $co (0 .. $self->columns-1) {
     foreach my $ro (0 .. $self->rows-1) {
-      next if ($self->elastic_image->Get("pixel[$co,$ro]") eq '0,0,0,0');
+      next if ($self->elastic_image->Get("pixel[$co,$ro]") =~ m{\A0,0,0});
       $self->push_mask_pixel_list([$co,$ro]);
     };
   };
@@ -268,7 +267,6 @@ sub lonely_pixels {
     foreach my $ro (0 .. $nrows) {
 
       my @pix = split(/,/, $ei->Get("pixel[$co,$ro]"));
-
       ++$off, next if ($pix[0] == 0);
 
       my $count = 0;
@@ -281,9 +279,7 @@ sub lonely_pixels {
 	  next if (($ro == $nrows) and ($rr == 1));
 
 	  my $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
-	  ++$count if ($ei->Get($arg) ne '0,0,0,0');
-	  #my @neighbor = split(/,/, $self->elastic_image->Get($arg));
-	  #++$count if ($neighbor[0] > 0);
+	  ++$count if ($ei->Get($arg) !~ m{\A0,0,0});
 	};
       };
       if ($count < $lpv) {
@@ -329,7 +325,7 @@ sub social_pixels {
       #my @pix = split(/,/, $ei->Get("pixel[$co,$ro]"));
       #++$on, next if ($pix[0] > 0);
       $val = $ei->Get("pixel[$co,$ro]");
-      ++$on, next if ($val ne '0,0,0,0');
+      ++$on, next if ($val !~ m{\A0,0,0});
 
       $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
@@ -345,7 +341,7 @@ sub social_pixels {
 	  ## string comparison shaved 3 seconds off this step
 	  #my @neighbor = split(/,/, $self->elastic_image->Get($arg));
 	  #++$count if ($neighbor[0] > 0);
-	  ++$count if ($ei->Get($arg) ne '0,0,0,0');
+	  ++$count if ($ei->Get($arg) !~ m{\A0,0,0});
 	  last OUTER if ($count > $spv);
 	};
       };
@@ -561,7 +557,7 @@ pixels not associated with the main image of the peak energy.
 
 =item C<social_pixel_value> [2]
 
-Inthe third pass over the elastic image, dark pixels which are
+In the third pass over the elastic image, dark pixels which are
 surrounded by larger than this number of illuminated pixels are
 presumed to be a part of the image of the peak energy.  They are given
 a value of 5 counts.  This serves the prupose of making the elastic
@@ -603,8 +599,8 @@ object has two attributes: C<status> and C<message>.  A successful
 return will have a positive definite C<status>.  Any reporting (for
 example exception reporting) is done via the C<message> attribute.
 
-Some methods, for example C<apply_mask>, use the return C<status> to
-return a useful numeric value.
+Some methods, for example C<apply_mask>, use the return C<status> as
+the sum of HERFD counts from the illuminated pixels.
 
 =head2 API
 
@@ -748,10 +744,9 @@ source code.  This also was a bit tricky.  My Ubuntu system has perl
 have a F<libperl.so> symlinked to it.  To get the perl wrapper to
 build, I had to do
 
-      sudo ln -s /usr/lib/libperl.5.10.1.so /usr/lib/libperl
+      sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
 
 Adjust the version number on the perl library as needed.
-
 
 =head1 BUGS AND LIMITATIONS
 
@@ -765,10 +760,9 @@ Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://cars9.uchicago.edu/~ravel/software/>
 
-
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.
+Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

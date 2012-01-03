@@ -14,7 +14,8 @@ use MooseX::AttributeHelpers;
 use Image::Magick;
 use File::Spec;
 
-use Xray::XDI;
+use vars qw($XDI_exists);
+$XDI_exists = eval "require Xray::XDIXX" || 0;
 
 my $ANSIColor_exists = (eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {
@@ -389,7 +390,8 @@ sub scan {
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
   print $self->assert("Reading scan from $scanfile", YELLOW);
   open(my $SCAN, "<", $scanfile);
-  my $fname = join("_", $self->stub, $self->peak_energy).'.xdi';
+  my $fname = join("_", $self->stub, $self->peak_energy);
+  $fname .= ($XDI_exists) ? '.xdi' : '.dat';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
   while (<$SCAN>) {
     next if m{\A\#};
@@ -408,12 +410,24 @@ sub scan {
   };
   close $SCAN;
 
-  my $xdi = Xray::XDI->new();
-  $xdi   -> ini($args{xdiini}) if $args{xdiini};
-  $xdi   -> push_comment("HERFD scan on " . $self->stub);
-  $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
-  $xdi   -> data(\@data);
-  $xdi   -> export($outfile);
+  if ($XDI_exists) {
+    my $xdi = Xray::XDI->new();
+    $xdi   -> ini($args{xdiini}) if $args{xdiini};
+    $xdi   -> push_comment("HERFD scan on " . $self->stub);
+    $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
+    $xdi   -> data(\@data);
+    $xdi   -> export($outfile);
+  } else {
+    open(my $O, '>', $outfile);
+    print   $O "# HERFD scan on " . $self->stub . $/;
+    printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
+    print   $O "# -------------------------\n";
+    print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
+    foreach my $p (@data) {
+      printf $O "  %.3f  %.7f  %10d  %10d  %10d  %10d  %10d  %4d  %8.3f\n", @$p;
+    };
+    close   $O;
+  };
 
   print $self->assert("Wrote $outfile", BOLD.GREEN);
   return $ret;

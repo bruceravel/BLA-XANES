@@ -15,6 +15,7 @@ my $build = Module::Build
 				'MooseX::AttributeHelpers'  => '0.23',
 				'MooseX::StrictConstructor' => '0.12',
 				'Image::Magick'             => 0,
+				'Config::IniFiles'          => 0,
 				#'Xray::XDI'                 => 0,
 			       },
 	 sign               => 1,

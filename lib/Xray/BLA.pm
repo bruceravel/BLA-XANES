@@ -15,7 +15,7 @@ use Image::Magick;
 use File::Spec;
 
 use vars qw($XDI_exists);
-$XDI_exists = eval "require Xray::XDIXX" || 0;
+$XDI_exists = eval "require Xray::XDI" || 0;
 
 my $ANSIColor_exists = (eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {

@@ -1,0 +1,69 @@
+#!/usr/bin/perl -I/home/bruce/git/BLA-XANES/lib  -I/home/bruce/git/XAS-Data-Interchange/perl/lib
+
+use strict;
+use warnings;
+use Xray::BLA;
+use Config::IniFiles;
+use Getopt::Long;
+
+my $energy     = 9713;
+my $verbose    = 1;
+my $save       = 0;
+my $animate    = 0;
+my $configfile = q{};
+my $xdiini     = q{}; # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
+my $result  = GetOptions ('save|s'      => \$save,
+			  'animate|a'   => \$animate,
+			  'verbose|v'   => \$verbose,
+			  'config|c=s'  => \$configfile,
+			  'xdiini|x=s'  => \$xdiini,
+			  'quiet|q'     => sub { $verbose = 0 },
+			  'help|h'      => \&usage,
+			 );
+
+&usage if not $ARGV[0];
+
+tie my %ini, 'Config::IniFiles', ( -file => $configfile );
+
+
+my $spectrum = Xray::BLA->new;
+$spectrum->set(scanfolder	  => $ini{bla}{scanfolder},
+	       tiffolder	  => $ini{bla}{tiffolder},
+	       outfolder	  => $ini{bla}{outfolder},
+	       stub		  => $ARGV[0],
+	       peak_energy	  => $energy,
+	       weak_pixel_value	  => 2,
+	       social_pixel_value => 2,
+	      );
+
+
+my @elastic = split(" ", $ini{bla}{emission});
+foreach my $e (@elastic) {
+  $spectrum -> peak_energy($e);
+  $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+  $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+};
+
+sub usage {
+  print "
+  rixs [options] <stub>
+
+     --config  | -c         [string]  configuration file (required)
+     --animate | -a         [flag]    save tiff animation of mask creation
+     --save    | -s         [flag]    save intermediate steps of mask creation
+     --verbose | -v         [flag]    write progress messages
+     --quiet   | -q         [flag]    suppress progress messages
+     --help    | -h         [flag]    write this message and exit
+
+  This script assumes that scan files and image files have related names.
+
+  example:  rixs -c /path/to/config.ini -a Aufoil1
+
+  In this example, the scan file is called `Aufoil1.001' and the image
+  files are called `Aufoil1_NNNNN.tif'.  Masks are created from the
+  elastic images at each emission energy.  File locations are
+  specified in the configuration file.
+
+";
+  exit;
+};

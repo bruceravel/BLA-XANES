@@ -6,10 +6,10 @@
 An measurement set consists of
 
  + A column data file with columns of energy and scalars from the
-   measurement 
+   measurement.
 
- + One Pilatus image for each energy containing the HERFD signal at
-   that energy
+ + One Pilatus image for each energy point containing the HERFD signal
+   at that point.
 
  + A set of Pilatus images taken at energies around the fluorescence
    energy.  These are used to make a mask which identifies which
@@ -31,10 +31,10 @@ After installing Image Magick, compiled to use signed 32 bit numbers
 
 ** Usage
 
-There are two programs in the bin/ folder.  ~herfd~ is used to make a
-single HERFD spectrum at a specific emission energy.  ~rixs~ is used
-to generate a sequence of HERFD spectra at a sequence of emission
-energies.
+There are two programs installed from the bin/ folder.  ~herfd~ is
+used to make a single HERFD spectrum at a specific emission energy.
+~rixs~ is used to generate a sequence of HERFD spectra at a sequence
+of emission energies.
 
 *** The herfd script
 
@@ -56,6 +56,9 @@ are specified in the configuration file.
 
 :  example:  herfd -c /path/to/config.ini -e 9713 -a Aufoil1
 
+Here, "Aufoil1" is the stub, i.e. the basename of the scan and image
+files, and the ~-c~, ~-e~, and ~-a~ command line options are
+demonstrated.
 
 *** The rixs script
 
@@ -167,7 +170,8 @@ I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its
 delivered to an Ubuntu system, Image Magick cannot handle the TIFF
 files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.  In order to be
 able to use Image Magick, it must be recompiled with a larger bit
-depth.  This is done by downloading and unpacking the tarball, then doing
+depth.  This is done by downloading and unpacking the source tarball,
+then doing
 
 :      ./configure --with-quantum-depth=32
 
@@ -179,4 +183,5 @@ build, I had to do
 
 :      sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
 
-Adjust the version number on the perl library as needed.
+Adjust the version number on the perl library as needed for your
+computer.

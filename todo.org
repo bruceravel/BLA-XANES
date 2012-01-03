@@ -1,31 +1,28 @@
 
 * BLA-XANES to do list
 
- + Look into using PDL for image processing.  That should be much
+ * Look into using PDL for image processing.  That should be much
    faster than Image::Magick, if only becuase computation can be
    pushed into PDL rather than done in perl with repeated calls to
    Image::Magick's ~Get~ method.
 
- + Extensive pods
+ * +Extensive pods+
 
- + +Generate properly scaled animated gifs for mask development and for+
-   +image sequence.  This will require bad pixel removal from the first+
-   +image in the mask sequence and from all images in a data set.+
+ * +Generate properly scaled animated gifs for mask development and for image sequence.  This will require bad pixel removal from the first image in the mask sequence and from all images in a data set.+
 
- + Jeremy suggested:
+ * Jeremy suggested:
 
-   + Higher weak-pixel cutoff for better energy resolution
+   - +Higher weak-pixel cutoff for better energy resolution+ (implemented via configuration)
 
-   + assigned the median pixel value within a particular radius to each
-     point
+   - assigned the median pixel value within a particular radius to each point
 
-   + bin with 2x2 or 3x3 bins
+   - bin with 2x2 or 3x3 bins
 
- + Interpolate elastic masks so that a single pass over the data can
+ * Interpolate elastic masks so that a single pass over the data can
    be made to generate the "whole" RIXS plane
 
- + +Automate setting of file names, such as ~elastic_file~+
+ * +Automate setting of file names, such as ~elastic_file~+
 
- + +location and access of ini file for XDI output needs to be more graceful+
+ * +location and access of ini file for XDI output needs to be more graceful+
 
- + convert animation file to gif for ease of viewing
+ * convert animation file to gif for ease of viewing

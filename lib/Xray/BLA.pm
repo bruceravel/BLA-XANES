@@ -9,12 +9,11 @@ our $VERSION = version->new('0.1');
 use Moose;
 use MooseX::AttributeHelpers;
 
-#use Image::Magick;
 use Image::Magick;
 use File::Spec;
 
 use vars qw($XDI_exists);
-$XDI_exists = eval "require Xray::XDIX" || 0;
+$XDI_exists = eval "require Xray::XDI" || 0;
 
 my $ANSIColor_exists = (eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {

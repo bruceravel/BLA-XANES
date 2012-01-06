@@ -409,9 +409,9 @@ sub scan {
   };
   close $SCAN;
 
-  if ($XDI_exists) {
+  if (($XDI_exists) and (-e $args{xdiini})) {
     my $xdi = Xray::XDI->new();
-    $xdi   -> ini($args{xdiini}) if $args{xdiini};
+    $xdi   -> ini($args{xdiini});
     $xdi   -> push_comment("HERFD scan on " . $self->stub);
     $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
     $xdi   -> data(\@data);

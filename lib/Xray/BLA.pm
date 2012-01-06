@@ -7,15 +7,14 @@ use version;
 our $VERSION = version->new('0.1');
 
 use Moose;
-#use MooseX::Aliases;
 use MooseX::AttributeHelpers;
-#use MooseX::StrictConstructor;
 
+#use Image::Magick;
 use Image::Magick;
 use File::Spec;
 
 use vars qw($XDI_exists);
-$XDI_exists = eval "require Xray::XDI" || 0;
+$XDI_exists = eval "require Xray::XDIX" || 0;
 
 my $ANSIColor_exists = (eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {
@@ -29,7 +28,8 @@ if ($ANSIColor_exists) {
 };
 
 
-with 'MooseX::SetGet';		# this is mine....
+with 'MooseX::MutatorAttributes';
+##with 'MooseX::SetGet';		# this is mine....
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
@@ -184,7 +184,7 @@ sub import_elastic_image {
 
   my $ret = Xray::BLA::Return->new;
   my $p = Image::Magick->new();
-  $p->Read(filename=>$self->elastic_file);
+  $p->Read($self->elastic_file);
   $self->elastic_image($p);
 
   if ($self->elastic_image->Get('version') !~ m{Q32}) {
@@ -717,6 +717,12 @@ image for this data point.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
+Using the scripts in the F<bin/> directory, file locations, elastic
+energies, and mask parameters are specified in an ini-style
+configuration file.  An example is found in F<share/config.ini>.
+
+If using L<Xray::XDI>, metadata can be supplied by an ini-style file.
+And example is found in F<share/bla.xdi.ini>.
 
 =head1 DEPENDENCIES
 
@@ -730,15 +736,15 @@ L<Moose>
 
 =item *
 
-L<Image::Magick>
+L<MooseX::MutatorAttributes>
 
 =item *
 
-L<Term::ANSIColor>
+L<Image::Magick> or, possibly, L<Graphics::Magick>
 
 =item *
 
-L<Xray::XDI>
+L<Xray::XDI>  (optional)
 
 =back
 

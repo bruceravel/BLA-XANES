@@ -26,3 +26,5 @@
    * +location and access of ini file for XDI output needs to be more graceful+
 
    * convert animation file to gif for ease of viewing
+
+   * use Package::Alias to switch easily between Image::Magick and Graphics::Magick

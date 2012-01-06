@@ -170,10 +170,17 @@ I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its
 delivered to an Ubuntu system, Image Magick cannot handle the TIFF
 files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.  In order to be
 able to use Image Magick, it must be recompiled with a larger bit
-depth.  This is done by downloading and unpacking the source tarball,
-then doing
+depth.  This is done by downloading the source code.  I grabbed the
+trunk of the Image Magick development version
+
+:       svn co https://www.imagemagick.org/subversion/ImageMagick/trunk ImageMagick
+
+then
 
 :      ./configure --with-quantum-depth=32
+
+Presumably, the same could be done with any Image Magick source
+tarball.
 
 I also rebuilt the perl wrapper which comes with the Image Magick
 source code.  This also was a bit tricky.  My Ubuntu system has 

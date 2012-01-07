@@ -29,12 +29,12 @@ my $result  = GetOptions ("energy|e=i"  => \$energy,
 tie my %ini, 'Config::IniFiles', ( -file => $configfile );
 
 my $spectrum = Xray::BLA->new;
-$spectrum->set(scanfolder	  => $ini{measure}{scanfolder},
-	       tiffolder	  => $ini{measure}{tiffolder},
-	       outfolder	  => $ini{measure}{outfolder},
-	       stub		  => $ARGV[0],
-	       peak_energy	  => $energy,
-	      );
+$spectrum->scanfolder	($ini{measure}{scanfolder});
+$spectrum->tiffolder	($ini{measure}{tiffolder});
+$spectrum->outfolder	($ini{measure}{outfolder});
+$spectrum->stub		($ARGV[0]);
+$spectrum->peak_energy	($energy);
+
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};
 $spectrum -> lonely_pixel_value($ini{pixel}{lonely}) if exists $ini{pixel}{lonely};

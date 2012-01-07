@@ -28,3 +28,5 @@
    * convert animation file to gif for ease of viewing
 
    * use Package::Alias to switch easily between Image::Magick and Graphics::Magick
+
+   * use MooseX::MutatorAttributes or MooseX::GetSet, which is convenient in the scripts

@@ -27,7 +27,7 @@ if ($ANSIColor_exists) {
 };
 
 
-with 'MooseX::MutatorAttributes';
+##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
@@ -489,12 +489,12 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
    my $spectrum = Xray::BLA->new;
 
    my $datalocation = '/home/bruce/Data/NIST/10ID/2011.12/';
-   $spectrum->set(scanfolder  => File::Spec->catfile($datalocation, "scans"),
-                  tiffolder   => File::Spec->catfile($datalocation, "tiffs"),
-                  outfolder   => File::Spec->catfile($datalocation, "processed"),
-                  stub        => "mydata",
-                  peak_energy => 9713,
-                 );
+   $spectrum->scanfolder('/path/to/scanfolder');
+   $spectrum->tiffolder('/path/to/tiffolder');
+   $spectrum->outfolder('/path/to/outfolder');
+   $spectrum->stub('myscan');
+   $spectrum->peak_energy(9713);
+
    $spectrum->mask(write=>0, verbose=>1, animate=>0);
    $spectrum->scan(verbose=>1);
 

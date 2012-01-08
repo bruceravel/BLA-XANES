@@ -3,7 +3,7 @@
 
 ** Synopsis
 
-An measurement set consists of
+A measurement set consists of
 
  + A column data file with columns of energy and scalars from the
    measurement.
@@ -51,8 +51,11 @@ of emission energies.
   
 The ~herfd~ script assumes that scan files and image files have
 related names.  In this example, the scan file is called ~Aufoil1.001~
-and the image files are called ~Aufoil1_NNNNN.tif~.  File locations
-are specified in the configuration file.
+and the image files are called ~Aufoil1_NNNNN.tif~.  The ~NNNNN~ in
+the image file name indicates the data point and is reflected in one
+of the columns of the scan file.  If your data do not follow these
+patterns, this script will fail.  File locations are specified in the
+configuration file.
 
 :  example:  herfd -c /path/to/config.ini -e 9713 -a Aufoil1
 
@@ -72,10 +75,13 @@ demonstrated.
 :     --help    | -h         [flag]    write this message and exit
 
 The ~rixs~ script assumes that scan files and image files have related
-names.  In this example, the scan file is called `Aufoil1.001' and
-the image files are called `Aufoil1_NNNNN.tif'.  Masks are created
-from the elastic images at each emission energy.  File locations are
-specified in the configuration file.
+names.  In this example, the scan file is called ~Aufoil1.001~ and the
+image files are called ~Aufoil1_NNNNN.tif~.  The ~NNNNN~ in the image
+file name indicates the data point and is reflected in one of the
+columns of the scan file.  If your data do not follow these patterns,
+this script will fail.  Masks are created from the elastic images at
+each emission energy.  File locations are specified in the
+configuration file.
 
 :  example:  rixs -c /path/to/config.ini -a Aufoil1
 

@@ -183,7 +183,7 @@ sub import_elastic_image {
 
   my $ret = Xray::BLA::Return->new;
   my $p = Image::Magick->new();
-  $p->Read($self->elastic_file);
+  my $x = $p->Read($self->elastic_file);
   $self->elastic_image($p);
 
   if ($self->elastic_image->Get('version') !~ m{Q32}) {

@@ -1,4 +1,4 @@
-#!/usr/bin/perl -I/home/bruce/git/BLA-XANES/lib  -I/home/bruce/git/XAS-Data-Interchange/perl/lib
+#!/usr/bin/perl -I/home/bruce/git/BLA-XANES/lib -I/home/bruce/git/XAS-Data-Interchange/perl/lib
 
 use strict;
 use warnings;

@@ -1,12 +1,12 @@
-#!/usr/bin/perl -I/home/bruce/git/BLA-XANES/lib  -I/home/bruce/git/XAS-Data-Interchange/perl/lib
+#!/usr/bin/perl
 
 use strict;
 use warnings;
 use Xray::BLA;
 use Config::IniFiles;
 use Getopt::Long;
+use Pod::Usage;
 
-my $energy     = 9713;
 my $verbose    = 1;
 my $save       = 0;
 my $animate    = 0;
@@ -18,10 +18,11 @@ my $result  = GetOptions ('save|s'      => \$save,
 			  'config|c=s'  => \$configfile,
 			  'xdiini|x=s'  => \$xdiini,
 			  'quiet|q'     => sub { $verbose = 0 },
-			  'help|h'      => \&usage,
+			  'help|h'      => sub{ pod2usage(1); exit 0},
 			 );
 
-&usage if not $ARGV[0];
+pod2usage(1) && exit 1 if not $ARGV[0];
+pod2usage(1) && exit 1 if not $configfile;
 
 tie my %ini, 'Config::IniFiles', ( -file => $configfile );
 
@@ -45,26 +46,81 @@ foreach my $e (@elastic) {
   $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
 };
 
-sub usage {
-  print "
-  rixs [options] <stub>
+exit 0;
 
-     --config  | -c         [string]  configuration file (required)
-     --animate | -a         [flag]    save tiff animation of mask creation
-     --save    | -s         [flag]    save intermediate steps of mask creation
-     --verbose | -v         [flag]    write progress messages
-     --quiet   | -q         [flag]    suppress progress messages
-     --help    | -h         [flag]    write this message and exit
+=head1 NAME
 
-  This script assumes that scan files and image files have related names.
+rixs - convert BLA image to XANES spectrum at a sequence of emission energies
 
-  example:  rixs -c /path/to/config.ini -a Aufoil1
+=head1 SYNOPSIS
 
-  In this example, the scan file is called `Aufoil1.001' and the image
-  files are called `Aufoil1_NNNNN.tif'.  Masks are created from the
-  elastic images at each emission energy.  File locations are
-  specified in the configuration file.
+herfd [options] <stub>
 
-";
-  exit;
-};
+ Options:
+     --config  | -c   [string]  configuration file (required)
+     --animate | -a   [flag]    save tiff animation of mask creation
+     --save    | -s   [flag]    save intermediate steps of mask creation
+     --verbose | -v   [flag]    write progress messages
+     --quiet   | -q   [flag]    suppress progress messages
+     --help    | -h   [flag]    write this message and exit
+
+=head1 Options
+
+=over 8
+
+=item B<--config>, B<-c>  (Required)
+
+Specify the location of the ini-style config file giving the input and
+output locations on disk and other information.
+
+=item B<--animate>, B<-a>
+
+Write an animated tiff showing the steps of mask creation.
+
+=item B<--save>, B<-s>
+
+Write individual tiff files showing the steps of mask creation.
+
+=item B<--verbose>, B<-v>   (Default)
+
+Write progress messages should be written to STDOUT.
+
+=item B<--quiet>, B<-q>
+
+Suppress progress messages to STDOUT.
+
+=item B<--help>, B<-h>
+
+Print this help message and exit.
+
+=back
+
+=head1 DESCRIPTION
+
+A measurement set consists of
+
+=over 4
+
+=item *
+
+A column data file with columns of energy and scalars from the
+measurement.
+
+=item *
+
+One Pilatus image for each energy point containing the HERFD signal at
+that point.
+
+=item *
+
+A set of Pilatus images taken at energies around the fluorescence
+energy.  These are used to make a mask which identifies which pixels
+contain signal related to specific emission energies.
+
+=back
+
+This software uses perl and Image Magick to process the images into a
+high resolution XANES spectrum.
+
+=cut
+

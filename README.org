@@ -155,7 +155,7 @@ in three steps:
 This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.
 
-When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, an
+When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, a
 4-frame animated tiff file will be written which shows the steps from
 elastic image to final mask.
 
@@ -176,8 +176,13 @@ I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its
 delivered to an Ubuntu system, Image Magick cannot handle the TIFF
 files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.  In order to be
 able to use Image Magick, it must be recompiled with a larger bit
-depth.  This is done by downloading the source code.  I grabbed the
-trunk of the Image Magick development version
+depth.  This is done by re-compiling from source code.  
+
+You must have [[http://www.libtiff.org/][libtiff]] and its development libraries installed so that
+Image Magick gets compiled with support for tiff files.  On Ubunutu,
+it is called ~libtiff4-dev~.
+
+Grab the trunk of the Image Magick development version
 
 :       svn co https://www.imagemagick.org/subversion/ImageMagick/trunk ImageMagick
 
@@ -189,10 +194,10 @@ Presumably, the same could be done with any Image Magick source
 tarball.
 
 I also rebuilt the perl wrapper which comes with the Image Magick
-source code.  This also was a bit tricky.  My Ubuntu system has 
-perl 5.10.1 and therefore has a ~libperl.5.10.1.so~.  It did not, however,
-have a ~libperl.so~ symlinked to it.  To get the perl wrapper to
-build, I had to do
+source code in the ~PerlMagick~ folder.  This also was a bit tricky.
+My Ubuntu system has perl 5.10.1 and therefore has a
+~libperl.5.10.1.so~.  It did not, however, have a ~libperl.so~
+symlinked to it.  To get the perl wrapper to build, I had to do
 
 :      sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
 

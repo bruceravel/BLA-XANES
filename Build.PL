@@ -11,7 +11,6 @@ my $build = Module::Build
 	 dist_author        => 'Bruce Ravel <bravel AT bnl DOT gov>',
 	 requires           => {
 				'Moose'			    => '1.21',
-				'MooseX::AttributeHelpers'  => '0.23',
 				#'MooseX::MutatorAttributes' => 0,
 				'Image::Magick'             => 0,
 				'Config::IniFiles'          => 0,

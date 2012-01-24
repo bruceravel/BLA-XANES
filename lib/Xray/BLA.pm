@@ -7,7 +7,6 @@ use version;
 our $VERSION = version->new('0.1');
 
 use Moose;
-use MooseX::AttributeHelpers;
 
 use Image::Magick;
 use File::Spec;

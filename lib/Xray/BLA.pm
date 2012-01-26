@@ -1,25 +1,50 @@
 package Xray::BLA;
 use Xray::BLA::Return;
 
-use strict;
-use warnings;
 use version;
-our $VERSION = version->new('0.1');
+our $VERSION = version->new('0.2');
 
 use Moose;
+#with 'Xray::BLA::Backend::ImageMagick';
+with 'Xray::BLA::Backend::Imager';
+no warnings qw(redefine);
 
-use Image::Magick;
 use File::Spec;
 
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
 
-my $ANSIColor_exists = (eval "require Term::ANSIColor");
-if ($ANSIColor_exists) {
-  import Term::ANSIColor qw(:constants);
+
+my $stub = 0;
+if ( (($^O eq 'MSWin32') or ($^O eq 'cygwin')) and ($ENV{TERM} eq 'dumb')) {
+  my $WCA_exists = (eval "require Win32::Console::ANSI");
+  if ($WCA_exists) {
+    import Term::ANSIColor qw(:constants);
+    # sub BOLD    {color('bold')};
+    # sub WHITE   {color('white')};
+    # sub YELLOW  {color('yellow')};
+    # sub RED     {color('red')};
+    # sub GREEN   {color('green')};
+    # sub CYAN    {color('cyan')};
+    # sub RESET   {color('reset')};
+  } else {
+    $stub = 1
+  };
 } else {
+  my $ANSIColor_exists = (eval "require Term::ANSIColor");
+  if ($ANSIColor_exists) {
+    import Term::ANSIColor qw(:constants);
+  } else {
+    $stub = 1;
+  };
+};
+$stub = 1 if ($ENV{TERM} eq 'dumb');
+#$stub = 1 if $nocolor;
+if ($stub) {
   sub BOLD    {q{}};
+  sub WHITE   {q{}};
   sub YELLOW  {q{}};
+  sub RED     {q{}};
   sub GREEN   {q{}};
   sub CYAN    {q{}};
   sub RESET   {q{}};
@@ -46,7 +71,6 @@ has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
-has 'elastic_image'      => (is => 'rw', isa => 'Image::Magick');
 
 has 'bad_pixel_list' => (
 			 metaclass => 'Collection::Array',
@@ -141,11 +165,11 @@ sub mask {
   foreach my $pix (@{$self->bad_pixel_list}) {
     my $co = $pix->[0];
     my $ro = $pix->[1];
-    $self->elastic_image->Set("pixel[$co,$ro]"=>0);
+    $self->set_pixel($self->elastic_image, $co, $ro, 0);
   };
   foreach my $co (0 .. $self->columns-1) {
     foreach my $ro (0 .. $self->rows-1) {
-      next if ($self->elastic_image->Get("pixel[$co,$ro]") =~ m{\A0,0,0});
+      next if ($self->get_pixel($self->elastic_image, $co, $ro) == 0);
       $self->push_mask_pixel_list([$co,$ro]);
     };
   };
@@ -153,18 +177,7 @@ sub mask {
 
   ## construct an animated gif of the mask building process
   if ($args{animate}) {
-    my $im = Image::Magick->new;
-    $im -> Read(@out);
-    foreach my $i (0 .. $#out) {
-      foreach my $pix (@{$self->bad_pixel_list}) {
-     	my $co = $pix->[0];
-     	my $ro = $pix->[1];
-     	$im->[$i]->Set("pixel[$co,$ro]"=>0);
-      };
-    };
-    my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_anim").'.tif');
-    my $x = $im -> Write($fname);
-    warn $x if $x;
+    my $fname = $self->animate(@out);
     print $self->assert("Wrote $fname", YELLOW), "\n" if $args{verbose};
   };
   if ($args{save}) {
@@ -181,24 +194,28 @@ sub import_elastic_image {
   $args{write} || 0;
 
   my $ret = Xray::BLA::Return->new;
-  my $p = Image::Magick->new();
-  my $x = $p->Read($self->elastic_file);
-  $self->elastic_image($p);
+  $self->elastic_image($self->read_image($self->elastic_file));
 
-  if ($self->elastic_image->Get('version') !~ m{Q32}) {
+  if (($self->backend eq 'Image::Magick') and ($self->get_version($self->elastic_image) !~ m{Q32})) {
     $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
     $ret->status(0);
     return $ret;
   };
+  if (($self->backend eq 'Imager') and ($self->get_version($self->elastic_image) < 0.87)) {
+    $ret->message("This program requires Imager version 0.87 or later.");
+    $ret->status(0);
+    return $ret;
+  };
 
-  $self->columns($self->elastic_image->Get('columns'));
-  $self->rows($self->elastic_image->Get('rows'));
+  $self->columns($self->get_columns($self->elastic_image));
+  $self->rows($self->get_rows($self->elastic_image));
   my $str = $self->assert("\nProcessing ".$self->elastic_file, YELLOW);
+  $str   .= sprintf "\tusing the %s backend\n", $self->backend;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
   if ($args{write}) {
-    $self->elastic_image->Write($args{write});
-    #$str .= "\tSaved initial image to ".$args{write}."\n";
+    $self->write_image($self->elastic_image, $args{write});
+    # $self->elastic_image->Write($args{write});
   };
   $ret->message($str);
   return $ret;
@@ -219,20 +236,20 @@ sub bad_pixels {
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
   foreach my $co (0 .. $self->columns-1) {
     foreach my $ro (0 .. $nrows) {
-      my $str = $ei->Get("pixel[$co,$ro]");
-      my @pix = split(/,/, $str);
+      my $val = $self->get_pixel($ei, $co, $ro);
+      #my @pix = split(/,/, $str);
       #    print "$co, $ro: $pix[0]\n" if $pix[0]>5;
-      if ($pix[0] > $bpv) {
+      if ($val > $bpv) {
 	$self->push_bad_pixel_list([$co,$ro]);
-  	$ei->Set("pixel[$co,$ro]"=>0);
+  	$self->set_pixel($ei, $co, $ro, 0);
   	++$removed;
   	++$off;
-      } elsif ($pix[0] < $wpv) {
-  	$ei->Set("pixel[$co,$ro]"=>0);
+      } elsif ($val < $wpv) {
+  	$self->set_pixel($ei, $co, $ro, 0);
   	++$toosmall;
   	++$off;
       } else {
-  	if ($pix[0]) {++$on} else {++$off};
+  	if ($val) {++$on} else {++$off};
       };
     };
   };
@@ -242,8 +259,7 @@ sub bad_pixels {
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
-    $ei->Write($args{write});
-    #$str .= "\tSaved first pass image to ".$args{write}."\n";
+    $self->write_image($ei, $args{write});
   };
   $ret->message($str);
   return $ret;
@@ -265,8 +281,7 @@ sub lonely_pixels {
   foreach my $co (0 .. $ncols) {
     foreach my $ro (0 .. $nrows) {
 
-      my @pix = split(/,/, $ei->Get("pixel[$co,$ro]"));
-      ++$off, next if ($pix[0] == 0);
+      ++$off, next if ($self->get_pixel($ei, $co, $ro) == 0);
 
       my $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
@@ -278,11 +293,11 @@ sub lonely_pixels {
 	  next if (($ro == $nrows) and ($rr == 1));
 
 	  my $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
-	  ++$count if ($ei->Get($arg) !~ m{\A0,0,0});
+	  ++$count if ($self->get_pixel($ei, $co+$cc, $ro+$rr) != 0);
 	};
       };
       if ($count < $lpv) {
-	$ei->Set("pixel[$co,$ro]"=>0);
+	$self->set_pixel($ei, $co, $ro, 0);
 	++$removed;
 	++$off;
       } else {
@@ -297,8 +312,7 @@ sub lonely_pixels {
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
-    $ei->Write($args{write});
-    #$str .= "\tSaved second pass image to ".$args{write}."\n";
+    $self->write_image($ei, $args{write});
   };
   $ret->message($str);
   return $ret;
@@ -321,10 +335,7 @@ sub social_pixels {
   foreach my $co (0 .. $ncols) {
     foreach my $ro (0 .. $nrows) {
 
-      #my @pix = split(/,/, $ei->Get("pixel[$co,$ro]"));
-      #++$on, next if ($pix[0] > 0);
-      $val = $ei->Get("pixel[$co,$ro]");
-      ++$on, next if ($val !~ m{\A0,0,0});
+      ++$on, next if ($self->get_pixel($ei, $co, $ro) > 0);
 
       $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
@@ -335,12 +346,7 @@ sub social_pixels {
 	  next if (($ro == 0) and ($rr == -1));
 	  next if (($ro == $nrows) and ($rr == 1));
 
-	  $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
-
-	  ## string comparison shaved 3 seconds off this step
-	  #my @neighbor = split(/,/, $self->elastic_image->Get($arg));
-	  #++$count if ($neighbor[0] > 0);
-	  ++$count if ($ei->Get($arg) !~ m{\A0,0,0});
+	  ++$count if ($self->get_pixel($ei, $co+$cc, $ro+$rr) != 0);
 	  last OUTER if ($count > $spv);
 	};
       };
@@ -354,8 +360,7 @@ sub social_pixels {
     };
   };
   foreach my $px (@addlist) {
-    my $arg = sprintf("pixel[%d,%d]", $px->[0], $px->[1]);
-    $ei->Set($arg=>'5,5,5,0');
+    $self->set_pixel($ei, $px->[0], $px->[1], 5);
   };
 
   my $str = $self->assert("Third pass", CYAN);
@@ -363,8 +368,7 @@ sub social_pixels {
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
-    $ei->Write($args{write});
-    #$str .= "\tSaved third pass image to ".$args{write}."\n";
+    $self->write_image($ei, $args{write});
   };
   $ret->status($on);
   $ret->message($str);
@@ -442,13 +446,11 @@ sub apply_mask {
   my $image = File::Spec->catfile($self->tiffolder, $fname);
   printf("  %3d, %s", $tif, $image) if ($args{verbose} and (not $tif % 10));
 
-  my $datapoint = Image::Magick->new();
-  $datapoint -> Read($image);
+  my $datapoint = $self->read_image($image);
   my $sum = 0;
 
   foreach my $pix (@{$self->mask_pixel_list}) {
-    my $data = $datapoint->Get("pixel[" . $pix->[0] . "," . $pix->[1] . "]");
-    $sum += (split(",", $data))[0];
+    $sum += $self->get_pixel($datapoint, $pix->[0], $pix->[1]);
   };
 
   ## this is a much slower way to apply the mask:
@@ -582,8 +584,7 @@ from the values of C<stub>, C<peak_energy>, and C<tiffolder>.
 
 =item C<elastic_image>
 
-This contains the L<Image::Magick> object corresponding to the elastic
-image.
+This contains the backend object corresponding to the elastic image.
 
 =item C<npixels>
 
@@ -738,7 +739,7 @@ L<MooseX::MutatorAttributes>
 
 =item *
 
-L<Image::Magick> or, possibly, L<Graphics::Magick>
+L<Imager> or L<Image::Magick> or, possibly, L<Graphics::Magick>
 
 =item *
 
@@ -767,6 +768,35 @@ build, I had to do
 Adjust the version number on the perl library as needed.
 
 =head1 BUGS AND LIMITATIONS
+
+=over 4
+
+=item *
+
+Set backend by attribute from the calling script
+
+=item *
+
+Write tests that use an actual tif image
+
+=item *
+
+write tests for both backends (using skip as needed)
+
+=item *
+
+Make sure this POD makes sense describing both backends
+
+=item *
+
+Write PODs for the backends
+
+=item *
+
+write images and animations with Imager (gif?)
+
+=back
+
 
 Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
 

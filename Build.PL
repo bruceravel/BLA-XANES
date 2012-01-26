@@ -12,9 +12,13 @@ my $build = Module::Build
 	 requires           => {
 				'Moose'			    => '1.21',
 				#'MooseX::MutatorAttributes' => 0,
-				'Image::Magick'             => 0,
 				'Config::IniFiles'          => 0,
+				'Math::Round'               => 0,
 				#'Xray::XDI'                 => 0,
+			       },
+	 recommends         => {
+				'Image::Magick'             => 0,
+				'Imager'                    => 0.87,
 			       },
 	 sign               => 1,
 	);

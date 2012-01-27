@@ -6,11 +6,10 @@ lib/Xray/BLA/Backend/ImageMagick.pm
 lib/Xray/BLA/Backend/Imager.pm
 lib/Xray/BLA/Return.pm
 MANIFEST			This list of files
-META.yml
 README.org
 share/bla.xdi.ini
 share/config.ini
-t/01base.t
+t/01_base.t
 t/02_imager.t
 t/03_image_magick.t
 t/s32_example.tif

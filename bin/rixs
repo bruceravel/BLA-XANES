@@ -17,6 +17,7 @@ my $result  = GetOptions ('save|s'      => \$save,
 			  'verbose|v'   => \$verbose,
 			  'config|c=s'  => \$configfile,
 			  'xdiini|x=s'  => \$xdiini,
+			  'nocolor|n'   => \$nocolor,
 			  'quiet|q'     => sub { $verbose = 0 },
 			  'help|h'      => sub{ pod2usage(1); exit 0},
 			 );
@@ -33,6 +34,7 @@ $spectrum -> tiffolder ($ini{measure}{tiffolder});
 $spectrum -> outfolder ($ini{measure}{outfolder});
 mkpath($spectrum->outfolder) if not -d $spectrum->outfolder;
 $spectrum -> stub      ($ARGV[0]);
+$spectrum -> colored(0) if $nocolor;
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};
@@ -62,6 +64,7 @@ herfd [options] <stub>
      --animate | -a   [flag]    save tiff animation of mask creation
      --save    | -s   [flag]    save intermediate steps of mask creation
      --verbose | -v   [flag]    write progress messages
+     --nocolor | -n   [flag]    turn off color coding of screen output
      --quiet   | -q   [flag]    suppress progress messages
      --help    | -h   [flag]    write this message and exit
 
@@ -84,7 +87,11 @@ Write individual tiff files showing the steps of mask creation.
 
 =item B<--verbose>, B<-v>   (Default)
 
-Write progress messages should be written to STDOUT.
+Write progress messages to STDOUT.
+
+=item B<--nocolor>, B<-n>
+
+Turn off color coding of screen output
 
 =item B<--quiet>, B<-q>
 

@@ -7,6 +7,7 @@ our $VERSION = version->new('0.2');
 use Moose;
 use Moose::Util qw(apply_all_roles);
 use MooseX::Aliases;
+use MooseX::AttributeHelpers;
 #with 'Xray::BLA::Backend::ImageMagick';
 #with 'Xray::BLA::Backend::Imager';
 no warnings qw(redefine);

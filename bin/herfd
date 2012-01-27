@@ -64,6 +64,7 @@ herfd [options] <stub>
      --animate | -a   [flag]    save tiff animation of mask creation
      --save    | -s   [flag]    save intermediate steps of mask creation
      --verbose | -v   [flag]    write progress messages
+     --nocolor | -n   [flag]    turn off color coding of screen output
      --quiet   | -q   [flag]    suppress progress messages
      --help    | -h   [flag]    write this message and exit
 
@@ -90,7 +91,11 @@ Write individual tiff files showing the steps of mask creation.
 
 =item B<--verbose>, B<-v>   (Default)
 
-Write progress messages should be written to STDOUT.
+Write progress messages to STDOUT.
+
+=item B<--nocolor>, B<-n>
+
+Turn off color coding of screen output
 
 =item B<--quiet>, B<-q>
 

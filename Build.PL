@@ -12,6 +12,7 @@ my $build = Module::Build
 	 requires           => {
 				'Moose'			    => '1.21',
 				#'MooseX::MutatorAttributes' => 0,
+				'MooseX::Aliases'           => '0',
 				'Config::IniFiles'          => 0,
 				'Math::Round'               => 0,
 				#'Xray::XDI'                 => 0,

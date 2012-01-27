@@ -29,9 +29,9 @@ pod2usage(1) && exit 1 if not $energy;
 
 tie my %ini, 'Config::IniFiles', ( -file => $configfile );
 
-my $spectrum = Xray::BLA->new;
+my $spectrum = Xray::BLA->new();
 $spectrum -> scanfolder	($ini{measure}{scanfolder});
-$spectrum -> tiffolder	($ini{measure}{tiffolder});
+$spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
 $spectrum -> stub       ($ARGV[0]);
 $spectrum -> peak_energy($energy);
@@ -40,6 +40,7 @@ $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};
 $spectrum -> lonely_pixel_value($ini{pixel}{lonely}) if exists $ini{pixel}{lonely};
 $spectrum -> social_pixel_value($ini{pixel}{social}) if exists $ini{pixel}{social};
+
 $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
 $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
 

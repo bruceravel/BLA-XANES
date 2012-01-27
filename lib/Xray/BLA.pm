@@ -5,8 +5,10 @@ use version;
 our $VERSION = version->new('0.2');
 
 use Moose;
+use Moose::Util qw(apply_all_roles);
+use MooseX::Aliases;
 #with 'Xray::BLA::Backend::ImageMagick';
-with 'Xray::BLA::Backend::Imager';
+#with 'Xray::BLA::Backend::Imager';
 no warnings qw(redefine);
 
 use File::Spec;
@@ -14,41 +16,7 @@ use File::Spec;
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
 
-
-my $stub = 0;
-if ( (($^O eq 'MSWin32') or ($^O eq 'cygwin')) and ($ENV{TERM} eq 'dumb')) {
-  my $WCA_exists = (eval "require Win32::Console::ANSI");
-  if ($WCA_exists) {
-    import Term::ANSIColor qw(:constants);
-    # sub BOLD    {color('bold')};
-    # sub WHITE   {color('white')};
-    # sub YELLOW  {color('yellow')};
-    # sub RED     {color('red')};
-    # sub GREEN   {color('green')};
-    # sub CYAN    {color('cyan')};
-    # sub RESET   {color('reset')};
-  } else {
-    $stub = 1
-  };
-} else {
-  my $ANSIColor_exists = (eval "require Term::ANSIColor");
-  if ($ANSIColor_exists) {
-    import Term::ANSIColor qw(:constants);
-  } else {
-    $stub = 1;
-  };
-};
-$stub = 1 if ($ENV{TERM} eq 'dumb');
-#$stub = 1 if $nocolor;
-if ($stub) {
-  sub BOLD    {q{}};
-  sub WHITE   {q{}};
-  sub YELLOW  {q{}};
-  sub RED     {q{}};
-  sub GREEN   {q{}};
-  sub CYAN    {q{}};
-  sub RESET   {q{}};
-};
+use Demeter::UI::Screen::TermColor qw(:all);
 
 
 ##with 'MooseX::MutatorAttributes';
@@ -57,7 +25,7 @@ if ($stub) {
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{});
-has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{});
+has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder');
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{});
 
 has 'peak_energy'	 => (is => 'rw', isa => 'Int', default => 0);
@@ -95,6 +63,7 @@ has 'mask_pixel_list' => (
 				       }
 			 );
 
+has 'backend'	    => (is => 'rw', isa => 'Str', default => q{});
 
 sub mask {
   my ($self, @args) = @_;
@@ -106,16 +75,23 @@ sub mask {
   $args{write}    = 1 if ($args{animate} or $args{save});
 
 
+
   $self->clear_bad_pixel_list;
   $self->clear_mask_pixel_list;
   my $elastic = join("_", $self->stub, 'elastic', $self->peak_energy).'_00001.tif';
   $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
 
+  my $ret = $self->check;
+  if ($ret->status == 0) {
+    print $ret->message;
+    die;
+  };
+
   ## import elastic image and store basic properties
   my @out = ();
   $out[0] = ($args{write}) ?
     File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_0").'.tif') : 0;
-  my $ret = $self->import_elastic_image(write=>$out[0]);
+  $ret = $self->import_elastic_image(write=>$out[0]);
   if ($ret->status == 0) {
     print $ret->message;
     die;
@@ -188,24 +164,56 @@ sub mask {
   };
 };
 
+sub check {
+  my ($self) = @_;
+
+  my $ret = Xray::BLA::Return->new;
+
+  $self->backend('ImageMagick') if $self->backend eq 'Image::Magick';
+
+  if (not $self->backend) {	# try Imager
+    my $imager_exists       = eval "require Imager" || 0;
+    $self->backend('Imager') if $imager_exists;
+  };
+  if (not $self->backend) {	# try Image::Magick
+    my $image_magick_exists = eval "require Image::Magick" || 0;
+    $self->backend('ImageMagick') if $image_magick_exists;
+  };
+  if (not $self->backend) {
+    $ret->message("No BLA backend has been defined");
+    $ret->status(0);
+    return $ret;
+  };
+
+  eval {apply_all_roles($self, 'Xray::BLA::Backend::'.$self->backend)};
+  if ($@) {
+    $ret->message("BLA backend Xray::BLA::Backend::".$self->backend." could not be loaded");
+    $ret->status(0);
+    return $ret;
+  };
+  my $x = $self->read_image($self->elastic_file);
+  $self->elastic_image($self->read_image($self->elastic_file));
+
+  if (($self->backend eq 'Imager') and ($self->get_version($self->elastic_image) < 0.87)) {
+    $ret->message("This program requires Imager version 0.87 or later.");
+    $ret->status(0);
+    return $ret;
+  };
+  if (($self->backend eq 'ImageMagick') and ($self->get_version($self->elastic_image) !~ m{Q32})) {
+    $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
+    $ret->status(0);
+    return $ret;
+  };
+
+  return $ret;
+};
+
 sub import_elastic_image {
   my ($self, @args) = @_;
   my %args = @args;
   $args{write} || 0;
 
   my $ret = Xray::BLA::Return->new;
-  $self->elastic_image($self->read_image($self->elastic_file));
-
-  if (($self->backend eq 'Image::Magick') and ($self->get_version($self->elastic_image) !~ m{Q32})) {
-    $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
-    $ret->status(0);
-    return $ret;
-  };
-  if (($self->backend eq 'Imager') and ($self->get_version($self->elastic_image) < 0.87)) {
-    $ret->message("This program requires Imager version 0.87 or later.");
-    $ret->status(0);
-    return $ret;
-  };
 
   $self->columns($self->get_columns($self->elastic_image));
   $self->rows($self->get_rows($self->elastic_image));
@@ -483,7 +491,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-0.1
+0.2
 
 =head1 SYNOPSIS
 
@@ -501,11 +509,73 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 DESCRIPTION
 
+This module is an engine for converting a series of tiff images
+collected using a bent Laue analyzer and a Pilatus 100K area detector
+into a high energy resolution XANES spectrum.  A HERFD measurement
+consists of a related set of files from the measurement:
 
+=over
+
+=item 1.
+
+A column data file containing the energy, signals from other scalars,
+and a few other columns
+
+=item 2.
+
+A tif image of an expiosure at each energy point.  This image must be
+interpreted to be the HERFD signal at that energy point.
+
+=item 3.
+
+A set of one or more exposures taken at incident energies around the
+peak of the fluorescence line (e.g. Lalpha1 for an L3 edge, etc).
+These exposures are used to make masks for interpreting the sequence
+of images at each energy point.
+
+=back
+
+As you can see in the synopsis, there are attributes for specifying
+the paths to the locations of the column data files (C<scanfolder>)
+and the tiff files (C<tiffolder>, C<tifffolder> with 3 C<f>'s is an
+alias)).
+
+Assumptions are made about the names of the files in those
+locations. Each files is build upon a stub, indicated by the C<stub>
+attribute.  If C<stub> is "Aufoil", then the column data in
+C<scanfolder> file is named F<Aufoil.001>.  The tiff images at each
+energy point are called F<Aufoil_NNNNN.tif> where C<NNNNN> is the
+index of the energy point.  One of the columns in the scan file
+contains this index so it is unambiguous which tiff image corresponds
+to which energy point.  Finally, the elastic exposures are called
+F<Aufoil_elastic_EEEE_00001.tif> where C<EEEE> is the incident
+energy. For instance, an exposure at the peak of the gold Lalpha1 line
+would be called F<Aufoil_elastic_9713_00001.tif>.
+
+If you use a different naming convention, this software in its current
+form B<will break>!
+
+This software uses an image handling back to interact with these two
+sets of tiff images.  Since the Pilatus writes rather unusual tiff
+files with signed 32 bit integer samples, not every image handling
+package can deal gracefully with them.  I have found two choices in
+the perl universe that work well, L<Imager> and C<Image::Magick>,
+although using L<Image::Magick> requires recompiliation to be able to
+use 32 bit sample depth.  Happily, I<Imager> works out of the box.
+The default is to use L<Imager>. but this can be specified using the
+C<backend> attribute when the Xray::BLA object is created.
 
 =head1 ATTRIBUTES
 
 =over 4
+
+=item C<backend>
+
+Specify which image handling library to use.  Currently the possible
+values for this attribute are C<Imager> and C<ImageMagick>.  The
+default, if not specified, is to use L<Imager>.  See the compilation
+caveat below if you choose to use L<Image::Magick> instead.
+L<Imager>, on the other hand, should just work out of the box.
 
 =item C<stub>
 
@@ -633,9 +703,12 @@ When true, the C<save> argument causes a tif file to be saved at
 each stage of processing the mask.
 
 When true, the C<animate> argument causes a properly scaled animation
-to be written showing the stages of mask creation.  Currently, this is
-a signed 32 bit tiff animation, so only ImageJ or the specially
-modified Image Magick can open it.  Sigh....
+to be written showing the stages of mask creation.
+
+Currently, these output image files are signed 32 bit tiff images or
+animations.  Not many image handling applications will handle them.  I
+recommend ImageJ or the specially modified Image Magick, if you have
+it.
 
 =item C<scan>
 
@@ -735,11 +808,19 @@ L<Moose>
 
 =item *
 
-L<MooseX::MutatorAttributes>
+L<MooseX::Aliases>
 
 =item *
 
-L<Imager> or L<Image::Magick> or, possibly, L<Graphics::Magick>
+Math::Round
+
+=item *
+
+Config::IniFiles
+
+=item *
+
+L<Imager> or L<Image::Magick>
 
 =item *
 
@@ -767,33 +848,22 @@ build, I had to do
 
 Adjust the version number on the perl library as needed.
 
+I have not been able to rebuild Image::Magick with Windows and
+MinGW. Happily C<Imager> works out of the box with MinGW and
+Strawberry Perl.
+
 =head1 BUGS AND LIMITATIONS
 
 =over 4
 
 =item *
 
-Set backend by attribute from the calling script
-
-=item *
-
-Write tests that use an actual tif image
-
-=item *
-
-write tests for both backends (using skip as needed)
-
-=item *
-
-Make sure this POD makes sense describing both backends
-
-=item *
-
-Write PODs for the backends
-
-=item *
-
 write images and animations with Imager (gif?)
+
+=item *
+
+Other possible backends: PDL, Graphics::Magick, GD.  PDL might be
+faster....
 
 =back
 

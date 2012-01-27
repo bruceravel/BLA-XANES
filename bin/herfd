@@ -11,6 +11,7 @@ my $energy     = 0;
 my $verbose    = 1;
 my $save       = 0;
 my $animate    = 0;
+my $nocolor    = 0;
 my $configfile = q{};
 my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
 my $result  = GetOptions ("energy|e=i"  => \$energy,
@@ -19,6 +20,7 @@ my $result  = GetOptions ("energy|e=i"  => \$energy,
 			  'verbose|v'   => \$verbose,
 			  'config|c=s'  => \$configfile,
 			  'xdiini|x=s'  => \$xdiini,
+			  'nocolor|n'   => \$nocolor,
 			  'quiet|q'     => sub { $verbose = 0 },
 			  'help|h'      => sub{ pod2usage(1); exit 0},
 			 );
@@ -33,8 +35,10 @@ my $spectrum = Xray::BLA->new();
 $spectrum -> scanfolder	($ini{measure}{scanfolder});
 $spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
+mkpath($spectrum->outfolder) if not -d $spectrum->outfolder;
 $spectrum -> stub       ($ARGV[0]);
 $spectrum -> peak_energy($energy);
+$spectrum -> colored(0) if $nocolor;
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};

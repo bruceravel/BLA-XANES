@@ -31,6 +31,7 @@ my $spectrum = Xray::BLA->new;
 $spectrum -> scanfolder($ini{measure}{scanfolder});
 $spectrum -> tiffolder ($ini{measure}{tiffolder});
 $spectrum -> outfolder ($ini{measure}{outfolder});
+mkpath($spectrum->outfolder) if not -d $spectrum->outfolder;
 $spectrum -> stub      ($ARGV[0]);
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};

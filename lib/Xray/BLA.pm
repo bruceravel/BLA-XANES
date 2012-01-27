@@ -16,11 +16,13 @@ use File::Spec;
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
 
-use Demeter::UI::Screen::TermColor qw(:all);
-
+eval 'use Term::ANSIColor ()';
+eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 'dumb'));
 
 ##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
+
+has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1);
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
@@ -73,8 +75,7 @@ sub mask {
   $args{animate} || 0;
   $args{write}    = 0;
   $args{write}    = 1 if ($args{animate} or $args{save});
-
-
+  local $|=1;
 
   $self->clear_bad_pixel_list;
   $self->clear_mask_pixel_list;
@@ -154,11 +155,11 @@ sub mask {
   ## construct an animated gif of the mask building process
   if ($args{animate}) {
     my $fname = $self->animate(@out);
-    print $self->assert("Wrote $fname", YELLOW), "\n" if $args{verbose};
+    print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
     my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_N").'.tif');
-    print $self->assert("Saved stages of mask creation to $fname", YELLOW), "\n" if $args{verbose};
+    print $self->assert("Saved stages of mask creation to $fname", 'yellow'), "\n" if $args{verbose};
   } else {
     unlink $_ foreach @out;
   };
@@ -217,7 +218,7 @@ sub import_elastic_image {
 
   $self->columns($self->get_columns($self->elastic_image));
   $self->rows($self->get_rows($self->elastic_image));
-  my $str = $self->assert("\nProcessing ".$self->elastic_file, YELLOW);
+  my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
   $str   .= sprintf "\tusing the %s backend\n", $self->backend;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
@@ -262,7 +263,7 @@ sub bad_pixels {
     };
   };
 
-  my $str = $self->assert("First pass", CYAN);
+  my $str = $self->assert("First pass", 'cyan');
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -315,7 +316,7 @@ sub lonely_pixels {
   };
 
 
-  my $str = $self->assert("Second pass", CYAN);
+  my $str = $self->assert("Second pass", 'cyan');
   $str   .= "\tRemoved $removed lonely pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -371,7 +372,7 @@ sub social_pixels {
     $self->set_pixel($ei, $px->[0], $px->[1], 5);
   };
 
-  my $str = $self->assert("Third pass", CYAN);
+  my $str = $self->assert("Third pass", 'cyan');
   $str   .= "\tAdded $added social pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -394,11 +395,12 @@ sub scan {
   $args{verbose} ||= 0;
   $args{xdiini}  ||= q{};
   my $ret = Xray::BLA::Return->new;
+  local $|=1;
 
   my (@data, @point);
 
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
-  print $self->assert("Reading scan from $scanfile", YELLOW);
+  print $self->assert("Reading scan from $scanfile", 'yellow');
   open(my $SCAN, "<", $scanfile);
   my $fname = join("_", $self->stub, $self->peak_energy);
   $fname .= ($XDI_exists) ? '.xdi' : '.dat';
@@ -439,7 +441,7 @@ sub scan {
     close   $O;
   };
 
-  print $self->assert("Wrote $outfile", BOLD.GREEN);
+  print $self->assert("Wrote $outfile", 'bold green');
   return $ret;
 };
 
@@ -449,6 +451,7 @@ sub apply_mask {
   my %args = @args;
   $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
+  local $|=1;
 
   my $fname = sprintf("%s_%5.5d.tif", $self->stub, $tif);
   my $image = File::Spec->catfile($self->tiffolder, $fname);
@@ -478,7 +481,8 @@ sub apply_mask {
 
 sub assert {
   my ($self, $message, $color) = @_;
-  return $color . $message . RESET . $/;
+  my $string = ($self->colored) ? Term::ANSIColor::colored($message, $color) : $message;
+  return $string.$/;
 };
 
 

@@ -29,7 +29,10 @@ has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{});
 has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder');
-has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{});
+has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
+			    trigger => sub{my ($self, $new) = @_;
+					   mkpath($new) if not -d $new;
+					 });
 
 has 'peak_energy'	 => (is => 'rw', isa => 'Int', default => 0);
 has 'columns'            => (is => 'rw', isa => 'Int', default => 0);
@@ -91,8 +94,7 @@ sub mask {
 
   ## import elastic image and store basic properties
   my @out = ();
-  $out[0] = ($args{write}) ?
-    File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_0").'.tif') : 0;
+  $out[0] = ($args{write}) ? $self->mask_file("0", 'tif') : 0;
   $ret = $self->import_elastic_image(write=>$out[0]);
   if ($ret->status == 0) {
     print $ret->message;
@@ -103,8 +105,7 @@ sub mask {
   undef $ret;
 
   ## weed out bad and weak pixels
-  $out[1] = ($args{write}) ?
-    File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_1").'.tif') : 0;
+  $out[1] = ($args{write}) ? $self->mask_file("1", 'tif') : 0;
   $ret = $self->bad_pixels(write=>$out[1]);
   if ($ret->status == 0) {
     print $ret->message;
@@ -115,8 +116,7 @@ sub mask {
   undef $ret;
 
   ## weed out lonely pixels
-  $out[2] = ($args{write}) ?
-    File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_2").'.tif') : 0;
+  $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
   $ret = $self->lonely_pixels(write=>$out[2]);
   if ($ret->status == 0) {
     print $ret->message;
@@ -127,8 +127,7 @@ sub mask {
   undef $ret;
 
   ## include social pixels
-  $out[3] = ($args{write}) ?
-    File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_3").'.tif') : 0;
+  $out[3] = ($args{write}) ? $self->mask_file("3", 'tif') : 0;
   $ret = $self->social_pixels(write=>$out[3]);
   if ($ret->status == 0) {
     print $ret->message;
@@ -159,7 +158,7 @@ sub mask {
     print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
-    my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_N").'.tif');
+    my $fname = $self->mask_file("N", 'tif');
     print $self->assert("Saved stages of mask creation to $fname", 'yellow'), "\n" if $args{verbose};
   } else {
     unlink $_ foreach @out;
@@ -384,6 +383,15 @@ sub social_pixels {
   $ret->message($str);
   return $ret;
 };
+
+sub mask_file {
+  my ($self, $which, $type) = @_;
+  $type ||= 'tif';
+  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_$which").'.');
+  $fname .= $type;
+  return $fname;
+};
+
 
 # # HERFD scan on Au3MarineCyanos1
 # # ----------------------------------
@@ -699,7 +707,7 @@ the sum of HERFD counts from the illuminated pixels.
 Create a mask from the elastic image measured at the energy given by
 C<peak_energy>.
 
-  $spectrum->mask(save=>0, verbose=>0, animate=>0);
+  $spectrum->mask(verbose=>0, save=>0, animate=>0);
 
 When true, the C<verbose> argument causes messages to be printed to
 standard output with information about each stage of mask creation.
@@ -863,12 +871,34 @@ Strawberry Perl.
 
 =item *
 
-write images and animations with Imager (gif?)
+assigned the median pixel value within a particular radius to each point
+
+=item *
+
+bin with 2x2 or 3x3 bins
+
+=item *
+
+Need much better exception handling, for example an emission energy
+that was not measured or scan/tif folder names that don't exist.
+
+=item *
+
+write images and animations to gif files
 
 =item *
 
 Other possible backends: PDL, Graphics::Magick, GD.  PDL might be
 faster....
+
+=item *
+
+Interpolate elastic masks to make a pixel v energy map for more
+fine-grained intepretation of the data images
+
+=item *
+
+MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 
 =back
 

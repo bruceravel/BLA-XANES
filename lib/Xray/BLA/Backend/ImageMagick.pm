@@ -30,7 +30,7 @@ sub animate {
       $self->set_pixel($im->[$i], $co, $ro, 0);
     };
   };
-  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_anim").'.tif');
+  my $fname = $self->mask_file("anim", 'tif');
   my $x = $im -> Write($fname);
   warn $x if $x;
   return $fname;
@@ -133,6 +133,14 @@ Get versioning information for Image::Magick.
 =back
 
 =head1 BUGS AND LIMITATIONS
+
+=over 4
+
+=item *
+
+Write animate as a gif
+
+=back
 
 Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
 

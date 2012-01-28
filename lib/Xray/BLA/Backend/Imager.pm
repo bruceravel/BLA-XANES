@@ -21,19 +21,10 @@ sub write_image {
 
 sub animate {
   my ($self, @files) = @_;
-  warn "not yet animating with Imager";
-  # my $im = Image::Magick->new;
-  # $im -> Read(@files);
-  # foreach my $i (0 .. $#files) {
-  #   foreach my $pix (@{$self->bad_pixel_list}) {
-  #     my $co = $pix->[0];
-  #     my $ro = $pix->[1];
-  #     $self->set_pixel($im->[$i], $co, $ro, 0);
-  #   };
-  # };
-  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_anim").'.tif');
-  # my $x = $im -> Write($fname);
-  # warn $x if $x;
+  my @images = map {Imager->new(file=>$_)} @files;
+  my $fname = $self->mask_file("anim", 'tif');
+  Imager->write_multi({ file=>$fname, type=>'tiff' }, @images)
+    or die Imager->errstr;
   return $fname;
 };
 
@@ -134,6 +125,27 @@ Get versioning information for Imager.
 =back
 
 =head1 BUGS AND LIMITATIONS
+
+=over 4
+
+=item *
+
+I don't quite understand how the 32 bit numbers are handled when get
+and set.  Using the image from the t/ directory:
+
+    my ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);
+    print $r, $/;
+        ==> 10
+    $bla->set_pixel($ei, 86,  150, 1);
+    ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);
+    print join("|", $r, round($r/2**24)), $/;
+        ==> 16843009|1
+
+=item *
+
+Write animate as a gif
+
+=back
 
 Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
 

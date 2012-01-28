@@ -15,13 +15,17 @@ A measurement set consists of
    energy.  These are used to make a mask which identifies which
    pixels contain signal related to specific emission energies.
 
-This software uses perl and Image Magick to process the images into a
-high resolution XANES spectrum.
+This software uses perl and either [[https://metacpan.org/module/Imager][Imager]] or [[https://metacpan.org/module/Image::Magick][Image::Magick]] to process
+the images into a high resolution XANES spectrum.
 
 ** Installation
 
-After installing Image Magick, compiled to use signed 32 bit numbers
-(see below), do the following.
+By default, Imager will be used for image handling.  If it is not
+already on your computer, it will be installed at the ~installdeps~
+step.  If you plan to use Image Magick, compile it to use signed 32
+bit numbers as explained see below.
+
+To install, do the following:
 
 :      perl Build.PL
 :      sudo ./Build installdeps  ## (if necessary)
@@ -45,6 +49,7 @@ of emission energies.
 :     --animate | -a         [flag]    save tiff animation of mask creation
 :     --save    | -s         [flag]    save intermediate steps of mask creation
 :     --verbose | -v         [flag]    write progress messages
+:     --nocolor | -n         [flag]    turn off color coding of screen output
 :     --quiet   | -q         [flag]    suppress progress messages
 :     --help    | -h         [flag]    write this message and exit
 
@@ -71,6 +76,7 @@ demonstrated.
 :     --animate | -a         [flag]    save tiff animation of mask creation
 :     --save    | -s         [flag]    save intermediate steps of mask creation
 :     --verbose | -v         [flag]    write progress messages
+:     --nocolor | -n         [flag]    turn off color coding of screen output
 :     --quiet   | -q         [flag]    suppress progress messages
 :     --help    | -h         [flag]    write this message and exit
 
@@ -169,6 +175,12 @@ are summed.  This sum is the HERFD signal at that incident energy.
 A column data file is written containing the energy and several
 scalars from the original measurement and a column containing the
 HERFD signal.  This file can be imported directly into Athena.
+
+** Working with Imager
+
+Imager works out of the box on both linux and Windows, although the
+way it handles 32-bit numbers with its inherent 24-bit sample depth is
+somewhat confusing.
 
 ** Working with Image Magick
 

@@ -43,7 +43,7 @@ $spectrum -> social_pixel_value($ini{pixel}{social}) if exists $ini{pixel}{socia
 
 my @elastic = split(" ", $ini{measure}{emission});
 foreach my $e (@elastic) {
-  $spectrum -> peak_energy($e);
+  $spectrum -> energy($e);
   $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
   $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
 };

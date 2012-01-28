@@ -5,12 +5,10 @@ use version;
 our $VERSION = version->new('0.2');
 
 use Moose;
-use Moose::Util qw(apply_all_roles);
+use Moose::Util qw(apply_all_roles);   my $datalocation = '/home/bruce/Data/NIST/10ID/2011.12/';
+
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
-#with 'Xray::BLA::Backend::ImageMagick';
-#with 'Xray::BLA::Backend::Imager';
-no warnings qw(redefine);
 
 use File::Spec;
 
@@ -30,13 +28,13 @@ has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{});
 has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder');
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
-			    trigger => sub{my ($self, $new) = @_;
-					   mkpath($new) if not -d $new;
-					 });
+			     trigger => sub{my ($self, $new) = @_;
+					    mkpath($new) if not -d $new;
+					  });
 
-has 'peak_energy'	 => (is => 'rw', isa => 'Int', default => 0);
-has 'columns'            => (is => 'rw', isa => 'Int', default => 0);
-has 'rows'               => (is => 'rw', isa => 'Int', default => 0);
+has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy');
+has 'columns'            => (is => 'rw', isa => 'Int', default => 0, alias => 'width');
+has 'rows'               => (is => 'rw', isa => 'Int', default => 0, alias => 'height');
 
 has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400);
 has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3);
@@ -83,7 +81,7 @@ sub mask {
 
   $self->clear_bad_pixel_list;
   $self->clear_mask_pixel_list;
-  my $elastic = join("_", $self->stub, 'elastic', $self->peak_energy).'_00001.tif';
+  my $elastic = join("_", $self->stub, 'elastic', $self->energy).'_00001.tif';
   $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
 
   my $ret = $self->check;
@@ -150,7 +148,6 @@ sub mask {
       $self->push_mask_pixel_list([$co,$ro]);
     };
   };
-  ##print $#{$self->mask_pixel_list}, $/;
 
   ## construct an animated gif of the mask building process
   if ($args{animate}) {
@@ -222,10 +219,7 @@ sub import_elastic_image {
   $str   .= sprintf "\tusing the %s backend\n", $self->backend;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
-  if ($args{write}) {
-    $self->write_image($self->elastic_image, $args{write});
-    # $self->elastic_image->Write($args{write});
-  };
+  $self->write_image($self->elastic_image, $args{write}) if $args{write};
   $ret->message($str);
   return $ret;
 };
@@ -246,8 +240,6 @@ sub bad_pixels {
   foreach my $co (0 .. $self->columns-1) {
     foreach my $ro (0 .. $nrows) {
       my $val = $self->get_pixel($ei, $co, $ro);
-      #my @pix = split(/,/, $str);
-      #    print "$co, $ro: $pix[0]\n" if $pix[0]>5;
       if ($val > $bpv) {
 	$self->push_bad_pixel_list([$co,$ro]);
   	$self->set_pixel($ei, $co, $ro, 0);
@@ -387,7 +379,7 @@ sub social_pixels {
 sub mask_file {
   my ($self, $which, $type) = @_;
   $type ||= 'tif';
-  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->peak_energy, "mask_$which").'.');
+  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask_$which").'.');
   $fname .= $type;
   return $fname;
 };
@@ -411,7 +403,7 @@ sub scan {
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
   print $self->assert("Reading scan from $scanfile", 'yellow');
   open(my $SCAN, "<", $scanfile);
-  my $fname = join("_", $self->stub, $self->peak_energy);
+  my $fname = join("_", $self->stub, $self->energy);
   $fname .= ($XDI_exists) ? '.xdi' : '.dat';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
   while (<$SCAN>) {
@@ -473,15 +465,6 @@ sub apply_mask {
     $sum += $self->get_pixel($datapoint, $pix->[0], $pix->[1]);
   };
 
-  ## this is a much slower way to apply the mask:
-  # foreach my $c (0 .. $self->columns-1) {
-  #   foreach my $r (0 .. $self->rows-1) {
-  #     my @mask = split(/,/, $self->elastic_image->Get("pixel[$c,$r]"));
-  #     next if not $mask[0];
-  #     my @data = split(/,/, $datapoint->Get("pixel[$c,$r]"));
-  #     $sum += $data[0];
-  #   };
-  # };
   printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
   $ret->status($sum);
   return $ret;
@@ -510,12 +493,11 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
    my $spectrum = Xray::BLA->new;
 
-   my $datalocation = '/home/bruce/Data/NIST/10ID/2011.12/';
    $spectrum->scanfolder('/path/to/scanfolder');
    $spectrum->tiffolder('/path/to/tiffolder');
    $spectrum->outfolder('/path/to/outfolder');
    $spectrum->stub('myscan');
-   $spectrum->peak_energy(9713);
+   $spectrum->energy(9713);
 
    $spectrum->mask(write=>0, verbose=>1, animate=>0);
    $spectrum->scan(verbose=>1);
@@ -536,7 +518,7 @@ and a few other columns
 
 =item 2.
 
-A tif image of an expiosure at each energy point.  This image must be
+A tif image of an exposure at each energy point.  This image must be
 interpreted to be the HERFD signal at that energy point.
 
 =item 3.
@@ -595,7 +577,7 @@ L<Imager>, on the other hand, should just work out of the box.
 The basename of the scan and image files.  The scan file is called
 C<E<lt>stubE<gt>.001>, the image files are called
 C<E<lt>stubE<gt>_NNNNN.tif>, and the processed column data files are
-called C<E<lt>stubE<gt>_E<lt>peak_energyE<gt>.001>.
+called C<E<lt>stubE<gt>_E<lt>energyE<gt>.001>.
 
 =item C<scanfile>
 
@@ -617,7 +599,7 @@ constructed from the value of C<stub>.
 The folder to which the processed file is written.  The processed file
 name is constructed from the value of C<stub>.
 
-=item C<peak_energy>
+=item C<energy>
 
 This normally takes the tabulated value of the measured fluorescence
 line.  For example, for the the gold L3 edge experiment, the L alpha 1
@@ -629,6 +611,8 @@ like F<E<lt>stubE<gt>_elsatic_E<lt>energyE<gt>_00001.tif>.
 
 This value can be changed to some other measured elastic energy in
 order to scan the off-axis portion of the spectrum.
+
+C<peak_energy> is an alias for C<energy>.
 
 =item C<bad_pixel_value>  [500]
 
@@ -663,7 +647,7 @@ image a solid mask with few gaps in the image of the main peak.
 =item C<elastic_file>
 
 This contains the name of the elastic image file.  It is constructed
-from the values of C<stub>, C<peak_energy>, and C<tiffolder>.
+from the values of C<stub>, C<energy>, and C<tiffolder>.
 
 =item C<elastic_image>
 
@@ -672,19 +656,19 @@ This contains the backend object corresponding to the elastic image.
 =item C<npixels>
 
 The number of illuminated pixels in the mask.  That is, the number of
-pixels contrributing to the HERFD signal.
+pixels contributing to the HERFD signal.
 
 =item C<columns>
 
 When the elastic file is read, this is set with the number of columns
 in the image.  All images in the measurement are presumed to have the
-same number of columns.
+same number of columns.  C<width> is an alias for C<columns>.
 
 =item C<rows>
 
 When the elastic file is read, this is set with the number of rows in
 the image.  All images in the measurement are presumed to have the
-same number of rows.
+same number of rows.  C<height> is an alias for C<rows>.
 
 =back
 
@@ -705,7 +689,7 @@ the sum of HERFD counts from the illuminated pixels.
 =item C<mask>
 
 Create a mask from the elastic image measured at the energy given by
-C<peak_energy>.
+C<energy>.
 
   $spectrum->mask(verbose=>0, save=>0, animate=>0);
 
@@ -742,6 +726,14 @@ no metadata and no column labels will be written to the output file.
 =head2 Internal methods
 
 =over 4
+
+=item C<check>
+
+Import an imaging backend and perform checks to make sure that it can
+support the 32 bit tiff images.  This is the first thing done by the
+C<mask> method.
+
+  $spectrum -> check;
 
 =item C<import_elastic_image>
 

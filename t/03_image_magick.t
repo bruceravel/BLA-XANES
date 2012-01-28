@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-no warnings qw(redefine);
 use Test::More tests => 4;
 use File::Basename;
 use File::Spec;

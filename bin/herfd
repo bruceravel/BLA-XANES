@@ -36,7 +36,7 @@ $spectrum -> scanfolder	($ini{measure}{scanfolder});
 $spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
 $spectrum -> stub       ($ARGV[0]);
-$spectrum -> peak_energy($energy);
+$spectrum -> energy($energy);
 $spectrum -> colored(0) if $nocolor;
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};

@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-no warnings qw(redefine);
 use Test::More tests => 5;
 use File::Basename;
 use File::Spec;

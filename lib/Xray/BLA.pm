@@ -10,11 +10,14 @@ use Moose::Util qw(apply_all_roles);
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
 
+use File::Path;
 use File::Spec;
 
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
 
+$ENV{TERM} = 'dumb' if not defined $ENV{TERM};
+$ENV{TERM} = 'dumb' if ($ENV{TERM} =~ m{\A\s*\z});
 eval 'use Term::ANSIColor ()';
 eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 'dumb'));
 

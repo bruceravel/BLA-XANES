@@ -12,4 +12,5 @@ share/config.ini
 t/01_base.t
 t/02_imager.t
 t/03_image_magick.t
-t/s32_example.tif
+t/example.001
+t/example_elastic_9713_00001.tif

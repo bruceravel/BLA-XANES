@@ -1,20 +1,20 @@
 #!/usr/bin/perl
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 use File::Basename;
 use File::Spec;
 
 my $here  = dirname($0);
 
 use Xray::BLA;
-my $bla = Xray::BLA -> new(backend=>'Imager');
+my $bla = Xray::BLA -> new(backend=>'Imager', stub=>'example', energy=>'9713',
+			   scanfolder=>$here, tiffolder=>$here);
 
 SKIP: {
-    skip 'Imager not available', 5 if not eval "require Imager";
+    skip 'Imager not available', 6 if not eval "require Imager";
 
-    my $file = File::Spec->catfile($here, 's32_example.tif');
-    $bla->elastic_file($file);
-    $bla->check;
+    my $ret = $bla->check;
+    ok($ret->status == 1, 'can read scan and elastic files');
     ok($bla->get_version >= 0.87, 'Correct version of Imager is available');
     my $ei = $bla->elastic_image;
 

@@ -4,3 +4,5 @@ blib/*
 Build
 MYMETA.*
 META.*
+
+*_flymake.pm

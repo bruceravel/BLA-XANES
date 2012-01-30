@@ -16,7 +16,8 @@ A measurement set consists of
    pixels contain signal related to specific emission energies.
 
 This software uses perl and either [[https://metacpan.org/module/Imager][Imager]] or [[https://metacpan.org/module/Image::Magick][Image::Magick]] to process
-the images into a high resolution XANES spectrum.
+the images into a high resolution XANES spectrum.  The two backends
+produce identical results.
 
 ** Installation
 
@@ -32,6 +33,17 @@ To install, do the following:
 :      ./Build
 :      ./Build test
 :      sudo ./Build install
+
+At the ~perl Build.PL~ step, you may see an error message like the
+following if either image handling backend is absent.  
+
+:     Checking prerequisites...
+:       recommends:
+:         *  Image::Magick is not installed
+
+If you plan to use the default Imager backend, then you can safely
+ignore the warning about Image::Magick being missing.
+
 
 ** Usage
 
@@ -184,11 +196,11 @@ somewhat confusing.
 
 ** Working with Image Magick
 
-I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its [[http://www.imagemagick.org/script/perl-magick.php][Perl interface]] for this project.  As
-delivered to an Ubuntu system, Image Magick cannot handle the TIFF
-files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.  In order to be
-able to use Image Magick, it must be recompiled with a larger bit
-depth.  This is done by re-compiling from source code.  
+I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its [[http://www.imagemagick.org/script/perl-magick.php][Perl interface]] as one of the image
+handling backends for this project.  As delivered, Image Magick cannot
+handle the TIFF files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.
+In order to be able to use Image Magick, it must be recompiled with a
+larger bit depth.  This is done by re-compiling from source code.
 
 You must have [[http://www.libtiff.org/][libtiff]] and its development libraries installed so that
 Image Magick gets compiled with support for tiff files.  On Ubunutu,
@@ -215,3 +227,8 @@ symlinked to it.  To get the perl wrapper to build, I had to do
 
 Adjust the version number on the perl library as needed for your
 computer.
+
+I was unable to compile Image Magick for Windows using MinGW, even
+armed with a fairly complete set of GnuWin32 libraries and even
+attempting it with a stable version (as opposed to the development
+trunk).  Oh well....

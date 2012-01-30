@@ -39,7 +39,7 @@ sub get_pixel {
 sub set_pixel {
   my ($self, $image, $x, $y, $value) = @_;
   #$image->setpixel(x=>$x, y=>$y, color=>[$value/(2**32),0,0,0]);
-  $image->setpixel(x=>$x, y=>$y, color=>[$value,0,0,0]);
+  $image->setpixel(x=>$x, y=>$y, color=>[$value,0,0]);
 };
 
 sub get_columns {
@@ -143,7 +143,7 @@ and set.  Using the image from the t/ directory:
 
 =item *
 
-Write animate as a gif
+Write animation as a gif
 
 =back
 

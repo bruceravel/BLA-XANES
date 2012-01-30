@@ -5,7 +5,7 @@ use version;
 our $VERSION = version->new('0.2');
 
 use Moose;
-use Moose::Util qw(apply_all_roles);   my $datalocation = '/home/bruce/Data/NIST/10ID/2011.12/';
+use Moose::Util qw(apply_all_roles);
 
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
@@ -24,6 +24,7 @@ eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1);
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
+has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{});
 has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder');
@@ -81,13 +82,10 @@ sub mask {
 
   $self->clear_bad_pixel_list;
   $self->clear_mask_pixel_list;
-  my $elastic = join("_", $self->stub, 'elastic', $self->energy).'_00001.tif';
-  $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
 
   my $ret = $self->check;
   if ($ret->status == 0) {
-    print $ret->message;
-    die;
+    die $self->assert($ret->message, 'bold red');
   };
 
   ## import elastic image and store basic properties
@@ -95,8 +93,7 @@ sub mask {
   $out[0] = ($args{write}) ? $self->mask_file("0", 'tif') : 0;
   $ret = $self->import_elastic_image(write=>$out[0]);
   if ($ret->status == 0) {
-    print $ret->message;
-    die;
+    die $self->assert($ret->message, 'bold red').$/;
   } else {
     print $ret->message if $args{verbose};
   };
@@ -106,8 +103,7 @@ sub mask {
   $out[1] = ($args{write}) ? $self->mask_file("1", 'tif') : 0;
   $ret = $self->bad_pixels(write=>$out[1]);
   if ($ret->status == 0) {
-    print $ret->message;
-    die;
+    die $self->assert($ret->message, 'bold red').$/;
   } else {
     print $ret->message if $args{verbose};
   };
@@ -117,8 +113,7 @@ sub mask {
   $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
   $ret = $self->lonely_pixels(write=>$out[2]);
   if ($ret->status == 0) {
-    print $ret->message;
-    die;
+    die $self->assert($ret->message, 'bold red').$/;
   } else {
     print $ret->message if $args{verbose};
   };
@@ -128,8 +123,7 @@ sub mask {
   $out[3] = ($args{write}) ? $self->mask_file("3", 'tif') : 0;
   $ret = $self->social_pixels(write=>$out[3]);
   if ($ret->status == 0) {
-    print $ret->message;
-    die;
+    die $self->assert($ret->message, 'bold red').$/;
   } else {
     print $ret->message if $args{verbose};
   };
@@ -166,6 +160,34 @@ sub check {
   my ($self) = @_;
 
   my $ret = Xray::BLA::Return->new;
+
+  ## does elastic file exist?
+  my $elastic = join("_", $self->stub, 'elastic', $self->energy).'_00001.tif';
+  $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
+  if (not -e $self->elastic_file) {
+    $ret->message("Elastic image file \"".$self->elastic_file."\" does not exist");
+    $ret->status(0);
+    return $ret;
+  };
+  if (not -r $self->elastic_file) {
+    $ret->message("Elastic image file \"".$self->elastic_file."\" cannot be read");
+    $ret->status(0);
+    return $ret;
+  };
+
+  ## does scan file exist?
+  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
+  $self->scanfile($scanfile);
+  if (not -e $scanfile) {
+    $ret->message("Scan file \"$elastic\" does not exist");
+    $ret->status(0);
+    return $ret;
+  };
+  if (not -r $scanfile) {
+    $ret->message("Scan file \"$elastic\" cannot be read");
+    $ret->status(0);
+    return $ret;
+  };
 
   $self->backend('ImageMagick') if $self->backend eq 'Image::Magick';
 
@@ -278,7 +300,7 @@ sub lonely_pixels {
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
 
-  my ($removed, $on, $off) = (0,0,0);
+  my ($removed, $on, $off, $co, $ro, $cc, $rr) = (0,0,0);
   foreach my $co (0 .. $ncols) {
     foreach my $ro (0 .. $nrows) {
 
@@ -330,11 +352,11 @@ sub social_pixels {
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
 
-  my ($added, $on, $off, $count) = (0,0,0,0);
+  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
   my @addlist = ();
   my ($arg, $val) = (q{}, q{});
-  foreach my $co (0 .. $ncols) {
-    foreach my $ro (0 .. $nrows) {
+  foreach $co (0 .. $ncols) {
+    foreach $ro (0 .. $nrows) {
 
       ++$on, next if ($self->get_pixel($ei, $co, $ro) > 0);
 
@@ -400,9 +422,8 @@ sub scan {
 
   my (@data, @point);
 
-  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
-  print $self->assert("Reading scan from $scanfile", 'yellow');
-  open(my $SCAN, "<", $scanfile);
+  print $self->assert("Reading scan from ".$self->scanfile, 'yellow');
+  open(my $SCAN, "<", $self->scanfile);
   my $fname = join("_", $self->stub, $self->energy);
   $fname .= ($XDI_exists) ? '.xdi' : '.dat';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
@@ -456,17 +477,27 @@ sub apply_mask {
 
   my $fname = sprintf("%s_%5.5d.tif", $self->stub, $tif);
   my $image = File::Spec->catfile($self->tiffolder, $fname);
-  printf("  %3d, %s", $tif, $image) if ($args{verbose} and (not $tif % 10));
+  if (not -e $image) {
+    warn "\tskipping $image, file not found\n";
+    $ret->message("skipping $image, file not found\n");
+    $ret->status(0);
+  } elsif (not -r $image) {
+    warn "\tskipping $image, file cannot be read\n";
+    $ret->message("skipping $image, file cannot be read\n");
+    $ret->status(0);
+  } else {
+    printf("  %3d, %s", $tif, $image) if ($args{verbose} and (not $tif % 10));
 
-  my $datapoint = $self->read_image($image);
-  my $sum = 0;
+    my $datapoint = $self->read_image($image);
+    my $sum = 0;
 
-  foreach my $pix (@{$self->mask_pixel_list}) {
-    $sum += $self->get_pixel($datapoint, $pix->[0], $pix->[1]);
+    foreach my $pix (@{$self->mask_pixel_list}) {
+      $sum += $self->get_pixel($datapoint, $pix->[0], $pix->[1]);
+    };
+
+    printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
+    $ret->status($sum);
   };
-
-  printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
-  $ret->status($sum);
   return $ret;
 };
 
@@ -499,7 +530,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
    $spectrum->stub('myscan');
    $spectrum->energy(9713);
 
-   $spectrum->mask(write=>0, verbose=>1, animate=>0);
+   $spectrum->mask(verbose=>1, write=>0, animate=>0);
    $spectrum->scan(verbose=>1);
 
 =head1 DESCRIPTION
@@ -725,13 +756,23 @@ no metadata and no column labels will be written to the output file.
 
 =head2 Internal methods
 
+All of these methods return a L<Xray::BLA::Return> object, which has
+two attributes, and integer C<status> to indicate the return status (1
+is normal in all cases here) and an string C<message> containing a
+short description of the exception (an empty string indicates no
+exception).
+
 =over 4
 
 =item C<check>
 
-Import an imaging backend and perform checks to make sure that it can
-support the 32 bit tiff images.  This is the first thing done by the
-C<mask> method.
+Confirm that the scan file and elastic image taken from the values of
+C<stub> and C<energy> exist and can be read.  Import an imaging
+backend and perform checks to make sure that it can support the 32 bit
+tiff images.
+
+This is the first thing done by the C<mask> method and must be the
+initial chore of any script using this library.
 
   $spectrum -> check;
 
@@ -791,6 +832,26 @@ The C<status> of the return object contains the photon count from the
 image for this data point.
 
 =back
+
+=head1 ERROR HANDLING
+
+If the scan file or the eleastic image cannot be found or cannot be
+read, a program will die with a message to STDERR to that effect.
+
+If an image file corresponding to a data point cannot be found or
+cannot be read, a value of 0 will be written to the output file for
+that data point and a warning will be printed to STDOUT.
+
+Any warning or error message will contain the complete file name so
+that the file naming or configuration mistake can be tracked down.
+
+Errors interpreting the contents of an image file are probably not
+handled well.
+
+The output column data file is B<not> written on the fly, so a run
+that dies or is halted early will result in no output being written.
+The save and animation images are written at the time the message is
+written to STDOUT when the C<verbose> switch is on.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -871,11 +932,6 @@ bin with 2x2 or 3x3 bins
 
 =item *
 
-Need much better exception handling, for example an emission energy
-that was not measured or scan/tif folder names that don't exist.
-
-=item *
-
 write images and animations to gif files
 
 =item *
@@ -891,6 +947,12 @@ fine-grained intepretation of the data images
 =item *
 
 MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
+
+=item *
+
+In the future, will need a more sophisticated mechanism for relating
+C<stub> to scan file and to image files -- some kind of templating
+scheme, I suspect
 
 =back
 

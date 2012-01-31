@@ -3,7 +3,10 @@ package Xray::BLA::Backend::Imager;
 use Moose::Role;
 use MooseX::Aliases;
 use Imager;
+use Imager::Color::Float;
 use Math::Round qw(round);
+
+use constant BIT_DEPTH => 2**32;
 
 has 'elastic_image' => (is => 'rw', isa => 'Imager');
 
@@ -31,15 +34,14 @@ sub animate {
 sub get_pixel {
   my ($self, $image, $x, $y) = @_;
   my @rgba = $image->getpixel(x=>$x, y=>$y, type=>'float')->rgba;
-  return round($rgba[0]*2**32);
+  return round($rgba[0]*BIT_DEPTH);
 };
 
-
-## this is scary.  not scaling $value back down by the same amount as it was scaled up in get_pixel!
+## see http://www.molar.is/en/lists/imager-devel/2012-01/0000.shtml
+## and http://www.molar.is/en/lists/imager-devel/2012-01/0001.shtml
 sub set_pixel {
   my ($self, $image, $x, $y, $value) = @_;
-  #$image->setpixel(x=>$x, y=>$y, color=>[$value/(2**32),0,0,0]);
-  $image->setpixel(x=>$x, y=>$y, color=>[$value,0,0]);
+  $image->setpixel(x=>$x, y=>$y, color=>Imager::Color::Float->new($value/BIT_DEPTH, 0, 0));
 };
 
 sub get_columns {
@@ -127,19 +129,6 @@ Get versioning information for Imager.
 =head1 BUGS AND LIMITATIONS
 
 =over 4
-
-=item *
-
-I don't quite understand how the 32 bit numbers are handled when get
-and set.  Using the image from the t/ directory:
-
-    my ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);
-    print $r, $/;
-        ==> 10
-    $bla->set_pixel($ei, 86,  150, 1);
-    ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);
-    print join("|", $r, round($r/2**24)), $/;
-        ==> 16843009|1
 
 =item *
 

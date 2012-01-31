@@ -940,7 +940,7 @@ write images and animations to gif files
 =item *
 
 Other possible backends: PDL, Graphics::Magick, GD.  PDL might be
-faster....
+faster but requires that netpbm be specially compiled.
 
 =item *
 

@@ -41,6 +41,7 @@ sub get_pixel {
 ## and http://www.molar.is/en/lists/imager-devel/2012-01/0001.shtml
 sub set_pixel {
   my ($self, $image, $x, $y, $value) = @_;
+  $value ||= 0;
   $image->setpixel(x=>$x, y=>$y, color=>Imager::Color::Float->new($value/BIT_DEPTH, 0, 0));
 };
 

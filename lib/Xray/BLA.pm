@@ -12,6 +12,7 @@ use MooseX::AttributeHelpers;
 
 use File::Path;
 use File::Spec;
+use Statistics::Descriptive;
 
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
@@ -45,6 +46,8 @@ has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3);
 has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3);
 has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
+
+has 'maskmode'           => (is => 'rw', isa => 'Int', default => 1);
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
 
@@ -112,26 +115,41 @@ sub mask {
   };
   undef $ret;
 
-  ## weed out lonely pixels
-  $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
-  $ret = $self->lonely_pixels(write=>$out[2]);
-  if ($ret->status == 0) {
-    die $self->assert($ret->message, 'bold red').$/;
-  } else {
-    print $ret->message if $args{verbose};
-  };
-  undef $ret;
+  if ($self->maskmode == 1) {
+    ## weed out lonely pixels
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
+    $ret = $self->lonely_pixels(write=>$out[2]);
+    if ($ret->status == 0) {
+      die $self->assert($ret->message, 'bold red').$/;
+    } else {
+      print $ret->message if $args{verbose};
+    };
+    undef $ret;
 
-  ## include social pixels
-  $out[3] = ($args{write}) ? $self->mask_file("3", 'tif') : 0;
-  $ret = $self->social_pixels(write=>$out[3]);
-  if ($ret->status == 0) {
-    die $self->assert($ret->message, 'bold red').$/;
+    ## include social pixels
+    $out[3] = ($args{write}) ? $self->mask_file("3", 'tif') : 0;
+    $ret = $self->social_pixels(write=>$out[3]);
+    if ($ret->status == 0) {
+      die $self->assert($ret->message, 'bold red').$/;
+    } else {
+      print $ret->message if $args{verbose};
+    };
+    $self->npixels($ret->status);
+    undef $ret;
+
+  } elsif ($self->maskmode == 2) {
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
+    $ret = $self->areal(write=>$out[2]);
+    if ($ret->status == 0) {
+      die $self->assert($ret->message, 'bold red').$/;
+    } else {
+      print $ret->message if $args{verbose};
+    };
+    undef $ret;
+
   } else {
-    print $ret->message if $args{verbose};
+    die $self->assert(sprintf("Mask mode %d is not a valid mode (insert better explanation here)", $self->maskmode), 'bold red').$/;
   };
-  $self->npixels($ret->status);
-  undef $ret;
 
   ## bad pixels may have been turned back on in the social pixel pass, so turn them off again
   foreach my $pix (@{$self->bad_pixel_list}) {
@@ -241,7 +259,8 @@ sub import_elastic_image {
   $self->columns($self->get_columns($self->elastic_image));
   $self->rows($self->get_rows($self->elastic_image));
   my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
-  $str   .= sprintf "\tusing the %s backend\n", $self->backend;
+  my $alg = ($self->maskmode == 2) ? 'areal median' : 'lonely/social';
+  $str   .= sprintf "\tusing the %s backend and the %s mask algorithm\n", $self->backend;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
   $self->write_image($self->elastic_image, $args{write}) if $args{write};
@@ -318,7 +337,6 @@ sub lonely_pixels {
 	  next if (($ro == 0) and ($rr == -1));
 	  next if (($ro == $nrows) and ($rr == 1));
 
-	  my $arg = sprintf("pixel[%d,%d]", $co+$cc, $ro+$rr);
 	  ++$count if ($self->get_pixel($ei, $co+$cc, $ro+$rr) != 0);
 	};
       };
@@ -401,6 +419,58 @@ sub social_pixels {
   return $ret;
 };
 
+
+sub areal {
+  my ($self, @args) = @_;
+  my %args = @args;
+  my $ret = Xray::BLA::Return->new;
+
+  my $ei    = $self->elastic_image;
+  my $nrows = $self->rows - 1;
+  my $ncols = $self->columns - 1;
+  my $stat = Statistics::Descriptive::Full->new();
+
+  my ($removed, $on, $off, $co, $ro, $cc, $rr, $value) = (0,0,0,0,0,0,0,0);
+  foreach my $co (0 .. $ncols) {
+    foreach my $ro (0 .. $nrows) {
+
+      ++$off, next if ($self->get_pixel($ei, $co, $ro) == 0);
+
+      my @neighborhood = ();
+    OUTER: foreach my $cc (-1 .. 1) {
+	next if (($co == 0) and ($cc == -1));
+	next if (($co == $ncols) and ($cc == 1));
+	foreach my $rr (-1 .. 1) {
+	  #next if (($cc == 0) and ($rr == 0));
+	  next if (($ro == 0) and ($rr == -1));
+	  next if (($ro == $nrows) and ($rr == 1));
+
+	  push @neighborhood, $self->get_pixel($ei, $co+$cc, $ro+$rr);
+	};
+      };
+      $stat->add_data(@neighborhood);
+      $value = $stat->median; #$stat->mean;
+      $self->set_pixel($ei, $co, $ro, $value);
+      ($value > 0) ? ++$on : ++$off;
+      $stat->clear;
+    };
+  };
+
+  my $str = $self->assert("Second pass", 'cyan');
+  $str   .= "\tSet each pixel to the median value of a 3x3 square centered at that pixzel\n";
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $on, $off, $on+$off;
+  if ($args{write}) {
+    $self->write_image($ei, $args{write});
+  };
+  $ret->message($str);
+  return $ret;
+};
+
+
+
+
+
 sub mask_file {
   my ($self, $which, $type) = @_;
   $type ||= 'tif';
@@ -452,12 +522,18 @@ sub scan {
     $xdi   -> ini($args{xdiini});
     $xdi   -> push_comment("HERFD scan on " . $self->stub);
     $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
+    $xdi   -> push_comment(sprintf("bad=%d  weak=%d  social=%d  lonely=%d",
+				   $self->bad_pixel_value, $self->weak_pixel_value,
+				   $self->social_pixel_value, $self->lonely_pixel_value));
     $xdi   -> data(\@data);
     $xdi   -> export($outfile);
   } else {
     open(my $O, '>', $outfile);
     print   $O "# HERFD scan on " . $self->stub . $/;
     printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
+    printf  $O "# bad=%d  weak=%d  lonely=%d  social=%d",
+      $self->bad_pixel_value, $self->weak_pixel_value,
+	$self->lonely_pixel_value, $self->social_pixel_value;
     print   $O "# -------------------------\n";
     print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
     foreach my $p (@data) {
@@ -648,7 +724,15 @@ order to scan the off-axis portion of the spectrum.
 
 C<peak_energy> is an alias for C<energy>.
 
-=item C<bad_pixel_value>  [500]
+=item C<maskmode>  [1]
+
+This chooses the mask creation algorithm.  1 means to use the
+lonely/social algorithm, 2 means to use the areal median algorithm.
+
+When using the areal median algorithm, you will get slightly better
+energy resolution if the C<weak_pixel_value> is not set to 0.
+
+=item C<bad_pixel_value>  [400]
 
 In the first pass over the elastic image, spuriously large pixel
 values -- presumably indicating the locations of bad pixels -- are
@@ -824,6 +908,21 @@ The C<message> attribute of the return object contains information
 regarding mask creation to be displayed if the C<verbose> argument to
 C<mask> is true.
 
+=item C<areal>
+
+At each point in the mask, assign its value to the median value of a
+3x3 square centered on that point.
+
+  $spectrum -> areal;
+
+The final mask image can be saved:
+
+  $spectrum -> areal(write => "arealpass.tif");
+
+The C<message> attribute of the return object contains information
+regarding mask creation to be displayed if the C<verbose> argument to
+C<mask> is true.
+
 =item C<apply_mask>
 
 Apply the mask to the image for a given data point to obtain the HERFD
@@ -924,10 +1023,6 @@ Strawberry Perl.
 =head1 BUGS AND LIMITATIONS
 
 =over 4
-
-=item *
-
-assigned the median pixel value within a particular radius to each point
 
 =item *
 

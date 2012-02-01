@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Test::More tests => 7;
+use Test::More tests => 9;
 use File::Basename;
 use File::Spec;
 
@@ -11,7 +11,7 @@ my $bla = Xray::BLA -> new(backend=>'Imager', stub=>'example', energy=>'9713',
 			   scanfolder=>$here, tiffolder=>$here);
 
 SKIP: {
-    skip 'Imager not available', 7 if not eval "require Imager";
+    skip 'Imager not available', 9 if not eval "require Imager";
 
     my $ret = $bla->check;
     ok($ret->status == 1, 'can read scan and elastic files');
@@ -28,6 +28,14 @@ SKIP: {
     ok($r == 0, 'zero pixel');
     ($r, $g, $b, $a) = $bla->get_pixel($ei, 259, 91);
     ok($r == 1048575, 'bad pixel');
+
+    $bla -> import_elastic_image;
+    $bla -> bad_pixel_value(400);
+    $bla -> weak_pixel_value(2);
+    $ret = $bla->bad_pixels();
+    #print $ret->message;
+    ok($ret->message =~ m{4 bad},      "found bad pixels");
+    ok($ret->message =~ m{66819 weak}, "found weak pixels");
 
     $bla->set_pixel($ei, 86, 150, 5);
     ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);

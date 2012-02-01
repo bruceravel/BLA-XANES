@@ -5,4 +5,7 @@ Build
 MYMETA.*
 META.*
 
+foo*
 *_flymake.pm
+
+*_mask_*.tif

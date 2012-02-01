@@ -8,6 +8,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 my $energy     = 0;
+my $mode       = 1;
 my $verbose    = 1;
 my $save       = 0;
 my $animate    = 0;
@@ -15,6 +16,7 @@ my $nocolor    = 0;
 my $configfile = q{};
 my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
 my $result  = GetOptions ("energy|e=i"  => \$energy,
+			  "mode|m=i"    => \$mode,
 			  'save|s'      => \$save,
 			  'animate|a'   => \$animate,
 			  'verbose|v'   => \$verbose,
@@ -37,7 +39,10 @@ $spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
 $spectrum -> stub       ($ARGV[0]);
 $spectrum -> energy($energy);
+$spectrum -> maskmode($mode);
 $spectrum -> colored(0) if $nocolor;
+
+921/777
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};

@@ -17,6 +17,7 @@ my $build = Module::Build
 				'Config::IniFiles'          => 0,
 				'Math::Round'               => 0,
 				#'Xray::XDI'                 => 0,
+				'Statistics::Descriptive'   => 0,
 			       },
 	 recommends         => {
 				'Image::Magick'             => 0,

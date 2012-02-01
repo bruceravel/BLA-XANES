@@ -10,6 +10,12 @@ use constant BIT_DEPTH => 2**32;
 
 has 'elastic_image' => (is => 'rw', isa => 'Imager');
 
+sub copy_image {
+  my ($self, $image) = @_;
+  my $p = $image->copy();
+  return $p;
+};
+
 sub read_image {
   my ($self, $file) = @_;
   my $p = Imager->new(file=>$file);

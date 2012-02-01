@@ -13,6 +13,7 @@ use MooseX::AttributeHelpers;
 use File::Path;
 use File::Spec;
 use Statistics::Descriptive;
+use Term::Sk;
 
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
@@ -48,6 +49,7 @@ has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
 
 has 'maskmode'           => (is => 'rw', isa => 'Int', default => 1);
+has 'radius'             => (is => 'rw', isa => 'Int', default => 1);
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
 
@@ -151,7 +153,7 @@ sub mask {
     die $self->assert(sprintf("Mask mode %d is not a valid mode (insert better explanation here)", $self->maskmode), 'bold red').$/;
   };
 
-  ## bad pixels may have been turned back on in the social pixel pass, so turn them off again
+  ## bad pixels may have been turned back on in the social or areal pass, so turn them off again
   foreach my $pix (@{$self->bad_pixel_list}) {
     my $co = $pix->[0];
     my $ro = $pix->[1];
@@ -170,7 +172,7 @@ sub mask {
     print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
-    my $fname = $self->mask_file("N", 'tif');
+    my $fname = $self->mask_file("*", 'tif');
     print $self->assert("Saved stages of mask creation to $fname", 'yellow'), "\n" if $args{verbose};
   } else {
     unlink $_ foreach @out;
@@ -232,7 +234,6 @@ sub check {
     $ret->status(0);
     return $ret;
   };
-  my $x = $self->read_image($self->elastic_file);
   $self->elastic_image($self->read_image($self->elastic_file));
 
   if (($self->backend eq 'Imager') and ($self->get_version($self->elastic_image) < 0.87)) {
@@ -260,7 +261,7 @@ sub import_elastic_image {
   $self->rows($self->get_rows($self->elastic_image));
   my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
   my $alg = ($self->maskmode == 2) ? 'areal median' : 'lonely/social';
-  $str   .= sprintf "\tusing the %s backend and the %s mask algorithm\n", $self->backend;
+  $str   .= sprintf "\tusing the %s backend and the %s mask algorithm\n", $self->backend, $alg;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
   $self->write_image($self->elastic_image, $args{write}) if $args{write};
@@ -330,12 +331,12 @@ sub lonely_pixels {
 
       my $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
-	next if (($co == 0) and ($cc == -1));
-	next if (($co == $ncols) and ($cc == 1));
+	next if (($co == 0) and ($cc < 0));
+	next if (($co == $ncols) and ($cc > 0));
 	foreach my $rr (-1 .. 1) {
 	  next if (($cc == 0) and ($rr == 0));
-	  next if (($ro == 0) and ($rr == -1));
-	  next if (($ro == $nrows) and ($rr == 1));
+	  next if (($ro == 0) and ($rr < 0));
+	  next if (($ro == $nrows) and ($rr > 0));
 
 	  ++$count if ($self->get_pixel($ei, $co+$cc, $ro+$rr) != 0);
 	};
@@ -430,34 +431,40 @@ sub areal {
   my $ncols = $self->columns - 1;
   my $stat = Statistics::Descriptive::Full->new();
 
+  my @list = ();
+
   my ($removed, $on, $off, $co, $ro, $cc, $rr, $value) = (0,0,0,0,0,0,0,0);
+  my $counter = Term::Sk->new('Areal median, time elapsed: %8t %15b (column %c of %m)', {freq => 's', base => 0, target=>$ncols});
   foreach my $co (0 .. $ncols) {
+    $counter->up;
     foreach my $ro (0 .. $nrows) {
 
-      ++$off, next if ($self->get_pixel($ei, $co, $ro) == 0);
-
       my @neighborhood = ();
-    OUTER: foreach my $cc (-1 .. 1) {
-	next if (($co == 0) and ($cc == -1));
-	next if (($co == $ncols) and ($cc == 1));
-	foreach my $rr (-1 .. 1) {
-	  #next if (($cc == 0) and ($rr == 0));
-	  next if (($ro == 0) and ($rr == -1));
-	  next if (($ro == $nrows) and ($rr == 1));
+    OUTER: foreach my $cc (-1*$self->radius .. $self->radius) {
+	next if (($co == 0) and ($cc < 0));
+	next if (($co == $ncols) and ($cc > 0));
+	foreach my $rr (-1*$self->radius .. $self->radius) {
+	  next if (($ro == 0) and ($rr < 0));
+	  next if (($ro == $nrows) and ($rr > 0));
 
 	  push @neighborhood, $self->get_pixel($ei, $co+$cc, $ro+$rr);
 	};
       };
       $stat->add_data(@neighborhood);
       $value = $stat->median; #$stat->mean;
-      $self->set_pixel($ei, $co, $ro, $value);
+      #$self->set_pixel($new, $co, $ro, $value);
+      push @list, [$co, $ro, $value];
       ($value > 0) ? ++$on : ++$off;
       $stat->clear;
     };
   };
+  $counter->close;
+  foreach my $point (@list) {
+    $self->set_pixel($ei, $point->[0], $point->[1], $point->[2]);
+  };
 
   my $str = $self->assert("Second pass", 'cyan');
-  $str   .= "\tSet each pixel to the median value of a 3x3 square centered at that pixzel\n";
+  $str   .= "\tSet each pixel to the median value of a 3x3 square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {

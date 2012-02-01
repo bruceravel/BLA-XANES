@@ -42,8 +42,6 @@ $spectrum -> energy($energy);
 $spectrum -> maskmode($mode);
 $spectrum -> colored(0) if $nocolor;
 
-921/777
-
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};
 $spectrum -> lonely_pixel_value($ini{pixel}{lonely}) if exists $ini{pixel}{lonely};

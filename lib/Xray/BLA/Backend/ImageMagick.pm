@@ -6,6 +6,12 @@ use Image::Magick;
 
 has 'elastic_image' => (is => 'rw', isa => 'Image::Magick');
 
+sub new_image {
+  my ($self) = @_;
+  my $p = Image::Magick->new();
+  return $p;
+};
+
 sub read_image {
   my ($self, $file) = @_;
   my $p = Image::Magick->new();

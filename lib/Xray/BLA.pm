@@ -48,8 +48,8 @@ has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3);
 has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
 
-has 'maskmode'           => (is => 'rw', isa => 'Int', default => 1);
-has 'radius'             => (is => 'rw', isa => 'Int', default => 1);
+has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2);
+has 'radius'             => (is => 'rw', isa => 'Int', default => 2);
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
 
@@ -147,6 +147,7 @@ sub mask {
     } else {
       print $ret->message if $args{verbose};
     };
+    $self->npixels($ret->status);
     undef $ret;
 
   } else {
@@ -441,11 +442,11 @@ sub areal {
 
       my @neighborhood = ();
     OUTER: foreach my $cc (-1*$self->radius .. $self->radius) {
-	next if (($co == 0) and ($cc < 0));
-	next if (($co == $ncols) and ($cc > 0));
+	next if ($co+$cc < 0);
+	next if ($co+$cc > $ncols);
 	foreach my $rr (-1*$self->radius .. $self->radius) {
-	  next if (($ro == 0) and ($rr < 0));
-	  next if (($ro == $nrows) and ($rr > 0));
+	  next if ($ro+$rr < 0);
+	  next if ($ro+$rr > $nrows);
 
 	  push @neighborhood, $self->get_pixel($ei, $co+$cc, $ro+$rr);
 	};
@@ -464,12 +465,14 @@ sub areal {
   };
 
   my $str = $self->assert("Second pass", 'cyan');
-  $str   .= "\tSet each pixel to the median value of a 3x3 square centered at that pixel\n";
+  my $n = 2*$self->radius+1;
+  $str   .= "\tSet each pixel to the median value of a ${n}x$n square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
     $self->write_image($ei, $args{write});
   };
+  $ret->status($on);
   $ret->message($str);
   return $ret;
 };
@@ -529,18 +532,28 @@ sub scan {
     $xdi   -> ini($args{xdiini});
     $xdi   -> push_comment("HERFD scan on " . $self->stub);
     $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
-    $xdi   -> push_comment(sprintf("bad=%d  weak=%d  social=%d  lonely=%d",
-				   $self->bad_pixel_value, $self->weak_pixel_value,
-				   $self->social_pixel_value, $self->lonely_pixel_value));
+    if ($self->maskmode == 1) {
+      $xdi   -> push_comment(sprintf("lonely/social algorithm: bad=%d  weak=%d  social=%d  lonely=%d",
+				     $self->bad_pixel_value, $self->weak_pixel_value,
+				     $self->social_pixel_value, $self->lonely_pixel_value));
+    } elsif ($self->maskmode == 2) {
+      $xdi   -> push_comment(sprintf("areal median algorithm: bad=%d  weak=%d  radius=%d",
+				     $self->bad_pixel_value, $self->weak_pixel_value, $self->radius));
+    };
     $xdi   -> data(\@data);
     $xdi   -> export($outfile);
   } else {
     open(my $O, '>', $outfile);
     print   $O "# HERFD scan on " . $self->stub . $/;
     printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
-    printf  $O "# bad=%d  weak=%d  lonely=%d  social=%d",
-      $self->bad_pixel_value, $self->weak_pixel_value,
-	$self->lonely_pixel_value, $self->social_pixel_value;
+    if ($self->maskmode == 1) {
+      printf  $O "# lonely/social algorithm: bad=%d  weak=%d  lonely=%d  social=%d",
+	$self->bad_pixel_value, $self->weak_pixel_value,
+	  $self->lonely_pixel_value, $self->social_pixel_value;
+    } elsif ($self->maskmode == 2) {
+      printf  $O "# areal median algorithm: bad=%d  weak=%d  radius=%d",
+	$self->bad_pixel_value, $self->weak_pixel_value, $self->radius;
+    };
     print   $O "# -------------------------\n";
     print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
     foreach my $p (@data) {

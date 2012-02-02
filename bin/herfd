@@ -8,7 +8,6 @@ use Getopt::Long;
 use Pod::Usage;
 
 my $energy     = 0;
-my $mode       = 1;
 my $verbose    = 1;
 my $save       = 0;
 my $animate    = 0;
@@ -16,7 +15,6 @@ my $nocolor    = 0;
 my $configfile = q{};
 my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
 my $result  = GetOptions ("energy|e=i"  => \$energy,
-			  "mode|m=i"    => \$mode,
 			  'save|s'      => \$save,
 			  'animate|a'   => \$animate,
 			  'verbose|v'   => \$verbose,
@@ -39,13 +37,14 @@ $spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
 $spectrum -> stub       ($ARGV[0]);
 $spectrum -> energy($energy);
-$spectrum -> maskmode($mode);
 $spectrum -> colored(0) if $nocolor;
 
-$spectrum -> bad_pixel_value   ($ini{pixel}{bad})    if exists $ini{pixel}{bad};
-$spectrum -> weak_pixel_value  ($ini{pixel}{weak})   if exists $ini{pixel}{weak};
-$spectrum -> lonely_pixel_value($ini{pixel}{lonely}) if exists $ini{pixel}{lonely};
-$spectrum -> social_pixel_value($ini{pixel}{social}) if exists $ini{pixel}{social};
+$spectrum -> bad_pixel_value   ($ini{pixel}{bad})      if exists $ini{pixel}{bad};
+$spectrum -> weak_pixel_value  ($ini{pixel}{weak})     if exists $ini{pixel}{weak};
+$spectrum -> lonely_pixel_value($ini{pixel}{lonely})   if exists $ini{pixel}{lonely};
+$spectrum -> social_pixel_value($ini{pixel}{social})   if exists $ini{pixel}{social};
+$spectrum -> maskmode          ($ini{pixel}{maskmode}) if exists $ini{pixel}{maskmode};
+$spectrum -> radius            ($ini{pixel}{radius})   if exists $ini{pixel}{radius};
 
 $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
 $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);

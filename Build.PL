@@ -18,6 +18,7 @@ my $build = Module::Build
 				'Math::Round'               => 0,
 				#'Xray::XDI'                 => 0,
 				'Statistics::Descriptive'   => 0,
+				'Term::Sk'                  => '0.07',
 			       },
 	 recommends         => {
 				'Image::Magick'             => 0,

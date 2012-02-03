@@ -768,7 +768,7 @@ sub smooth {
 
 sub gnuplot_map {
   my ($self) = @_;
-  my $text = "set term wxt 1 font 'Droid Sans,9' enhanced
+  my $text = "set term wxt enhanced
 
 set auto
 set key default

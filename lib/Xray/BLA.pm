@@ -676,12 +676,19 @@ sub apply_mask {
   return $ret;
 };
 
+
+## TODO: * abstract out line 697,698
 sub energy_map {
-  my ($self) = @_;
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+  local $|=1;
 
   my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (column %c of %m)',
 			      {freq => 's', base => 0, target=>$self->rows});
-  open(my $M, '>', 'map.dat');
+  my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
+  open(my $M, '>', $outfile);
 
   foreach my $r (0 .. $self->rows-1) {
     $counter->up;
@@ -689,23 +696,6 @@ sub energy_map {
     foreach my $ie (0 .. $#{$self->elastic_energies}) {
       my @colors = $self->elastic_image_list->[$ie]->getscanline(y=>$r, type=>'float');
       my @y = map { my @rgba = $_->rgba; $rgba[0]*2**32 } @colors;
-
-      ## turn off a pixel that is illuminated and has dark pixels to the left and right
-      my @z = ();
-      foreach my $i (1 .. $#y-1) {
-	push(@z, $i) if (($y[$i-1] == 0) and ($y[$i+1] == 0));
-      };
-      foreach my $j (@z) {
-	$y[$j] = 0;
-      };
-      ## turn on a pixel that is dark and has illuminated pixels to the left and right
-      @z = ();
-      foreach my $i (1 .. $#y-1) {
-	push(@z, $i) if ((int($y[$i-1]) == 10) and (int($y[$i+1]) == +10));
-      };
-      foreach my $j (@z) {
-	$y[$j] = 10;
-      };
       push @all, \@y;
     };
 
@@ -717,9 +707,6 @@ sub energy_map {
 
     my $stripe = 0;
     foreach my $list (@all) {
-      my $on = 0;
-      my $first = $list->[0];
-      $on = 1 if $first > 0;
       foreach my $p (0 .. $#{$list}) {
 	if ($list->[$p] > 0) {
 	  push @{$represented[$p]}, $self->elastic_energies->[$stripe];
@@ -742,7 +729,7 @@ sub energy_map {
     foreach my $k (0 .. $#linemap) {
       $flag = 1 if $linemap[$k] > $self->elastic_energies->[0];
       next if $linemap[$k] >= $self->elastic_energies->[0];
-      $linemap[$k] = $self->elastic_energies->[$#{self->elastic_energies}]+2 if $flag;
+      $linemap[$k] = $self->elastic_energies->[$#{$self->elastic_energies}]+2 if $flag;
     };
 
     my @zz = $self->smooth(4, \@linemap);
@@ -753,10 +740,16 @@ sub energy_map {
   };
   $counter->close;
   close $M;
-  return $self;
+  print $self->assert("Wrote map data to $outfile", 'bold green');
+  $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');
+  open(my $G, '>', $outfile);
+  print $G $self->gnuplot_map;
+  close $G;
+  print $self->assert("Wrote gnuplot script to $outfile", 'bold green');
+  return $ret;
 };
 
-## see ifeffit-1.2.11d/src/lib/decod.f, lines 453-461
+## swiped from ifeffit-1.2.11d/src/lib/decod.f, lines 453-461
 sub smooth {
   my ($self, $repeats, $rarr) = @_;
   my @array = @$rarr;
@@ -772,6 +765,43 @@ sub smooth {
   return @smoothed;
 };
 
+
+sub gnuplot_map {
+  my ($self) = @_;
+  my $text = "set term wxt 1 font 'Droid Sans,9' enhanced
+
+set auto
+set key default
+set pm3d map
+
+set title '{/=14 __stub__ energy map}' offset 0,-5
+set ylabel '{/=11 columns}' offset 0,2.5
+#set xlabel '{/=11 rows}' rotate by 90
+
+set view 0,90,1,1
+set origin -0.17,-0.2
+set size 1.4,1.4
+unset grid
+
+unset ztics
+unset zlabel
+set xrange [0:194]
+set yrange [0:486]
+set cbtics 9701, 4, 9721
+set cbrange [9701:9721]
+
+set colorbox vertical size 0.025,0.7 user origin 0.03,0.15
+
+set palette model RGB defined (0 '#990000', 1 'red', 2 'orange', 3 'yellow', 4 'green', 5 '#009900', 6 '#006633', 7 '#0066DD', 8 '#000099')
+
+splot '__file__' title ''
+";
+  my $file = File::Spec->catfile($self->outfolder, $self->stub.'.map');
+  $text =~ s{__file__}{$file};
+  my $stub = $self->stub;
+  $text =~ s{__stub__}{$stub};
+  return $text;
+};
 
 
 sub assert {
@@ -1226,6 +1256,10 @@ Strawberry Perl.
 
 =item *
 
+Option to save final mask, which is needed for map creation
+
+=item *
+
 bin with 2x2 or 3x3 bins
 
 =item *
@@ -1239,16 +1273,12 @@ faster but requires that netpbm be specially compiled.
 
 =item *
 
-Interpolate elastic masks to make a pixel v energy map for more
-fine-grained intepretation of the data images.
-
-This can be done by taking a row from each mask, finding the center or
-mass of each peak in the lineplot from each row, then linearly
-interpolating between the centers.
+MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 
 =item *
 
-MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
+It should not be necessary to specify the list of elastic energies in
+the config file
 
 =item *
 

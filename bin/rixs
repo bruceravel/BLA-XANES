@@ -10,6 +10,7 @@ use Pod::Usage;
 my $verbose    = 1;
 my $save       = 0;
 my $animate    = 0;
+my $nocolor    = 0;
 my $configfile = q{};
 my $xdiini     = q{}; # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
 my $result  = GetOptions ('save|s'      => \$save,

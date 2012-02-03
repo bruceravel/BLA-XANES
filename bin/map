@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Imager;
+use Config::IniFiles;
+use Getopt::Long;
+use Pod::Usage;
+use File::Spec;
+
+my $maskfolder = '/home/bruce/Data/NIST/10ID/2011.12/processed/masks';
+
+tie my %ini, 'Config::IniFiles', ( -file => '/home/bruce/git/BLA-XANES/share/config.ini' );
+
+my @elastic = split(" ", $ini{measure}{emission});
+my @images = map {Imager->new(file=>$_)} map {File::Spec->catfile($maskfolder, 'Aufoil1_'.$_.'_mask_2.tif')} @elastic;
+
+
+foreach my $r (0 .. 194) {
+
+
+
+  my @all = ();
+  my $count = 0;
+  foreach my $ie (0 .. $#elastic) {
+    my @colors = $images[$ie]->getscanline(y=>$r, type=>'float');
+    my @y = map { my @rgba = $_->rgba; $rgba[0]*2**32+$count } @colors;
+
+    ## turn off a pixel that is illuminated and has dark pixels to the left and right
+    my @z = ();
+    foreach my $i (1 .. $#y-1) {
+      push(@z, $i) if (($y[$i-1] == $count) and ($y[$i+1] == $count));
+    };
+    foreach my $j (@z) {
+      $y[$j] = $count;
+    };
+
+    ## turn on a pixel that is dark and has illuminated pixels to the left and right
+    @z = ();
+    foreach my $i (1 .. $#y-1) {
+      push(@z, $i) if ((int($y[$i-1]) == $count+10) and (int($y[$i+1]) == $count+10));
+    };
+    foreach my $j (@z) {
+      $y[$j] = $count+10;
+    };
+    
+    push @all, \@y;
+  };
+
+
+  my @linemap = map {0} (0 .. 486);
+
+  my (@x, @y);
+
+  my $stripe = 0;
+  foreach my $list (@all) {
+    my $on = 0;
+    my $first = $list->[0];
+    $on = 1 if $first > 0;
+    foreach my $p (1 .. $#{$list}) {
+      if ($list->[$p] > 0) {
+	$first = $p if ($on == 0);
+	$on = 1;
+      } else {
+	if ($on) {
+	  #print join("   ", $elastic[$stripe], $first, $p, int(($p+$first)/2)), $/;
+	  $linemap[ int(($p+$first)/2) ] = $elastic[$stripe];
+	  push @x, int(($p+$first)/2);
+	  push @y, $elastic[$stripe];
+	};
+	$on = 0;
+      };
+    };
+    if ($on) {
+      #print join("   ", $elastic[$stripe], $first, $#{$list}, int(($#{$list}+$first)/2)), $/;
+      $linemap[ int(($#{$list}+$first)/2) ] = $elastic[$stripe];
+      push @x, int(($#{$list}+$first)/2);
+      push @y, $elastic[$stripe];
+    };
+    ++$stripe;
+  };
+
+  $linemap[0] = $elastic[0]-2 if ($linemap[0] == 0);
+  $linemap[$#linemap] = $elastic[$#elastic]+2 if ($linemap[$#linemap] == 0);
+
+  my $first = 0;
+  foreach my $i (1..$#linemap) {
+    next if $linemap[$i] == 0;
+    foreach my $j ($first+1 .. $i-1) {
+      my $ediff = $linemap[$i] - $linemap[$first];
+      $linemap[$j] = $linemap[$first] + $ediff * ($j - $first) / ($i - $first);
+    };
+    $first = $i;
+  };
+
+  foreach my $i (0..$#linemap) {
+    print "  $r  $i  $linemap[$i]\n"
+  };
+  print $/;
+
+};
+

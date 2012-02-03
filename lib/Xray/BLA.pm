@@ -47,9 +47,11 @@ has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3);
 has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3);
 has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
+has 'nbad'               => (is => 'rw', isa => 'Int', default => 0);
 
 has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2);
 has 'radius'             => (is => 'rw', isa => 'Int', default => 2);
+has 'operation'          => (is => 'rw', isa => 'Str', default => q{median});
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
 
@@ -117,7 +119,7 @@ sub mask {
   };
   undef $ret;
 
-  if ($self->maskmode == 1) {
+  if ($self->maskmode == 1) {	# lonely/social algorithm
     ## weed out lonely pixels
     $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
     $ret = $self->lonely_pixels(write=>$out[2]);
@@ -139,7 +141,7 @@ sub mask {
     $self->npixels($ret->status);
     undef $ret;
 
-  } elsif ($self->maskmode == 2) {
+  } elsif ($self->maskmode == 2) { # areal median or mean
     $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
     $ret = $self->areal(write=>$out[2]);
     if ($ret->status == 0) {
@@ -150,8 +152,20 @@ sub mask {
     $self->npixels($ret->status);
     undef $ret;
 
+  } elsif ($self->maskmode == 3) { # whole image
+    $args{animate} = 0;
+    $args{save} = 0;
+    foreach my $co (0 .. $self->columns-1) {
+      foreach my $ro (0 .. $self->rows-1) {
+	$self->set_pixel($self->elastic_image, $co, $ro, 5);
+      };
+    };
+    $self->npixels($self->columns * $self->rows - $self->nbad);
+
   } else {
-    die $self->assert(sprintf("Mask mode %d is not a valid mode (insert better explanation here)", $self->maskmode), 'bold red').$/;
+    die $self->assert(sprintf("Mask mode %d is not a valid mode (currently 1=lonely/social, 2=areal median/mean,  3=whole image)",
+			      $self->maskmode),
+		      'bold red').$/;
   };
 
   ## bad pixels may have been turned back on in the social or areal pass, so turn them off again
@@ -160,9 +174,11 @@ sub mask {
     my $ro = $pix->[1];
     $self->set_pixel($self->elastic_image, $co, $ro, 0);
   };
+  my $count = 0;
   foreach my $co (0 .. $self->columns-1) {
     foreach my $ro (0 .. $self->rows-1) {
       next if ($self->get_pixel($self->elastic_image, $co, $ro) == 0);
+      ++$count;
       $self->push_mask_pixel_list([$co,$ro]);
     };
   };
@@ -261,7 +277,9 @@ sub import_elastic_image {
   $self->columns($self->get_columns($self->elastic_image));
   $self->rows($self->get_rows($self->elastic_image));
   my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
-  my $alg = ($self->maskmode == 2) ? 'areal median' : 'lonely/social';
+  my $alg = ($self->maskmode == 3) ? 'whole image'
+          : ($self->maskmode == 2) ? 'areal '.$self->operation
+	  :                          'lonely/social';
   $str   .= sprintf "\tusing the %s backend and the %s mask algorithm\n", $self->backend, $alg;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
@@ -301,6 +319,7 @@ sub bad_pixels {
     };
   };
 
+  $self->nbad($removed);
   my $str = $self->assert("First pass", 'cyan');
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
@@ -435,7 +454,8 @@ sub areal {
   my @list = ();
 
   my ($removed, $on, $off, $co, $ro, $cc, $rr, $value) = (0,0,0,0,0,0,0,0);
-  my $counter = Term::Sk->new('Areal median, time elapsed: %8t %15b (column %c of %m)', {freq => 's', base => 0, target=>$ncols});
+  my $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
+			      {freq => 's', base => 0, target=>$ncols});
   foreach my $co (0 .. $ncols) {
     $counter->up;
     foreach my $ro (0 .. $nrows) {
@@ -452,7 +472,8 @@ sub areal {
 	};
       };
       $stat->add_data(@neighborhood);
-      $value = $stat->median; #$stat->mean;
+      $value = ($self->operation eq 'mean') ? int($stat->mean) : $stat->median;
+      $value = 10 if $value > 0;
       #$self->set_pixel($new, $co, $ro, $value);
       push @list, [$co, $ro, $value];
       ($value > 0) ? ++$on : ++$off;
@@ -466,7 +487,7 @@ sub areal {
 
   my $str = $self->assert("Second pass", 'cyan');
   my $n = 2*$self->radius+1;
-  $str   .= "\tSet each pixel to the median value of a ${n}x$n square centered at that pixel\n";
+  $str   .= "\tSet each pixel to the ".$self->operation." value of a ${n}x$n square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   if ($args{write}) {
@@ -507,9 +528,6 @@ sub scan {
 
   print $self->assert("Reading scan from ".$self->scanfile, 'yellow');
   open(my $SCAN, "<", $self->scanfile);
-  my $fname = join("_", $self->stub, $self->energy);
-  $fname .= ($XDI_exists) ? '.xdi' : '.dat';
-  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
   while (<$SCAN>) {
     next if m{\A\#};
     next if m{\A\s*\z};
@@ -517,55 +535,78 @@ sub scan {
     @point = ();
     my @list = split(" ", $_);
 
-    my $ret = $self->apply_mask($list[11], verbose=>$args{verbose});
+    my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
     push @point, $list[0];
-    push @point, $ret->status/$list[3];
+    push @point, sprintf("%.10f", $loop->status/$list[3]);
     push @point, @list[3..6];
-    push @point, $ret->status;
+    push @point, $loop->status;
     push @point, @list[1..2];
     push @data, [@point];
   };
   close $SCAN;
 
+  my $outfile;
   if (($XDI_exists) and (-e $args{xdiini})) {
-    my $xdi = Xray::XDI->new();
-    $xdi   -> ini($args{xdiini});
-    $xdi   -> push_comment("HERFD scan on " . $self->stub);
-    $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
-    if ($self->maskmode == 1) {
-      $xdi   -> push_comment(sprintf("lonely/social algorithm: bad=%d  weak=%d  social=%d  lonely=%d",
-				     $self->bad_pixel_value, $self->weak_pixel_value,
-				     $self->social_pixel_value, $self->lonely_pixel_value));
-    } elsif ($self->maskmode == 2) {
-      $xdi   -> push_comment(sprintf("areal median algorithm: bad=%d  weak=%d  radius=%d",
-				     $self->bad_pixel_value, $self->weak_pixel_value, $self->radius));
-    };
-    $xdi   -> data(\@data);
-    $xdi   -> export($outfile);
+    $outfile = $self->xdi_out($args{xdiini}, \@data);
   } else {
-    open(my $O, '>', $outfile);
-    print   $O "# HERFD scan on " . $self->stub . $/;
-    printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
-    if ($self->maskmode == 1) {
-      printf  $O "# lonely/social algorithm: bad=%d  weak=%d  lonely=%d  social=%d",
-	$self->bad_pixel_value, $self->weak_pixel_value,
-	  $self->lonely_pixel_value, $self->social_pixel_value;
-    } elsif ($self->maskmode == 2) {
-      printf  $O "# areal median algorithm: bad=%d  weak=%d  radius=%d",
-	$self->bad_pixel_value, $self->weak_pixel_value, $self->radius;
-    };
-    print   $O "# -------------------------\n";
-    print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
-    foreach my $p (@data) {
-      printf $O "  %.3f  %.7f  %10d  %10d  %10d  %10d  %10d  %4d  %8.3f\n", @$p;
-    };
-    close   $O;
+    $outfile = $self->dat_out(\@data);
   };
 
   print $self->assert("Wrote $outfile", 'bold green');
   return $ret;
 };
 
+
+sub xdi_out {
+  my ($self, $xdiini, $rdata) = @_;
+  my $fname = join("_", $self->stub, $self->energy) . '.xdi';
+  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+
+  my $xdi = Xray::XDI->new();
+  $xdi   -> ini($xdiini);
+  $xdi   -> push_comment("HERFD scan on " . $self->stub);
+  $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
+  if ($self->maskmode == 1) {
+    $xdi   -> push_comment(sprintf("lonely/social algorithm: bad=%d  weak=%d  social=%d  lonely=%d",
+				   $self->bad_pixel_value, $self->weak_pixel_value,
+				   $self->social_pixel_value, $self->lonely_pixel_value));
+  } elsif ($self->maskmode == 2) {
+    $xdi   -> push_comment(sprintf("areal %s algorithm: bad=%d  weak=%d  radius=%d",
+				   $self->operation, $self->bad_pixel_value, $self->weak_pixel_value, $self->radius));
+  } elsif ($self->maskmode == 3) {
+    $xdi   -> push_comment(sprintf("whole image: bad=%d", $self->bad_pixel_value));
+  };
+  $xdi   -> data($rdata);
+  $xdi   -> export($outfile);
+  return $outfile;
+};
+
+sub dat_out {
+  my ($self, $rdata) = @_;
+  my $fname = join("_", $self->stub, $self->energy) . '.dat';
+  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+
+  open(my $O, '>', $outfile);
+  print   $O "# HERFD scan on " . $self->stub . $/;
+  printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
+  if ($self->maskmode == 1) {
+    printf  $O "# lonely/social algorithm: bad=%d  weak=%d  lonely=%d  social=%d\n",
+      $self->bad_pixel_value, $self->weak_pixel_value,
+	$self->lonely_pixel_value, $self->social_pixel_value;
+  } elsif ($self->maskmode == 2) {
+    printf  $O "# areal %s algorithm: bad=%d  weak=%d  radius=%d\n",
+      $self->operation, $self->bad_pixel_value, $self->weak_pixel_value, $self->radius;
+  } elsif ($self->maskmode == 2) {
+    printf  $O "# whole image: bad=%d\n", $self->bad_pixel_value;
+  };
+  print   $O "# -------------------------\n";
+  print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
+  foreach my $p (@$rdata) {
+    printf $O "  %.3f  %.7f  %10d  %10d  %10d  %10d  %10d  %4d  %8.3f\n", @$p;
+  };
+  close   $O;
+  return $outfile;
+};
 
 sub apply_mask {
   my ($self, $tif, @args) = @_;
@@ -747,10 +788,17 @@ C<peak_energy> is an alias for C<energy>.
 =item C<maskmode>  [1]
 
 This chooses the mask creation algorithm.  1 means to use the
-lonely/social algorithm, 2 means to use the areal median algorithm.
+lonely/social algorithm.  2 means to use the areal median algorithm.
+3 means to use the whole image except for the bad pixels.  (#3 is more
+useful for testing than actuall data processing.)
 
 When using the areal median algorithm, you will get slightly better
 energy resolution if the C<weak_pixel_value> is not set to 0.
+
+=item C<operation>  [median]
+
+Setting this to "mean" changes the areal median algorithm to an areal
+mean algorithm.
 
 =item C<bad_pixel_value>  [400]
 
@@ -930,8 +978,8 @@ C<mask> is true.
 
 =item C<areal>
 
-At each point in the mask, assign its value to the median value of a
-3x3 square centered on that point.
+At each point in the mask, assign its value to the median or mean
+value of a 3x3 square centered on that point.
 
   $spectrum -> areal;
 
@@ -1060,7 +1108,11 @@ faster but requires that netpbm be specially compiled.
 =item *
 
 Interpolate elastic masks to make a pixel v energy map for more
-fine-grained intepretation of the data images
+fine-grained intepretation of the data images.
+
+This can be done by taking a row from each mask, finding the center or
+mass of each peak in the lineplot from each row, then linearly
+interpolating between the centers.
 
 =item *
 

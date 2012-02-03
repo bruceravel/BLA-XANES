@@ -78,6 +78,41 @@ has 'mask_pixel_list' => (
 				       }
 			 );
 
+has 'elastic_energies' => (
+			   metaclass => 'Collection::Array',
+			   is        => 'rw',
+			   isa       => 'ArrayRef',
+			   default   => sub { [] },
+			   provides  => {
+					 'push'  => 'push_elastic_energies',
+					 'pop'   => 'pop_elastic_energies',
+					 'clear' => 'clear_elastic_energies',
+					}
+			  );
+has 'elastic_file_list' => (
+			    metaclass => 'Collection::Array',
+			    is        => 'rw',
+			    isa       => 'ArrayRef',
+			    default   => sub { [] },
+			    provides  => {
+					  'push'  => 'push_elastic_file_list',
+					  'pop'   => 'pop_elastic_file_list',
+					  'clear' => 'clear_elastic_file_list',
+					 }
+			   );
+has 'elastic_image_list' => (
+			     metaclass => 'Collection::Array',
+			     is        => 'rw',
+			     isa       => 'ArrayRef',
+			     default   => sub { [] },
+			     provides  => {
+					   'push'  => 'push_elastic_image_list',
+					   'pop'   => 'pop_elastic_image_list',
+					   'clear' => 'clear_elastic_image_list',
+					  }
+			    );
+
+
 has 'backend'	    => (is => 'rw', isa => 'Str', default => q{});
 
 sub mask {
@@ -640,6 +675,103 @@ sub apply_mask {
   };
   return $ret;
 };
+
+sub energy_map {
+  my ($self) = @_;
+
+  my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (column %c of %m)',
+			      {freq => 's', base => 0, target=>$self->rows});
+  open(my $M, '>', 'map.dat');
+
+  foreach my $r (0 .. $self->rows-1) {
+    $counter->up;
+    my @all = ();
+    foreach my $ie (0 .. $#{$self->elastic_energies}) {
+      my @colors = $self->elastic_image_list->[$ie]->getscanline(y=>$r, type=>'float');
+      my @y = map { my @rgba = $_->rgba; $rgba[0]*2**32 } @colors;
+
+      ## turn off a pixel that is illuminated and has dark pixels to the left and right
+      my @z = ();
+      foreach my $i (1 .. $#y-1) {
+	push(@z, $i) if (($y[$i-1] == 0) and ($y[$i+1] == 0));
+      };
+      foreach my $j (@z) {
+	$y[$j] = 0;
+      };
+      ## turn on a pixel that is dark and has illuminated pixels to the left and right
+      @z = ();
+      foreach my $i (1 .. $#y-1) {
+	push(@z, $i) if ((int($y[$i-1]) == 10) and (int($y[$i+1]) == +10));
+      };
+      foreach my $j (@z) {
+	$y[$j] = 10;
+      };
+      push @all, \@y;
+    };
+
+
+    my @represented = map {[0]} (0 .. $self->columns-1);
+    my @linemap = map {0} (0 .. $self->columns-1);
+
+    my (@x, @y);
+
+    my $stripe = 0;
+    foreach my $list (@all) {
+      my $on = 0;
+      my $first = $list->[0];
+      $on = 1 if $first > 0;
+      foreach my $p (0 .. $#{$list}) {
+	if ($list->[$p] > 0) {
+	  push @{$represented[$p]}, $self->elastic_energies->[$stripe];
+	};
+      };
+      ++$stripe;
+    };
+
+    foreach my $i (0 .. $#represented) {
+      my $n = sprintf("%.1f", $#{$represented[$i]});
+      my $val = '(' . join('+', @{$represented[$i]}) . ')/' . $n;
+      $linemap[$i] = eval "$val" || 0;
+    };
+
+    foreach my $k (0 .. $#linemap) {
+      next if $linemap[$k] > 0;
+      $linemap[$k] = $self->elastic_energies->[0]-2;
+    };
+    my $flag = 0;
+    foreach my $k (0 .. $#linemap) {
+      $flag = 1 if $linemap[$k] > $self->elastic_energies->[0];
+      next if $linemap[$k] >= $self->elastic_energies->[0];
+      $linemap[$k] = $self->elastic_energies->[$#{self->elastic_energies}]+2 if $flag;
+    };
+
+    my @zz = $self->smooth(4, \@linemap);
+    foreach my $i (0..$#zz) {
+      print $M "  $r  $i  $zz[$i]\n";
+    };
+    print $M $/;
+  };
+  $counter->close;
+  close $M;
+  return $self;
+};
+
+## see ifeffit-1.2.11d/src/lib/decod.f, lines 453-461
+sub smooth {
+  my ($self, $repeats, $rarr) = @_;
+  my @array = @$rarr;
+  my @smoothed = ();
+  foreach my $x (1 .. $repeats) {
+    $smoothed[0] = 3*$array[0]/4.0 + $array[1]/4.0;
+    foreach my $i (1 .. $#array-1) {
+      $smoothed[$i] = ($array[$i] + ($array[$i+1] + $array[$i-1])/2.0)/2.0;
+    };
+    $smoothed[$#array] = 3*$array[$#array]/4.0 + $array[$#array-1]/4.0;
+    @array = @smoothed;
+  };
+  return @smoothed;
+};
+
 
 
 sub assert {

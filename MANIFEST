@@ -1,5 +1,4 @@
-bin/herfd
-bin/rixs
+bin/bla
 Build.PL
 lib/Xray/BLA.pm
 lib/Xray/BLA/Backend/ImageMagick.pm

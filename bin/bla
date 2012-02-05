@@ -8,13 +8,13 @@ use Getopt::Long;
 use Pod::Usage;
 
 my $energy     = 0;
-my $verbose    = 1;
+my $reuse      = 0;
 my $save       = 0;
 my $animate    = 0;
-my $reuse      = 0;
-my $nocolor    = 0;
+my $verbose    = 1;
 my $configfile = q{};
 my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
+my $nocolor    = 0;
 my $result     = GetOptions ("energy|e=i"  => \$energy,
 			     'reuse|r'     => \$reuse,
 			     'save|s'      => \$save,
@@ -79,15 +79,12 @@ if ($mode eq 'herfd') {
   };
   if ($need_to_check) {
     my $ret = $spectrum -> check;
-    if ($ret->status == 0) {
-      die $spectrum->assert($ret->message, 'bold red');
-    };
+    die $spectrum->assert($ret->message, 'bold red') if $ret->status == 0;
     $spectrum -> import_elastic_image;
   };
   my @images = map {$spectrum->read_image($_)} @{$spectrum->elastic_file_list};
-  $spectrum->elastic_image_list(\@images);
-  $spectrum->elastic_energies(\@elastic);
-
+  $spectrum -> elastic_image_list(\@images);
+  $spectrum -> elastic_energies(\@elastic);
   $spectrum -> energy_map(verbose => $verbose);
 
 } else {
@@ -109,15 +106,15 @@ bla - wrapper script for bent Laue analyzer HERFD, RIXS, and energy map function
  bla map   [options] <stub>
 
  Options:
-     --config  | -c   [string]  configuration file (required)
-     --energy  | -e   [integer] emission energy for HERFD (required for HERFD)
-     --reuse   | -r   [flag]    reuse mask files for map if found in outfolder
-     --animate | -a   [flag]    save tiff animation of mask creation
-     --save    | -s   [flag]    save tiff with mask
-     --verbose | -v   [flag]    write progress messages
-     --nocolor | -n   [flag]    turn off color coding of screen output
-     --quiet   | -q   [flag]    suppress progress messages
-     --help    | -h   [flag]    write this message and exit
+   --config  | -c   [string]   configuration file (*required*)
+   --energy  | -e   [integer]  emission energy for HERFD (required for HERFD)
+   --reuse   | -r   [flag]     reuse mask files for map if found in outfolder
+   --animate | -a   [flag]     save tiff animation of mask creation
+   --save    | -s   [flag]     save tiff with mask
+   --verbose | -v   [flag]     write progress messages
+   --nocolor | -n   [flag]     turn off color coding of screen output
+   --quiet   | -q   [flag]     suppress progress messages
+   --help    | -h   [flag]     write this message and exit
 
 =head1 Options
 

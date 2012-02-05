@@ -1,0 +1,416 @@
+NAME
+    Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES
+    spectrum
+
+VERSION
+    0.2
+
+SYNOPSIS
+       my $spectrum = Xray::BLA->new;
+
+       $spectrum->scanfolder('/path/to/scanfolder');
+       $spectrum->tiffolder('/path/to/tiffolder');
+       $spectrum->outfolder('/path/to/outfolder');
+       $spectrum->stub('myscan');
+       $spectrum->energy(9713);
+
+       $spectrum->mask(verbose=>1, write=>0, animate=>0);
+       $spectrum->scan(verbose=>1);
+
+DESCRIPTION
+    This module is an engine for converting a series of tiff images
+    collected using a bent Laue analyzer and a Pilatus 100K area detector
+    into a high energy resolution XANES spectrum. A HERFD measurement
+    consists of a related set of files from the measurement:
+
+    1.  A column data file containing the energy, signals from other
+        scalars, and a few other columns
+
+    2.  A tif image of an exposure at each energy point. This image must be
+        interpreted to be the HERFD signal at that energy point.
+
+    3.  A set of one or more exposures taken at incident energies around the
+        peak of the fluorescence line (e.g. Lalpha1 for an L3 edge, etc).
+        These exposures are used to make masks for interpreting the sequence
+        of images at each energy point.
+
+    As you can see in the synopsis, there are attributes for specifying the
+    paths to the locations of the column data files ("scanfolder") and the
+    tiff files ("tiffolder", "tifffolder" with 3 "f"'s is an alias)).
+
+    Assumptions are made about the names of the files in those locations.
+    Each files is build upon a stub, indicated by the "stub" attribute. If
+    "stub" is "Aufoil", then the column data in "scanfolder" file is named
+    Aufoil.001. The tiff images at each energy point are called
+    Aufoil_NNNNN.tif where "NNNNN" is the index of the energy point. One of
+    the columns in the scan file contains this index so it is unambiguous
+    which tiff image corresponds to which energy point. Finally, the elastic
+    exposures are called Aufoil_elastic_EEEE_00001.tif where "EEEE" is the
+    incident energy. For instance, an exposure at the peak of the gold
+    Lalpha1 line would be called Aufoil_elastic_9713_00001.tif.
+
+    If you use a different naming convention, this software in its current
+    form will break!
+
+    This software uses an image handling back to interact with these two
+    sets of tiff images. Since the Pilatus writes rather unusual tiff files
+    with signed 32 bit integer samples, not every image handling package can
+    deal gracefully with them. I have found two choices in the perl universe
+    that work well, Imager and "Image::Magick", although using Image::Magick
+    requires recompiliation to be able to use 32 bit sample depth. Happily,
+    *Imager* works out of the box. The default is to use Imager. but this
+    can be specified using the "backend" attribute when the Xray::BLA object
+    is created.
+
+ATTRIBUTES
+    "backend"
+        Specify which image handling library to use. Currently the possible
+        values for this attribute are "Imager" and "ImageMagick". The
+        default, if not specified, is to use Imager. See the compilation
+        caveat below if you choose to use Image::Magick instead. Imager, on
+        the other hand, should just work out of the box.
+
+    "stub"
+        The basename of the scan and image files. The scan file is called
+        "<stub>.001", the image files are called "<stub>_NNNNN.tif", and the
+        processed column data files are called "<stub>_<energy>.001".
+
+    "scanfile"
+        The fully resolved path to the scan file, as determined from "stub"
+        and "scanfolder".
+
+    "scanfolder"
+        The folder containing the scan file. The scan file name is
+        constructed from the value of "stub".
+
+    "tiffolder"
+        The folder containing the image files. The image file names are
+        constructed from the value of "stub".
+
+    "tiffolder"
+        The folder to which the processed file is written. The processed
+        file name is constructed from the value of "stub".
+
+    "energy"
+        This normally takes the tabulated value of the measured fluorescence
+        line. For example, for the the gold L3 edge experiment, the L alpha
+        1 line is likely used. It's tabulated value is 9715 eV.
+
+        The image containing the data measured from the elastic scattering
+        with the incident energy at this energy will have a filename
+        something like <stub>_elsatic_<energy>_00001.tif.
+
+        This value can be changed to some other measured elastic energy in
+        order to scan the off-axis portion of the spectrum.
+
+        "peak_energy" is an alias for "energy".
+
+    "maskmode" [2]
+        This chooses the mask creation algorithm. 1 means to use the
+        lonely/social algorithm. 2 means to use the areal median algorithm.
+        3 means to use the whole image except for the bad pixels. (#3 is
+        more useful for testing than for actual data processing, although it
+        gives a sense of what the data would look like using an integrating
+        detector.)
+
+        When using the areal median algorithm, you will get slightly better
+        energy resolution if the "weak_pixel_value" is not set to 0.
+
+    "operation" [median]
+        Setting this to "mean" changes the areal median algorithm to an
+        areal mean algorithm.
+
+    "bad_pixel_value" [400]
+        In the first pass over the elastic image, spuriously large pixel
+        values -- presumably indicating the locations of bad pixels -- are
+        removed from the image by setting them to 0. This is the cutoff
+        value above which a pixel is assumed to be a bad one.
+
+    "weak_pixel_value" [3]
+        In the first pass over the elastic image, small valued pixels are
+        removed from the image. These pixels are presumed to have been
+        illuminated by a small number of stray photons not associated with
+        the imagining of photons at the peak energy. Pixels with fewer than
+        this n umber of counts are set to 0.
+
+    "lonely_pixel_value" [3]
+        In the second pass over the elastic image, illuminiated pixles with
+        fewer than this number of illuminated neighboring pixels are removed
+        fropm the image. This serves the prupose of removing most stray
+        pixels not associated with the main image of the peak energy.
+
+    "social_pixel_value" [2]
+        In the third pass over the elastic image, dark pixels which are
+        surrounded by larger than this number of illuminated pixels are
+        presumed to be a part of the image of the peak energy. They are
+        given a value of 5 counts. This serves the prupose of making the
+        elastic image a solid mask with few gaps in the image of the main
+        peak.
+
+    "elastic_file"
+        This contains the name of the elastic image file. It is constructed
+        from the values of "stub", "energy", and "tiffolder".
+
+    "elastic_image"
+        This contains the backend object corresponding to the elastic image.
+
+    "npixels"
+        The number of illuminated pixels in the mask. That is, the number of
+        pixels contributing to the HERFD signal.
+
+    "columns"
+        When the elastic file is read, this is set with the number of
+        columns in the image. All images in the measurement are presumed to
+        have the same number of columns. "width" is an alias for "columns".
+
+    "rows"
+        When the elastic file is read, this is set with the number of rows
+        in the image. All images in the measurement are presumed to have the
+        same number of rows. "height" is an alias for "rows".
+
+    "colored"
+        This flag should be true to write colored text to the screen when
+        methods are called with the verbose flag on.
+
+    "screen"
+        This flag should be true when run from the command line so that
+        progress messages are written to the screen.
+
+METHODS
+    All methods return an object of type "Xray::BLA::Return". This object
+    has two attributes: "status" and "message". A successful return will
+    have a positive definite "status". Any reporting (for example exception
+    reporting) is done via the "message" attribute.
+
+    Some methods, for example "apply_mask", use the return "status" as the
+    sum of HERFD counts from the illuminated pixels.
+
+  API
+    "mask"
+        Create a mask from the elastic image measured at the energy given by
+        "energy".
+
+          $spectrum->mask(verbose=>0, save=>0, animate=>0);
+
+        When true, the "verbose" argument causes messages to be printed to
+        standard output with information about each stage of mask creation.
+
+        When true, the "save" argument causes a tif file to be saved at each
+        stage of processing the mask.
+
+        When true, the "animate" argument causes a properly scaled animation
+        to be written showing the stages of mask creation.
+
+        Currently, these output image files are signed 32 bit tiff images or
+        animations. Not many image handling applications will handle them. I
+        recommend ImageJ or the specially modified Image Magick, if you have
+        it.
+
+    "scan"
+        Rewrite the scan file with a column containing the HERFD signal as
+        computed by applying the mask to the image file from each data
+        point.
+
+          $spectrum->scan(verbose=>0, xdiini=>$inifile);
+
+        When true, the "verbose" argument causes messages to be printed to
+        standard output about every data point being processed.
+
+        The "xdiini" argument takes the filename of an ini-style
+        configuration file for XDI metadata. If no ini file is supplied,
+        then no metadata and no column labels will be written to the output
+        file.
+
+  Internal methods
+    All of these methods return a Xray::BLA::Return object, which has two
+    attributes, and integer "status" to indicate the return status (1 is
+    normal in all cases here) and an string "message" containing a short
+    description of the exception (an empty string indicates no exception).
+
+    "check"
+        Confirm that the scan file and elastic image taken from the values
+        of "stub" and "energy" exist and can be read. Import an imaging
+        backend and perform checks to make sure that it can support the 32
+        bit tiff images.
+
+        This is the first thing done by the "mask" method and must be the
+        initial chore of any script using this library.
+
+          $spectrum -> check;
+
+    "import_elastic_image"
+        Import the file containing the elastic image and perform the first
+        pass in which bad pixels and weak pixels are removed from the image.
+
+          $spectrum -> import_elastic_image;
+
+        The intermediate image can be saved:
+
+          $spectrum -> import_elastic_image(write => "firstpass.tif");
+
+        The "message" attribute of the return object contains information
+        regarding mask creation to be displayed if the "verbose" argument to
+        "mask" is true.
+
+    "lonely_pixels"
+        Make the second pass over the elastic image. Remove illuminated
+        pixels which are not surrounded by enough other illuminated pixels.
+
+          $spectrum -> lonely_pixels;
+
+        The intermediate image can be saved:
+
+          $spectrum -> lonely_pixels(write => "secondpass.tif");
+
+        The "message" attribute of the return object contains information
+        regarding mask creation to be displayed if the "verbose" argument to
+        "mask" is true.
+
+    "social_pixels"
+        Make the third pass over the elastic image. Include dark pixels
+        which are surrounded by enough illuminated pixels.
+
+          $spectrum -> lonely_pixels;
+
+        The final mask image can be saved:
+
+          $spectrum -> lonely_pixels(write => "finalpass.tif");
+
+        The "message" attribute of the return object contains information
+        regarding mask creation to be displayed if the "verbose" argument to
+        "mask" is true.
+
+    "areal"
+        At each point in the mask, assign its value to the median or mean
+        value of a 3x3 square centered on that point.
+
+          $spectrum -> areal;
+
+        The final mask image can be saved:
+
+          $spectrum -> areal(write => "arealpass.tif");
+
+        The "message" attribute of the return object contains information
+        regarding mask creation to be displayed if the "verbose" argument to
+        "mask" is true.
+
+    "apply_mask"
+        Apply the mask to the image for a given data point to obtain the
+        HERFD signal for that data point.
+
+          $spectrum -> apply_mask($tif_number, verbose=>1)
+
+        The "status" of the return object contains the photon count from the
+        image for this data point.
+
+ERROR HANDLING
+    If the scan file or the elastic image cannot be found or cannot be read,
+    a program will die with a message to STDERR to that effect.
+
+    If an image file corresponding to a data point cannot be found or cannot
+    be read, a value of 0 will be written to the output file for that data
+    point and a warning will be printed to STDOUT.
+
+    Any warning or error message will contain the complete file name so that
+    the file naming or configuration mistake can be tracked down.
+
+    Errors interpreting the contents of an image file are probably not
+    handled well.
+
+    The output column data file is not written on the fly, so a run that
+    dies or is halted early will result in no output being written. The save
+    and animation images are written at the time the message is written to
+    STDOUT when the "verbose" switch is on.
+
+CONFIGURATION AND ENVIRONMENT
+    Using the scripts in the bin/ directory, file locations, elastic
+    energies, and mask parameters are specified in an ini-style
+    configuration file. An example is found in share/config.ini.
+
+    If using Xray::XDI, metadata can be supplied by an ini-style file. And
+    example is found in share/bla.xdi.ini.
+
+DEPENDENCIES
+  CPAN
+    *   Moose
+
+    *   MooseX::Aliases
+
+    *   Math::Round
+
+    *   Config::IniFiles
+
+    *   Imager or Image::Magick
+
+    *   Xray::XDI (optional)
+
+  Image Magick
+    As delivered to an Ubuntu system, Image Magick cannot handle the TIFF
+    files as written by the Pilatus 100K imagine detector. In order to be
+    able to use Image Magick, it must be recompiled with a larger bit depth.
+    This is done by downloading and unpacking the tarball, then doing
+
+          ./configure --with-quantum-depth=32
+
+    I also rebuilt the perl wrapper which comes with the Image Magick source
+    code. This also was a bit tricky. My Ubuntu system has perl 5.10.1 and
+    therefore has a libperl.5.10.1.so. It did not, however, have a
+    libperl.so symlinked to it. To get the perl wrapper to build, I had to
+    do
+
+          sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
+
+    Adjust the version number on the perl library as needed.
+
+    I have not been able to rebuild Image::Magick with Windows and MinGW.
+    Happily "Imager" works out of the box with MinGW and Strawberry Perl.
+
+BUGS AND LIMITATIONS
+    *   Other energy map output formats
+
+    *   bin with 2x2 or 3x3 bins
+
+    *   write images and animations to gif files
+
+    *   Other possible backends: PDL, Graphics::Magick, GD. PDL might be
+        faster but requires that netpbm be specially compiled.
+
+        Alternately, import images to a list of lists data structure and do
+        away with susequent calls to the image handling backend.
+
+    *   MooseX::MutatorAttributes or MooseX::GetSet would certainly be
+        nice....
+
+    *   It should not be necessary to specify the list of elastic energies
+        in the config file. The can be culled from the file names.
+
+    *   $step in "energy_mask" should be determined from actual list of
+        emission energies measured.
+
+    *   In the future, will need a more sophisticated mechanism for relating
+        "stub" to scan file and to image files -- some kind of templating
+        scheme, I suspect
+
+    *   Wouldn't it be awesome to have all the data&images stored in an HDF5
+        file?
+
+    Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
+
+    Patches are welcome.
+
+AUTHOR
+    Bruce Ravel (bravel AT bnl DOT gov)
+
+    <http://cars9.uchicago.edu/~ravel/software/>
+
+LICENCE AND COPYRIGHT
+    Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights
+    reserved.
+
+    This module is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself. See perlgpl.
+
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+

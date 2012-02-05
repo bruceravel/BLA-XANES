@@ -29,6 +29,7 @@ eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 
 ##with 'MooseX::SetGet';		# this is mine....
 
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1);
+has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1);
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
@@ -494,7 +495,7 @@ sub areal {
   my $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
 			      {freq => 's', base => 0, target=>$ncols});
   foreach my $co (0 .. $ncols) {
-    $counter->up;
+    $counter->up if $self->screen;
     foreach my $ro (0 .. $nrows) {
 
       my @neighborhood = ();
@@ -517,7 +518,7 @@ sub areal {
       $stat->clear;
     };
   };
-  $counter->close;
+  $counter->close if $self->screen;
   foreach my $point (@list) {
     $self->set_pixel($ei, $point->[0], $point->[1], $point->[2]);
   };
@@ -686,6 +687,7 @@ sub energy_map {
   $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
   local $|=1;
+  my $step = 2;
 
   my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (column %c of %m)',
 			      {freq => 's', base => 0, target=>$self->rows});
@@ -693,19 +695,20 @@ sub energy_map {
   open(my $M, '>', $outfile);
 
   foreach my $r (0 .. $self->rows-1) {
-    $counter->up;
+    $counter->up if $self->screen;
+
+    my @represented = map {[0]} (0 .. $self->columns-1);
+    my @linemap = map {0} (0 .. $self->columns-1);
+    my (@x, @y);
     my @all = ();
+
+    ## gather current row from each mask
     foreach my $ie (0 .. $#{$self->elastic_energies}) {
       my @y = $self->get_row($self->elastic_image_list->[$ie], $r);
       push @all, \@y;
     };
 
-
-    my @represented = map {[0]} (0 .. $self->columns-1);
-    my @linemap = map {0} (0 .. $self->columns-1);
-
-    my (@x, @y);
-
+    ## accumulate energies at which each pixel is illuminated
     my $stripe = 0;
     foreach my $list (@all) {
       foreach my $p (0 .. $#{$list}) {
@@ -716,14 +719,15 @@ sub energy_map {
       ++$stripe;
     };
 
+    ## make each pixel the average of energies at which the pixel is illuminated
     foreach my $i (0 .. $#represented) {
       my $n = sprintf("%.1f", $#{$represented[$i]});
       my $val = '(' . join('+', @{$represented[$i]}) . ')/' . $n;
       $linemap[$i] = eval "$val" || 0;
     };
 
-
-    $linemap[0] ||= $self->elastic_energies->[0]-2;
+    ## linearly interpolate from the left to fill in any gaps from the measured masks
+    $linemap[0] ||= $self->elastic_energies->[0]-$step;
     my $flag = 0;
     my $first = 0;
     foreach my $k (1 .. $#linemap) {
@@ -740,22 +744,26 @@ sub energy_map {
     };
     if ($flag) {
       my $emin = $linemap[$first-1];
-      my $ediff = 2; #$self->elastic_energies->[$#{$self->elastic_energies}] - $emin;
+      my $ediff = $step; # this should be the step between elastic measurements
       foreach my $j ($first .. $#linemap) {
 	$linemap[$j] = $emin + (($j-$first)/($#linemap-$first)) * $ediff;
       };
     };
 
+    ## do three-point smoothing to smooth over abrupt steps in energy
     my @zz = $self->smooth(4, \@linemap);
+
+    ## write this row
     foreach my $i (0..$#zz) {
       print $M "  $r  $i  $zz[$i]\n";
     };
     print $M $/;
   };
-  $counter->close;
+  $counter->close if $self->screen;
   close $M;
-  print $self->assert("Wrote map data to $outfile", 'bold green');
+  print $self->assert("Wrote map data to $outfile", 'bold green') if $args{verbose};
 
+  ## write a usable gnuplot script for plotting the data
   my $gpfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');
   my $gp = $self->gnuplot_map;
   my $tmpl = Text::Template->new(TYPE=>'string', SOURCE=>$gp)
@@ -768,9 +776,10 @@ sub energy_map {
 						stub  => $stub,
 						nrows => $self->rows,
 						ncols => $self->columns,
+						step  => $step,
 					       });
   close $G;
-  print $self->assert("Wrote gnuplot script to $gpfile", 'bold green');
+  print $self->assert("Wrote gnuplot script to $gpfile", 'bold green') if $args{verbose};
   return $ret;
 };
 
@@ -811,8 +820,8 @@ unset ztics
 unset zlabel
 set xrange [0:{$nrows}]
 set yrange [0:{$ncols}]
-set cbtics {$emin-2}, 4, {$emax+2}
-set cbrange [{$emin-2}:{$emax+2}]
+set cbtics {$emin-$step}, {2*$step}, {$emax+$step}
+set cbrange [{$emin-$step}:{$emax+$step}]
 
 set colorbox vertical size 0.025,0.65 user origin 0.03,0.15
 
@@ -1048,6 +1057,16 @@ same number of columns.  C<width> is an alias for C<columns>.
 When the elastic file is read, this is set with the number of rows in
 the image.  All images in the measurement are presumed to have the
 same number of rows.  C<height> is an alias for C<rows>.
+
+=item C<colored>
+
+This flag should be true to write colored text to the screen when
+methods are called with the verbose flag on.
+
+=item C<screen>
+
+This flag should be true when run from the command line so that
+progress messages are written to the screen.
 
 =back
 
@@ -1313,6 +1332,11 @@ MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 
 It should not be necessary to specify the list of elastic energies in
 the config file.  The can be culled from the file names.
+
+=item *
+
+C<$step> in C<energy_mask> should be determined from actual list of
+emission energies measured.
 
 =item *
 

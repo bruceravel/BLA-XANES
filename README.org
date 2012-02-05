@@ -56,7 +56,7 @@ wrapper script around the three bent Laue functions:
  2. ~rixs~: generate a sequence of HERFD spectra at a
     sequence of emission energies
 
- 3. ~bla-map~: convert a series of elastic images to an
+ 3. ~map~: convert a series of elastic images to an
     energy vs. pixel map
 
 *** The bla script
@@ -167,26 +167,26 @@ are illuminated by photons of that energy.
 For a given emission energy, the elastic image is read and processed
 in three steps:
 
- 1. Set the bad pixels (i.e. those with spuriously large values) to
-    zero.  The "spuriously large value" is defined as larger than the
-    bad pixel value from the configuration file.  Also remove all weak
-    pixels, i.e. those with fewer than some cutoff, defined by the
-    weak pixel value from the configuration file.
+  1. Set the bad pixels (i.e. those with spuriously large values) to
+     zero.  The "spuriously large value" is defined as larger than the
+     bad pixel value from the configuration file.  Also remove all weak
+     pixels, i.e. those with fewer than some cutoff, defined by the
+     weak pixel value from the configuration file.
 
- 2. lonely/social algorith,
+  2. lonely/social algorith,
 
-    + Remove all "lonely" pixels.  These are the pixels that are
-      illuminated but surrounded by fewer illuminated pixels than the
-      lonely pixel value in the configuration file.
+     + Remove all "lonely" pixels.  These are the pixels that are
+       illuminated but surrounded by fewer illuminated pixels than the
+       lonely pixel value in the configuration file.
 
-    + Add in all "social" pixels.  These are pixels which are dark, but
-      are surrounded by enough illuminated pixels (i.e. more than the
-      social pixel value from the configuration file) such that it, too,
-      should be illuminated.
+     + Add in all "social" pixels.  These are pixels which are dark, but
+       are surrounded by enough illuminated pixels (i.e. more than the
+       social pixel value from the configuration file) such that it, too,
+       should be illuminated.
 
- 3. areal meadin/mean algorithm
+  3. areal meadin/mean algorithm
 
-    + blah blah
+     + blah blah
 
 This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.

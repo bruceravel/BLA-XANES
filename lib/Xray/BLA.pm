@@ -2,7 +2,7 @@ package Xray::BLA;
 use Xray::BLA::Return;
 
 use version;
-our $VERSION = version->new('0.2');
+our $VERSION = version->new('0.3');
 
 use Moose;
 use Moose::Util qw(apply_all_roles);
@@ -408,7 +408,6 @@ sub lonely_pixels {
       };
     };
   };
-
 
   my $str = $self->assert("Second pass", 'cyan');
   $str   .= "\tRemoved $removed lonely pixels\n";
@@ -858,7 +857,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-0.2
+0.3
 
 =head1 SYNOPSIS
 
@@ -963,9 +962,10 @@ constructed from the value of C<stub>.
 =item C<tiffolder>
 
 The folder containing the image files.  The image file names are
-constructed from the value of C<stub>.
+constructed from the value of C<stub>.  C<tifffolder> (with 3 C<f>'s)
+is an alias.
 
-=item C<tiffolder>
+=item C<outfolder>
 
 The folder to which the processed file is written.  The processed file
 name is constructed from the value of C<stub>.
@@ -994,8 +994,8 @@ useful for testing than for actual data processing, although it gives
 a sense of what the data would look like using an integrating
 detector.)
 
-When using the areal median algorithm, you will get slightly better
-energy resolution if the C<weak_pixel_value> is not set to 0.
+When using the areal median algorithm, you may get slightly better
+energy resolution if the C<weak_pixel_value> is set E<gt> 0.
 
 =item C<operation>  [median]
 
@@ -1024,6 +1024,8 @@ fewer than this number of illuminated neighboring pixels are removed
 fropm the image.  This serves the prupose of removing most stray
 pixels not associated with the main image of the peak energy.
 
+This attribute is ignored by the areal median/mean algorithm.
+
 =item C<social_pixel_value> [2]
 
 In the third pass over the elastic image, dark pixels which are
@@ -1031,6 +1033,15 @@ surrounded by larger than this number of illuminated pixels are
 presumed to be a part of the image of the peak energy.  They are given
 a value of 5 counts.  This serves the prupose of making the elastic
 image a solid mask with few gaps in the image of the main peak.
+
+This attribute is ignored by the areal median/mean algorithm.
+
+=item C<radius> [2]
+
+This determines the size of the square used in the areal median/mean
+algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
+eadch direction.  A value of 2 means to use a 5x5 square.  Execution
+time is very sensistive to this value.
 
 =item C<elastic_file>
 
@@ -1119,6 +1130,14 @@ The C<xdiini> argument takes the filename of an ini-style
 configuration file for XDI metadata.  If no ini file is supplied, then
 no metadata and no column labels will be written to the output file.
 
+=item C<energy_map>
+
+Read the masks from each emission energy and interpolate them to make
+a map of pixel vs. energy.  This requires that each mask has already
+been generated from the measured elastic image.
+
+  $spectrum -> energy_map(verbose => $verbose);
+
 =back
 
 =head2 Internal methods
@@ -1191,7 +1210,8 @@ C<mask> is true.
 =item C<areal>
 
 At each point in the mask, assign its value to the median or mean
-value of a 3x3 square centered on that point.
+value of a square centered on that point.  The size of the square is
+determined by the value of the C<radius> attribute.
 
   $spectrum -> areal;
 

@@ -82,7 +82,7 @@ Xray::BLA::Backends::ImageMagick - Use Image::Magick as the BLA imagine handling
 
 =head1 VERSION
 
-0.2
+0.3
 
 =head1 DESCRIPTION
 
@@ -119,6 +119,14 @@ Get the value associated with a pixel.
 Set the value associated with a pixel.
 
   $val = $bla->set_pixel($image, $x, $y, 5);
+
+=item C<get_row>
+
+Get the values associated with a full row of pixel.
+
+  @vals = $bla->get_row($image, $y);
+
+NOT YET IMPLEMENTED IN THIS BACKEND
 
 =item C<get_columns>, C<get_width>
 

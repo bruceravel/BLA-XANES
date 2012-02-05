@@ -144,7 +144,10 @@ on your data.  You may wish to keep multiple configuration files
 around for different experiments, different edges, etc.
 
 The four items in the ~[pixel]~ section are used in mask creation, as
-explained below under "Mask".
+explained below under "Mask". ~maskmode~ is used to set the mask
+creation algorithm.  1 means to use the lonely/social algorithm, 2
+means to use the areal median/mean algorithm, 3 means to use the whole
+image except for the bad pixels.  2 is the default.
 
 *** Error checking
 
@@ -186,7 +189,8 @@ in three steps:
 
   3. areal meadin/mean algorithm
 
-     + blah blah
+     + Set each pixel to the median or mean value of the pixels in a
+       square centered at that pixel.
 
 This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.

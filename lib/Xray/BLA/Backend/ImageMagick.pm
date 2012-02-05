@@ -144,6 +144,10 @@ Get versioning information for Image::Magick.
 
 =item *
 
+Need to write get_row method
+
+=item *
+
 Write animate as a gif
 
 =back

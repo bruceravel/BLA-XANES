@@ -16,7 +16,7 @@ my $result  = GetOptions ('verbose|v'   => \$verbose,
 			  'config|c=s'  => \$configfile,
 			  'nocolor|n'   => \$nocolor,
 			  'quiet|q'     => sub { $verbose = 0 },
-			  'help|h'      => sub{ pod2usage(1); exit 0},
+			  'help|h'      => sub { pod2usage(1); exit 0},
 			 );
 
 pod2usage(1) && exit 1 if not $ARGV[0];
@@ -42,8 +42,7 @@ my @elastic = split(" ", $ini{measure}{emission});
 my $need_to_check = 0;
 foreach my $e (@elastic) {
   $spectrum -> energy($e);
-  my $file = $spectrum->mask_file("3", 'tif');
-  $file = $spectrum->mask_file("2", 'tif') if not -e $file;
+  my $file = $spectrum->mask_file("mask", 'tif');
   if (not -e $file) {
     $spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
   } elsif (not $reuse) {
@@ -53,7 +52,13 @@ foreach my $e (@elastic) {
   };
   $spectrum -> push_elastic_file_list($file);
 };
-$spectrum->check, $spectrum -> import_elastic_image if $need_to_check;
+if ($need_to_check) {
+  my $ret = $spectrum -> check;
+  if ($ret->status == 0) {
+    die $spectrum->assert($ret->message, 'bold red');
+  };
+  $spectrum -> import_elastic_image;
+};
 my @images = map {$spectrum->read_image($_)} @{$spectrum->elastic_file_list};
 $spectrum->elastic_image_list(\@images);
 $spectrum->elastic_energies(\@elastic);
@@ -90,7 +95,8 @@ output locations on disk and other information.
 
 =item B<--reuse>, B<-r>
 
-Reuse mask files if found in output folder.
+Reuse mask files if found in output folder.  This may happen, for
+instance, if the rixs program has already been run.
 
 =item B<--verbose>, B<-v>   (Default)
 
@@ -134,8 +140,8 @@ contain signal related to specific emission energies.
 
 =back
 
-This software uses perl and Image Magick to process the images into a
-high resolution XANES spectrum.
+This software uses perl and Imager or Image Magick to process the
+images into a high resolution XANES spectrum.
 
 =cut
 

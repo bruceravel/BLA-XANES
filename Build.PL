@@ -19,6 +19,7 @@ my $build = Module::Build
 				#'Xray::XDI'                 => 0,
 				'Statistics::Descriptive'   => 0,
 				'Term::Sk'                  => '0.07',
+				'Text::Template'            => 0,
 			       },
 	 recommends         => {
 				'Image::Magick'             => 0,

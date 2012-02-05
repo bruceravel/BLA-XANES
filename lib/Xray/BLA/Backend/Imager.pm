@@ -51,6 +51,14 @@ sub set_pixel {
   $image->setpixel(x=>$x, y=>$y, color=>Imager::Color::Float->new($value/BIT_DEPTH, 0, 0));
 };
 
+
+sub get_row {
+  my ($self, $image, $y) = @_;
+  my @colors = $image->getscanline(y=>$y, type=>'float');
+  my @y = map { my @rgba = $_->rgba; $rgba[0]*BIT_DEPTH } @colors;
+  return @y;
+};
+
 sub get_columns {
   my ($self, $image) = @_;
   return $image->getwidth;

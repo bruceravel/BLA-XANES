@@ -10,10 +10,12 @@ use Moose::Util qw(apply_all_roles);
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
 
+use File::Copy;
 use File::Path;
 use File::Spec;
 use Statistics::Descriptive;
 use Term::Sk;
+use Text::Template;
 
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
@@ -224,11 +226,11 @@ sub mask {
     print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
-    my $fname = $self->mask_file("*", 'tif');
-    print $self->assert("Saved stages of mask creation to $fname", 'yellow'), "\n" if $args{verbose};
-  } else {
-    unlink $_ foreach @out;
+    my $fname = $self->mask_file("mask", 'tif');
+    print $self->assert("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
+    copy($out[$#out], $fname);
   };
+  unlink $_ foreach @out;
 };
 
 sub check {
@@ -540,7 +542,8 @@ sub areal {
 sub mask_file {
   my ($self, $which, $type) = @_;
   $type ||= 'tif';
-  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask_$which").'.');
+  my $id = ($which eq 'mask') ? q{} : "_$which";
+  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
   $fname .= $type;
   return $fname;
 };
@@ -677,7 +680,6 @@ sub apply_mask {
 };
 
 
-## TODO: * abstract out line 697,698
 sub energy_map {
   my ($self, @args) = @_;
   my %args = @args;
@@ -694,8 +696,7 @@ sub energy_map {
     $counter->up;
     my @all = ();
     foreach my $ie (0 .. $#{$self->elastic_energies}) {
-      my @colors = $self->elastic_image_list->[$ie]->getscanline(y=>$r, type=>'float');
-      my @y = map { my @rgba = $_->rgba; $rgba[0]*2**32 } @colors;
+      my @y = $self->get_row($self->elastic_image_list->[$ie], $r);
       push @all, \@y;
     };
 
@@ -721,15 +722,28 @@ sub energy_map {
       $linemap[$i] = eval "$val" || 0;
     };
 
-    foreach my $k (0 .. $#linemap) {
-      next if $linemap[$k] > 0;
-      $linemap[$k] = $self->elastic_energies->[0]-2;
-    };
+
+    $linemap[0] ||= $self->elastic_energies->[0]-2;
     my $flag = 0;
-    foreach my $k (0 .. $#linemap) {
-      $flag = 1 if $linemap[$k] > $self->elastic_energies->[0];
-      next if $linemap[$k] >= $self->elastic_energies->[0];
-      $linemap[$k] = $self->elastic_energies->[$#{$self->elastic_energies}]+2 if $flag;
+    my $first = 0;
+    foreach my $k (1 .. $#linemap) {
+      $flag = 1 if ($linemap[$k] == 0);
+      $first = $k if not $flag;
+      if ($flag and ($linemap[$k] > 0)) {
+	my $emin = $linemap[$first-1];
+	my $ediff = $linemap[$k] - $emin;
+	foreach my $j ($first .. $k-1) {
+	  $linemap[$j] = $emin + (($j-$first)/($k-$first)) * $ediff;
+	};
+	$flag = 0;
+      };
+    };
+    if ($flag) {
+      my $emin = $linemap[$first-1];
+      my $ediff = 2; #$self->elastic_energies->[$#{$self->elastic_energies}] - $emin;
+      foreach my $j ($first .. $#linemap) {
+	$linemap[$j] = $emin + (($j-$first)/($#linemap-$first)) * $ediff;
+      };
     };
 
     my @zz = $self->smooth(4, \@linemap);
@@ -741,11 +755,22 @@ sub energy_map {
   $counter->close;
   close $M;
   print $self->assert("Wrote map data to $outfile", 'bold green');
-  $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');
-  open(my $G, '>', $outfile);
-  print $G $self->gnuplot_map;
+
+  my $gpfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');
+  my $gp = $self->gnuplot_map;
+  my $tmpl = Text::Template->new(TYPE=>'string', SOURCE=>$gp)
+    or die "Couldn't construct template: $Text::Template::ERROR";
+  open(my $G, '>', $gpfile);
+  (my $stub = $self->stub) =~ s{_}{\\\\_}g;
+  print $G my $string = $tmpl->fill_in(HASH => {emin  => $self->elastic_energies->[0],
+						emax  => $self->elastic_energies->[$#{$self->elastic_energies}],
+						file  => $outfile,
+						stub  => $stub,
+						nrows => $self->rows,
+						ncols => $self->columns,
+					       });
   close $G;
-  print $self->assert("Wrote gnuplot script to $outfile", 'bold green');
+  print $self->assert("Wrote gnuplot script to $gpfile", 'bold green');
   return $ret;
 };
 
@@ -768,15 +793,14 @@ sub smooth {
 
 sub gnuplot_map {
   my ($self) = @_;
-  my $text = "set term wxt enhanced
+  my $text = q<set term wxt font ",9"  enhanced
 
 set auto
 set key default
 set pm3d map
 
-set title '{/=14 __stub__ energy map}' offset 0,-5
-set ylabel '{/=11 columns}' offset 0,2.5
-#set xlabel '{/=11 rows}' rotate by 90
+set title "\{/=14 {$stub} energy map\}" offset 0,-5
+set ylabel "\{/=11 columns\}" offset 0,2.5
 
 set view 0,90,1,1
 set origin -0.17,-0.2
@@ -785,23 +809,28 @@ unset grid
 
 unset ztics
 unset zlabel
-set xrange [0:194]
-set yrange [0:486]
-set cbtics 9701, 4, 9721
-set cbrange [9701:9721]
+set xrange [0:{$nrows}]
+set yrange [0:{$ncols}]
+set cbtics {$emin-2}, 4, {$emax+2}
+set cbrange [{$emin-2}:{$emax+2}]
 
-set colorbox vertical size 0.025,0.7 user origin 0.03,0.15
+set colorbox vertical size 0.025,0.65 user origin 0.03,0.15
 
-set palette model RGB defined (0 '#990000', 1 'red', 2 'orange', 3 'yellow', 4 'green', 5 '#009900', 6 '#006633', 7 '#0066DD', 8 '#000099')
+set palette model RGB defined ( -1 'red', 0 'white', 1 'blue' )
 
-splot '__file__' title ''
-";
-  my $file = File::Spec->catfile($self->outfolder, $self->stub.'.map');
-  $text =~ s{__file__}{$file};
-  my $stub = $self->stub;
-  $text =~ s{__stub__}{$stub};
+splot '{$file}' title ''
+>;
   return $text;
 };
+
+## heat scale
+#set palette model RGB defined ( -1 'black', 0 'red', 1 'yellow', 2 'white' )
+
+## undersaturated rainbow
+#set palette model RGB defined (0 '#990000', 1 'red', 2 'orange', 3 'yellow', 4 'green', 5 '#009900', 6 '#006633', 7 '#0066DD', 8 '#000099')
+
+## gray scale
+#set palette model RGB defined ( 0 'black', 1 'white' )
 
 
 sub assert {
@@ -947,12 +976,14 @@ order to scan the off-axis portion of the spectrum.
 
 C<peak_energy> is an alias for C<energy>.
 
-=item C<maskmode>  [1]
+=item C<maskmode>  [2]
 
 This chooses the mask creation algorithm.  1 means to use the
 lonely/social algorithm.  2 means to use the areal median algorithm.
 3 means to use the whole image except for the bad pixels.  (#3 is more
-useful for testing than actuall data processing.)
+useful for testing than for actual data processing, although it gives
+a sense of what the data would look like using an integrating
+detector.)
 
 When using the areal median algorithm, you will get slightly better
 energy resolution if the C<weak_pixel_value> is not set to 0.
@@ -1167,7 +1198,7 @@ image for this data point.
 
 =head1 ERROR HANDLING
 
-If the scan file or the eleastic image cannot be found or cannot be
+If the scan file or the elastic image cannot be found or cannot be
 read, a program will die with a message to STDERR to that effect.
 
 If an image file corresponding to a data point cannot be found or
@@ -1256,7 +1287,7 @@ Strawberry Perl.
 
 =item *
 
-Option to save final mask, which is needed for map creation
+Other energy map output formats
 
 =item *
 
@@ -1271,6 +1302,9 @@ write images and animations to gif files
 Other possible backends: PDL, Graphics::Magick, GD.  PDL might be
 faster but requires that netpbm be specially compiled.
 
+Alternately, import images to a list of lists data structure and do
+away with susequent calls to the image handling backend.
+
 =item *
 
 MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
@@ -1278,13 +1312,18 @@ MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 =item *
 
 It should not be necessary to specify the list of elastic energies in
-the config file
+the config file.  The can be culled from the file names.
 
 =item *
 
 In the future, will need a more sophisticated mechanism for relating
 C<stub> to scan file and to image files -- some kind of templating
 scheme, I suspect
+
+=item *
+
+Wouldn't it be awesome to have all the data&images stored in an HDF5
+file?
 
 =back
 

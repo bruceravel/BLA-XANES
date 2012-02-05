@@ -47,10 +47,11 @@ ignore the warning about Image::Magick being missing.
 
 ** Usage
 
-There are two programs installed from the bin/ folder.  ~herfd~ is
+There are three programs installed from the bin/ folder.  ~herfd~ is
 used to make a single HERFD spectrum at a specific emission energy.
 ~rixs~ is used to generate a sequence of HERFD spectra at a sequence
-of emission energies.
+of emission energies.  ~bla-map~ is used to convert a series of
+elastic images to an energy vs. pixel map.
 
 *** The herfd script
 
@@ -59,7 +60,7 @@ of emission energies.
 :     --config  | -c         [string]  configuration file (required)
 :     --energy  | -e         [integer] emission energy (required)
 :     --animate | -a         [flag]    save tiff animation of mask creation
-:     --save    | -s         [flag]    save intermediate steps of mask creation
+:     --save    | -s         [flag]    save tiff with mask
 :     --verbose | -v         [flag]    write progress messages
 :     --nocolor | -n         [flag]    turn off color coding of screen output
 :     --quiet   | -q         [flag]    suppress progress messages
@@ -86,7 +87,7 @@ demonstrated.
 :
 :     --config  | -c         [string]  configuration file (required)
 :     --animate | -a         [flag]    save tiff animation of mask creation
-:     --save    | -s         [flag]    save intermediate steps of mask creation
+:     --save    | -s         [flag]    save tiff with mask
 :     --verbose | -v         [flag]    write progress messages
 :     --nocolor | -n         [flag]    turn off color coding of screen output
 :     --quiet   | -q         [flag]    suppress progress messages
@@ -103,6 +104,32 @@ configuration file.
 
 :  example:  rixs -c /path/to/config.ini -a Aufoil1
 
+*** The bla-map script
+
+:  bla-map [options] <stub>
+:
+:     --config  | -c         [string]  configuration file (required)
+:     --reuse   | -r         [flag]    reuse mask files if found in outfolder
+:     --verbose | -v         [flag]    write progress messages
+:     --nocolor | -n         [flag]    turn off color coding of screen output
+:     --quiet   | -q         [flag]    suppress progress messages
+:     --help    | -h         [flag]    write this message and exit
+
+The ~rixs~ script assumes that the image files are named
+~<stub>_<energy>_00001.tif~.  The ~<stub>~ in the image file name
+indicates common part of the name of the files associated with the
+measurement.  The ~<energy>~ part is the energy of the incident beam.
+If your elastic image files do not follow this patterns, this script
+will fail.  Masks are created from the elastic images at each emission
+energy.  File locations are specified in the configuration file.
+
+:  example:  bla-map -c /path/to/config.ini Aufoil1
+
+The output of this program is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]] which can
+be read by gnuplot and a gnuplot script for displaying the data.  The
+resulting image will plot a map of detector column vs detector row
+with the color axis showing energy.
+
 *** The configuration file
 
 The configuration file is in the Windows-style ini format.  Here is an
@@ -115,10 +142,12 @@ example.
 :   outfolder  = /home/bruce/Data/NIST/10ID/2011.12/processed
 :
 :   [pixel]
+:   maskmode = 2
 :   bad    = 400
 :   weak   = 2
 :   lonely = 2
 :   social = 2
+:   radius = 2
 
 The ~emission~ item, which is not used by the ~herfd~ script, contains
 the list of emission energies at which to generate HERFD spectra.  The
@@ -161,19 +190,25 @@ in three steps:
     pixels, i.e. those with fewer than some cutoff, defined by the
     weak pixel value from the configuration file.
 
- 2. Remove all "lonely" pixels.  These are the pixels that are
-    illuminated but surrounded by fewer illuminated pixels than the
-    lonely pixel value in the configuration file.
+ 2. lonely/social algorith,
 
- 3. Add in all "social" pixels.  These are pixels which are dark, but
-    are surrounded by enough illuminated pixels (i.e. more than the
-    social pixel value from the configuration file) such that it, too,
-    should be illuminated.
+    + Remove all "lonely" pixels.  These are the pixels that are
+      illuminated but surrounded by fewer illuminated pixels than the
+      lonely pixel value in the configuration file.
+
+    + Add in all "social" pixels.  These are pixels which are dark, but
+      are surrounded by enough illuminated pixels (i.e. more than the
+      social pixel value from the configuration file) such that it, too,
+      should be illuminated.
+
+ 3. areal meadin/mean algorithm
+
+    + blah blah
 
 This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.
 
-When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, a
+When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, a 3- or
 4-frame animated tiff file will be written which shows the steps from
 elastic image to final mask.
 

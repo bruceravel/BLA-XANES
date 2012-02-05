@@ -22,7 +22,7 @@ my $result  = GetOptions ("energy|e=i"  => \$energy,
 			  'xdiini|x=s'  => \$xdiini,
 			  'nocolor|n'   => \$nocolor,
 			  'quiet|q'     => sub { $verbose = 0 },
-			  'help|h'      => sub{ pod2usage(1); exit 0},
+			  'help|h'      => sub { pod2usage(1); exit 0},
 			 );
 
 pod2usage(1) && exit 1 if not $ARGV[0];
@@ -63,7 +63,7 @@ herfd [options] <stub>
      --config  | -c   [string]  configuration file (required)
      --energy  | -e   [integer] emission energy (required)
      --animate | -a   [flag]    save tiff animation of mask creation
-     --save    | -s   [flag]    save intermediate steps of mask creation
+     --save    | -s   [flag]    save tiff with mask
      --verbose | -v   [flag]    write progress messages
      --nocolor | -n   [flag]    turn off color coding of screen output
      --quiet   | -q   [flag]    suppress progress messages
@@ -88,7 +88,7 @@ Write an animated tiff showing the steps of mask creation.
 
 =item B<--save>, B<-s>
 
-Write individual tiff files showing the steps of mask creation.
+Write a tiff file showing the mask.
 
 =item B<--verbose>, B<-v>   (Default)
 
@@ -132,7 +132,7 @@ contain signal related to specific emission energies.
 
 =back
 
-This software uses perl and Image Magick to process the images into a
-high resolution XANES spectrum.
+This software uses perl and Imager or Image Magick to process the
+images into a high resolution XANES spectrum.
 
 =cut

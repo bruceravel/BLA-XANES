@@ -47,27 +47,36 @@ ignore the warning about Image::Magick being missing.
 
 ** Usage
 
-There are three programs installed from the bin/ folder.  ~herfd~ is
-used to make a single HERFD spectrum at a specific emission energy.
-~rixs~ is used to generate a sequence of HERFD spectra at a sequence
-of emission energies.  ~bla-map~ is used to convert a series of
-elastic images to an energy vs. pixel map.
+There is a single programs installed from the bin/ folder.  ~bla~ is a
+wrapper script around the three bent Laue functions:
 
-*** The herfd script
+ 1. ~herfd~: make a single HERFD spectrum at a specific
+    emission energy
 
-:  herfd [options] <stub>
+ 2. ~rixs~: generate a sequence of HERFD spectra at a
+    sequence of emission energies
+
+ 3. ~bla-map~: convert a series of elastic images to an
+    energy vs. pixel map
+
+*** The bla script
+
+:  bla herfd [ceasvnqh] <stub>
+:  bla rixs  [casvnqh]  <stub>
+:  bla map   [crvnqh]   <stub>
 :
-:     --config  | -c         [string]  configuration file (required)
-:     --energy  | -e         [integer] emission energy (required)
-:     --animate | -a         [flag]    save tiff animation of mask creation
-:     --save    | -s         [flag]    save tiff with mask
-:     --verbose | -v         [flag]    write progress messages
-:     --nocolor | -n         [flag]    turn off color coding of screen output
-:     --quiet   | -q         [flag]    suppress progress messages
-:     --help    | -h         [flag]    write this message and exit
+:     --config  | -c    [string]  configuration file (required)
+:     --energy  | -e    [integer] emission energy (required for HERFD)
+:     --reuse   | -r    [flag]    reuse mask files for energy mnap if in outfolder
+:     --animate | -a    [flag]    save tiff animation of mask creation
+:     --save    | -s    [flag]    save tiff with mask
+:     --verbose | -v    [flag]    write progress messages
+:     --nocolor | -n    [flag]    turn off color coding of screen output
+:     --quiet   | -q    [flag]    suppress progress messages
+:     --help    | -h    [flag]    write this message and exit
 
   
-The ~herfd~ script assumes that scan files and image files have
+The ~bla~ script assumes that scan files and image files have
 related names.  In this example, the scan file is called ~Aufoil1.001~
 and the image files are called ~Aufoil1_NNNNN.tif~.  The ~NNNNN~ in
 the image file name indicates the data point and is reflected in one
@@ -75,60 +84,34 @@ of the columns of the scan file.  If your data do not follow these
 patterns, this script will fail.  File locations are specified in the
 configuration file.
 
-:  example:  herfd -c /path/to/config.ini -e 9713 -a Aufoil1
+:  examples:  bla herfd -c /path/to/config.ini -e 9713 -a Aufoil1
+:             bla rixs -c /path/to/config.ini -a Aufoil1
+:             bla map -c /path/to/config.ini Aufoil1
+
 
 Here, "Aufoil1" is the stub, i.e. the basename of the scan and image
 files, and the ~-c~, ~-e~, and ~-a~ command line options are
 demonstrated.
 
-*** The rixs script
+Options that are not used by a function (for example ~-e~ for ~rixs~
+or ~map~, or ~-a~ for ~map~) will be silently ignored.
 
-:  rixs [options] <stub>
-:
-:     --config  | -c         [string]  configuration file (required)
-:     --animate | -a         [flag]    save tiff animation of mask creation
-:     --save    | -s         [flag]    save tiff with mask
-:     --verbose | -v         [flag]    write progress messages
-:     --nocolor | -n         [flag]    turn off color coding of screen output
-:     --quiet   | -q         [flag]    suppress progress messages
-:     --help    | -h         [flag]    write this message and exit
+~-c~ is required for all functions.
 
-The ~rixs~ script assumes that scan files and image files have related
-names.  In this example, the scan file is called ~Aufoil1.001~ and the
-image files are called ~Aufoil1_NNNNN.tif~.  The ~NNNNN~ in the image
-file name indicates the data point and is reflected in one of the
-columns of the scan file.  If your data do not follow these patterns,
-this script will fail.  Masks are created from the elastic images at
-each emission energy.  File locations are specified in the
-configuration file.
+*** Output
 
-:  example:  rixs -c /path/to/config.ini -a Aufoil1
+ + The output of the ~herfd~ script is a data file containing the
+   HERFD spectrum at the specified eminssion energy and, if requested,
+   tiff images with the mask and the mask creation animation.
 
-*** The bla-map script
+ + The output of the ~rixs~ script is the same as for the ~herfd~
+   script at each emission energy.
 
-:  bla-map [options] <stub>
-:
-:     --config  | -c         [string]  configuration file (required)
-:     --reuse   | -r         [flag]    reuse mask files if found in outfolder
-:     --verbose | -v         [flag]    write progress messages
-:     --nocolor | -n         [flag]    turn off color coding of screen output
-:     --quiet   | -q         [flag]    suppress progress messages
-:     --help    | -h         [flag]    write this message and exit
-
-The ~rixs~ script assumes that the image files are named
-~<stub>_<energy>_00001.tif~.  The ~<stub>~ in the image file name
-indicates common part of the name of the files associated with the
-measurement.  The ~<energy>~ part is the energy of the incident beam.
-If your elastic image files do not follow this patterns, this script
-will fail.  Masks are created from the elastic images at each emission
-energy.  File locations are specified in the configuration file.
-
-:  example:  bla-map -c /path/to/config.ini Aufoil1
-
-The output of this program is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]] which can
-be read by gnuplot and a gnuplot script for displaying the data.  The
-resulting image will plot a map of detector column vs detector row
-with the color axis showing energy.
+ + The output of the ~map~ program is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
+   which can be read by gnuplot and a gnuplot script for displaying
+   the data.  The resulting image will plot a map of detector column
+   vs detector row with the color axis showing energy.  Tiff files for
+   the masks at each emission energy are also written.
 
 *** The configuration file
 
@@ -149,10 +132,10 @@ example.
 :   social = 2
 :   radius = 2
 
-The ~emission~ item, which is not used by the ~herfd~ script, contains
-the list of emission energies at which to generate HERFD spectra.  The
-other three items are the locations of the scan files, the image
-files, and the output files.
+The ~emission~ item, which is not used by the ~herfd~ function,
+contains the list of emission energies at which to generate HERFD
+spectra.  The other three items are the locations of the scan files,
+the image files, and the output files.
 
 This configuration file can sit anywhere on disk and *must* be
 specified at the command line for either script.  I would recommend

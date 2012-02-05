@@ -11,23 +11,26 @@ my $energy     = 0;
 my $verbose    = 1;
 my $save       = 0;
 my $animate    = 0;
+my $reuse      = 0;
 my $nocolor    = 0;
 my $configfile = q{};
 my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
-my $result  = GetOptions ("energy|e=i"  => \$energy,
-			  'save|s'      => \$save,
-			  'animate|a'   => \$animate,
-			  'verbose|v'   => \$verbose,
-			  'config|c=s'  => \$configfile,
-			  'xdiini|x=s'  => \$xdiini,
-			  'nocolor|n'   => \$nocolor,
-			  'quiet|q'     => sub { $verbose = 0 },
-			  'help|h'      => sub { pod2usage(1); exit 0},
-			 );
+my $result     = GetOptions ("energy|e=i"  => \$energy,
+			     'reuse|r'     => \$reuse,
+			     'save|s'      => \$save,
+			     'animate|a'   => \$animate,
+			     'verbose|v'   => \$verbose,
+			     'config|c=s'  => \$configfile,
+			     'xdiini|x=s'  => \$xdiini,
+			     'nocolor|n'   => \$nocolor,
+			     'quiet|q'     => sub { $verbose = 0 },
+			     'help|h'      => sub { pod2usage(1); exit 0},
+			    );
 
-pod2usage(1) && exit 1 if not $ARGV[0];
+my $mode = $ARGV[0];
+
+pod2usage(1) && exit 1 if not $ARGV[1];
 pod2usage(1) && exit 1 if not $configfile;
-pod2usage(1) && exit 1 if not $energy;
 
 tie my %ini, 'Config::IniFiles', ( -file => $configfile );
 
@@ -35,8 +38,7 @@ my $spectrum = Xray::BLA->new();
 $spectrum -> scanfolder	($ini{measure}{scanfolder});
 $spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
-$spectrum -> stub       ($ARGV[0]);
-$spectrum -> energy($energy);
+$spectrum -> stub       ($ARGV[1]);
 $spectrum -> colored(0) if $nocolor;
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})      if exists $ini{pixel}{bad};
@@ -46,22 +48,70 @@ $spectrum -> social_pixel_value($ini{pixel}{social})   if exists $ini{pixel}{soc
 $spectrum -> maskmode          ($ini{pixel}{maskmode}) if exists $ini{pixel}{maskmode};
 $spectrum -> radius            ($ini{pixel}{radius})   if exists $ini{pixel}{radius};
 
-$spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
-$spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+my @elastic = split(" ", $ini{measure}{emission});
+
+if ($mode eq 'herfd') {
+  pod2usage(1) && exit 1 if not $energy;
+  $spectrum -> energy($energy);
+  $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
+  $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+
+} elsif ($mode eq 'rixs') {
+  foreach my $e (@elastic) {
+    $spectrum -> energy($e);
+    $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+    $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+  };
+
+} elsif ($mode eq 'map') {
+  my $need_to_check = 0;
+  foreach my $e (@elastic) {
+    $spectrum -> energy($e);
+    my $file = $spectrum->mask_file("mask", 'tif');
+    if (not -e $file) {
+      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
+    } elsif (not $reuse) {
+      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
+    } else {
+      $need_to_check = 1;
+    };
+    $spectrum -> push_elastic_file_list($file);
+  };
+  if ($need_to_check) {
+    my $ret = $spectrum -> check;
+    if ($ret->status == 0) {
+      die $spectrum->assert($ret->message, 'bold red');
+    };
+    $spectrum -> import_elastic_image;
+  };
+  my @images = map {$spectrum->read_image($_)} @{$spectrum->elastic_file_list};
+  $spectrum->elastic_image_list(\@images);
+  $spectrum->elastic_energies(\@elastic);
+
+  $spectrum -> energy_map(verbose => $verbose);
+
+} else {
+  pod2usage(1);
+  exit 1;
+
+};
 
 exit 0;
 
 =head1 NAME
 
-herfd - convert a sequence of BLA image to a XANES spectrum at a specified emission energy
+bla - wrapper script for bent Laue analyzer HERFD, RIXS, and energy map functions
 
 =head1 SYNOPSIS
 
-herfd [options] <stub>
+ bla herfd [options] <stub>
+ bla rixs  [options] <stub>
+ bla map   [options] <stub>
 
  Options:
      --config  | -c   [string]  configuration file (required)
-     --energy  | -e   [integer] emission energy (required)
+     --energy  | -e   [integer] emission energy for HERFD (required for HERFD)
+     --reuse   | -r   [flag]    reuse mask files for map if found in outfolder
      --animate | -a   [flag]    save tiff animation of mask creation
      --save    | -s   [flag]    save tiff with mask
      --verbose | -v   [flag]    write progress messages
@@ -78,9 +128,15 @@ herfd [options] <stub>
 Specify the location of the ini-style config file giving the input and
 output locations on disk and other information.
 
-=item B<--energy>, B<-e>  (Required)
+=item B<--energy>, B<-e>  (Required for HERFD)
 
 The emission energy at which to compute the XANES spectrum.
+
+=item B<--reuse>, B<-r>
+
+Reuse mask files for making energy map if they are found in output
+folder.  This may happen, for instance, if the rixs function has
+already been run.
 
 =item B<--animate>, B<-a>
 
@@ -109,6 +165,23 @@ Print this help message and exit.
 =back
 
 =head1 DESCRIPTION
+
+=over 4
+
+=item herfd
+
+Convert a sequence of BLA image to a XANES spectrum at a specified
+emission energy.
+
+=item rixs
+
+Convert BLA image to XANES spectrum at a sequence of emission energies.
+
+=item map
+
+Convert a sequence of BLA elastic images to an energy map.
+
+=back
 
 A measurement set consists of
 

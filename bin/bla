@@ -40,6 +40,8 @@ $spectrum -> tifffolder	($ini{measure}{tiffolder});
 $spectrum -> outfolder	($ini{measure}{outfolder});
 $spectrum -> stub       ($ARGV[1]);
 $spectrum -> colored(0) if $nocolor;
+$spectrum -> element	($ini{measure}{element});
+$spectrum -> line	($ini{measure}{line});
 
 $spectrum -> bad_pixel_value   ($ini{pixel}{bad})      if exists $ini{pixel}{bad};
 $spectrum -> weak_pixel_value  ($ini{pixel}{weak})     if exists $ini{pixel}{weak};

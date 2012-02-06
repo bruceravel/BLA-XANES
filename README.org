@@ -123,6 +123,8 @@ example.
 :   scanfolder = /home/bruce/Data/NIST/10ID/2011.12/scans
 :   tiffolder  = /home/bruce/Data/NIST/10ID/2011.12/tiffs
 :   outfolder  = /home/bruce/Data/NIST/10ID/2011.12/processed
+:   element    = Au
+:   line       = La1
 :
 :   [pixel]
 :   maskmode = 2

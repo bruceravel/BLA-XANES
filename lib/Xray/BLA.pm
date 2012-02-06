@@ -16,6 +16,7 @@ use File::Spec;
 use Statistics::Descriptive;
 use Term::Sk;
 use Text::Template;
+use Xray::Absorption;
 
 use vars qw($XDI_exists);
 $XDI_exists = eval "require Xray::XDI" || 0;
@@ -27,6 +28,9 @@ eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 
 
 ##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
+
+has 'element'            => (is => 'rw', isa => 'Str', default => q{});
+has 'line'               => (is => 'rw', isa => 'Str', default => q{});
 
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1);
 has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1);
@@ -733,7 +737,7 @@ sub energy_map {
       $flag = 1 if ($linemap[$k] == 0);
       $first = $k if not $flag;
       if ($flag and ($linemap[$k] > 0)) {
-	my $emin = $linemap[$first-1];
+	my $emin = $linemap[$first];
 	my $ediff = $linemap[$k] - $emin;
 	foreach my $j ($first .. $k-1) {
 	  $linemap[$j] = $emin + (($j-$first)/($k-$first)) * $ediff;
@@ -769,6 +773,8 @@ sub energy_map {
     or die "Couldn't construct template: $Text::Template::ERROR";
   open(my $G, '>', $gpfile);
   (my $stub = $self->stub) =~ s{_}{\\\\_}g;
+  my $peak = Xray::Absorption->get_energy($self->element, $self->line)
+    || ( ($self->elastic_energies->[$#{$self->elastic_energies}]+$self->elastic_energies->[0]) /2 );
   print $G my $string = $tmpl->fill_in(HASH => {emin  => $self->elastic_energies->[0],
 						emax  => $self->elastic_energies->[$#{$self->elastic_energies}],
 						file  => $outfile,
@@ -776,16 +782,36 @@ sub energy_map {
 						nrows => $self->rows,
 						ncols => $self->columns,
 						step  => $step,
+						peak  => $peak,
 					       });
   close $G;
   print $self->assert("Wrote gnuplot script to $gpfile", 'bold green') if $args{verbose};
   return $ret;
 };
 
+
+# ## snarf (quietly!) the list of energies from the list used for the
+# ## next_energy function in Xray::Absoprtion::Elam
+# my $hash;
+# do {
+#   no warnings;
+#   $hash = $$Xray::Absorption::Elam::r_elam{line_list};
+# };
+# my @line_list = ();
+# foreach my $key (keys %$hash) {
+#   next unless exists $$hash{$key}->[2];
+#   next unless ($$hash{$key}->[2] > 100);
+#   push @line_list, $$hash{$key};
+# };
+# ## and sort by increasing energy
+# @line_list = sort {$a->[2] <=> $b->[2]} @line_list;
+
+
 ## swiped from ifeffit-1.2.11d/src/lib/decod.f, lines 453-461
 sub smooth {
   my ($self, $repeats, $rarr) = @_;
   my @array = @$rarr;
+  return @array if ($repeats == 0);
   my @smoothed = ();
   foreach my $x (1 .. $repeats) {
     $smoothed[0] = 3*$array[0]/4.0 + $array[1]/4.0;
@@ -824,7 +850,7 @@ set cbrange [{$emin-$step}:{$emax+$step}]
 
 set colorbox vertical size 0.025,0.65 user origin 0.03,0.15
 
-set palette model RGB defined ( -1 'red', 0 'white', 1 'blue' )
+set palette model RGB defined ( {$emin-$step-$peak} 'red', 0 'white', {$emax+$step-$peak} 'blue' )
 
 splot '{$file}' title ''
 >;
@@ -948,6 +974,18 @@ The basename of the scan and image files.  The scan file is called
 C<E<lt>stubE<gt>.001>, the image files are called
 C<E<lt>stubE<gt>_NNNNN.tif>, and the processed column data files are
 called C<E<lt>stubE<gt>_E<lt>energyE<gt>.001>.
+
+=item C<element>
+
+The element of the absorber.  This is currently only used when making
+the energy v. pixel map.  This can be a two-letter element symbol, a Z
+number, or an element name in English (e.g. Au, 79, or gold).
+
+=item <line>
+
+The measured emission line.  This is currently only used when making
+the energy v. pixel map.  This can be a Siegbahn (e.g. La1 or Lalpha1)
+or IUPAC symbol (e.g. L3-M5).
 
 =item C<scanfile>
 
@@ -1357,6 +1395,11 @@ the config file.  The can be culled from the file names.
 
 C<$step> in C<energy_mask> should be determined from actual list of
 emission energies measured.
+
+=item *
+
+Figure out element and emission line by comparing the midpoint of the
+range of elastic energies to a table of line energies.
 
 =item *
 

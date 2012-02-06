@@ -119,6 +119,18 @@ has 'elastic_image_list' => (
 					  }
 			    );
 
+has 'herfd_file_list' => (
+			  metaclass => 'Collection::Array',
+			  is        => 'rw',
+			  isa       => 'ArrayRef',
+			  default   => sub { [] },
+			  provides  => {
+					'push'  => 'push_herfd_file_list',
+					'pop'   => 'pop_herfd_file_list',
+					'clear' => 'clear_herfd_file_list',
+				       }
+			 );
+
 
 has 'backend'	    => (is => 'rw', isa => 'Str', default => q{});
 
@@ -594,6 +606,7 @@ sub scan {
     $outfile = $self->dat_out(\@data);
   };
 
+  $ret->message($outfile);
   print $self->assert("Wrote $outfile", 'bold green');
   return $ret;
 };
@@ -683,6 +696,37 @@ sub apply_mask {
   return $ret;
 };
 
+
+sub rixs_map {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+  my $count = 0;
+  my (@x, @y, @all);
+  foreach my $file (@{$self->herfd_file_list}) {
+    @x = () if $count == 0;	# gather energy axis from first file
+    @y = ();
+    open(my $f, '<', $file);
+    foreach my $line (<$f>) {
+      next if $line =~ m{\A\s*\z};
+      next if $line =~ m{\A\s*\#};
+      my @list = split(" ", $line);
+      push @x, $list[0] if $count == 0;
+      push @y, $list[1];
+    };
+    push @all, [@y];
+    close $f;
+    ++$count;
+  };
+  foreach my $i (0 .. $#x) {
+    foreach my $ie (0 .. $#{$self->elastic_energies}) {
+      print $x[$i], "   ", $self->elastic_energies->[$ie], "   ", $all[$ie]->[$i], $/;
+    };
+    print $/;
+  };
+
+};
 
 sub energy_map {
   my ($self, @args) = @_;
@@ -1167,6 +1211,9 @@ standard output about every data point being processed.
 The C<xdiini> argument takes the filename of an ini-style
 configuration file for XDI metadata.  If no ini file is supplied, then
 no metadata and no column labels will be written to the output file.
+
+An L<Xray::BLA::Return> object is returned.  Its C<message> attribute
+contains the fully resolved file name for the output HERFD data file.
 
 =item C<energy_map>
 

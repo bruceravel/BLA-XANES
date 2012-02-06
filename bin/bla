@@ -62,8 +62,13 @@ if ($mode eq 'herfd') {
   foreach my $e (@elastic) {
     $spectrum -> energy($e);
     $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-    $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+    my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+    $spectrum -> push_herfd_file_list($ret->message);
+    #my $file = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e.'.xdi');
+    #$spectrum -> push_herfd_file_list($file);
   };
+  #$spectrum -> elastic_energies(\@elastic);
+  #$spectrum -> rixs_map(verbose => $verbose);
 
 } elsif ($mode eq 'map') {
   my $need_to_check = 0;

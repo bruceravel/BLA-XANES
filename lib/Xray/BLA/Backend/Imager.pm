@@ -36,6 +36,14 @@ sub get_version {
   return $Imager::VERSION;
 };
 
+sub animate {
+  my ($self, @files) = @_;
+  my @images = map {Imager->new(file=>$_)} @files;
+  my $fname = $self->mask_file("anim", 'gif');
+  Imager->write_multi({ file=>$fname, type=>'gif', gif_delay=>33, gif_loop=>0 }, @images)
+    or die Imager->errstr;
+  return $fname;
+};
 
 #has 'elastic_image' => (is => 'rw', isa => 'Imager');
 
@@ -49,15 +57,6 @@ sub get_version {
 #   my ($self, $image, $file) = @_;
 #   $image->write(file=>$file);
 #   return $image;
-# };
-
-# sub animate {
-#   my ($self, @files) = @_;
-#   my @images = map {Imager->new(file=>$_)} @files;
-#   my $fname = $self->mask_file("anim", 'tif');
-#   Imager->write_multi({ file=>$fname, type=>'tiff' }, @images)
-#     or die Imager->errstr;
-#   return $fname;
 # };
 
 # sub get_pixel {

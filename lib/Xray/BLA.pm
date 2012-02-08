@@ -547,9 +547,15 @@ sub areal {
 
 sub mask_file {
   my ($self, $which, $type) = @_;
-  $type ||= 'tif';
-  my $id = ($which eq 'mask') ? q{} : "_$which";
-  my $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
+  $type ||= 'gif';
+  my $fname;
+  if ($which eq 'anim') {
+    my $range = join("-", $self->elastic_energies->[0], $self->elastic_energies->[-1]);
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $range, "mask", "anim").'.');
+  } else {
+    my $id = ($which eq 'mask') ? q{} :"_$which";
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
+  };
   $fname .= $type;
   return $fname;
 };
@@ -727,6 +733,7 @@ sub energy_map {
   my ($self, @args) = @_;
   my %args = @args;
   $args{verbose} ||= 0;
+  $args{animate} ||= 0;
   my $ret = Xray::BLA::Return->new;
   local $|=1;
   my $step = 2;
@@ -831,6 +838,12 @@ sub energy_map {
 					       });
   close $G;
   print $self->assert("Wrote gnuplot script to $gpfile", 'bold green') if $args{verbose};
+
+  if ($args{animate}) {
+    my $animfile = $self->animate(@{$self->elastic_file_list});
+    print $self->assert("Wrote gif animation of mask to $animfile", 'bold green') if $args{verbose};
+  };
+
   return $ret;
 };
 
@@ -1188,7 +1201,7 @@ each stage of processing the mask.
 When true, the C<animate> argument causes a properly scaled animation
 to be written showing the stages of mask creation.
 
-These output image files are gif images or animations.
+These output image files are gif.
 
 =item C<scan>
 
@@ -1213,7 +1226,16 @@ Read the masks from each emission energy and interpolate them to make
 a map of pixel vs. energy.  This requires that each mask has already
 been generated from the measured elastic image.
 
-  $spectrum -> energy_map(verbose => $verbose);
+  $spectrum -> energy_map(verbose => 1, animate=>0);
+
+When true, the C<verbose> argument causes messages to be printed to
+standard output about file written.
+
+When true, the C<animate> argument causes an animated gif file to be
+written containing a movie of the processed elastic masks.
+
+The returned L<Xray::BLA::Return> object conveys no information at
+this time.
 
 =back
 

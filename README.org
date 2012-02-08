@@ -1,4 +1,3 @@
-
 * Convert bent-laue analyzer images to XANES data
 
 ** Synopsis
@@ -15,7 +14,7 @@ A measurement set consists of
    energy.  These are used to make a mask which identifies which
    pixels contain signal related to specific emission energies.
 
-This software uses perl and [[https://metacpan.org/module/Imager][Imager]] or [[http://pdl.perl.org][PDL]] to process the images into a
+This software uses perl, [[https://metacpan.org/module/Imager][Imager]], and [[http://pdl.perl.org][PDL]] to process the images into a
 high resolution XANES spectrum.  Imager is used to import data from
 the signed 32 bit numbers.  That data is immediately pushed into a PDL
 object for further processing.

@@ -1,14 +1,20 @@
 package Xray::BLA;
 use Xray::BLA::Return;
+use Xray::BLA::Image;
 
 use version;
-our $VERSION = version->new('0.3');
+our $VERSION = version->new('0.4');
 
 use Moose;
 use Moose::Util qw(apply_all_roles);
+with 'Xray::BLA::Backend::Imager';
 
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
+
+use PDL::Lite;
+use PDL::NiceSlice;
+use PDL::IO::Pic qw(rim);
 
 use File::Copy;
 use File::Path;
@@ -61,6 +67,7 @@ has 'radius'             => (is => 'rw', isa => 'Int', default => 2);
 has 'operation'          => (is => 'rw', isa => 'Str', default => q{median});
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
+has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null});
 
 has 'bad_pixel_list' => (
 			 metaclass => 'Collection::Array',
@@ -73,17 +80,6 @@ has 'bad_pixel_list' => (
 				       'clear' => 'clear_bad_pixel_list',
 				      }
 			);
-has 'mask_pixel_list' => (
-			  metaclass => 'Collection::Array',
-			  is        => 'rw',
-			  isa       => 'ArrayRef',
-			  default   => sub { [] },
-			  provides  => {
-					'push'  => 'push_mask_pixel_list',
-					'pop'   => 'pop_mask_pixel_list',
-					'clear' => 'clear_mask_pixel_list',
-				       }
-			 );
 
 has 'elastic_energies' => (
 			   metaclass => 'Collection::Array',
@@ -132,7 +128,7 @@ has 'herfd_file_list' => (
 			 );
 
 
-has 'backend'	    => (is => 'rw', isa => 'Str', default => q{});
+has 'backend'	    => (is => 'rw', isa => 'Str', default => q{Imager});
 
 sub mask {
   my ($self, @args) = @_;
@@ -145,7 +141,6 @@ sub mask {
   local $|=1;
 
   $self->clear_bad_pixel_list;
-  $self->clear_mask_pixel_list;
 
   my $ret = $self->check;
   if ($ret->status == 0) {
@@ -154,7 +149,7 @@ sub mask {
 
   ## import elastic image and store basic properties
   my @out = ();
-  $out[0] = ($args{write}) ? $self->mask_file("0", 'tif') : 0;
+  $out[0] = ($args{write}) ? $self->mask_file("0", 'gif') : 0;
   $ret = $self->import_elastic_image(write=>$out[0]);
   if ($ret->status == 0) {
     die $self->assert($ret->message, 'bold red').$/;
@@ -164,7 +159,7 @@ sub mask {
   undef $ret;
 
   ## weed out bad and weak pixels
-  $out[1] = ($args{write}) ? $self->mask_file("1", 'tif') : 0;
+  $out[1] = ($args{write}) ? $self->mask_file("1", 'gif') : 0;
   $ret = $self->bad_pixels(write=>$out[1]);
   if ($ret->status == 0) {
     die $self->assert($ret->message, 'bold red').$/;
@@ -175,7 +170,7 @@ sub mask {
 
   if ($self->maskmode == 1) {	# lonely/social algorithm
     ## weed out lonely pixels
-    $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
     $ret = $self->lonely_pixels(write=>$out[2]);
     if ($ret->status == 0) {
       die $self->assert($ret->message, 'bold red').$/;
@@ -185,7 +180,7 @@ sub mask {
     undef $ret;
 
     ## include social pixels
-    $out[3] = ($args{write}) ? $self->mask_file("3", 'tif') : 0;
+    $out[3] = ($args{write}) ? $self->mask_file("3", 'gif') : 0;
     $ret = $self->social_pixels(write=>$out[3]);
     if ($ret->status == 0) {
       die $self->assert($ret->message, 'bold red').$/;
@@ -196,7 +191,7 @@ sub mask {
     undef $ret;
 
   } elsif ($self->maskmode == 2) { # areal median or mean
-    $out[2] = ($args{write}) ? $self->mask_file("2", 'tif') : 0;
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
     $ret = $self->areal(write=>$out[2]);
     if ($ret->status == 0) {
       die $self->assert($ret->message, 'bold red').$/;
@@ -226,15 +221,8 @@ sub mask {
   foreach my $pix (@{$self->bad_pixel_list}) {
     my $co = $pix->[0];
     my $ro = $pix->[1];
-    $self->set_pixel($self->elastic_image, $co, $ro, 0);
-  };
-  my $count = 0;
-  foreach my $co (0 .. $self->columns-1) {
-    foreach my $ro (0 .. $self->rows-1) {
-      next if ($self->get_pixel($self->elastic_image, $co, $ro) == 0);
-      ++$count;
-      $self->push_mask_pixel_list([$co,$ro]);
-    };
+    $self->elastic_image->($co, $ro) .= 0;
+    ## for .=, see assgn in PDL::Ops
   };
 
   ## construct an animated gif of the mask building process
@@ -243,7 +231,7 @@ sub mask {
     print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
-    my $fname = $self->mask_file("mask", 'tif');
+    my $fname = $self->mask_file("mask", 'gif');
     print $self->assert("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
     copy($out[$#out], $fname);
   };
@@ -283,36 +271,37 @@ sub check {
     return $ret;
   };
 
-  $self->backend('ImageMagick') if $self->backend eq 'Image::Magick';
+  # $self->backend('ImageMagick') if $self->backend eq 'Image::Magick';
+  # if (not $self->backend) {	# try Imager
+  #   my $imager_exists       = eval "require Imager" || 0;
+  #   $self->backend('Imager') if $imager_exists;
+  # };
+  # if (not $self->backend) {	# try Image::Magick
+  #   my $image_magick_exists = eval "require Image::Magick" || 0;
+  #   $self->backend('ImageMagick') if $image_magick_exists;
+  # };
+  # if (not $self->backend) {
+  #   $ret->message("No BLA backend has been defined");
+  #   $ret->status(0);
+  #   return $ret;
+  # };
 
-  if (not $self->backend) {	# try Imager
-    my $imager_exists       = eval "require Imager" || 0;
-    $self->backend('Imager') if $imager_exists;
-  };
-  if (not $self->backend) {	# try Image::Magick
-    my $image_magick_exists = eval "require Image::Magick" || 0;
-    $self->backend('ImageMagick') if $image_magick_exists;
-  };
-  if (not $self->backend) {
-    $ret->message("No BLA backend has been defined");
-    $ret->status(0);
-    return $ret;
-  };
+  # eval {apply_all_roles($self, 'Xray::BLA::Backend::'.$self->backend)};
+  # if ($@) {
+  #   $ret->message("BLA backend Xray::BLA::Backend::".$self->backend." could not be loaded");
+  #   $ret->status(0);
+  #   return $ret;
+  # };
 
-  eval {apply_all_roles($self, 'Xray::BLA::Backend::'.$self->backend)};
-  if ($@) {
-    $ret->message("BLA backend Xray::BLA::Backend::".$self->backend." could not be loaded");
-    $ret->status(0);
-    return $ret;
-  };
-  $self->elastic_image($self->read_image($self->elastic_file));
+  my $img = Xray::BLA::Image->new(parent=>$self);
+  $self->elastic_image($img->Read($self->elastic_file));
 
-  if (($self->backend eq 'Imager') and ($self->get_version($self->elastic_image) < 0.87)) {
+  if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
     $ret->message("This program requires Imager version 0.87 or later.");
     $ret->status(0);
     return $ret;
   };
-  if (($self->backend eq 'ImageMagick') and ($self->get_version($self->elastic_image) !~ m{Q32})) {
+  if (($self->backend eq 'ImageMagick') and ($self->get_version !~ m{Q32})) {
     $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
     $ret->status(0);
     return $ret;
@@ -324,12 +313,14 @@ sub check {
 sub import_elastic_image {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{write} || 0;
+  #$args{write} ||= 0;
+  $args{write} = 0;
 
   my $ret = Xray::BLA::Return->new;
 
-  $self->columns($self->get_columns($self->elastic_image));
-  $self->rows($self->get_rows($self->elastic_image));
+  my ($c, $r) = $self->elastic_image->dims;
+  $self->columns($c);
+  $self->rows($r);
   my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
   my $alg = ($self->maskmode == 3) ? 'whole image'
           : ($self->maskmode == 2) ? 'areal '.$self->operation
@@ -337,7 +328,8 @@ sub import_elastic_image {
   $str   .= sprintf "\tusing the %s backend and the %s mask algorithm\n", $self->backend, $alg;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
-  $self->write_image($self->elastic_image, $args{write}) if $args{write};
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -345,7 +337,7 @@ sub import_elastic_image {
 sub bad_pixels {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{write} || 0;
+  $args{write} ||= 0;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -357,14 +349,15 @@ sub bad_pixels {
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
   foreach my $co (0 .. $self->columns-1) {
     foreach my $ro (0 .. $nrows) {
-      my $val = $self->get_pixel($ei, $co, $ro);
+      my $val = $ei->at($co, $ro);
       if ($val > $bpv) {
 	$self->push_bad_pixel_list([$co,$ro]);
-  	$self->set_pixel($ei, $co, $ro, 0);
+  	$ei -> ($co, $ro) .= 0;
+	## for .=, see assgn in PDL::Ops
   	++$removed;
   	++$off;
       } elsif ($val < $wpv) {
-  	$self->set_pixel($ei, $co, $ro, 0);
+  	$ei -> ($co, $ro) .= 0;
   	++$toosmall;
   	++$off;
       } else {
@@ -378,9 +371,8 @@ sub bad_pixels {
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-  if ($args{write}) {
-    $self->write_image($ei, $args{write});
-  };
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -388,7 +380,7 @@ sub bad_pixels {
 sub lonely_pixels {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{write} || 0;
+  $args{write} ||= 0;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -401,7 +393,7 @@ sub lonely_pixels {
   foreach my $co (0 .. $ncols) {
     foreach my $ro (0 .. $nrows) {
 
-      ++$off, next if ($self->get_pixel($ei, $co, $ro) == 0);
+      ++$off, next if ($ei->at($co, $ro) == 0);
 
       my $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
@@ -412,14 +404,16 @@ sub lonely_pixels {
 	  next if (($ro == 0) and ($rr < 0));
 	  next if (($ro == $nrows) and ($rr > 0));
 
-	  ++$count if ($self->get_pixel($ei, $co+$cc, $ro+$rr) != 0);
+	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
 	};
       };
       if ($count < $lpv) {
-	$self->set_pixel($ei, $co, $ro, 0);
+	$ei -> ($co, $ro) .= 0;
+	## for .=, see assgn in PDL::Ops
 	++$removed;
 	++$off;
       } else {
+	$ei -> ($co, $ro) .= 1;
 	++$on;
       };
     };
@@ -429,9 +423,8 @@ sub lonely_pixels {
   $str   .= "\tRemoved $removed lonely pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-  if ($args{write}) {
-    $self->write_image($ei, $args{write});
-  };
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -453,7 +446,7 @@ sub social_pixels {
   foreach $co (0 .. $ncols) {
     foreach $ro (0 .. $nrows) {
 
-      ++$on, next if ($self->get_pixel($ei, $co, $ro) > 0);
+      ++$on, next if ($ei->at($co, $ro) > 0);
 
       $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
@@ -464,7 +457,7 @@ sub social_pixels {
 	  next if (($ro == 0) and ($rr == -1));
 	  next if (($ro == $nrows) and ($rr == 1));
 
-	  ++$count if ($self->get_pixel($ei, $co+$cc, $ro+$rr) != 0);
+	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
 	  last OUTER if ($count > $spv);
 	};
       };
@@ -478,16 +471,16 @@ sub social_pixels {
     };
   };
   foreach my $px (@addlist) {
-    $self->set_pixel($ei, $px->[0], $px->[1], 5);
+    $ei -> ($px->[0], $px->[1]) .= 1;
+    ## for .=, see assgn in PDL::Ops
   };
 
   my $str = $self->assert("Third pass", 'cyan');
   $str   .= "\tAdded $added social pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-  if ($args{write}) {
-    $self->write_image($ei, $args{write});
-  };
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
   $ret->status($on);
   $ret->message($str);
   return $ret;
@@ -506,28 +499,25 @@ sub areal {
 
   my @list = ();
 
-  my ($removed, $on, $off, $co, $ro, $cc, $rr, $value) = (0,0,0,0,0,0,0,0);
+  my ($removed, $on, $off, $co, $ro, $cc, $rr, $cdn, $cup, $rdn, $rup, $value) = (0,0,0,0,0,0,0,0,0,0,0,0);
   my $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
 			      {freq => 's', base => 0, target=>$ncols});
+
+  my $radius = $self->radius;
   foreach my $co (0 .. $ncols) {
     $counter->up if $self->screen;
+    $cdn = ($co < $radius)        ? 0      : $co-$radius;
+    $cup = ($co > $ncols-$radius) ? $ncols : $co+$radius;
     foreach my $ro (0 .. $nrows) {
 
-      my @neighborhood = ();
-    OUTER: foreach my $cc (-1*$self->radius .. $self->radius) {
-	next if ($co+$cc < 0);
-	next if ($co+$cc > $ncols);
-	foreach my $rr (-1*$self->radius .. $self->radius) {
-	  next if ($ro+$rr < 0);
-	  next if ($ro+$rr > $nrows);
+      $rdn = ($ro < $radius)        ? 0      : $ro-$radius;
+      $rup = ($ro > $nrows-$radius) ? $nrows : $ro+$radius;
+      my $slice = $ei->($cdn:$cup, $rdn:$rup);
+      $value = $slice->flat->oddmedover;
+      ## oddmedover: see PDL::Ufunc
+      ## flat: see PDL::Core
 
-	  push @neighborhood, $self->get_pixel($ei, $co+$cc, $ro+$rr);
-	};
-      };
-      $stat->add_data(@neighborhood);
-      $value = ($self->operation eq 'mean') ? int($stat->mean) : $stat->median;
-      $value = 10 if $value > 0;
-      #$self->set_pixel($new, $co, $ro, $value);
+      $value = 1 if $value > 0;
       push @list, [$co, $ro, $value];
       ($value > 0) ? ++$on : ++$off;
       $stat->clear;
@@ -535,7 +525,8 @@ sub areal {
   };
   $counter->close if $self->screen;
   foreach my $point (@list) {
-    $self->set_pixel($ei, $point->[0], $point->[1], $point->[2]);
+    $ei -> ($point->[0], $point->[1]) .= $point->[2];
+    ## for .=, see assgn in PDL::Ops
   };
 
   my $str = $self->assert("Second pass", 'cyan');
@@ -543,9 +534,8 @@ sub areal {
   $str   .= "\tSet each pixel to the ".$self->operation." value of a ${n}x$n square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-  if ($args{write}) {
-    $self->write_image($ei, $args{write});
-  };
+  $self->elastic_image->wim($args{write}, {COLOR=>'bw'}) if $args{write};
+  ## wim: see PDL::IO::Pic
   $ret->status($on);
   $ret->message($str);
   return $ret;
@@ -683,13 +673,11 @@ sub apply_mask {
   } else {
     printf("  %3d, %s", $tif, $image) if ($args{verbose} and (not $tif % 10));
 
-    my $datapoint = $self->read_image($image);
-    my $sum = 0;
-
-    foreach my $pix (@{$self->mask_pixel_list}) {
-      $sum += $self->get_pixel($datapoint, $pix->[0], $pix->[1]);
-    };
-
+    ## * is pixel by pixel multiplication of mask and datapoint: see mult in PDL::Ops
+    ## sumover: see PDL::Ufunc
+    ## flat, sclr: see PDL::Core
+    my $masked = $self->elastic_image * Xray::BLA::Image->new(parent=>$self)->Read($image);
+    my $sum = int($masked->flat->sumover->sclr);
     printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
     $ret->status($sum);
   };
@@ -702,6 +690,10 @@ sub rixs_map {
   my %args = @args;
   $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
+
+  my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'_rixs.map');
+  open(my $M, '>', $outfile);
+
   my $count = 0;
   my (@x, @y, @all);
   foreach my $file (@{$self->herfd_file_list}) {
@@ -721,11 +713,14 @@ sub rixs_map {
   };
   foreach my $i (0 .. $#x) {
     foreach my $ie (0 .. $#{$self->elastic_energies}) {
-      print $x[$i], "   ", $self->elastic_energies->[$ie], "   ", $all[$ie]->[$i], $/;
+      print $M $x[$i], "   ", $self->elastic_energies->[$ie], "   ", $all[$ie]->[$i], $/;
     };
-    print $/;
+    print $M $/;
   };
+  close $M;
+  print $self->assert("Wrote rixs map to $outfile", 'bold green') if $args{verbose};
 
+  return $ret;
 };
 
 sub energy_map {
@@ -736,10 +731,14 @@ sub energy_map {
   local $|=1;
   my $step = 2;
 
-  my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (column %c of %m)',
+  my @images = map {rim($_)} @{$self->elastic_file_list};
+  $self -> elastic_image_list(\@images);
+
+  my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (row %c of %m)',
 			      {freq => 's', base => 0, target=>$self->rows});
   my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
   open(my $M, '>', $outfile);
+  my $ncols = $self->columns - 1;
 
   foreach my $r (0 .. $self->rows-1) {
     $counter->up if $self->screen;
@@ -751,15 +750,17 @@ sub energy_map {
 
     ## gather current row from each mask
     foreach my $ie (0 .. $#{$self->elastic_energies}) {
-      my @y = $self->get_row($self->elastic_image_list->[$ie], $r);
-      push @all, \@y;
+      ## extract the $r-th row from each image and fl;atten it to a 1D PDL
+      my $y = $self->elastic_image_list->[$ie] -> (0:$ncols,$r) -> flat;
+      push @all, $y;
     };
+
 
     ## accumulate energies at which each pixel is illuminated
     my $stripe = 0;
     foreach my $list (@all) {
-      foreach my $p (0 .. $#{$list}) {
-	if ($list->[$p] > 0) {
+      foreach my $p (0 .. $ncols) {
+	if ($list->at($p) > 0) {
 	  push @{$represented[$p]}, $self->elastic_energies->[$stripe];
 	};
       };
@@ -808,7 +809,7 @@ sub energy_map {
   };
   $counter->close if $self->screen;
   close $M;
-  print $self->assert("Wrote map data to $outfile", 'bold green') if $args{verbose};
+  print $self->assert("Wrote calibration map to $outfile", 'bold green') if $args{verbose};
 
   ## write a usable gnuplot script for plotting the data
   my $gpfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');
@@ -996,21 +997,15 @@ files with signed 32 bit integer samples, not every image handling
 package can deal gracefully with them.  I have found two choices in
 the perl universe that work well, L<Imager> and C<Image::Magick>,
 although using L<Image::Magick> requires recompiliation to be able to
-use 32 bit sample depth.  Happily, I<Imager> works out of the box.
-The default is to use L<Imager>. but this can be specified using the
-C<backend> attribute when the Xray::BLA object is created.
+use 32 bit sample depth.  Happily, L<Imager> works out of the box, so
+I am using it.
+
+The signed 32 bit tiffs are imported using L<Imager> and immediately
+stuffed into a L<PDL> object.  All subsequent work is done using PDL.
 
 =head1 ATTRIBUTES
 
 =over 4
-
-=item C<backend>
-
-Specify which image handling library to use.  Currently the possible
-values for this attribute are C<Imager> and C<ImageMagick>.  The
-default, if not specified, is to use L<Imager>.  See the compilation
-caveat below if you choose to use L<Image::Magick> instead.
-L<Imager>, on the other hand, should just work out of the box.
 
 =item C<stub>
 
@@ -1122,8 +1117,8 @@ This attribute is ignored by the areal median/mean algorithm.
 
 This determines the size of the square used in the areal median/mean
 algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
-eadch direction.  A value of 2 means to use a 5x5 square.  Execution
-time is very sensistive to this value.
+eadch direction.  A value of 2 means to use a 5x5 square.  Thanks to
+PDL, the hit for using a larger radius is quite small.
 
 =item C<elastic_file>
 
@@ -1193,10 +1188,7 @@ each stage of processing the mask.
 When true, the C<animate> argument causes a properly scaled animation
 to be written showing the stages of mask creation.
 
-Currently, these output image files are signed 32 bit tiff images or
-animations.  Not many image handling applications will handle them.  I
-recommend ImageJ or the specially modified Image Magick, if you have
-it.
+These output image files are gif images or animations.
 
 =item C<scan>
 
@@ -1357,6 +1349,10 @@ And example is found in F<share/bla.xdi.ini>.
 
 =item *
 
+L<PDL>
+
+=item *
+
 L<Moose>
 
 =item *
@@ -1373,7 +1369,7 @@ Config::IniFiles
 
 =item *
 
-L<Imager> or L<Image::Magick>
+L<Imager>
 
 =item *
 
@@ -1419,18 +1415,6 @@ bin with 2x2 or 3x3 bins
 
 =item *
 
-write images and animations to gif files
-
-=item *
-
-Other possible backends: PDL, Graphics::Magick, GD.  PDL might be
-faster but requires that netpbm be specially compiled.
-
-Alternately, import images to a list of lists data structure and do
-away with susequent calls to the image handling backend.
-
-=item *
-
 MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 
 =item *
@@ -1460,7 +1444,6 @@ Wouldn't it be awesome to have all the data&images stored in an HDF5
 file?
 
 =back
-
 
 Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
 

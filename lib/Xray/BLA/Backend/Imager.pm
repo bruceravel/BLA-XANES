@@ -8,49 +8,11 @@ use Math::Round qw(round);
 
 use constant BIT_DEPTH => 2**32;
 
-has 'elastic_image' => (is => 'rw', isa => 'Imager');
-
-sub copy_image {
-  my ($self, $image) = @_;
-  my $p = $image->copy();
-  return $p;
-};
-
 sub read_image {
   my ($self, $file) = @_;
   my $p = Imager->new(file=>$file);
   return $p;
 };
-
-sub write_image {
-  my ($self, $image, $file) = @_;
-  $image->write(file=>$file);
-  return $image;
-};
-
-sub animate {
-  my ($self, @files) = @_;
-  my @images = map {Imager->new(file=>$_)} @files;
-  my $fname = $self->mask_file("anim", 'tif');
-  Imager->write_multi({ file=>$fname, type=>'tiff' }, @images)
-    or die Imager->errstr;
-  return $fname;
-};
-
-sub get_pixel {
-  my ($self, $image, $x, $y) = @_;
-  my @rgba = $image->getpixel(x=>$x, y=>$y, type=>'float')->rgba;
-  return round($rgba[0]*BIT_DEPTH);
-};
-
-## see http://www.molar.is/en/lists/imager-devel/2012-01/0000.shtml
-## and http://www.molar.is/en/lists/imager-devel/2012-01/0001.shtml
-sub set_pixel {
-  my ($self, $image, $x, $y, $value) = @_;
-  $value ||= 0;
-  $image->setpixel(x=>$x, y=>$y, color=>Imager::Color::Float->new($value/BIT_DEPTH, 0, 0));
-};
-
 
 sub get_row {
   my ($self, $image, $y) = @_;
@@ -73,6 +35,46 @@ sub get_version {
   my ($self) = @_;
   return $Imager::VERSION;
 };
+
+
+#has 'elastic_image' => (is => 'rw', isa => 'Imager');
+
+# sub copy_image {
+#   my ($self, $image) = @_;
+#   my $p = $image->copy();
+#   return $p;
+# };
+
+# sub write_image {
+#   my ($self, $image, $file) = @_;
+#   $image->write(file=>$file);
+#   return $image;
+# };
+
+# sub animate {
+#   my ($self, @files) = @_;
+#   my @images = map {Imager->new(file=>$_)} @files;
+#   my $fname = $self->mask_file("anim", 'tif');
+#   Imager->write_multi({ file=>$fname, type=>'tiff' }, @images)
+#     or die Imager->errstr;
+#   return $fname;
+# };
+
+# sub get_pixel {
+#   my ($self, $image, $x, $y) = @_;
+#   my @rgba = $image->getpixel(x=>$x, y=>$y, type=>'float')->rgba;
+#   return round($rgba[0]*BIT_DEPTH);
+# };
+
+# ## see http://www.molar.is/en/lists/imager-devel/2012-01/0000.shtml
+# ## and http://www.molar.is/en/lists/imager-devel/2012-01/0001.shtml
+# sub set_pixel {
+#   my ($self, $image, $x, $y, $value) = @_;
+#   $value ||= 0;
+#   $image->setpixel(x=>$x, y=>$y, color=>Imager::Color::Float->new($value/BIT_DEPTH, 0, 0));
+# };
+
+
 
 
 1;

@@ -10,6 +10,7 @@ my $build = Module::Build
 	 license            => 'perl',
 	 dist_author        => 'Bruce Ravel <bravel AT bnl DOT gov>',
 	 requires           => {
+				'PDL'                       => '0',
 				'Moose'			    => '1.21',
 				#'MooseX::MutatorAttributes' => 0,
 				'MooseX::AttributeHelpers'  => 0,
@@ -20,11 +21,12 @@ my $build = Module::Build
 				'Statistics::Descriptive'   => 0,
 				'Term::Sk'                  => '0.07',
 				'Text::Template'            => 0,
-			       },
-	 recommends         => {
-				'Image::Magick'             => 0,
 				'Imager'                    => 0.87,
 			       },
+	 #recommends         => {
+	 #			'Image::Magick'             => 0,
+	 #			'Imager'                    => 0.87,
+	 #		       },
 	 sign               => 1,
 	);
 $build->create_build_script;

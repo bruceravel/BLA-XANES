@@ -15,34 +15,20 @@ A measurement set consists of
    energy.  These are used to make a mask which identifies which
    pixels contain signal related to specific emission energies.
 
-This software uses perl and either [[https://metacpan.org/module/Imager][Imager]] or [[https://metacpan.org/module/Image::Magick][Image::Magick]] to process
-the images into a high resolution XANES spectrum.  The two backends
-produce identical results.
+This software uses perl and [[https://metacpan.org/module/Imager][Imager]] or [[http://pdl.perl.org][PDL]] to process the images into a
+high resolution XANES spectrum.  Imager is used to import data from
+the signed 32 bit numbers.  That data is immediately pushed into a PDL
+object for further processing.
 
 ** Installation
-
-By default, Imager will be used for image handling.  If it is not
-already on your computer, it will be installed at the ~installdeps~
-step.  If you plan to use Image Magick, compile it to use signed 32
-bit numbers as explained see below.
 
 To install, do the following:
 
 :      perl Build.PL
-:      sudo ./Build installdeps  ## (if necessary)
+:      sudo ./Build installdeps  ## (if any dependencies are not met)
 :      ./Build
 :      ./Build test
 :      sudo ./Build install
-
-At the ~perl Build.PL~ step, you may see an error message like the
-following if either image handling backend is absent.  
-
-:     Checking prerequisites...
-:       recommends:
-:         *  Image::Magick is not installed
-
-If you plan to use the default Imager backend, then you can safely
-ignore the warning about Image::Magick being missing.
 
 
 ** Usage
@@ -219,6 +205,9 @@ way it handles 32-bit numbers with its inherent 24-bit sample depth is
 somewhat confusing.
 
 ** Working with Image Magick
+
+In principle [[http://www.imagemagick.org/script/index.php][Image Magick]] can be u sed instead of Imager, but doing so
+is a bit of work.
 
 I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its [[http://www.imagemagick.org/script/perl-magick.php][Perl interface]] as one of the image
 handling backends for this project.  As delivered, Image Magick cannot

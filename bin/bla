@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Xray::BLA;
+use Xray::BLA::Image;
 use Config::IniFiles;
 use Getopt::Long;
 use Pod::Usage;
@@ -51,6 +52,7 @@ $spectrum -> maskmode          ($ini{pixel}{maskmode}) if exists $ini{pixel}{mas
 $spectrum -> radius            ($ini{pixel}{radius})   if exists $ini{pixel}{radius};
 
 my @elastic = split(" ", $ini{measure}{emission});
+$spectrum -> elastic_energies(\@elastic);
 
 if ($mode eq 'herfd') {
   pod2usage(1) && exit 1 if not $energy;
@@ -61,20 +63,30 @@ if ($mode eq 'herfd') {
 } elsif ($mode eq 'rixs') {
   foreach my $e (@elastic) {
     $spectrum -> energy($e);
-    $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-    my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
-    $spectrum -> push_herfd_file_list($ret->message);
-    #my $file = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e.'.xdi');
-    #$spectrum -> push_herfd_file_list($file);
+    my $file = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);
+    if (($Xray::BLA::XDI_exists) and (-e $xdiini)) {
+      $file .= '.xdi';
+    } else {
+      $file .= '.dat';
+    };
+    if (not -e $file) {
+      $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+      my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+    } elsif (not $reuse) {
+      $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+      my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+    } else {
+      1;			# do nothing
+    };
+    $spectrum -> push_herfd_file_list($file);
   };
-  #$spectrum -> elastic_energies(\@elastic);
-  #$spectrum -> rixs_map(verbose => $verbose);
+  $spectrum -> rixs_map(verbose => $verbose);
 
 } elsif ($mode eq 'map') {
   my $need_to_check = 0;
   foreach my $e (@elastic) {
     $spectrum -> energy($e);
-    my $file = $spectrum->mask_file("mask", 'tif');
+    my $file = $spectrum->mask_file("mask", 'gif');
     if (not -e $file) {
       $spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
     } elsif (not $reuse) {
@@ -89,10 +101,10 @@ if ($mode eq 'herfd') {
     die $spectrum->assert($ret->message, 'bold red') if $ret->status == 0;
     $spectrum -> import_elastic_image;
   };
-  my @images = map {$spectrum->read_image($_)} @{$spectrum->elastic_file_list};
-  $spectrum -> elastic_image_list(\@images);
-  $spectrum -> elastic_energies(\@elastic);
   $spectrum -> energy_map(verbose => $verbose);
+
+} elsif ($mode eq 'test') {
+  die "test: nothing here\n";
 
 } else {
   pod2usage(1);

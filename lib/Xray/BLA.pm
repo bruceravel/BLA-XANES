@@ -888,7 +888,7 @@ unset grid
 
 unset ztics
 unset zlabel
-set xrange [0:{$nrows}]
+set xrange [{$nrows}:0]
 set yrange [0:{$ncols}]
 set cbtics {$emin-$step}, {2*$step}, {$emax+$step}
 set cbrange [{$emin-$step}:{$emax+$step}]

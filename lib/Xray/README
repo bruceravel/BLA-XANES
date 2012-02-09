@@ -58,18 +58,12 @@ DESCRIPTION
     deal gracefully with them. I have found two choices in the perl universe
     that work well, Imager and "Image::Magick", although using Image::Magick
     requires recompiliation to be able to use 32 bit sample depth. Happily,
-    *Imager* works out of the box. The default is to use Imager. but this
-    can be specified using the "backend" attribute when the Xray::BLA object
-    is created.
+    Imager works out of the box, so I am using it.
+
+    The signed 32 bit tiffs are imported using Imager and immediately
+    stuffed into a PDL object. All subsequent work is done using PDL.
 
 ATTRIBUTES
-    "backend"
-        Specify which image handling library to use. Currently the possible
-        values for this attribute are "Imager" and "ImageMagick". The
-        default, if not specified, is to use Imager. See the compilation
-        caveat below if you choose to use Image::Magick instead. Imager, on
-        the other hand, should just work out of the box.
-
     "stub"
         The basename of the scan and image files. The scan file is called
         "<stub>.001", the image files are called "<stub>_NNNNN.tif", and the
@@ -80,7 +74,7 @@ ATTRIBUTES
         the energy v. pixel map. This can be a two-letter element symbol, a
         Z number, or an element name in English (e.g. Au, 79, or gold).
 
-    <line>
+    "line"
         The measured emission line. This is currently only used when making
         the energy v. pixel map. This can be a Siegbahn (e.g. La1 or
         Lalpha1) or IUPAC symbol (e.g. L3-M5).
@@ -165,8 +159,8 @@ ATTRIBUTES
     "radius" [2]
         This determines the size of the square used in the areal median/mean
         algorithm. A value of 1 means to use a 3x3 square, i.e. 1 pixel in
-        eadch direction. A value of 2 means to use a 5x5 square. Execution
-        time is very sensistive to this value.
+        eadch direction. A value of 2 means to use a 5x5 square. Thanks to
+        PDL, the hit for using a larger radius is quite small.
 
     "elastic_file"
         This contains the name of the elastic image file. It is constructed
@@ -198,9 +192,9 @@ ATTRIBUTES
         progress messages are written to the screen.
 
 METHODS
-    All methods return an object of type "Xray::BLA::Return". This object
-    has two attributes: "status" and "message". A successful return will
-    have a positive definite "status". Any reporting (for example exception
+    All methods return an object of type Xray::BLA::Return. This object has
+    two attributes: "status" and "message". A successful return will have a
+    positive definite "status". Any reporting (for example exception
     reporting) is done via the "message" attribute.
 
     Some methods, for example "apply_mask", use the return "status" as the
@@ -222,10 +216,7 @@ METHODS
         When true, the "animate" argument causes a properly scaled animation
         to be written showing the stages of mask creation.
 
-        Currently, these output image files are signed 32 bit tiff images or
-        animations. Not many image handling applications will handle them. I
-        recommend ImageJ or the specially modified Image Magick, if you have
-        it.
+        These output image files are gif.
 
     "scan"
         Rewrite the scan file with a column containing the HERFD signal as
@@ -242,12 +233,25 @@ METHODS
         then no metadata and no column labels will be written to the output
         file.
 
+        An Xray::BLA::Return object is returned. Its "message" attribute
+        contains the fully resolved file name for the output HERFD data
+        file.
+
     "energy_map"
         Read the masks from each emission energy and interpolate them to
         make a map of pixel vs. energy. This requires that each mask has
         already been generated from the measured elastic image.
 
-          $spectrum -> energy_map(verbose => $verbose);
+          $spectrum -> energy_map(verbose => 1, animate=>0);
+
+        When true, the "verbose" argument causes messages to be printed to
+        standard output about file written.
+
+        When true, the "animate" argument causes an animated gif file to be
+        written containing a movie of the processed elastic masks.
+
+        The returned Xray::BLA::Return object conveys no information at this
+        time.
 
   Internal methods
     All of these methods return a Xray::BLA::Return object, which has two
@@ -361,6 +365,8 @@ CONFIGURATION AND ENVIRONMENT
 
 DEPENDENCIES
   CPAN
+    *   PDL
+
     *   Moose
 
     *   MooseX::Aliases
@@ -369,7 +375,7 @@ DEPENDENCIES
 
     *   Config::IniFiles
 
-    *   Imager or Image::Magick
+    *   Imager
 
     *   Xray::XDI (optional)
 
@@ -391,30 +397,22 @@ DEPENDENCIES
 
     Adjust the version number on the perl library as needed.
 
-    I have not been able to rebuild Image::Magick with Windows and MinGW.
-    Happily "Imager" works out of the box with MinGW and Strawberry Perl.
+    I have not been able to rebuild Image Magick with Windows and MinGW.
+    Happily Imager works out of the box with MinGW and Strawberry Perl.
+    Currently, the Image Magick backend is disabled.
 
 BUGS AND LIMITATIONS
+    *   Energy map file needs a descriptive header.
+
     *   Other energy map output formats
 
     *   bin with 2x2 or 3x3 bins
-
-    *   write images and animations to gif files
-
-    *   Other possible backends: PDL, Graphics::Magick, GD. PDL might be
-        faster but requires that netpbm be specially compiled.
-
-        Alternately, import images to a list of lists data structure and do
-        away with susequent calls to the image handling backend.
 
     *   MooseX::MutatorAttributes or MooseX::GetSet would certainly be
         nice....
 
     *   It should not be necessary to specify the list of elastic energies
         in the config file. The can be culled from the file names.
-
-    *   $step in "energy_mask" should be determined from actual list of
-        emission energies measured.
 
     *   Figure out element and emission line by comparing the midpoint of
         the range of elastic energies to a table of line energies.

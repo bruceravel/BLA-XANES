@@ -23,6 +23,38 @@ Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://cars9.uchicago.edu/~ravel/software/>
 
+=head1 ATTRIBUTES
+
+=over 4
+
+=item C<status>
+
+A numerical status.  Evaluates to false to indicate a problem.  Also
+used to return a numerical value for a successful return.
+
+=item C<message>
+
+A string response.  This eaither returns an exception message or
+textual information about a successful return.
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item C<is_ok>
+
+Returns true if no problem is reported.
+
+   my $ret = $object -> some_method;
+   do {something} if $ret->is_ok;
+
+   my $ret = $object -> some_method;
+   die $ret->message if not $ret->is_ok;
+
+=back
+
 =head1 LICENCE AND COPYRIGHT
 
 Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.

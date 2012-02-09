@@ -19,6 +19,8 @@ use PDL::IO::Pic qw(rim);
 use File::Copy;
 use File::Path;
 use File::Spec;
+use List::Util qw(sum reduce);
+use Math::Round qw(round);
 use Statistics::Descriptive;
 use Term::Sk;
 use Text::Template;
@@ -513,9 +515,10 @@ sub areal {
       $rdn = ($ro < $radius)        ? 0      : $ro-$radius;
       $rup = ($ro > $nrows-$radius) ? $nrows : $ro+$radius;
       my $slice = $ei->($cdn:$cup, $rdn:$rup);
-      $value = $slice->flat->oddmedover;
-      ## oddmedover: see PDL::Ufunc
+      $value = ($self->operation eq 'median') ? $slice->flat->oddmedover : int($slice->flat->average);
+      ## oddmedover, average: see PDL::Ufunc
       ## flat: see PDL::Core
+      ## also see PDL::NiceSlice for matrix slicing syntax
 
       $value = 1 if $value > 0;
       push @list, [$co, $ro, $value];
@@ -736,8 +739,12 @@ sub energy_map {
   $args{animate} ||= 0;
   my $ret = Xray::BLA::Return->new;
   local $|=1;
-  my $step = 2;
 
+  ## determine the average step between elastic measurements
+  my @energies = sort {$a <=> $b} @{$self->elastic_energies};
+  my $step = round( sum(map {$energies[$_+1] - $energies[$_]} (0 .. $#energies-1)) / $#energies );
+
+  ## import the gifs of each elastic map
   my @images = map {rim($_)} @{$self->elastic_file_list};
   $self -> elastic_image_list(\@images);
 
@@ -799,7 +806,7 @@ sub energy_map {
     };
     if ($flag) {
       my $emin = $linemap[$first-1];
-      my $ediff = $step; # this should be the step between elastic measurements
+      my $ediff = $step; # FIXME: this should be the actual step between adjacent elastic measurements
       foreach my $j ($first .. $#linemap) {
 	$linemap[$j] = $emin + (($j-$first)/($#linemap-$first)) * $ediff;
       };
@@ -1033,7 +1040,7 @@ The element of the absorber.  This is currently only used when making
 the energy v. pixel map.  This can be a two-letter element symbol, a Z
 number, or an element name in English (e.g. Au, 79, or gold).
 
-=item <line>
+=item C<line>
 
 The measured emission line.  This is currently only used when making
 the energy v. pixel map.  This can be a Siegbahn (e.g. La1 or Lalpha1)
@@ -1173,7 +1180,7 @@ progress messages are written to the screen.
 
 =head1 METHODS
 
-All methods return an object of type C<Xray::BLA::Return>.  This
+All methods return an object of type L<Xray::BLA::Return>.  This
 object has two attributes: C<status> and C<message>.  A successful
 return will have a positive definite C<status>.  Any reporting (for
 example exception reporting) is done via the C<message> attribute.
@@ -1383,11 +1390,11 @@ L<MooseX::Aliases>
 
 =item *
 
-Math::Round
+L<Math::Round>
 
 =item *
 
-Config::IniFiles
+L<Config::IniFiles>
 
 =item *
 
@@ -1419,13 +1426,17 @@ build, I had to do
 
 Adjust the version number on the perl library as needed.
 
-I have not been able to rebuild Image::Magick with Windows and
-MinGW. Happily C<Imager> works out of the box with MinGW and
-Strawberry Perl.
+I have not been able to rebuild Image Magick with Windows and
+MinGW. Happily L<Imager> works out of the box with MinGW and
+Strawberry Perl.  Currently, the Image Magick backend is disabled.
 
 =head1 BUGS AND LIMITATIONS
 
 =over 4
+
+=item *
+
+Energy map file needs a descriptive header.
 
 =item *
 
@@ -1443,11 +1454,6 @@ MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 
 It should not be necessary to specify the list of elastic energies in
 the config file.  The can be culled from the file names.
-
-=item *
-
-C<$step> in C<energy_mask> should be determined from actual list of
-emission energies measured.
 
 =item *
 

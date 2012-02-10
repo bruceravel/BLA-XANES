@@ -44,12 +44,13 @@ $spectrum -> colored(0) if $nocolor;
 $spectrum -> element	($ini{measure}{element});
 $spectrum -> line	($ini{measure}{line});
 
-$spectrum -> bad_pixel_value   ($ini{pixel}{bad})      if exists $ini{pixel}{bad};
-$spectrum -> weak_pixel_value  ($ini{pixel}{weak})     if exists $ini{pixel}{weak};
-$spectrum -> lonely_pixel_value($ini{pixel}{lonely})   if exists $ini{pixel}{lonely};
-$spectrum -> social_pixel_value($ini{pixel}{social})   if exists $ini{pixel}{social};
-$spectrum -> maskmode          ($ini{pixel}{maskmode}) if exists $ini{pixel}{maskmode};
-$spectrum -> radius            ($ini{pixel}{radius})   if exists $ini{pixel}{radius};
+$spectrum -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
+$spectrum -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};
+$spectrum -> lonely_pixel_value($ini{pixel}{lonely})    if exists $ini{pixel}{lonely};
+$spectrum -> social_pixel_value($ini{pixel}{social})    if exists $ini{pixel}{social};
+$spectrum -> maskmode          ($ini{pixel}{maskmode})  if exists $ini{pixel}{maskmode};
+$spectrum -> radius            ($ini{pixel}{radius})    if exists $ini{pixel}{radius};
+$spectrum -> operation         ($ini{pixel}{operation}) if exists $ini{pixel}{radius};
 
 my @elastic = split(" ", $ini{measure}{emission});
 $spectrum -> elastic_energies(\@elastic);

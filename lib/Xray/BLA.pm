@@ -11,6 +11,7 @@ with 'Xray::BLA::Backend::Imager';
 
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
+use Moose::Util::TypeConstraints;
 
 use PDL::Lite;
 use PDL::NiceSlice;
@@ -66,7 +67,12 @@ has 'nbad'               => (is => 'rw', isa => 'Int', default => 0);
 
 has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2);
 has 'radius'             => (is => 'rw', isa => 'Int', default => 2);
-has 'operation'          => (is => 'rw', isa => 'Str', default => q{median});
+
+enum 'Projections' => ['median', 'mean'];
+coerce 'Projections',
+  from 'Str',
+  via { lc($_) };
+has 'operation'          => (is => 'rw', isa => 'Projections', default => q{median});
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
 has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null});

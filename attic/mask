@@ -1,0 +1,92 @@
+sub mask_orig {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{save}    || 0;
+  $args{verbose} || 0;
+  $args{animate} || 0;
+  $args{write}    = 0;
+  $args{write}    = 1 if ($args{animate} or $args{save});
+  local $|=1;
+
+  $self->clear_bad_pixel_list;
+
+  my $ret = $self->check;
+  if ($ret->status == 0) {
+    die $self->assert($ret->message, 'bold red');
+  };
+
+  my $save = $self->weak_pixel_value;
+  $self->weak_pixel_value(0) if ($self->maskmode == 4);
+
+  ## import elastic image and store basic properties
+  my @out = ();
+  $out[0] = ($args{write}) ? $self->mask_file("0", 'gif') : 0;
+  $self->do_step('import_elastic_image', $out[0], $args{verbose}, 0);
+
+  ## weed out bad and weak pixels
+  $out[1] = ($args{write}) ? $self->mask_file("1", 'gif') : 0;
+  $self->do_step('bad_pixels', $out[1], $args{verbose}, 0);
+
+  if ($self->maskmode == 1) {	# lonely/social algorithm
+    ## weed out lonely pixels
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
+    $self->do_step('lonely_pixels', $out[2], $args{verbose}, 0);
+
+    ## include social pixels
+    $out[3] = ($args{write}) ? $self->mask_file("3", 'gif') : 0;
+    $self->do_step('social_pixels', $out[3], $args{verbose}, 1);
+
+  } elsif ($self->maskmode == 2) { # areal median or mean
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
+    $self->do_step('areal', $out[2], $args{verbose}, 1);
+
+  } elsif ($self->maskmode == 3) { # whole image
+    $args{animate} = 0;
+    $args{save} = 0;
+    foreach my $co (0 .. $self->columns-1) {
+      foreach my $ro (0 .. $self->rows-1) {
+	$self->set_pixel($self->elastic_image, $co, $ro, 1);
+      };
+    };
+    $self->npixels($self->columns * $self->rows - $self->nbad);
+
+  } elsif ($self->maskmode == 4) { # jeremy's path
+    $self->elastic_image->inplace->mult($self->scalemask, 0);
+    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
+    $self->do_step('areal', $out[2], $args{verbose}, 0);
+    $out[3] = ($args{write}) ? $self->mask_file("3", 'gif') : 0;
+    $self->weak_pixel_value($save);
+    $self->do_step('bad_pixels', $out[3], $args{verbose}, 0);
+    ## weed out lonely pixels
+    $out[4] = ($args{write}) ? $self->mask_file("4", 'gif') : 0;
+    $self->do_step('lonely_pixels', $out[4], $args{verbose}, 0);
+    ## include social pixels
+    $out[5] = ($args{write}) ? $self->mask_file("5", 'gif') : 0;
+    $self->do_step('social_pixels', $out[5], $args{verbose}, 1);
+
+  } else {
+    die $self->assert(sprintf("Mask mode %d is not a valid mode (currently 1=lonely/social, 2=areal median/mean,  3=whole image)",
+			      $self->maskmode),
+		      'bold red').$/;
+  };
+
+  ## bad pixels may have been turned back on in the social or areal pass, so turn them off again
+  foreach my $pix (@{$self->bad_pixel_list}) {
+    my $co = $pix->[0];
+    my $ro = $pix->[1];
+    $self->elastic_image->($co, $ro) .= 0;
+    ## for .=, see assgn in PDL::Ops
+  };
+
+  ## construct an animated gif of the mask building process
+  if ($args{animate}) {
+    my $fname = $self->animate(@out);
+    print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
+  };
+  if ($args{save}) {
+    my $fname = $self->mask_file("mask", 'gif');
+    print $self->assert("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
+    copy($out[$#out], $fname);
+  };
+  unlink $_ foreach @out;
+};

@@ -33,27 +33,11 @@ my $mode = $ARGV[0];
 pod2usage(1) && exit 1 if not $ARGV[1];
 pod2usage(1) && exit 1 if not $configfile;
 
-tie my %ini, 'Config::IniFiles', ( -file => $configfile );
-
 my $spectrum = Xray::BLA->new();
-$spectrum -> scanfolder	($ini{measure}{scanfolder});
-$spectrum -> tifffolder	($ini{measure}{tiffolder});
-$spectrum -> outfolder	($ini{measure}{outfolder});
-$spectrum -> stub       ($ARGV[1]);
 $spectrum -> colored(0) if $nocolor;
-$spectrum -> element	($ini{measure}{element});
-$spectrum -> line	($ini{measure}{line});
+$spectrum -> read_ini($configfile);
+my @elastic =  $spectrum -> elastic_energies;
 
-$spectrum -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
-$spectrum -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};
-$spectrum -> lonely_pixel_value($ini{pixel}{lonely})    if exists $ini{pixel}{lonely};
-$spectrum -> social_pixel_value($ini{pixel}{social})    if exists $ini{pixel}{social};
-$spectrum -> maskmode          ($ini{pixel}{maskmode})  if exists $ini{pixel}{maskmode};
-$spectrum -> radius            ($ini{pixel}{radius})    if exists $ini{pixel}{radius};
-$spectrum -> operation         ($ini{pixel}{operation}) if exists $ini{pixel}{radius};
-
-my @elastic = split(" ", $ini{measure}{emission});
-$spectrum -> elastic_energies(\@elastic);
 
 if ($mode eq 'herfd') {
   pod2usage(1) && exit 1 if not $energy;

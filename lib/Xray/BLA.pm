@@ -67,6 +67,7 @@ has 'nbad'               => (is => 'rw', isa => 'Int', default => 0);
 
 has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2);
 has 'radius'             => (is => 'rw', isa => 'Int', default => 2);
+has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1);
 
 enum 'Projections' => ['median', 'mean'];
 coerce 'Projections',
@@ -135,8 +136,49 @@ has 'herfd_file_list' => (
 				       }
 			 );
 
+has 'steps' => (
+		metaclass => 'Collection::Array',
+		is        => 'rw',
+		isa       => 'ArrayRef',
+		default   => sub { [] },
+		provides  => {
+			      'push'  => 'push_steps',
+			      'pop'   => 'pop_steps',
+			      'clear' => 'clear_steps',
+			     }
+	       );
+
 
 has 'backend'	    => (is => 'rw', isa => 'Str', default => q{Imager});
+
+sub read_ini {
+  my ($self, $configfile) = @_;
+
+  tie my %ini, 'Config::IniFiles', ( -file => $configfile );
+
+  $self -> scanfolder($ini{measure}{scanfolder});
+  $self -> tifffolder($ini{measure}{tiffolder});
+  $self -> outfolder ($ini{measure}{outfolder});
+  $self -> stub      ($ARGV[1]);
+  $self -> element   ($ini{measure}{element});
+  $self -> line	     ($ini{measure}{line});
+
+  $self -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
+  $self -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};
+  $self -> lonely_pixel_value($ini{pixel}{lonely})    if exists $ini{pixel}{lonely};
+  $self -> social_pixel_value($ini{pixel}{social})    if exists $ini{pixel}{social};
+  $self -> maskmode          ($ini{pixel}{maskmode})  if exists $ini{pixel}{maskmode};
+  $self -> radius            ($ini{pixel}{radius})    if exists $ini{pixel}{radius};
+  $self -> operation         ($ini{pixel}{operation}) if exists $ini{pixel}{operation};
+  $self -> scalemask         ($ini{pixel}{scalemask}) if exists $ini{pixel}{scalemask};
+
+  my @elastic = split(" ", $ini{measure}{emission});
+  $self -> elastic_energies(\@elastic);
+
+  $self->steps($ini{steps}{steps});
+
+  return $self;
+};
 
 sub mask {
   my ($self, @args) = @_;
@@ -158,71 +200,52 @@ sub mask {
   ## import elastic image and store basic properties
   my @out = ();
   $out[0] = ($args{write}) ? $self->mask_file("0", 'gif') : 0;
-  $ret = $self->import_elastic_image(write=>$out[0]);
-  if ($ret->status == 0) {
-    die $self->assert($ret->message, 'bold red').$/;
-  } else {
-    print $ret->message if $args{verbose};
-  };
-  undef $ret;
+  $self->do_step('import_elastic_image', $out[0], $args{verbose}, 0);
 
-  ## weed out bad and weak pixels
-  $out[1] = ($args{write}) ? $self->mask_file("1", 'gif') : 0;
-  $ret = $self->bad_pixels(write=>$out[1]);
-  if ($ret->status == 0) {
-    die $self->assert($ret->message, 'bold red').$/;
-  } else {
-    print $ret->message if $args{verbose};
-  };
-  undef $ret;
+  my $i=0;
+  foreach my $st (@{$self->steps}) {
+    my $set_npixels = ($st eq $self->steps->[-1]) ? 1 : 0;
 
-  if ($self->maskmode == 1) {	# lonely/social algorithm
-    ## weed out lonely pixels
-    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
-    $ret = $self->lonely_pixels(write=>$out[2]);
-    if ($ret->status == 0) {
-      die $self->assert($ret->message, 'bold red').$/;
-    } else {
-      print $ret->message if $args{verbose};
-    };
-    undef $ret;
+    my @args = split(" ", $st);
 
-    ## include social pixels
-    $out[3] = ($args{write}) ? $self->mask_file("3", 'gif') : 0;
-    $ret = $self->social_pixels(write=>$out[3]);
-    if ($ret->status == 0) {
-      die $self->assert($ret->message, 'bold red').$/;
-    } else {
-      print $ret->message if $args{verbose};
-    };
-    $self->npixels($ret->status);
-    undef $ret;
-
-  } elsif ($self->maskmode == 2) { # areal median or mean
-    $out[2] = ($args{write}) ? $self->mask_file("2", 'gif') : 0;
-    $ret = $self->areal(write=>$out[2]);
-    if ($ret->status == 0) {
-      die $self->assert($ret->message, 'bold red').$/;
-    } else {
-      print $ret->message if $args{verbose};
-    };
-    $self->npixels($ret->status);
-    undef $ret;
-
-  } elsif ($self->maskmode == 3) { # whole image
-    $args{animate} = 0;
-    $args{save} = 0;
-    foreach my $co (0 .. $self->columns-1) {
-      foreach my $ro (0 .. $self->rows-1) {
-	$self->set_pixel($self->elastic_image, $co, $ro, 5);
+  LOOP: {
+      ($args[0] eq 'bad') and do {
+	$self -> bad_pixel_value($args[1]);
+	$self -> weak_pixel_value($args[3]);
+	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
+	$self->do_step('bad_pixels', $out[-1], $args{verbose}, $set_npixels);
+	last LOOP;
       };
-    };
-    $self->npixels($self->columns * $self->rows - $self->nbad);
 
-  } else {
-    die $self->assert(sprintf("Mask mode %d is not a valid mode (currently 1=lonely/social, 2=areal median/mean,  3=whole image)",
-			      $self->maskmode),
-		      'bold red').$/;
+      ($args[0] eq 'multiply') and do {
+	$self->scalemask($args[2]);
+	$self->elastic_image->inplace->mult($self->scalemask, 0);
+	last LOOP;
+      };
+
+      ($args[0] eq 'areal') and do {
+	$self->operation($args[1]);
+	$self->radius($args[3]);
+	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
+	$self->do_step('areal', $out[-1], $args{verbose}, $set_npixels);
+	last LOOP;
+      };
+
+      ($args[0] eq 'lonely') and do {
+	$self->lonely_pixel_value($args[1]);
+	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
+	$self->do_step('lonely_pixels', $out[-1], $args{verbose}, $set_npixels);
+	last LOOP;
+      };
+
+      ($args[0] eq 'social') and do {
+	$self->social_pixel_value($args[1]);
+	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
+	$self->do_step('social_pixels', $out[-1], $args{verbose}, $set_npixels);
+	last LOOP;
+      };
+
+    };
   };
 
   ## bad pixels may have been turned back on in the social or areal pass, so turn them off again
@@ -235,6 +258,7 @@ sub mask {
 
   ## construct an animated gif of the mask building process
   if ($args{animate}) {
+    #print $self->assert('Mask creation animation is currently broken', 'bold red'), "\n" if $args{verbose};
     my $fname = $self->animate(@out);
     print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
@@ -244,6 +268,21 @@ sub mask {
     copy($out[$#out], $fname);
   };
   unlink $_ foreach @out;
+
+};
+
+
+sub do_step {
+  my ($self, $step, $write, $verbose, $set_npixels) = @_;
+  my $ret = $self->$step(write=>$write, unity=>$set_npixels);
+  if ($ret->status == 0) {
+    die $self->assert($ret->message, 'bold red').$/;
+  } else {
+    print $ret->message if $verbose;
+  };
+  $self->npixels($ret->status) if $set_npixels;
+  undef $ret;
+  return 1;
 };
 
 sub check {
@@ -375,7 +414,7 @@ sub bad_pixels {
   };
 
   $self->nbad($removed);
-  my $str = $self->assert("First pass", 'cyan');
+  my $str = $self->assert("Bad/weak pass", 'cyan');
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -421,13 +460,13 @@ sub lonely_pixels {
 	++$removed;
 	++$off;
       } else {
-	$ei -> ($co, $ro) .= 1;
+	$ei -> ($co, $ro) .= 1 if ($args{unity});
 	++$on;
       };
     };
   };
 
-  my $str = $self->assert("Second pass", 'cyan');
+  my $str = $self->assert("Lonely pixel pass", 'cyan');
   $str   .= "\tRemoved $removed lonely pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -454,7 +493,11 @@ sub social_pixels {
   foreach $co (0 .. $ncols) {
     foreach $ro (0 .. $nrows) {
 
-      ++$on, next if ($ei->at($co, $ro) > 0);
+      if ($ei->at($co, $ro) > 0) {
+	++$on;
+	$ei -> ($co, $ro) .= 1;
+	next;
+      }
 
       $count = 0;
     OUTER: foreach my $cc (-1 .. 1) {
@@ -479,11 +522,11 @@ sub social_pixels {
     };
   };
   foreach my $px (@addlist) {
-    $ei -> ($px->[0], $px->[1]) .= 1;
+    $ei -> ($px->[0], $px->[1]) .= 1 if ($args{unity});
     ## for .=, see assgn in PDL::Ops
   };
 
-  my $str = $self->assert("Third pass", 'cyan');
+  my $str = $self->assert("Social pixel pass", 'cyan');
   $str   .= "\tAdded $added social pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -526,7 +569,7 @@ sub areal {
       ## flat: see PDL::Core
       ## also see PDL::NiceSlice for matrix slicing syntax
 
-      $value = 1 if $value > 0;
+      $value = 1 if (($value > 0) and ($args{unity}));
       push @list, [$co, $ro, $value];
       ($value > 0) ? ++$on : ++$off;
       $stat->clear;
@@ -538,7 +581,7 @@ sub areal {
     ## for .=, see assgn in PDL::Ops
   };
 
-  my $str = $self->assert("Second pass", 'cyan');
+  my $str = $self->assert("Areal ".$self->operation." pass", 'cyan');
   my $n = 2*$self->radius+1;
   $str   .= "\tSet each pixel to the ".$self->operation." value of a ${n}x$n square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",

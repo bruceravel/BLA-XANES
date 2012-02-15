@@ -111,34 +111,73 @@ example.
 :   element    = Au
 :   line       = La1
 :
-:   [pixel]
-:   maskmode = 2
-:   bad    = 400
-:   weak   = 2
-:   lonely = 2
-:   social = 2
-:   radius = 2
-
-The ~emission~ item, which is not used by the ~herfd~ function,
-contains the list of emission energies at which to generate HERFD
-spectra.  The other three items are the locations of the scan files,
-the image files, and the output files.
+:   [steps]
+:   steps = <<END
+:   bad 400 weak 0
+:   multiply by 5
+:   areal mean radius 2
+:   bad 400 weak 2
+:   lonely 3
+:   social 2
+:   END
 
 This configuration file can sit anywhere on disk and *must* be
-specified at the command line for either script.  I would recommend
-that you put it in the current work directory wherever you are working
-on your data.  You may wish to keep multiple configuration files
-around for different experiments, different edges, etc.
+specified at the command line when using the ~bla~ script.  I would
+recommend that you put it in the current work directory wherever you
+are working on your data.  You may wish to keep multiple configuration
+files around for different experiments, different edges, etc.
 
-The four items in the ~[pixel]~ section are used in mask creation, as
-explained below under "Mask". ~maskmode~ is used to set the mask
-creation algorithm.  1 means to use the lonely/social algorithm, 2
-means to use the areal median/mean algorithm, 3 means to use the whole
-image except for the bad pixels.  2 is the default.
+In the ~[measure]~ section, the ~emission~ item, which is not used by
+the ~herfd~ function, contains the list of emission energies at which
+to generate HERFD spectra.  The next three items are the locations of
+the scan files, the image files, and the output files.  The last two
+items are used to properly scale the color palette of the energy map
+by positively identifying the emission line measured.
+
+The ~[steps]~ section is used to define the sequence of operations
+used to make the mask at any emission energy.  The syntax of this
+section is somewhat fussy.  It is essential that there are no spaces
+after either instance of the word ~END~.  Other than that, whitespace
+is not important, but spelling is.
+
+The possible steps to mask creation are:
+
+ 1. Bad and weak pixel removal.  The syntax is ~bad # weak #~.  The
+    first number indicates the value above which a pixel is assumed to
+    be a bad pixel.  The second number is the value below which a
+    pixel is considered weak.  Both bad and weak pixels are removed
+    from the mask.
+
+ 2. Multiply emission image by an overall constant.  The syntax is
+    ~multiply by #~ where the number is the constant scaling factor.
+
+ 3. Apply an areal median or mean to each pixel.  The syntax is 
+    ~areal <median|mean> radius #~.  The number defines the size of
+    the square considered around each pixel.  A value of 1 means a 3x3
+    square, a valueof 2 means a 5x5 square.  The value of each pixel
+    is set to either the mean or the median value of the pixels in the
+    square.
+
+ 4. Remove all the lonely pixels.  A lonely pixel is one which is
+    illuminated but is not surrounded by enough illuminated pixels.
+    The syntax is ~lonely #~.  The number defines how many illuminated
+    pixels are required for a pixel not to be considered lonely.
+
+ 5. Include all social pixels.  A social pixel is one which is not
+    illuminated but is surrounded by enough illuminated pixels.  The
+    syntax is ~social #~.  The number defines how many of the
+    surrounding pixles must be illuminated for the pixel to be turned
+    on.
+
+The steps can come in any order and can be repeated.  At the end of
+the final step, the illuminated pixels in the mask will be set to a
+value of 1 so that the final mask can be used as an AND mask to create
+the HERFD spectra..
+
 
 *** Error checking
 
-Neither script is particularly robust in terms of flagging problems.
+The script is not particularly robust in terms of flagging problems.
 You should not expect particularly useful error messages if the
 folders in the configuration file are not correct or if you give an
 emission energy value that was not measured as an elastic image.  In
@@ -163,7 +202,7 @@ in three steps:
      pixels, i.e. those with fewer than some cutoff, defined by the
      weak pixel value from the configuration file.
 
-  2. lonely/social algorith,
+  2. lonely/social algorithm
 
      + Remove all "lonely" pixels.  These are the pixels that are
        illuminated but surrounded by fewer illuminated pixels than the

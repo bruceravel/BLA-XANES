@@ -8,9 +8,7 @@ VERSION
 SYNOPSIS
        my $spectrum = Xray::BLA->new;
 
-       $spectrum->scanfolder('/path/to/scanfolder');
-       $spectrum->tiffolder('/path/to/tiffolder');
-       $spectrum->outfolder('/path/to/outfolder');
+       $spectrum->read_ini("config.ini"); # set attributes from ini file
        $spectrum->stub('myscan');
        $spectrum->energy(9713);
 
@@ -34,12 +32,13 @@ DESCRIPTION
         These exposures are used to make masks for interpreting the sequence
         of images at each energy point.
 
-    As you can see in the synopsis, there are attributes for specifying the
-    paths to the locations of the column data files ("scanfolder") and the
-    tiff files ("tiffolder", "tifffolder" with 3 "f"'s is an alias)).
+    Attributes for specifying the paths to the locations of the column data
+    files ("scanfolder") and the tiff files ("tiffolder", "tifffolder" with
+    3 "f"'s is an alias)) are typically set from an ini-style configuration
+    file.
 
     Assumptions are made about the names of the files in those locations.
-    Each files is build upon a stub, indicated by the "stub" attribute. If
+    Each files is built upon a stub, indicated by the "stub" attribute. If
     "stub" is "Aufoil", then the column data in "scanfolder" file is named
     Aufoil.001. The tiff images at each energy point are called
     Aufoil_NNNNN.tif where "NNNNN" is the index of the energy point. One of
@@ -50,7 +49,7 @@ DESCRIPTION
     Lalpha1 line would be called Aufoil_elastic_9713_00001.tif.
 
     If you use a different naming convention, this software in its current
-    form will break!
+    form will break! See "BUGS AND LIMITATIONS".
 
     This software uses an image handling back to interact with these two
     sets of tiff images. Since the Pilatus writes rather unusual tiff files
@@ -109,6 +108,24 @@ ATTRIBUTES
         order to scan the off-axis portion of the spectrum.
 
         "peak_energy" is an alias for "energy".
+
+    "steps"
+        This contains a reference to an array of steps to be taken for mask
+        creation. For example, if the configuration file contains the
+        following:
+
+           ## areal algorithm
+           [steps]
+           steps = <<END
+           bad 400 weak 0
+           areal median radius 2
+           END
+
+        then the lines beginning with "bad" and "areal" will be the entries
+        in the array, indicating that first bad and weak pixels will be
+        removed using the specifies values for "bad_pixel_value" and
+        "weak_pixel_value", then an areal median of radius 2 will be
+        computed.
 
     "maskmode" [2]
         This chooses the mask creation algorithm. 1 means to use the
@@ -201,6 +218,12 @@ METHODS
     sum of HERFD counts from the illuminated pixels.
 
   API
+    "read_ini"
+        Import an ini-style configuration file to set attributes of the
+        Xray::BLA object.
+
+          $spectrum -> read_ini("myconfig.ini");
+
     "mask"
         Create a mask from the elastic image measured at the energy given by
         "energy".
@@ -217,6 +240,10 @@ METHODS
         to be written showing the stages of mask creation.
 
         These output image files are gif.
+
+        This method is a wrapper around the contents of the "step"
+        attribute. Each entry in "step" will be parsed and executed in
+        sequence.
 
     "scan"
         Rewrite the scan file with a column containing the HERFD signal as
@@ -336,6 +363,73 @@ METHODS
         The "status" of the return object contains the photon count from the
         image for this data point.
 
+MASK SPECIFICATION SYNTAX
+    The steps to mask creation are specified using a simple imperative
+    language. Here's an example of specfying the steps via the configuration
+    file:
+
+        [steps]
+        steps = <<END
+        bad 400 weak 0
+        multiply by 5
+        areal mean radius 2
+        bad 400 weak 6
+        lonely 3
+        social 2
+        END
+
+    Each specification of a step is contained on a single line. Whitespace
+    is unimportant, but spelling matters. The parser has little
+    intelligence.
+
+    The possible steps are:
+
+    "bad # weak #"
+        This specification says to remove bad and weak pixels from the
+        image. The first number is the value used for "bad_pixel_value". The
+        second number is the value used for "weak_pixel_value".
+
+    "multiply by #"
+        This specification says to multiply the image by a constant. That
+        is, each pixel will be multiplied by the given constant.
+
+    "areal [median|mean] radius #"
+        Apply the areal median or mean algorithm. The number specifies the
+        "radius" over which to apply the median or mean. A value of 1 says
+        to construct a 3x3 square, i.e. 1 pixel both ways in both
+        dimensions, a value of 2 says to construct a 5x5 square, and so on.
+        Using this algorithm, the pixel is set to either the median or the
+        mean of the pixels in the square.
+
+    "lonely #"
+        Turn off a pixel that is not surrounded by enough illuminated
+        pixels. The purpose of this is to darken isolated pixels. The number
+        is used as the value of "lonely_pixel_value". If a pixel is
+        illuminated and is surrounded by fewer than that number of pixels,
+        it will be turned off.
+
+    "social #"
+        Turn off a pixel that is surrounded by enough illuminated pixels.
+        The purpose of this is to illuminate dark pixels in an illuminated
+        region. The number is used as the value of "social_pixel_value". If
+        a pixel is not illuminated and is surrounded by more than that
+        number of pixels, it will be turned on.
+
+    The steps can be specified in any order and repeated as necessary.
+
+    The "steps" attribute is set is a configuration file containing the
+    "[steps]" group is read. The "steps" attribute can be manipulated by
+    hand:
+
+       $spectrum->steps(\@list_of_steps);      # set the steps to an array
+
+       $spectrum->push_steps("multiply by 7"); # add to the end of the list of steps
+
+       $spectrum->pop_steps;                   # remove the last item from the list
+
+       $spectrum->steps([]); # or
+       $spectrum->clear_steps;                 # remove all steps from the list
+
 ERROR HANDLING
     If the scan file or the elastic image cannot be found or cannot be read,
     a program will die with a message to STDERR to that effect.
@@ -344,8 +438,9 @@ ERROR HANDLING
     be read, a value of 0 will be written to the output file for that data
     point and a warning will be printed to STDOUT.
 
-    Any warning or error message will contain the complete file name so that
-    the file naming or configuration mistake can be tracked down.
+    Any warning or error message involving a file will contain the complete
+    file name so that the file naming or configuration mistake can be
+    tracked down.
 
     Errors interpreting the contents of an image file are probably not
     handled well.
@@ -356,7 +451,7 @@ ERROR HANDLING
     STDOUT when the "verbose" switch is on.
 
 CONFIGURATION AND ENVIRONMENT
-    Using the scripts in the bin/ directory, file locations, elastic
+    Using the script in the bin/ directory, file locations, elastic
     energies, and mask parameters are specified in an ini-style
     configuration file. An example is found in share/config.ini.
 
@@ -402,8 +497,6 @@ DEPENDENCIES
     Currently, the Image Magick backend is disabled.
 
 BUGS AND LIMITATIONS
-    *   Energy map file needs a descriptive header.
-
     *   Other energy map output formats
 
     *   bin with 2x2 or 3x3 bins
@@ -420,6 +513,10 @@ BUGS AND LIMITATIONS
     *   In the future, will need a more sophisticated mechanism for relating
         "stub" to scan file and to image files -- some kind of templating
         scheme, I suspect
+
+    *   More robust error handling.
+
+    *   Use of XDI is undocumented.
 
     *   Wouldn't it be awesome to have all the data&images stored in an HDF5
         file?

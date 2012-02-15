@@ -3,26 +3,25 @@ use Xray::BLA::Return;
 use Xray::BLA::Image;
 
 use version;
-our $VERSION = version->new('0.4');
+our $VERSION = version->new('0.5');
+use feature "switch";
 
 use Moose;
 use Moose::Util qw(apply_all_roles);
 with 'Xray::BLA::Backend::Imager';
-
 use MooseX::Aliases;
 use MooseX::AttributeHelpers;
 use Moose::Util::TypeConstraints;
 
 use PDL::Lite;
 use PDL::NiceSlice;
-use PDL::IO::Pic qw(rim);
+use PDL::IO::Pic qw(wim rim);
 
 use File::Copy;
 use File::Path;
 use File::Spec;
-use List::Util qw(sum reduce);
+use List::Util qw(sum);
 use Math::Round qw(round);
-use Statistics::Descriptive;
 use Term::Sk;
 use Text::Template;
 use Xray::Absorption;
@@ -208,43 +207,41 @@ sub mask {
 
     my @args = split(" ", $st);
 
-  LOOP: {
-      ($args[0] eq 'bad') and do {
+    given ($args[0]) {
+      when ('bad')  {
 	$self -> bad_pixel_value($args[1]);
 	$self -> weak_pixel_value($args[3]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
 	$self->do_step('bad_pixels', $out[-1], $args{verbose}, $set_npixels);
-	last LOOP;
       };
 
-      ($args[0] eq 'multiply') and do {
+      when ('multiply')  {
 	$self->scalemask($args[2]);
 	$self->elastic_image->inplace->mult($self->scalemask, 0);
-	last LOOP;
       };
 
-      ($args[0] eq 'areal') and do {
+      when ('areal')  {
 	$self->operation($args[1]);
 	$self->radius($args[3]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
 	$self->do_step('areal', $out[-1], $args{verbose}, $set_npixels);
-	last LOOP;
       };
 
-      ($args[0] eq 'lonely') and do {
+      when ('lonely')  {
 	$self->lonely_pixel_value($args[1]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
 	$self->do_step('lonely_pixels', $out[-1], $args{verbose}, $set_npixels);
-	last LOOP;
       };
 
-      ($args[0] eq 'social') and do {
+      when ('social')  {
 	$self->social_pixel_value($args[1]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
 	$self->do_step('social_pixels', $out[-1], $args{verbose}, $set_npixels);
-	last LOOP;
       };
 
+      default {
+	print assert("I don't know what to do with \"$st\"", 'bold red');
+      };
     };
   };
 
@@ -254,6 +251,7 @@ sub mask {
     my $ro = $pix->[1];
     $self->elastic_image->($co, $ro) .= 0;
     ## for .=, see assgn in PDL::Ops
+    ## for ->() syntax see PDL::NiceSlice
   };
 
   ## construct an animated gif of the mask building process
@@ -401,6 +399,7 @@ sub bad_pixels {
 	$self->push_bad_pixel_list([$co,$ro]);
   	$ei -> ($co, $ro) .= 0;
 	## for .=, see assgn in PDL::Ops
+	## for ->() syntax see PDL::NiceSlice
   	++$removed;
   	++$off;
       } elsif ($val < $wpv) {
@@ -457,6 +456,7 @@ sub lonely_pixels {
       if ($count < $lpv) {
 	$ei -> ($co, $ro) .= 0;
 	## for .=, see assgn in PDL::Ops
+	## for ->() syntax see PDL::NiceSlice
 	++$removed;
 	++$off;
       } else {
@@ -524,6 +524,7 @@ sub social_pixels {
   foreach my $px (@addlist) {
     $ei -> ($px->[0], $px->[1]) .= 1 if ($args{unity});
     ## for .=, see assgn in PDL::Ops
+    ## for ->() syntax see PDL::NiceSlice
   };
 
   my $str = $self->assert("Social pixel pass", 'cyan');
@@ -546,7 +547,6 @@ sub areal {
   my $ei    = $self->elastic_image;
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
-  my $stat = Statistics::Descriptive::Full->new();
 
   my @list = ();
 
@@ -572,13 +572,13 @@ sub areal {
       $value = 1 if (($value > 0) and ($args{unity}));
       push @list, [$co, $ro, $value];
       ($value > 0) ? ++$on : ++$off;
-      $stat->clear;
     };
   };
   $counter->close if $self->screen;
   foreach my $point (@list) {
     $ei -> ($point->[0], $point->[1]) .= $point->[2];
     ## for .=, see assgn in PDL::Ops
+    ## for ->() syntax see PDL::NiceSlice
   };
 
   my $str = $self->assert("Areal ".$self->operation." pass", 'cyan');
@@ -801,6 +801,10 @@ sub energy_map {
 			      {freq => 's', base => 0, target=>$self->rows});
   my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
   open(my $M, '>', $outfile);
+  printf $M "# Energy calibration map for %s\n", $self->stub;
+  printf $M "# Elastic energy range [%s : %s]\n", $energies[0], $energies[-1];
+  print  $M "# ----------------------------------\n";
+  print  $M "# row  column  interpolated_energy\n\n";
   my $ncols = $self->columns - 1;
 
   foreach my $r (0 .. $self->rows-1) {
@@ -997,15 +1001,13 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-0.3
+0.5
 
 =head1 SYNOPSIS
 
    my $spectrum = Xray::BLA->new;
 
-   $spectrum->scanfolder('/path/to/scanfolder');
-   $spectrum->tiffolder('/path/to/tiffolder');
-   $spectrum->outfolder('/path/to/outfolder');
+   $spectrum->read_ini("config.ini"); # set attributes from ini file
    $spectrum->stub('myscan');
    $spectrum->energy(9713);
 
@@ -1040,13 +1042,13 @@ of images at each energy point.
 
 =back
 
-As you can see in the synopsis, there are attributes for specifying
-the paths to the locations of the column data files (C<scanfolder>)
-and the tiff files (C<tiffolder>, C<tifffolder> with 3 C<f>'s is an
-alias)).
+Attributes for specifying the paths to the locations of the column
+data files (C<scanfolder>) and the tiff files (C<tiffolder>,
+C<tifffolder> with 3 C<f>'s is an alias)) are typically set from an
+ini-style configuration file.
 
 Assumptions are made about the names of the files in those
-locations. Each files is build upon a stub, indicated by the C<stub>
+locations. Each files is built upon a stub, indicated by the C<stub>
 attribute.  If C<stub> is "Aufoil", then the column data in
 C<scanfolder> file is named F<Aufoil.001>.  The tiff images at each
 energy point are called F<Aufoil_NNNNN.tif> where C<NNNNN> is the
@@ -1058,7 +1060,7 @@ energy. For instance, an exposure at the peak of the gold Lalpha1 line
 would be called F<Aufoil_elastic_9713_00001.tif>.
 
 If you use a different naming convention, this software in its current
-form B<will break>!
+form B<will break>!  See L</"BUGS AND LIMITATIONS">.
 
 This software uses an image handling back to interact with these two
 sets of tiff images.  Since the Pilatus writes rather unusual tiff
@@ -1130,6 +1132,25 @@ This value can be changed to some other measured elastic energy in
 order to scan the off-axis portion of the spectrum.
 
 C<peak_energy> is an alias for C<energy>.
+
+=item C<steps>
+
+This contains a reference to an array of steps to be taken for mask
+creation.  For example, if the configuration file contains the
+following:
+
+   ## areal algorithm
+   [steps]
+   steps = <<END
+   bad 400 weak 0
+   areal median radius 2
+   END
+
+then the lines beginning with "bad" and "areal" will be the entries in
+the array, indicating that first bad and weak pixels will be removed
+using the specifies values for C<bad_pixel_value> and
+C<weak_pixel_value>, then an areal median of radius 2 will be computed.
+
 
 =item C<maskmode>  [2]
 
@@ -1241,6 +1262,13 @@ the sum of HERFD counts from the illuminated pixels.
 
 =over 4
 
+=item C<read_ini>
+
+Import an ini-style configuration file to set attributes of the
+Xray::BLA object.
+
+  $spectrum -> read_ini("myconfig.ini");
+
 =item C<mask>
 
 Create a mask from the elastic image measured at the energy given by
@@ -1258,6 +1286,9 @@ When true, the C<animate> argument causes a properly scaled animation
 to be written showing the stages of mask creation.
 
 These output image files are gif.
+
+This method is a wrapper around the contents of the C<step> attribute.
+Each entry in C<step> will be parsed and executed in sequence.
 
 =item C<scan>
 
@@ -1390,6 +1421,84 @@ image for this data point.
 
 =back
 
+=head1 MASK SPECIFICATION SYNTAX
+
+The steps to mask creation are specified using a simple imperative
+language.  Here's an example of specfying the steps via the
+configuration file:
+
+    [steps]
+    steps = <<END
+    bad 400 weak 0
+    multiply by 5
+    areal mean radius 2
+    bad 400 weak 6
+    lonely 3
+    social 2
+    END
+
+Each specification of a step is contained on a single line.
+Whitespace is unimportant, but spelling matters.  The parser has
+little intelligence.
+
+The possible steps are:
+
+=over 4
+
+=item C<bad # weak #>
+
+This specification says to remove bad and weak pixels from the image.
+The first number is the value used for C<bad_pixel_value>.  The second
+number is the value used for C<weak_pixel_value>.
+
+=item C<multiply by #>
+
+This specification says to multiply the image by a constant.  That is,
+each pixel will be multiplied by the given constant.
+
+=item C<areal [median|mean] radius #>
+
+Apply the areal median or mean algorithm.  The number specifies the
+"radius" over which to apply the median or mean.  A value of 1 says to
+construct a 3x3 square, i.e. 1 pixel both ways in both dimensions, a
+value of 2 says to construct a 5x5 square, and so on.  Using this
+algorithm, the pixel is set to either the median or the mean of the
+pixels in the square.
+
+=item C<lonely #>
+
+Turn off a pixel that is not surrounded by enough illuminated pixels.
+The purpose of this is to darken isolated pixels.  The number is used
+as the value of C<lonely_pixel_value>.  If a pixel is illuminated and
+is surrounded by fewer than that number of pixels, it will be turned
+off.
+
+=item C<social #>
+
+Turn off a pixel that is surrounded by enough illuminated pixels.  The
+purpose of this is to illuminate dark pixels in an illuminated region.
+The number is used as the value of C<social_pixel_value>.  If a pixel
+is not illuminated and is surrounded by more than that number of pixels,
+it will be turned on.
+
+=back
+
+The steps can be specified in any order and repeated as necessary.
+
+The C<steps> attribute is set is a configuration file containing the
+C<[steps]> group is read.  The C<steps> attribute can be manipulated
+by hand:
+
+   $spectrum->steps(\@list_of_steps);      # set the steps to an array
+
+   $spectrum->push_steps("multiply by 7"); # add to the end of the list of steps
+
+   $spectrum->pop_steps;                   # remove the last item from the list
+
+   $spectrum->steps([]); # or
+   $spectrum->clear_steps;                 # remove all steps from the list
+
+
 =head1 ERROR HANDLING
 
 If the scan file or the elastic image cannot be found or cannot be
@@ -1399,8 +1508,9 @@ If an image file corresponding to a data point cannot be found or
 cannot be read, a value of 0 will be written to the output file for
 that data point and a warning will be printed to STDOUT.
 
-Any warning or error message will contain the complete file name so
-that the file naming or configuration mistake can be tracked down.
+Any warning or error message involving a file will contain the
+complete file name so that the file naming or configuration mistake
+can be tracked down.
 
 Errors interpreting the contents of an image file are probably not
 handled well.
@@ -1412,7 +1522,7 @@ written to STDOUT when the C<verbose> switch is on.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-Using the scripts in the F<bin/> directory, file locations, elastic
+Using the script in the F<bin/> directory, file locations, elastic
 energies, and mask parameters are specified in an ini-style
 configuration file.  An example is found in F<share/config.ini>.
 
@@ -1420,6 +1530,8 @@ If using L<Xray::XDI>, metadata can be supplied by an ini-style file.
 And example is found in F<share/bla.xdi.ini>.
 
 =head1 DEPENDENCIES
+
+This requires perl 5.10 or later.
 
 =head2 CPAN
 
@@ -1435,6 +1547,10 @@ L<Moose>
 
 =item *
 
+L<MooseX::AttributeHelpers>
+
+=item *
+
 L<MooseX::Aliases>
 
 =item *
@@ -1444,6 +1560,14 @@ L<Math::Round>
 =item *
 
 L<Config::IniFiles>
+
+=item *
+
+L<Term::Sk>
+
+=item *
+
+L<Text::Template>
 
 =item *
 
@@ -1485,7 +1609,8 @@ Strawberry Perl.  Currently, the Image Magick backend is disabled.
 
 =item *
 
-Energy map file needs a descriptive header.
+Filename for mask creation animated gif is wrong.  C<mask_file> builds
+the filename correctly for the energy map animation.
 
 =item *
 
@@ -1514,6 +1639,14 @@ range of elastic energies to a table of line energies.
 In the future, will need a more sophisticated mechanism for relating
 C<stub> to scan file and to image files -- some kind of templating
 scheme, I suspect
+
+=item *
+
+More robust error handling.
+
+=item *
+
+Use of XDI is undocumented.
 
 =item *
 

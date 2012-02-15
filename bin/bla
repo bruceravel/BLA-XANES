@@ -36,7 +36,7 @@ pod2usage(1) && exit 1 if not $configfile;
 my $spectrum = Xray::BLA->new();
 $spectrum -> colored(0) if $nocolor;
 $spectrum -> read_ini($configfile);
-my @elastic =  $spectrum -> elastic_energies;
+my @elastic =  @{$spectrum -> elastic_energies};
 
 
 if ($mode eq 'herfd') {

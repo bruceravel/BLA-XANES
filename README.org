@@ -221,14 +221,15 @@ in three steps:
 This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.
 
-When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, a 3- or
-4-frame animated tiff file will be written which shows the steps from
-elastic image to final mask.
+When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, an animated
+tiff file will be written.  For ~herfd~, it shows the steps from
+elastic image to final mask.  For ~map~, it shows the motion of the map across
+the face of the detector.
 
 ** Scan conversion
 
 At each energy point, the HERFD signal is computed from the Pilatus
-image using the mask created by the algorithm described above.  The
+image using the mask created as described above.  The
 counts on each pixel lying within the illuminated portion of the mask
 are summed.  This sum is the HERFD signal at that incident energy.
 

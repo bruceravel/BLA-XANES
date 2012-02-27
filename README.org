@@ -52,6 +52,7 @@ wrapper script around the three bent Laue functions:
 :
 :     --config  | -c    [string]  configuration file (required)
 :     --energy  | -e    [integer] emission energy (required for HERFD)
+:     --xdiini  | -x    [string]  XDI configuration file
 :     --reuse   | -r    [flag]    reuse mask files for energy mnap if in outfolder
 :     --animate | -a    [flag]    save tiff animation of mask creation
 :     --save    | -s    [flag]    save tiff with mask
@@ -184,6 +185,27 @@ emission energy value that was not measured as an elastic image.  In
 those cases, the program will almost certainly fail with some kind of
 stack trace, but probably not with an immediately useful error
 message.
+
+*** XDI Output
+
+When a configuration file containing XDI metadata is used, the output
+files will be written in XDI format.  This is particularly handy for
+the RIXS function.  If XDI metadata is provided, then the
+~BLA.pixel_ratio~ metadatum will be written to the output file.  This
+number is computed from the number of pixels illuminated in the mask
+at each emission energy.  The pixel ratio for an emission energy is
+the number of pixels from the emission energy with the largest number
+of illuminated pixles divided by the number of illuminated pixels at
+that energy.
+
+The pixel ratio can be used to normalize the mu(E) data from each
+emission energy.  The concept is that the normalized mu(E) data are an
+approximation of what they would be if each emission energy was
+equally represented on the face of the detector.
+
+The version of Athena based on Demeter will be able to use these
+values as importance or plot multiplier values if the ~Xray::XDI~
+module is available.
 
 ** Mask
 

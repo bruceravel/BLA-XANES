@@ -20,7 +20,7 @@ use PDL::IO::Pic qw(wim rim);
 use File::Copy;
 use File::Path;
 use File::Spec;
-use List::Util qw(sum);
+use List::Util qw(sum max);
 use Math::Round qw(round);
 use Term::Sk;
 use Text::Template;
@@ -40,6 +40,7 @@ eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 
 has 'element'            => (is => 'rw', isa => 'Str', default => q{});
 has 'line'               => (is => 'rw', isa => 'Str', default => q{});
 
+has 'task'		 => (is => 'rw', isa => 'Str',  default => q{});
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1);
 has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1);
 
@@ -135,6 +136,20 @@ has 'herfd_file_list' => (
 				       }
 			 );
 
+has 'herfd_pixels_used' => (
+			    metaclass => 'Collection::Array',
+			    is        => 'rw',
+			    isa       => 'ArrayRef',
+			    default   => sub { [] },
+			    provides  => {
+					  'push'  => 'push_herfd_pixels_used',
+					  'pop'   => 'pop_herfd_pixels_used',
+					  'clear' => 'clear_herfd_pixels_used',
+					 }
+			   );
+
+
+
 has 'steps' => (
 		metaclass => 'Collection::Array',
 		is        => 'rw',
@@ -190,6 +205,7 @@ sub mask {
   local $|=1;
 
   $self->clear_bad_pixel_list;
+  $self->npixels(0);
 
   my $ret = $self->check;
   if ($ret->status == 0) {
@@ -667,8 +683,10 @@ sub xdi_out {
 
   my $xdi = Xray::XDI->new();
   $xdi   -> ini($xdiini);
+  $xdi   -> push_extension(sprintf("BLA.illuminated_pixels: %d", $self->npixels));
+  $xdi   -> push_extension(sprintf("BLA.total_pixels: %d", $self->columns*$self->rows));
+  $xdi   -> push_extension("BLA.pixel_ratio: \%pixel_ratio\%") if ($self->task eq 'rixs');
   $xdi   -> push_comment("HERFD scan on " . $self->stub);
-  $xdi   -> push_comment(sprintf("%d illuminated pixels (of %d) in the mask", $self->npixels, $self->columns*$self->rows));
   if ($self->maskmode == 1) {
     $xdi   -> push_comment(sprintf("lonely/social algorithm: bad=%d  weak=%d  social=%d  lonely=%d",
 				   $self->bad_pixel_value, $self->weak_pixel_value,
@@ -742,6 +760,27 @@ sub apply_mask {
   return $ret;
 };
 
+sub prep_rixs_for_normalization {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+
+  my $max = max(@{$self->herfd_pixels_used});
+  my @used = map {sprintf("%.3f", $max/$_)} @{$self->herfd_pixels_used};
+  foreach my $i (0 .. $#used) {
+    local $/;
+    open(my $IN, '<', $self->herfd_file_list->[$i]);
+    my $text = <$IN>;
+    close $IN;
+    $text =~ s{\%pixel_ratio\%}{$used[$i]};
+    open(my $OUT, '>', $self->herfd_file_list->[$i]);
+    print $OUT $text;
+    close $OUT;
+  };
+  print $self->assert("Prepared HERFD files for pixel count normalization", 'yellow') if $args{verbose};
+  return $ret;
+};
 
 sub rixs_map {
   my ($self, @args) = @_;
@@ -1519,6 +1558,27 @@ The output column data file is B<not> written on the fly, so a run
 that dies or is halted early will result in no output being written.
 The save and animation images are written at the time the message is
 written to STDOUT when the C<verbose> switch is on.
+
+=head1 XDI OUTPUT
+
+When a configuration file containing XDI metadata is used, the output
+files will be written in XDI format.  This is particularly handy for
+the RIXS function.  If XDI metadata is provided, then the
+C<BLA.pixel_ratio> datum will be written to the output file.  This
+number is computed from the number of pixels illuminated in the mask
+at each emission energy.  The pixel ratio for an emission energy is
+the number of pixels from the emission energy with the largest number
+of illuminated pixles divided by the number of illuminated pixels at
+that energy.
+
+The pixel ratio can be used to normalize the mu(E) data from each
+emission energy.  The concept is that the normalized mu(E) data are an
+approximation of what they would be if each emission energy was
+equally represented on the face of the detector.
+
+The version of Athena based on Demeter will be able to use these
+values as importance or plot multiplier values if the L<Xray::XDI>
+module is available.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 

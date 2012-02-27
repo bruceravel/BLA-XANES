@@ -33,7 +33,7 @@ To install, do the following:
 ** Usage
 
 There is a single programs installed from the bin/ folder.  ~bla~ is a
-wrapper script around the three bent Laue functions:
+wrapper script around the three bent Laue tasks:
 
  1. ~herfd~: make a single HERFD spectrum at a specific
     emission energy
@@ -86,14 +86,14 @@ or ~map~, or ~-a~ for ~map~) will be silently ignored.
 
 *** Output
 
- + The output of the ~herfd~ script is a data file containing the
+ + The output of the ~herfd~ task is a data file containing the
    HERFD spectrum at the specified eminssion energy and, if requested,
    tiff images with the mask and the mask creation animation.
 
- + The output of the ~rixs~ script is the same as for the ~herfd~
+ + The output of the ~rixs~ task is the same as for the ~herfd~
    script at each emission energy.
 
- + The output of the ~map~ program is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
+ + The output of the ~map~ task is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
    which can be read by gnuplot and a gnuplot script for displaying
    the data.  The resulting image will plot a map of detector column
    vs detector row with the color axis showing energy.  Tiff files for
@@ -243,14 +243,15 @@ in three steps:
 This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.
 
-When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, a 3- or
-4-frame animated tiff file will be written which shows the steps from
-elastic image to final mask.
+When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, an animated
+tiff file will be written.  For ~herfd~, it shows the steps from
+elastic image to final mask.  For ~map~, it shows the motion of the map across
+the face of the detector.
 
 ** Scan conversion
 
 At each energy point, the HERFD signal is computed from the Pilatus
-image using the mask created by the algorithm described above.  The
+image using the mask created as described above.  The
 counts on each pixel lying within the illuminated portion of the mask
 are summed.  This sum is the HERFD signal at that incident energy.
 

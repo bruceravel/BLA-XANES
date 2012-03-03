@@ -9,6 +9,7 @@ use Getopt::Long;
 use Pod::Usage;
 
 my $energy     = 0;
+my $point      = -1;
 my $reuse      = 0;
 my $save       = 0;
 my $animate    = 0;
@@ -17,6 +18,7 @@ my $configfile = q{};
 my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
 my $nocolor    = 0;
 my $result     = GetOptions ("energy|e=i"   => \$energy,
+			     "point|p=i"    => \$point,
 			     'reuse|r'      => \$reuse,
 			     'save|s'       => \$save,
 			     'animate|a'    => \$animate,
@@ -44,6 +46,20 @@ if ($mode eq 'herfd') {
   $spectrum -> energy($energy);
   $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
   $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+
+} elsif ($mode eq 'mask') {
+  pod2usage(1) && exit 1 if not $energy;
+  $spectrum -> energy($energy);
+  $spectrum -> mask(verbose=>0, save=>1, animate=>$animate);
+
+} elsif ($mode eq 'point') {
+  pod2usage(1) && exit(1) if not $energy;
+  pod2usage(1) && exit(1) if ($point < 1);
+  $spectrum -> energy($energy);
+  my $ret = $spectrum -> read_mask(verbose=>0);
+  print(0) && exit(1) if not $ret->status;
+  my $value = $spectrum->apply_mask($point, verbose=>0, silence=>1)->status;
+  print $value.$/;
 
 } elsif ($mode eq 'rixs') {
   foreach my $e (@elastic) {
@@ -91,7 +107,7 @@ if ($mode eq 'herfd') {
   $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
 
 } elsif ($mode eq 'test') {
-  die "test: nothing here\n";
+  die "test the BLA code...\n";
 
 } else {
   pod2usage(1);
@@ -107,17 +123,16 @@ bla - wrapper script for bent Laue analyzer HERFD, RIXS, and energy map function
 
 =head1 SYNOPSIS
 
- bla herfd [options] <stub>
- bla rixs  [options] <stub>
- bla map   [options] <stub>
+ bla (herfd|rixs|map|mask|point) [options] <stub>
 
  Options:
    --config  | -c   [string]   configuration file (*required*)
-   --energy  | -e   [integer]  emission energy for HERFD (required for HERFD)
+   --energy  | -e   [integer]  emission energy for HERFD (required for herfd/point tasks)
+   --point   | -p   [integer]  data point at which compute HERFD (required for point task)
    --xdiini  | -x   [string]   XDI configuration file
    --reuse   | -r   [flag]     reuse mask files for map if found in outfolder
-   --animate | -a   [flag]     save tiff animation of mask or energy map creation
-   --save    | -s   [flag]     save tiff with mask
+   --animate | -a   [flag]     save gif animation of mask or energy map creation
+   --save    | -s   [flag]     save gif with mask
    --verbose | -v   [flag]     write progress messages
    --nocolor | -n   [flag]     turn off color coding of screen output
    --quiet   | -q   [flag]     suppress progress messages
@@ -132,9 +147,14 @@ bla - wrapper script for bent Laue analyzer HERFD, RIXS, and energy map function
 Specify the location of the ini-style config file giving the input and
 output locations on disk and other information.
 
-=item B<--energy>, B<-e>  (Required for HERFD)
+=item B<--energy>, B<-e>  (Required for herfd and point tasks)
 
 The emission energy at which to compute the XANES spectrum.
+
+=item B<--point>, B<-p>  (Required for point task)
+
+The data point at which to compute the HERFD value.  If that BLA image
+does not exist, this returns 0.
 
 =item B<--xdiini>, B<-x>
 
@@ -153,7 +173,7 @@ rixs) or the sequence of emission energy masks (map).
 
 =item B<--save>, B<-s>
 
-Write a tiff file showing the mask.
+Write a gif file showing the mask.
 
 =item B<--verbose>, B<-v>   (Default)
 
@@ -189,6 +209,15 @@ Convert BLA image to XANES spectrum at a sequence of emission energies.
 =item map
 
 Convert a sequence of BLA elastic images to an energy map.
+
+=item mask
+
+Compute a mask for a given emission energy.
+
+=item map
+
+Convert a specified BLA image to the HERFD value at that incidient
+energy using a specified emission energy.  Print that value to STDOUT.
 
 =back
 

@@ -33,7 +33,7 @@ To install, do the following:
 ** Usage
 
 There is a single programs installed from the bin/ folder.  ~bla~ is a
-wrapper script around the three bent Laue tasks:
+wrapper script around the five bent Laue tasks:
 
  1. ~herfd~: make a single HERFD spectrum at a specific
     emission energy
@@ -44,18 +44,26 @@ wrapper script around the three bent Laue tasks:
  3. ~map~: convert a series of elastic images to an
     energy vs. pixel map
 
+ 4. ~mask~: compute the mask file for a secific emission energy
+
+ 5. ~point~: convert a specified BLA image to its HERFD value for a
+    specified emission energy
+
 *** The bla script
 
-:  bla herfd [ceasvnqh] <stub>
-:  bla rixs  [casvnqh]  <stub>
-:  bla map   [crvnqh]   <stub>
-:
+:  bla herfd [cxeasvnqh] <stub>
+:  bla rixs  [cxasvnqh]  <stub>
+:  bla map   [crvnqh]    <stub>
+:  bla mask  [casvnqh]   <stub>
+:  bla point [ceph]      <stub>
+: 
 :     --config  | -c    [string]  configuration file (required)
-:     --energy  | -e    [integer] emission energy (required for HERFD)
+:     --energy  | -e    [integer] emission energy (required for herfd/point tasks)
+:     --point   | -p    [integer] data point at which compute HERFD (required for point task)
 :     --xdiini  | -x    [string]  XDI configuration file
-:     --reuse   | -r    [flag]    reuse mask files for energy mnap if in outfolder
-:     --animate | -a    [flag]    save tiff animation of mask creation
-:     --save    | -s    [flag]    save tiff with mask
+:     --reuse   | -r    [flag]    reuse mask files for energy map if in outfolder
+:     --animate | -a    [flag]    save gif animation of mask creation
+:     --save    | -s    [flag]    save gif with mask
 :     --verbose | -v    [flag]    write progress messages
 :     --nocolor | -n    [flag]    turn off color coding of screen output
 :     --quiet   | -q    [flag]    suppress progress messages
@@ -70,9 +78,11 @@ of the columns of the scan file.  If your data do not follow these
 patterns, this script will fail.  File locations are specified in the
 configuration file.
 
-:  examples:  bla herfd -c /path/to/config.ini -e 9713 -a Aufoil1
-:             bla rixs -c /path/to/config.ini -a Aufoil1
-:             bla map -c /path/to/config.ini Aufoil1
+:  examples:  bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
+:             bla rixs -c=/path/to/config.ini -a Aufoil1
+:             bla map -c=/path/to/config.ini Aufoil1
+:             bla mask -c=/path/to/config.ini -e=9713 Aufoil1
+:             bla point -c=/path/to/config.ini -e=9713 -p=10 Aufoil1
 
 
 Here, "Aufoil1" is the stub, i.e. the basename of the scan and image
@@ -80,15 +90,21 @@ files, and the ~-c~, ~-e~, and ~-a~ command line options are
 demonstrated.
 
 Options that are not used by a function (for example ~-e~ for ~rixs~
-or ~map~, or ~-a~ for ~map~) will be silently ignored.
+or ~map~, ~-a~ for ~map~, or ~-p~ for any task other than ~point~)
+will be silently ignored.
 
 ~-c~ is required for all functions.
+
+Since the ~mask~ and ~point~ tasks are intended for use during data
+acquisition, verbosity is tunred off regardless of the command line
+switches for the ~mask~ and ~point~ tasks.  Saving is turned on for
+the ~mask~ task regardless of the command line switches.
 
 *** Output
 
  + The output of the ~herfd~ task is a data file containing the
    HERFD spectrum at the specified eminssion energy and, if requested,
-   tiff images with the mask and the mask creation animation.
+   gif images with the mask and the mask creation animation.
 
  + The output of the ~rixs~ task is the same as for the ~herfd~
    script at each emission energy.
@@ -96,8 +112,29 @@ or ~map~, or ~-a~ for ~map~) will be silently ignored.
  + The output of the ~map~ task is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
    which can be read by gnuplot and a gnuplot script for displaying
    the data.  The resulting image will plot a map of detector column
-   vs detector row with the color axis showing energy.  Tiff files for
+   vs detector row with the color axis showing energy.  Gif files for
    the masks at each emission energy are also written.
+
+ + The output of the ~mask~ task is a single gif file containing the
+   mask for the specified emission energy.
+
+ + The output of the ~point~ task is the HERFD value extracted from a
+   specified BLA image for a specified emission energy.  The value is
+   printed to STDOUT.  If files containing the BLA image or the
+   emission mask do not exist, 0 is printed to STDOUT.
+
+The ~herfd~, ~rixs~, and ~map~ tasks are intended for post-processing
+of a full data set.
+
+The ~mask~ and ~point~ tasks are intended for inlining in the data
+acquisition process.  The ~mask~ task should be run after measuring
+the elastic images at the emission energy and before measuring the
+HERFD data.  The ~mask~ task takes about 10 seconds.
+
+The ~point~ task is intended for generating the HERFD value at a
+specific emission energy during the scan.  This value can be used for
+plotting or storing to the output data file.  The ~point~ task takes
+lass than 1 second.
 
 *** The configuration file
 
@@ -244,7 +281,7 @@ This results in a simple logical-AND mask for evaluating the signal at
 each energy point from the Pilatus image.
 
 When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, an animated
-tiff file will be written.  For ~herfd~, it shows the steps from
+gif file will be written.  For ~herfd~, it shows the steps from
 elastic image to final mask.  For ~map~, it shows the motion of the map across
 the face of the detector.
 

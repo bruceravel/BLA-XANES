@@ -634,6 +634,23 @@ sub mask_file {
 # # energy time ring_current i0 it ifl ir roi1 roi2 roi3 roi4 tif
 #     11850.000   20  95.3544291727  1400844   830935   653600   956465      38      18      15      46      1
 
+sub read_mask {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+  my $fname = $self->mask_file("mask", 'gif');
+  if (not -e $fname) {
+    $ret->status(0);
+    $ret->message("mask file $fname does not exist");
+    return $ret;
+  };
+  my $image = rim($fname);
+  $self -> elastic_image($image);
+  print $self->assert("Read mask from ".$fname, 'yellow') if $args{verbose};
+  return $ret;
+};
+
 sub scan {
   my ($self, @args) = @_;
   my %args = @args;
@@ -644,7 +661,7 @@ sub scan {
 
   my (@data, @point);
 
-  print $self->assert("Reading scan from ".$self->scanfile, 'yellow');
+  print $self->assert("Reading scan from ".$self->scanfile, 'yellow') if $args{verbose};
   open(my $SCAN, "<", $self->scanfile);
   while (<$SCAN>) {
     next if m{\A\#};
@@ -671,7 +688,7 @@ sub scan {
   };
 
   $ret->message($outfile);
-  print $self->assert("Wrote $outfile", 'bold green');
+  print $self->assert("Wrote $outfile", 'bold green') if $args{verbose};
   return $ret;
 };
 
@@ -733,17 +750,18 @@ sub apply_mask {
   my ($self, $tif, @args) = @_;
   my %args = @args;
   $args{verbose} ||= 0;
+  $args{silence} ||= 0;
   my $ret = Xray::BLA::Return->new;
   local $|=1;
 
   my $fname = sprintf("%s_%5.5d.tif", $self->stub, $tif);
   my $image = File::Spec->catfile($self->tiffolder, $fname);
   if (not -e $image) {
-    warn "\tskipping $image, file not found\n";
+    warn "\tskipping $image, file not found\n" if not $args{silence};
     $ret->message("skipping $image, file not found\n");
     $ret->status(0);
   } elsif (not -r $image) {
-    warn "\tskipping $image, file cannot be read\n";
+    warn "\tskipping $image, file cannot be read\n" if not $args{silence};
     $ret->message("skipping $image, file cannot be read\n");
     $ret->status(0);
   } else {

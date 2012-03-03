@@ -1687,6 +1687,11 @@ Strawberry Perl.  Currently, the Image Magick backend is disabled.
 
 =item *
 
+Scan file format is currently hardwired.  In the future, will need to
+adapt to different columns.
+
+=item *
+
 Filename for mask creation animated gif is wrong.  C<mask_file> builds
 the filename correctly for the energy map animation.
 

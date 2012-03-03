@@ -3,7 +3,7 @@ NAME
     spectrum
 
 VERSION
-    0.3
+    0.5
 
 SYNOPSIS
        my $spectrum = Xray::BLA->new;
@@ -450,6 +450,25 @@ ERROR HANDLING
     and animation images are written at the time the message is written to
     STDOUT when the "verbose" switch is on.
 
+XDI OUTPUT
+    When a configuration file containing XDI metadata is used, the output
+    files will be written in XDI format. This is particularly handy for the
+    RIXS function. If XDI metadata is provided, then the "BLA.pixel_ratio"
+    datum will be written to the output file. This number is computed from
+    the number of pixels illuminated in the mask at each emission energy.
+    The pixel ratio for an emission energy is the number of pixels from the
+    emission energy with the largest number of illuminated pixles divided by
+    the number of illuminated pixels at that energy.
+
+    The pixel ratio can be used to normalize the mu(E) data from each
+    emission energy. The concept is that the normalized mu(E) data are an
+    approximation of what they would be if each emission energy was equally
+    represented on the face of the detector.
+
+    The version of Athena based on Demeter will be able to use these values
+    as importance or plot multiplier values if the Xray::XDI module is
+    available.
+
 CONFIGURATION AND ENVIRONMENT
     Using the script in the bin/ directory, file locations, elastic
     energies, and mask parameters are specified in an ini-style
@@ -459,16 +478,24 @@ CONFIGURATION AND ENVIRONMENT
     example is found in share/bla.xdi.ini.
 
 DEPENDENCIES
+    This requires perl 5.10 or later.
+
   CPAN
     *   PDL
 
     *   Moose
+
+    *   MooseX::AttributeHelpers
 
     *   MooseX::Aliases
 
     *   Math::Round
 
     *   Config::IniFiles
+
+    *   Term::Sk
+
+    *   Text::Template
 
     *   Imager
 
@@ -497,6 +524,12 @@ DEPENDENCIES
     Currently, the Image Magick backend is disabled.
 
 BUGS AND LIMITATIONS
+    *   Scan file format is currently hardwired. In the future, will need to
+        adapt to different columns.
+
+    *   Filename for mask creation animated gif is wrong. "mask_file" builds
+        the filename correctly for the energy map animation.
+
     *   Other energy map output formats
 
     *   bin with 2x2 or 3x3 bins

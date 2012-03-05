@@ -49,8 +49,9 @@ if ($mode eq 'herfd') {
 
 } elsif ($mode eq 'mask') {
   pod2usage(1) && exit 1 if not $energy;
+  $spectrum -> screen($verbose);
   $spectrum -> energy($energy);
-  $spectrum -> mask(verbose=>0, save=>1, animate=>$animate);
+  $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate);
 
 } elsif ($mode eq 'point') {
   pod2usage(1) && exit(1) if not $energy;

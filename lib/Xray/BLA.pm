@@ -278,8 +278,8 @@ sub mask {
   };
   if ($args{save}) {
     my $fname = $self->mask_file("mask", 'gif');
+    $self->elastic_image->wim($fname);
     print $self->assert("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
-    copy($out[$#out], $fname);
   };
   unlink $_ foreach @out;
 
@@ -567,8 +567,9 @@ sub areal {
   my @list = ();
 
   my ($removed, $on, $off, $co, $ro, $cc, $rr, $cdn, $cup, $rdn, $rup, $value) = (0,0,0,0,0,0,0,0,0,0,0,0);
-  my $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
-			      {freq => 's', base => 0, target=>$ncols});
+  my $counter = q{};
+  $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
+			   {freq => 's', base => 0, target=>$ncols}) if $self->screen;
 
   my $radius = $self->radius;
   foreach my $co (0 .. $ncols) {

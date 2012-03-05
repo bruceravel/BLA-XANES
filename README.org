@@ -95,10 +95,11 @@ will be silently ignored.
 
 ~-c~ is required for all functions.
 
-Since the ~mask~ and ~point~ tasks are intended for use during data
-acquisition, verbosity is tunred off regardless of the command line
-switches for the ~mask~ and ~point~ tasks.  Saving is turned on for
-the ~mask~ task regardless of the command line switches.
+Since the ~point~ task returns a number intended for use during data
+acquisition, verbosity is turned off regardless of the command line
+switches.  Use the ~-q~ flag if you want to suppress screen messages
+during the ~mask~ task.  Saving is turned on for the ~mask~ task
+regardless of the command line switches.
 
 *** Output
 

@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 
-use strict;
-use warnings;
-use Xray::BLA;
+use Xray::BLA; # automatically turns on strict and warnings
 use Xray::BLA::Image;
 use Config::IniFiles;
 use Getopt::Long;
@@ -15,25 +13,29 @@ my $save       = 0;
 my $animate    = 0;
 my $verbose    = 1;
 my $configfile = q{};
-my $xdiini     = q{};      # '/home/bruce/git/BLA-XANES/share/bla.xdi.ini'
+my $xdiini     = q{};      # 'share/bla.xdi.ini'
 my $nocolor    = 0;
-my $result     = GetOptions ("energy|e=i"   => \$energy,
-			     "point|p=i"    => \$point,
-			     'reuse|r'      => \$reuse,
-			     'save|s'       => \$save,
-			     'animate|a'    => \$animate,
-			     'verbose|v'    => \$verbose,
-			     'config|c=s'   => \$configfile,
-			     'xdiini|x=s'   => \$xdiini,
-			     'nocolor|n'    => \$nocolor,
-			     'quiet|q'      => sub { $verbose = 0 },
-			     'help|h'       => sub { pod2usage(1); exit 0},
+my $result     = GetOptions ("energy|e=i" => \$energy,
+			     "point|p=i"  => \$point,
+			     'reuse|r'    => \$reuse,
+			     'save|s'     => \$save,
+			     'animate|a'  => \$animate,
+			     'verbose|v'  => \$verbose,
+			     'config|c=s' => \$configfile,
+			     'xdiini|x=s' => \$xdiini,
+			     'nocolor|n'  => \$nocolor,
+			     'quiet|q'    => sub { $verbose = 0 },
+			     'help|h'     => sub { pod2usage(1); exit 0},
 			    );
 
 my $mode = $ARGV[0];
+$configfile ||= $ENV{BLACONFIG};
+$energy     ||= $ENV{BLAENERGY};
 
-pod2usage(1) && exit 1 if not $ARGV[1];
-pod2usage(1) && exit 1 if not $configfile;
+warn("BLA error: no file stub specified\n")     && exit 1 if not $ARGV[1];
+warn("BLA error: no config file specified (use the -c switch)\n")   && exit 1 if not $configfile;
+warn("BLA error: $configfile does not exist\n") && exit 1 if not -e $configfile;
+warn("BLA error: $configfile cannot be read\n") && exit 1 if not -r $configfile;
 
 my $spectrum = Xray::BLA->new(task=>$mode);
 $spectrum -> colored(0) if $nocolor;
@@ -42,25 +44,28 @@ my @elastic =  @{$spectrum -> elastic_energies};
 
 
 if ($mode eq 'herfd') {
-  pod2usage(1) && exit 1 if not $energy;
+  warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
   $spectrum -> energy($energy);
   $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
   $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
 
+
 } elsif ($mode eq 'mask') {
-  pod2usage(1) && exit 1 if not $energy;
+  warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
   $spectrum -> screen($verbose);
   $spectrum -> energy($energy);
   $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate);
 
+
 } elsif ($mode eq 'point') {
-  pod2usage(1) && exit(1) if not $energy;
-  pod2usage(1) && exit(1) if ($point < 1);
+  warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
+  warn("BLA error: no energy point specified (use the -p switch)\n")    && exit(1) if ($point < 1);
   $spectrum -> energy($energy);
   my $ret = $spectrum -> read_mask(verbose=>0);
   print(0) && exit(1) if not $ret->status;
   my $value = $spectrum->apply_mask($point, verbose=>0, silence=>1)->status;
   print $value.$/;
+
 
 } elsif ($mode eq 'rixs') {
   foreach my $e (@elastic) {
@@ -86,6 +91,7 @@ if ($mode eq 'herfd') {
   $spectrum -> prep_rixs_for_normalization(verbose => $verbose) if $xdiini;
   $spectrum -> rixs_map(verbose => $verbose);
 
+
 } elsif ($mode eq 'map') {
   my $need_to_check = 0;
   foreach my $e (@elastic) {
@@ -107,8 +113,10 @@ if ($mode eq 'herfd') {
   };
   $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
 
+
 } elsif ($mode eq 'test') {
-  die "test the BLA code...\n";
+  die "tests for the BLA code (none currently)...\n";
+
 
 } else {
   pod2usage(1);
@@ -120,7 +128,7 @@ exit 0;
 
 =head1 NAME
 
-bla - wrapper script for bent Laue analyzer HERFD, RIXS, and energy map functions
+bla - wrapper script for bent Laue analyzer HERFD-related tasks
 
 =head1 SYNOPSIS
 
@@ -145,8 +153,7 @@ bla - wrapper script for bent Laue analyzer HERFD, RIXS, and energy map function
 
 =item B<--config>, B<-c>  (Required)
 
-Specify the location of the ini-style config file giving the input and
-output locations on disk and other information.
+Specify the location of the ini-style config file.
 
 =item B<--energy>, B<-e>  (Required for herfd and point tasks)
 
@@ -154,18 +161,15 @@ The emission energy at which to compute the XANES spectrum.
 
 =item B<--point>, B<-p>  (Required for point task)
 
-The data point at which to compute the HERFD value.  If that BLA image
-does not exist, this returns 0.
+The data point at which to compute the HERFD value.
 
 =item B<--xdiini>, B<-x>
 
-Write HERFD as XDI files using the specified XDI configuration file.
+Write HERFD as XDI files using the specified XDI config file.
 
 =item B<--reuse>, B<-r>
 
-Reuse mask files for making energy map if they are found in output
-folder.  This may happen, for instance, if the rixs function has
-already been run.
+Reuse mask files for making energy map if possible.
 
 =item B<--animate>, B<-a>
 
@@ -215,7 +219,7 @@ Convert a sequence of BLA elastic images to an energy map.
 
 Compute a mask for a given emission energy.
 
-=item map
+=item point
 
 Convert a specified BLA image to the HERFD value at that incidient
 energy using a specified emission energy.  Print that value to STDOUT.
@@ -244,7 +248,7 @@ contain signal related to specific emission energies.
 
 =back
 
-This software uses perl and Imager or Image Magick to process the
-images into a high resolution XANES spectrum.
+This software uses perl and PDL with Imager or Image Magick to process
+the images into a high resolution XANES spectrum.
 
 =cut

@@ -37,9 +37,9 @@ sub get_version {
 };
 
 sub animate {
-  my ($self, @files) = @_;
+  my ($self, $which, @files) = @_;
   my @images = map {Imager->new(file=>$_)} @files;
-  my $fname = $self->mask_file("anim", 'gif');
+  my $fname = $self->mask_file($which, 'gif');
   Imager->write_multi({ file=>$fname, type=>'gif', gif_delay=>33, gif_loop=>0 }, @images)
     or die Imager->errstr;
   return $fname;

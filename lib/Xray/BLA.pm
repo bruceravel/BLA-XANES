@@ -165,6 +165,12 @@ has 'steps' => (
 
 has 'backend'	    => (is => 'rw', isa => 'Str', default => q{Imager});
 
+sub import {
+  my ($class) = @_;
+  strict->import;
+  warnings->import;
+};
+
 sub read_ini {
   my ($self, $configfile) = @_;
 
@@ -262,18 +268,11 @@ sub mask {
   };
 
   ## bad pixels may have been turned back on in the social or areal pass, so turn them off again
-  foreach my $pix (@{$self->bad_pixel_list}) {
-    my $co = $pix->[0];
-    my $ro = $pix->[1];
-    $self->elastic_image->($co, $ro) .= 0;
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
+  $self->remove_bad_pixels;
 
   ## construct an animated gif of the mask building process
   if ($args{animate}) {
-    #print $self->assert('Mask creation animation is currently broken', 'bold red'), "\n" if $args{verbose};
-    my $fname = $self->animate(@out);
+    my $fname = $self->animate('anim', @out);
     print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
@@ -283,6 +282,17 @@ sub mask {
   };
   unlink $_ foreach @out;
 
+};
+
+sub remove_bad_pixels {
+  my ($self) = @_;
+  foreach my $pix (@{$self->bad_pixel_list}) {
+    my $co = $pix->[0];
+    my $ro = $pix->[1];
+    $self->elastic_image->($co, $ro) .= 0;
+    ## for .=, see assgn in PDL::Ops
+    ## for ->() syntax see PDL::NiceSlice
+  };
 };
 
 
@@ -538,10 +548,11 @@ sub social_pixels {
     };
   };
   foreach my $px (@addlist) {
-    $ei -> ($px->[0], $px->[1]) .= 1 if ($args{unity});
+    $ei -> ($px->[0], $px->[1]) .= 1; # if ($args{unity});
     ## for .=, see assgn in PDL::Ops
     ## for ->() syntax see PDL::NiceSlice
   };
+  $self->remove_bad_pixels;
 
   my $str = $self->assert("Social pixel pass", 'cyan');
   $str   .= "\tAdded $added social pixels\n";
@@ -560,6 +571,7 @@ sub areal {
   my %args = @args;
   my $ret = Xray::BLA::Return->new;
 
+  $self->remove_bad_pixels;
   my $ei    = $self->elastic_image;
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
@@ -597,6 +609,7 @@ sub areal {
     ## for .=, see assgn in PDL::Ops
     ## for ->() syntax see PDL::NiceSlice
   };
+  $self->remove_bad_pixels;
 
   my $str = $self->assert("Areal ".$self->operation." pass", 'cyan');
   my $n = 2*$self->radius+1;
@@ -618,9 +631,11 @@ sub mask_file {
   my ($self, $which, $type) = @_;
   $type ||= 'gif';
   my $fname;
-  if ($which eq 'anim') {
+  if ($which eq 'map') {
     my $range = join("-", $self->elastic_energies->[0], $self->elastic_energies->[-1]);
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $range, "mask", "anim").'.');
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $range, "map", "anim").'.');
+  } elsif ($which eq 'anim') {
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "mask", "anim").'.');
   } else {
     my $id = ($which eq 'mask') ? q{} :"_$which";
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
@@ -958,8 +973,8 @@ sub energy_map {
   print $self->assert("Wrote gnuplot script to $gpfile", 'bold green') if $args{verbose};
 
   if ($args{animate}) {
-    my $animfile = $self->animate(@{$self->elastic_file_list});
-    print $self->assert("Wrote gif animation of mask to $animfile", 'bold green') if $args{verbose};
+    my $animfile = $self->animate('map', @{$self->elastic_file_list});
+    print $self->assert("Wrote gif animation of energy map to $animfile", 'bold green') if $args{verbose};
   };
 
   return $ret;
@@ -1063,6 +1078,8 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 SYNOPSIS
 
+   use Xray::BLA; # automatically turns on strict and warnings
+
    my $spectrum = Xray::BLA->new;
 
    $spectrum->read_ini("config.ini"); # set attributes from ini file
@@ -1071,6 +1088,8 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
    $spectrum->mask(verbose=>1, write=>0, animate=>0);
    $spectrum->scan(verbose=>1);
+
+Xray::BLA imports C<warnings> and C<strict> by default.
 
 =head1 DESCRIPTION
 
@@ -1088,7 +1107,7 @@ and a few other columns
 
 =item 2.
 
-A tif image of an exposure at each energy point.  This image must be
+A tiff image of an exposure at each energy point.  This image must be
 interpreted to be the HERFD signal at that energy point.
 
 =item 3.
@@ -1693,11 +1712,6 @@ adapt to different columns.
 
 =item *
 
-Filename for mask creation animated gif is wrong.  C<mask_file> builds
-the filename correctly for the energy map animation.
-
-=item *
-
 Other energy map output formats
 
 =item *
@@ -1711,7 +1725,7 @@ MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
 =item *
 
 It should not be necessary to specify the list of elastic energies in
-the config file.  The can be culled from the file names.
+the config file.  They could be culled from the file names.
 
 =item *
 

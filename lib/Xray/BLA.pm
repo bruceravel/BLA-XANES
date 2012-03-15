@@ -37,46 +37,74 @@ eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 
 ##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
 
-has 'element'            => (is => 'rw', isa => 'Str', default => q{});
-has 'line'               => (is => 'rw', isa => 'Str', default => q{});
+has 'element'            => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "The two-letter symbol of the absorber element.");
+has 'line'               => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-has 'task'		 => (is => 'rw', isa => 'Str',  default => q{});
-has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1);
-has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1);
+enum 'BlaTasks' => ['herfd', 'rixs', 'point', 'map', 'mask', 'test', 'list'];
+coerce 'BlaTasks',
+  from 'Str',
+  via { lc($_) };
+has 'task'		 => (is => 'rw', isa => 'BlaTasks',  default => q{},
+			     documentation => "The data processing task as set by the calling program.");
+has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1,
+			     documentation => "A flag for turning colored output on and off.");
+has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1,
+			     documentation => "A flag indicating whether output is written to STDOUT.");
 
-has 'stub'		 => (is => 'rw', isa => 'Str', default => q{});
-has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
-has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{});
-has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{});
-has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder');
+has 'stub'		 => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "The base of filenames from a measurement.");
+has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "The name of the text file containing the scan data.");
+has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "The location on disk of the scan file.");
+has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder',
+			     documentation => "The location on disk of the Pilatus images.");
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 			     trigger => sub{my ($self, $new) = @_;
 					    mkpath($new) if not -d $new;
-					  });
+					  },
+			     documentation => "The location on disk to which processed data and images are written.");
 
-has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy');
-has 'columns'            => (is => 'rw', isa => 'Int', default => 0, alias => 'width');
-has 'rows'               => (is => 'rw', isa => 'Int', default => 0, alias => 'height');
+has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy',
+			     documentation => "The specific emission energy at which to perform the calculation.");
+has 'columns'            => (is => 'rw', isa => 'Int', default => 0, alias => 'width',
+			     documentation => "The width of the images in pixels.");
+has 'rows'               => (is => 'rw', isa => 'Int', default => 0, alias => 'height',
+			     documentation => "The height of the images in pixels.");
 
-has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400);
-has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3);
-has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3);
-has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2);
-has 'npixels'            => (is => 'rw', isa => 'Int', default => 0);
-has 'nbad'               => (is => 'rw', isa => 'Int', default => 0);
+has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400,
+			     documentation => "The value above which a pixel is considered to be a bad pixel.");
+has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3,
+			     documentation => "The value below which a pixel is considered to contain a spurious signal.");
+has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3,
+			     documentation => "The number of illuminated neighbors below which a pixel is considered isolated and should be removed from the mask.");
+has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2,
+			     documentation => "The number of illuminated neighbors above which a pixel is considered as part of the mask.");
+has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
+			     documentation => "The number of illuminated pixels in the final mask.");
+has 'nbad'               => (is => 'rw', isa => 'Int', default => 0,
+			     documentation => "The number of bad pixels found in the elastic image.");
 
-has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2);
-has 'radius'             => (is => 'rw', isa => 'Int', default => 2);
-has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1);
+has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2,
+			     documentation => "<deprecated>");
+has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
+			     documentation => "The radius used for the areal mean/median step of mask creation.");
+has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
+			     documentation => "The value by which to multiply the mask during the multiplication step of mask creation.");
 
 enum 'Projections' => ['median', 'mean'];
 coerce 'Projections',
   from 'Str',
   via { lc($_) };
-has 'operation'          => (is => 'rw', isa => 'Projections', default => q{median});
+has 'operation'          => (is => 'rw', isa => 'Projections', default => q{median},
+			     documentation => "The areal operation, either median or mean.");
 
-has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{});
-has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null});
+has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "THe fully resolved file name containing the measured elastic image.");
+has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			     documentation => "The PDL object containing the elastic image.");
 
 has 'bad_pixel_list' => (
 			 metaclass => 'Collection::Array',
@@ -87,7 +115,8 @@ has 'bad_pixel_list' => (
 				       'push'  => 'push_bad_pixel_list',
 				       'pop'   => 'pop_bad_pixel_list',
 				       'clear' => 'clear_bad_pixel_list',
-				      }
+				      },
+			 documentation => "An array reference containing the x,y coordinates of the bad pixels."
 			);
 
 has 'elastic_energies' => (
@@ -99,7 +128,8 @@ has 'elastic_energies' => (
 					 'push'  => 'push_elastic_energies',
 					 'pop'   => 'pop_elastic_energies',
 					 'clear' => 'clear_elastic_energies',
-					}
+					},
+			   documentation => "An array reference containing the energies at which elastic images were measured."
 			  );
 has 'elastic_file_list' => (
 			    metaclass => 'Collection::Array',
@@ -110,7 +140,8 @@ has 'elastic_file_list' => (
 					  'push'  => 'push_elastic_file_list',
 					  'pop'   => 'pop_elastic_file_list',
 					  'clear' => 'clear_elastic_file_list',
-					 }
+					 },
+			    documentation => "An array reference containing the fully resolved file names of the measured elastic images."
 			   );
 has 'elastic_image_list' => (
 			     metaclass => 'Collection::Array',
@@ -121,7 +152,8 @@ has 'elastic_image_list' => (
 					   'push'  => 'push_elastic_image_list',
 					   'pop'   => 'pop_elastic_image_list',
 					   'clear' => 'clear_elastic_image_list',
-					  }
+					  },
+			    documentation => "An array reference containing the PDL objects of the measured elastic images."
 			    );
 
 has 'herfd_file_list' => (
@@ -133,7 +165,8 @@ has 'herfd_file_list' => (
 					'push'  => 'push_herfd_file_list',
 					'pop'   => 'pop_herfd_file_list',
 					'clear' => 'clear_herfd_file_list',
-				       }
+				       },
+			  documentation => "An array reference containing output files from a RIXS sequence."
 			 );
 
 has 'herfd_pixels_used' => (
@@ -145,7 +178,8 @@ has 'herfd_pixels_used' => (
 					  'push'  => 'push_herfd_pixels_used',
 					  'pop'   => 'pop_herfd_pixels_used',
 					  'clear' => 'clear_herfd_pixels_used',
-					 }
+					 },
+			    documentation => "An array reference containing numbers of illuminate pixels from a RIXS sequence."
 			   );
 
 
@@ -159,11 +193,14 @@ has 'steps' => (
 			      'push'  => 'push_steps',
 			      'pop'   => 'pop_steps',
 			      'clear' => 'clear_steps',
-			     }
+			     },
+		documentation => "An array reference containing the user-specified steps of the mask creation process."
 	       );
 
 
-has 'backend'	    => (is => 'rw', isa => 'Str', default => q{Imager});
+enum 'Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
+has 'backend'	    => (is => 'rw', isa => 'Str', default => q{Imager},
+			documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
 
 sub import {
   my ($class) = @_;
@@ -179,7 +216,6 @@ sub read_ini {
   $self -> scanfolder($ini{measure}{scanfolder});
   $self -> tifffolder($ini{measure}{tiffolder});
   $self -> outfolder ($ini{measure}{outfolder});
-  $self -> stub      ($ARGV[1]);
   $self -> element   ($ini{measure}{element});
   $self -> line	     ($ini{measure}{line});
 
@@ -239,6 +275,7 @@ sub mask {
 
       when ('multiply')  {
 	$self->scalemask($args[2]);
+	print $self->assert("Multiply image by ".$self->scalemask, 'cyan') if $args{verbose};
 	$self->elastic_image->inplace->mult($self->scalemask, 0);
       };
 

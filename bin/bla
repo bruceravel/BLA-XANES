@@ -32,12 +32,15 @@ my $mode = $ARGV[0];
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
 
-warn("BLA error: no file stub specified\n")     && exit 1 if not $ARGV[1];
-warn("BLA error: no config file specified (use the -c switch)\n")   && exit 1 if not $configfile;
-warn("BLA error: $configfile does not exist\n") && exit 1 if not -e $configfile;
-warn("BLA error: $configfile cannot be read\n") && exit 1 if not -r $configfile;
+if ($mode ne 'test' and $mode ne 'list') {
+  warn("BLA error: no file stub specified\n")     && exit 1 if not $ARGV[1];
+  warn("BLA error: no config file specified (use the -c switch)\n")   && exit 1 if not $configfile;
+  warn("BLA error: $configfile does not exist\n") && exit 1 if not -e $configfile;
+  warn("BLA error: $configfile cannot be read\n") && exit 1 if not -r $configfile;
+};
 
 my $spectrum = Xray::BLA->new(task=>$mode);
+$spectrum -> stub($ARGV[1]||q{});
 $spectrum -> colored(0) if $nocolor;
 $spectrum -> read_ini($configfile);
 my @elastic =  @{$spectrum -> elastic_energies};
@@ -114,10 +117,14 @@ if ($mode eq 'herfd') {
   $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
 
 
+} elsif ($mode eq 'list') {
+  my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
+  foreach my $a (@list) {
+    my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, 'bold green') : $a;
+    printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation;
+  };
 } elsif ($mode eq 'test') {
   die "tests for the BLA code (none currently)...\n";
-
-
 } else {
   pod2usage(1);
   exit 1;

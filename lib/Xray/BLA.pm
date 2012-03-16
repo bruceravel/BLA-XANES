@@ -10,7 +10,7 @@ use Moose;
 use Moose::Util qw(apply_all_roles);
 with 'Xray::BLA::Backend::Imager';
 use MooseX::Aliases;
-use MooseX::AttributeHelpers;
+#use MooseX::AttributeHelpers;
 use Moose::Util::TypeConstraints;
 
 use PDL::Lite;
@@ -107,77 +107,77 @@ has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null
 			     documentation => "The PDL object containing the elastic image.");
 
 has 'bad_pixel_list' => (
-			 metaclass => 'Collection::Array',
+			 traits    => ['Array'],
 			 is        => 'rw',
 			 isa       => 'ArrayRef',
 			 default   => sub { [] },
-			 provides  => {
-				       'push'  => 'push_bad_pixel_list',
-				       'pop'   => 'pop_bad_pixel_list',
-				       'clear' => 'clear_bad_pixel_list',
+			 handles   => {
+				       'push_bad_pixel_list'  => 'push',
+				       'pop_bad_pixel_list'   => 'pop',
+				       'clear_bad_pixel_list' => 'clear',
 				      },
 			 documentation => "An array reference containing the x,y coordinates of the bad pixels."
 			);
 
 has 'elastic_energies' => (
-			   metaclass => 'Collection::Array',
+			   traits    => ['Array'],
 			   is        => 'rw',
 			   isa       => 'ArrayRef',
 			   default   => sub { [] },
-			   provides  => {
-					 'push'  => 'push_elastic_energies',
-					 'pop'   => 'pop_elastic_energies',
-					 'clear' => 'clear_elastic_energies',
+			   handles   => {
+					 'push_elastic_energies'  => 'push',
+					 'pop_elastic_energies'   => 'pop',
+					 'clear_elastic_energies' => 'clear',
 					},
 			   documentation => "An array reference containing the energies at which elastic images were measured."
 			  );
 has 'elastic_file_list' => (
-			    metaclass => 'Collection::Array',
+			    traits    => ['Array'],
 			    is        => 'rw',
 			    isa       => 'ArrayRef',
 			    default   => sub { [] },
-			    provides  => {
-					  'push'  => 'push_elastic_file_list',
-					  'pop'   => 'pop_elastic_file_list',
-					  'clear' => 'clear_elastic_file_list',
+			    handles   => {
+					  'push_elastic_file_list'  => 'push',
+					  'pop_elastic_file_list'   => 'pop',
+					  'clear_elastic_file_list' => 'clear',
 					 },
 			    documentation => "An array reference containing the fully resolved file names of the measured elastic images."
 			   );
 has 'elastic_image_list' => (
-			     metaclass => 'Collection::Array',
+			     traits    => ['Array'],
 			     is        => 'rw',
 			     isa       => 'ArrayRef',
 			     default   => sub { [] },
-			     provides  => {
-					   'push'  => 'push_elastic_image_list',
-					   'pop'   => 'pop_elastic_image_list',
-					   'clear' => 'clear_elastic_image_list',
+			     handles   => {
+					   'push_elastic_image_list'  => 'push',
+					   'pop_elastic_image_list'   => 'pop',
+					   'clear_elastic_image_list' => 'clear',
 					  },
 			    documentation => "An array reference containing the PDL objects of the measured elastic images."
 			    );
 
 has 'herfd_file_list' => (
-			  metaclass => 'Collection::Array',
+			  traits    => ['Array'],
 			  is        => 'rw',
 			  isa       => 'ArrayRef',
 			  default   => sub { [] },
-			  provides  => {
-					'push'  => 'push_herfd_file_list',
-					'pop'   => 'pop_herfd_file_list',
-					'clear' => 'clear_herfd_file_list',
+			  handles   => {
+					'push_herfd_file_list'  => 'push',
+					'pop_herfd_file_list'   => 'pop',
+					'clear_herfd_file_list' => 'clear',
 				       },
 			  documentation => "An array reference containing output files from a RIXS sequence."
 			 );
 
 has 'herfd_pixels_used' => (
-			    metaclass => 'Collection::Array',
+			    traits    => ['Array'],
 			    is        => 'rw',
 			    isa       => 'ArrayRef',
 			    default   => sub { [] },
-			    provides  => {
-					  'push'  => 'push_herfd_pixels_used',
-					  'pop'   => 'pop_herfd_pixels_used',
-					  'clear' => 'clear_herfd_pixels_used',
+			    handles   => {
+					  'push_herfd_pixels_used'  => 'push',
+					  'pop_herfd_pixels_used'   => 'pop',
+					  'clear_herfd_pixels_used' => 'clear',
 					 },
 			    documentation => "An array reference containing numbers of illuminate pixels from a RIXS sequence."
 			   );
@@ -185,22 +185,22 @@ has 'herfd_pixels_used' => (
 
 
 has 'steps' => (
-		metaclass => 'Collection::Array',
+		traits    => ['Array'],
 		is        => 'rw',
 		isa       => 'ArrayRef',
 		default   => sub { [] },
-		provides  => {
-			      'push'  => 'push_steps',
-			      'pop'   => 'pop_steps',
-			      'clear' => 'clear_steps',
+		handles   => {
+			      'push_steps'  => 'push',
+			      'pop_steps'   => 'pop',
+			      'clear_steps' => 'clear',
 			     },
 		documentation => "An array reference containing the user-specified steps of the mask creation process."
 	       );
 
 
 enum 'Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
-has 'backend'	    => (is => 'rw', isa => 'Str', default => q{Imager},
-			documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
+has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
+		    documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
 
 sub import {
   my ($class) = @_;

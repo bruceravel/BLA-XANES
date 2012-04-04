@@ -232,6 +232,11 @@ The possible steps to mask creation are:
     surrounding pixles must be illuminated for the pixel to be turned
     on.
 
+ 6. Use the entire image.  This step just sets all the pixels in the
+    mask to 1 so that the entire image is used to compute the energy
+    point.  Note that it makes no sense to use this step with any step
+    other than the bad/weak step, which should precede this step.
+
 The steps can come in any order and can be repeated.  At the end of
 the final step, the illuminated pixels in the mask will be set to a
 value of 1 so that the final mask can be used as an AND mask to create
@@ -272,53 +277,12 @@ The version of Athena based on Demeter will be able to use these
 values as importance or plot multiplier values if the ~Xray::XDI~
 module is available.
 
-** Mask
-
-Along with each scan, a series of images are collected with the
-incident beam at energies around the L alpha 1 line.  The XANES can be
-extracted, then, as a function of emission energy by creating a mask
-from the elastic energy which identifies the pixels on the camera that
-are illuminated by photons of that energy.
-
-For a given emission energy, the elastic image is read and processed
-in three steps:
-
-  1. Set the bad pixels (i.e. those with spuriously large values) to
-     zero.  The "spuriously large value" is defined as larger than the
-     bad pixel value from the configuration file.  Also remove all weak
-     pixels, i.e. those with fewer than some cutoff, defined by the
-     weak pixel value from the configuration file.
-
-  2. lonely/social algorithm
-
-     + Remove all "lonely" pixels.  These are the pixels that are
-       illuminated but surrounded by fewer illuminated pixels than the
-       lonely pixel value in the configuration file.
-
-     + Add in all "social" pixels.  These are pixels which are dark, but
-       are surrounded by enough illuminated pixels (i.e. more than the
-       social pixel value from the configuration file) such that it, too,
-       should be illuminated.
-
-  3. areal meadin/mean algorithm
-
-     + Set each pixel to the median or mean value of the pixels in a
-       square centered at that pixel.
-
-This results in a simple logical-AND mask for evaluating the signal at
-each energy point from the Pilatus image.
-
-When the ~-a~ flag is used with the ~herfd~ or ~rixs~ scripts, an
-animated gif file will be written.  For ~herfd~ or ~rixs~, it shows
-the steps from elastic image to final mask.  For ~map~, it shows the
-motion of the map across the face of the detector.
-
 ** Scan conversion
 
 At each energy point, the HERFD signal is computed from the Pilatus
-image using the mask created as described above.  The
-counts on each pixel lying within the illuminated portion of the mask
-are summed.  This sum is the HERFD signal at that incident energy.
+image using the mask created as described above.  The counts on each
+pixel lying within the illuminated portion of the mask are summed.
+This sum is the HERFD signal at that incident energy.
 
 A column data file is written containing the energy and several
 scalars from the original measurement and a column containing the

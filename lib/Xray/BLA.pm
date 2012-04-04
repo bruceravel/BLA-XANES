@@ -10,7 +10,6 @@ use Moose;
 use Moose::Util qw(apply_all_roles);
 with 'Xray::BLA::Backend::Imager';
 use MooseX::Aliases;
-#use MooseX::AttributeHelpers;
 use Moose::Util::TypeConstraints;
 
 use PDL::Lite;
@@ -42,7 +41,7 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-enum 'BlaTasks' => ['herfd', 'rixs', 'point', 'map', 'mask', 'test', 'list'];
+enum 'BlaTasks' => [qw(herfd rixs point map mask test list)];
 coerce 'BlaTasks',
   from 'Str',
   via { lc($_) };
@@ -62,9 +61,7 @@ has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{},
 has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder',
 			     documentation => "The location on disk of the Pilatus images.");
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
-			     trigger => sub{my ($self, $new) = @_;
-					    mkpath($new) if not -d $new;
-					  },
+			     trigger => sub{my ($self, $new) = @_; mkpath($new) if not -d $new;},
 			     documentation => "The location on disk to which processed data and images are written.");
 
 has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy',
@@ -87,8 +84,7 @@ has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 has 'nbad'               => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of bad pixels found in the elastic image.");
 
-has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2,
-			     documentation => "<deprecated>");
+#has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2, documentation => "<deprecated>");
 has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The radius used for the areal mean/median step of mask creation.");
 has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
@@ -223,7 +219,6 @@ sub read_ini {
   $self -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};
   $self -> lonely_pixel_value($ini{pixel}{lonely})    if exists $ini{pixel}{lonely};
   $self -> social_pixel_value($ini{pixel}{social})    if exists $ini{pixel}{social};
-  $self -> maskmode          ($ini{pixel}{maskmode})  if exists $ini{pixel}{maskmode};
   $self -> radius            ($ini{pixel}{radius})    if exists $ini{pixel}{radius};
   $self -> operation         ($ini{pixel}{operation}) if exists $ini{pixel}{operation};
   $self -> scalemask         ($ini{pixel}{scalemask}) if exists $ini{pixel}{scalemask};
@@ -231,7 +226,8 @@ sub read_ini {
   my @elastic = split(" ", $ini{measure}{emission});
   $self -> elastic_energies(\@elastic);
 
-  $self->steps($ini{steps}{steps});
+  my $value = (ref($ini{steps}{steps}) eq q{ARRAY}) ? $ini{steps}{steps} : [$ini{steps}{steps}];
+  $self->steps($value);
 
   return $self;
 };
@@ -298,13 +294,18 @@ sub mask {
 	$self->do_step('social_pixels', $out[-1], $args{verbose}, $set_npixels);
       };
 
+      when ('entire') {
+	print $self->assert("Using entire image", 'cyan') if $args{verbose};
+	$self->elastic_image(PDL::Core::ones($self->columns, $self->rows));
+      };
+
       default {
 	print assert("I don't know what to do with \"$st\"", 'bold red');
       };
     };
   };
 
-  ## bad pixels may have been turned back on in the social or areal pass, so turn them off again
+  ## bad pixels may have been turned back on in the social, areal, or entire pass, so turn them off again
   $self->remove_bad_pixels;
 
   ## construct an animated gif of the mask building process
@@ -430,10 +431,7 @@ sub import_elastic_image {
   $self->columns($c);
   $self->rows($r);
   my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
-  my $alg = ($self->maskmode == 3) ? 'whole image'
-          : ($self->maskmode == 2) ? 'areal '.$self->operation
-	  :                          'lonely/social';
-  $str   .= sprintf "\tusing the %s backend and the %s mask algorithm\n", $self->backend, $alg;
+  $str   .= sprintf "\tusing the %s backend\n", $self->backend;
   $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
     $self->columns, $self->rows, $self->columns*$self->rows;
   $self->elastic_image->wim($args{write}) if $args{write};
@@ -757,15 +755,9 @@ sub xdi_out {
   $xdi   -> push_extension(sprintf("BLA.total_pixels: %d", $self->columns*$self->rows));
   $xdi   -> push_extension("BLA.pixel_ratio: \%pixel_ratio\%") if ($self->task eq 'rixs');
   $xdi   -> push_comment("HERFD scan on " . $self->stub);
-  if ($self->maskmode == 1) {
-    $xdi   -> push_comment(sprintf("lonely/social algorithm: bad=%d  weak=%d  social=%d  lonely=%d",
-				   $self->bad_pixel_value, $self->weak_pixel_value,
-				   $self->social_pixel_value, $self->lonely_pixel_value));
-  } elsif ($self->maskmode == 2) {
-    $xdi   -> push_comment(sprintf("areal %s algorithm: bad=%d  weak=%d  radius=%d",
-				   $self->operation, $self->bad_pixel_value, $self->weak_pixel_value, $self->radius));
-  } elsif ($self->maskmode == 3) {
-    $xdi   -> push_comment(sprintf("whole image: bad=%d", $self->bad_pixel_value));
+  $xdi   -> push_comment("Mask building steps:");
+  foreach my $st (@{$self->steps}) {
+    $xdi -> push_comment("  $st");
   };
   $xdi   -> data($rdata);
   $xdi   -> export($outfile);
@@ -780,15 +772,9 @@ sub dat_out {
   open(my $O, '>', $outfile);
   print   $O "# HERFD scan on " . $self->stub . $/;
   printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
-  if ($self->maskmode == 1) {
-    printf  $O "# lonely/social algorithm: bad=%d  weak=%d  lonely=%d  social=%d\n",
-      $self->bad_pixel_value, $self->weak_pixel_value,
-	$self->lonely_pixel_value, $self->social_pixel_value;
-  } elsif ($self->maskmode == 2) {
-    printf  $O "# areal %s algorithm: bad=%d  weak=%d  radius=%d\n",
-      $self->operation, $self->bad_pixel_value, $self->weak_pixel_value, $self->radius;
-  } elsif ($self->maskmode == 2) {
-    printf  $O "# whole image: bad=%d\n", $self->bad_pixel_value;
+  printf  $O "# Mask building steps:\n";
+  foreach my $st (@{$self->steps}) {
+    printf  $O "#    $st\n";
   };
   print   $O "# -------------------------\n";
   print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
@@ -1264,19 +1250,6 @@ then the lines beginning with "bad" and "areal" will be the entries in
 the array, indicating that first bad and weak pixels will be removed
 using the specifies values for C<bad_pixel_value> and
 C<weak_pixel_value>, then an areal median of radius 2 will be computed.
-
-
-=item C<maskmode>  [2]
-
-This chooses the mask creation algorithm.  1 means to use the
-lonely/social algorithm.  2 means to use the areal median algorithm.
-3 means to use the whole image except for the bad pixels.  (#3 is more
-useful for testing than for actual data processing, although it gives
-a sense of what the data would look like using an integrating
-detector.)
-
-When using the areal median algorithm, you may get slightly better
-energy resolution if the C<weak_pixel_value> is set E<gt> 0.
 
 =item C<operation>  [median]
 

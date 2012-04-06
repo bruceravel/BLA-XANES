@@ -223,13 +223,42 @@ sub read_ini {
   $self -> operation         ($ini{pixel}{operation}) if exists $ini{pixel}{operation};
   $self -> scalemask         ($ini{pixel}{scalemask}) if exists $ini{pixel}{scalemask};
 
-  my @elastic = split(" ", $ini{measure}{emission});
-  $self -> elastic_energies(\@elastic);
+  $self -> elastic_energies($self->parse_emission_line($ini{measure}{emission}));
 
   my $value = (ref($ini{steps}{steps}) eq q{ARRAY}) ? $ini{steps}{steps} : [$ini{steps}{steps}];
   $self->steps($value);
 
   return $self;
+};
+
+sub parse_emission_line {	# return an array reference containing the elastic energies
+  my ($self, $string) = @_;
+  return [] if not defined $string;
+  my @list = split(" ", $string);
+
+
+  my @elastic = ();
+  given ($list[1]) {
+
+    when ('to') {		# <start> to <end> by <step>
+      my $eee = $list[0];	#    0     1   2    3    4
+      push @elastic, $eee;
+      while ($eee < $list[2]) {
+	$eee += $list[4];
+	push @elastic, $eee;
+      };
+    };
+
+    when (m{\d+}) {		# list of energies
+      @elastic = @list
+    };
+
+    default {			# list of energies, I guess, perhaps just one...?
+      @elastic = @list
+    };
+
+  };
+  return \@elastic;
 };
 
 sub mask {

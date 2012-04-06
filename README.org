@@ -69,7 +69,6 @@ wrapper script around the five bent Laue tasks:
 :     --quiet   | -q    [flag]    suppress progress messages
 :     --help    | -h    [flag]    write this message and exit
 
-  
 The ~bla~ script assumes that scan files and image files have
 related names.  In this example, the scan file is called ~Aufoil1.001~
 and the image files are called ~Aufoil1_NNNNN.tif~.  The ~NNNNN~ in
@@ -183,8 +182,22 @@ example:
 :   social 2
 :   END
 
+[[file:share/config.ini][Here is an example configuration file.]]  (It is important not to
+cut-and-paste the example above in a way that preserves the org-mode
+mark-up.)
+
+The ~emission~ can use a more concise syntax if the sequence of
+elastic energies was measured on a uniform grid.  The following are
+equivalent:
+
+:   emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
+:
+:   emission   = 9703 to 9719 by 2
+
+White space does not matter, but the words ~to~ and ~by~ are required.
+
 This configuration file can sit anywhere on disk and *must* be
-specified at the command line or via the ~BALCONFIG~ environment
+specified at the command line or via the ~BLACONFIG~ environment
 variable when using the ~bla~ script.  I would recommend that you put
 it in the current work directory wherever you are working on your
 data.  You may wish to keep multiple configuration files around for
@@ -232,10 +245,11 @@ The possible steps to mask creation are:
     surrounding pixles must be illuminated for the pixel to be turned
     on.
 
- 6. Use the entire image.  This step just sets all the pixels in the
-    mask to 1 so that the entire image is used to compute the energy
-    point.  Note that it makes no sense to use this step with any step
-    other than the bad/weak step, which should precede this step.
+ 6. Use the entire image.  The syntax is ~entire image~. This step
+    just sets all the pixels in the mask to 1 so that the entire image
+    is used to compute the energy point.  Note that it makes no sense
+    to use this step with any step other than the bad/weak step, which
+    should precede this step.
 
 The steps can come in any order and can be repeated.  At the end of
 the final step, the illuminated pixels in the mask will be set to a

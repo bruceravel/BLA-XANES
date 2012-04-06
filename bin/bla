@@ -45,6 +45,15 @@ $spectrum -> colored(0) if $nocolor;
 $spectrum -> read_ini($configfile);
 my @elastic =  @{$spectrum -> elastic_energies};
 
+if ($mode !~ m{list|test}) {
+  warn("BLA error: no scan folder specified in the configuration file\n")      && exit 1 if not $spectrum->scanfolder;
+  warn("BLA error: no tiff folder specified in the configuration file\n")      && exit 1 if not $spectrum->tiffolder;
+  warn("BLA error: no output folder specified in the configuration file\n")    && exit 1 if not $spectrum->outfolder;
+  warn("BLA error: no absorber element specified in the configuration file\n") && exit 1 if ((not $spectrum->element) and ($mode eq 'map'));
+  warn("BLA error: no emission line specified in the configuration file\n")    && exit 1 if ((not $spectrum->line)    and ($mode eq 'map'));
+};
+
+
 
 if ($mode eq 'herfd') {
   warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
@@ -71,6 +80,7 @@ if ($mode eq 'herfd') {
 
 
 } elsif ($mode eq 'rixs') {
+  warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
   foreach my $e (@elastic) {
     $spectrum -> energy($e);
     my $file = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);
@@ -97,6 +107,7 @@ if ($mode eq 'herfd') {
 
 } elsif ($mode eq 'map') {
   my $need_to_check = 0;
+  warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
   foreach my $e (@elastic) {
     $spectrum -> energy($e);
     my $file = $spectrum->mask_file("mask", 'gif');

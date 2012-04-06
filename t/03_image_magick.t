@@ -8,7 +8,7 @@ my $here  = dirname($0);
 use Xray::BLA;
 
 SKIP: {
-    skip 'Image::Magick not available', 8 if not eval "require Image::Magick";
+    skip 'Image::Magick not available', 7 if not eval "require Image::Magick";
 
     my $bla = Xray::BLA -> new(backend=>'ImageMagick', stub=>'example', energy=>'9713',
 			       scanfolder=>$here, tiffolder=>$here);

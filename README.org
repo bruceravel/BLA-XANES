@@ -182,7 +182,7 @@ example:
 :   social 2
 :   END
 
-[[file:share/config.ini][Here is an example configuration file.]]  (It is important not to
+[[https://github.com/bruceravel/BLA-XANES/blob/master/share/config.ini][Here is an example configuration file.]]  (It is important not to
 cut-and-paste the example above in a way that preserves the org-mode
 mark-up.)
 

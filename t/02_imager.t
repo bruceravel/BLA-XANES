@@ -3,6 +3,8 @@
 use Test::More tests => 9;
 use File::Basename;
 use File::Spec;
+use Math::Round qw(round);
+use PDL::NiceSlice;
 
 my $here  = dirname($0);
 
@@ -18,16 +20,14 @@ SKIP: {
     ok($bla->get_version >= 0.87, 'Correct version of Imager is available');
     my $ei = $bla->elastic_image;
 
-    ok((($bla->get_columns($ei) == 487) and ($bla->get_rows($ei) == 195)), 'width and height');
+    ok(((($ei->dims)[0] == 487) and (($ei->dims)[1] == 195)), 'width and height');
 
-
-
-    my ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);
-    ok($r == 10, 'good pixel');
-    ($r, $g, $b, $a) = $bla->get_pixel($ei, 427,  32);
-    ok($r == 0, 'zero pixel');
-    ($r, $g, $b, $a) = $bla->get_pixel($ei, 259, 91);
-    ok($r == 1048575, 'bad pixel');
+    my $r = $ei->at( 86,  150);
+    ok(round($r) == 10, 'good pixel '.$r);
+    $r = $ei->at(427,  32);
+    ok(round($r) == 0, 'zero pixel '.$r);
+    $r = $ei->at(259, 91);
+    ok(round($r) == 1048575, 'bad pixel '.$r);
 
     $bla -> import_elastic_image;
     $bla -> bad_pixel_value(400);
@@ -37,7 +37,7 @@ SKIP: {
     ok($ret->message =~ m{4 bad},      "found bad pixels");
     ok($ret->message =~ m{66819 weak}, "found weak pixels");
 
-    $bla->set_pixel($ei, 86, 150, 5);
-    ($r, $g, $b, $a) = $bla->get_pixel($ei, 86,  150);
-    ok($r == 5, 'set pixel works');
+    $ei->( 86, 150).=5;
+    $r = $ei->at( 86,  150);
+    ok(round($r) == 5, 'set pixel works');
   };

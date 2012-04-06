@@ -41,7 +41,7 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-enum 'BlaTasks' => [qw(herfd rixs point map mask test list)];
+enum 'BlaTasks' => [qw(herfd rixs point map mask test list), ''];
 coerce 'BlaTasks',
   from 'Str',
   via { lc($_) };
@@ -209,11 +209,11 @@ sub read_ini {
 
   tie my %ini, 'Config::IniFiles', ( -file => $configfile );
 
-  $self -> scanfolder($ini{measure}{scanfolder});
-  $self -> tifffolder($ini{measure}{tiffolder});
-  $self -> outfolder ($ini{measure}{outfolder});
-  $self -> element   ($ini{measure}{element});
-  $self -> line	     ($ini{measure}{line});
+  $self -> scanfolder($ini{measure}{scanfolder})      if exists($ini{measure}{scanfolder});
+  $self -> tifffolder($ini{measure}{tiffolder})       if exists($ini{measure}{tiffolder});
+  $self -> outfolder ($ini{measure}{outfolder})       if exists($ini{measure}{outfolder});
+  $self -> element   ($ini{measure}{element})         if exists($ini{measure}{element});
+  $self -> line	     ($ini{measure}{line})            if exists($ini{measure}{line});
 
   $self -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
   $self -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};

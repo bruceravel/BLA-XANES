@@ -6,9 +6,11 @@ use Xray::BLA::Image;
 use Config::IniFiles;
 use Getopt::Long;
 use Pod::Usage;
+use Scalar::Util qw(looks_like_number);
 
 my $energy     = 0;
 my $point      = -1;
+my $incident   = 0;
 my $reuse      = 0;
 my $save       = 0;
 my $animate    = 0;
@@ -16,22 +18,24 @@ my $verbose    = 1;
 my $configfile = q{};
 my $xdiini     = q{};      # 'share/bla.xdi.ini'
 my $nocolor    = 0;
-my $result     = GetOptions ("energy|e=i" => \$energy,
-			     "point|p=i"  => \$point,
-			     'reuse|r'    => \$reuse,
-			     'save|s'     => \$save,
-			     'animate|a'  => \$animate,
-			     'verbose|v'  => \$verbose,
-			     'config|c=s' => \$configfile,
-			     'xdiini|x=s' => \$xdiini,
-			     'nocolor|n'  => \$nocolor,
-			     'quiet|q'    => sub { $verbose = 0 },
-			     'help|h'     => sub { pod2usage(1); exit 0},
+my $result     = GetOptions ("energy|e=i"  => \$energy,
+			     "point|p=i"   => \$point,
+			     "incident|i=s"=> \$incident,
+			     'reuse|r'	   => \$reuse,
+			     'save|s'	   => \$save,
+			     'animate|a'   => \$animate,
+			     'verbose|v'   => \$verbose,
+			     'config|c=s'  => \$configfile,
+			     'xdiini|x=s'  => \$xdiini,
+			     'nocolor|n'   => \$nocolor,
+			     'quiet|q'	   => sub { $verbose = 0 },
+			     'help|h'	   => sub { pod2usage(1); exit 0},
 			    );
 
 my $mode = $ARGV[0] || q{none};
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
+$incident   ||= $ENV{BLAINCIDENT};
 my $nonpublic = 'list|none|test';
 
 my $spectrum = Xray::BLA->new();
@@ -46,6 +50,7 @@ if ($mode !~ m{$nonpublic}) {
   warn("BLA error: no config file specified (use the -c switch)\n")   && exit 1 if not $configfile;
   warn("BLA error: $configfile does not exist\n") && exit 1 if not -e $configfile;
   warn("BLA error: $configfile cannot be read\n") && exit 1 if not -r $configfile;
+  warn("BLA error: incident energy (-i switch) is not a number\n") && exit 1 if not looks_like_number($incident);
 };
 
 $spectrum -> task($mode);
@@ -135,6 +140,21 @@ given ($mode) {
       $spectrum -> import_elastic_image;
     };
     $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
+  }
+
+  when ('xes') {
+    warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
+    foreach my $e (@elastic) {
+      $spectrum -> energy($e);
+      my $rixs = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);
+      $rixs .= (($Xray::BLA::XDI_exists) and (-e $xdiini)) ? '.xdi' : '.dat';
+      if (not -e $rixs) {
+	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+	my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+      };
+      $spectrum -> push_herfd_file_list($rixs);
+    };
+    $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$incident);
   }
 
   when ('list') {

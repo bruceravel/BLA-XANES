@@ -3,7 +3,7 @@ use Xray::BLA::Return;
 use Xray::BLA::Image;
 
 use version;
-our $VERSION = version->new('0.5');
+our $VERSION = version->new('0.6');
 use feature "switch";
 
 use Moose;
@@ -20,7 +20,9 @@ use File::Copy;
 use File::Path;
 use File::Spec;
 use List::Util qw(sum max);
+use List::MoreUtils qw(pairwise);
 use Math::Round qw(round);
+use Scalar::Util qw(looks_like_number);
 use Term::Sk;
 use Text::Template;
 use Xray::Absorption;
@@ -41,7 +43,7 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-enum 'BlaTasks' => [qw(herfd rixs point map mask test list none)];
+enum 'BlaTasks' => [qw(herfd rixs point map mask xes test list none)];
 coerce 'BlaTasks',
   from 'Str',
   via { lc($_) };
@@ -66,6 +68,10 @@ has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 
 has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy',
 			     documentation => "The specific emission energy at which to perform the calculation.");
+has 'incident'	         => (is => 'rw', isa => 'Num', default => 0,,
+			     documentation => "The specific incident energy at which to compute the emission spectrum.");
+has 'nincident'	         => (is => 'rw', isa => 'Int', default => 0,,
+			     documentation => "The data point index at which to compute the emission spectrum.");
 has 'columns'            => (is => 'rw', isa => 'Int', default => 0, alias => 'width',
 			     documentation => "The width of the images in pixels.");
 has 'rows'               => (is => 'rw', isa => 'Int', default => 0, alias => 'height',
@@ -694,6 +700,7 @@ sub areal {
 sub mask_file {
   my ($self, $which, $type) = @_;
   $type ||= 'gif';
+  $type = 'tif' if ($^O =~ /MSWin32/);
   my $fname;
   if ($which eq 'map') {
     my $range = join("-", $self->elastic_energies->[0], $self->elastic_energies->[-1]);
@@ -1109,12 +1116,117 @@ splot '{$file}' title ''
 ## gray scale
 #set palette model RGB defined ( 0 'black', 1 'white' )
 
+sub compute_xes {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
+  $args{inident} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+
+  $self->get_incident($args{incident});
+  print $self->assert("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
+
+  my @values  = ();
+  my @npixels = ();
+  foreach my $r (@{$self->herfd_file_list}) {
+    open(my $F, '<', $r);
+    my $count = 0;
+    while (<$F>) {
+      ++$count if ($_ !~ m{\A\#});
+      if ($count == $self->nincident) {
+	my @list = split(" ", $_);
+	push @values, $list[1];
+      } elsif ($_ =~ m{BLA\.illuminated_pixels: (\d+)}) {
+	push @npixels, $1;
+      } elsif ($_ =~ m{(\d+) illuminated pixels}) {
+	push @npixels, $1;
+      };
+    };
+  };
+  my $max = max(@npixels);
+  @npixels = map {$max / $_} @npixels;
+
+  my @xes = ();
+  foreach my $i (0 .. $#npixels) {
+    push @xes, [$self->elastic_energies->[$i], $npixels[$i]*$values[$i]];
+  };
+  my $outfile;
+  if (($XDI_exists) and (-e $args{xdiini})) {
+    $outfile = $self->xdi_xes($args{xdiini}, \@xes);
+  } else {
+    $outfile = $self->dat_xes(\@xes);
+  };
+  $ret->message($outfile);
+  print $self->assert("Wrote $outfile", 'bold green') if $args{verbose};
+  return $ret;
+};
+
+sub get_incident {
+  my ($self, $in) = @_;
+  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
+  $self->scanfile($scanfile);
+  open(my $S, '<', $self->scanfile);
+  my @energy = ();
+  while (<$S>) {
+    next if ($_ =~ m{\A\#});
+    my @list = split(" ", $_);
+    push @energy, $list[0];
+  };
+  if ($in == 0) {
+    my $n = int($#energy/2);
+    $self->incident($energy[$n]);
+    $self->nincident($n);
+  } elsif (($in =~ m{\A\d+\z}) and ($in < 1000)) {
+    $self->incident($energy[$in]);
+    $self->nincident($in);
+  } elsif (not looks_like_number($in)) {
+    die "BLA error: incident energy (-i switch) is not a number\n";
+  } else {
+    my $n = 0;
+    print $in, $/;
+    while (($in > $energy[$n]) and ($n < $#energy)) {
+      ++$n;
+    };
+    $self->incident($energy[$n]);
+    $self->nincident($n);
+  };
+};
+
+sub xdi_xes {
+  my ($self, $xdiini, $rdata) = @_;
+  my $fname = join("_", $self->stub, 'xes', $self->incident) . '.xdi';
+  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+
+  my $xdi = Xray::XDI->new();
+  $xdi   -> ini($xdiini);
+  $xdi   -> push_comment("XES from " . $self->stub . " at " . $self->incident . ' eV');
+  $xdi   -> data($rdata);
+  $xdi   -> export($outfile);
+  return $outfile;
+};
+sub dat_xes {
+  my ($self, $rdata) = @_;
+  my $fname = join("_", $self->stub, 'xes', $self->incident) . '.dat';
+  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+
+  open(my $O, '>', $outfile);
+  print   $O "# XES from " . $self->stub . " at " . $self->incident . ' eV' . $/;
+  print   $O "# -------------------------\n";
+  print   $O "#   energy      xes\n";
+  foreach my $p (@$rdata) {
+    printf $O "  %.3f  %.7f\n", @$p;
+  };
+  close   $O;
+  return $outfile;
+};
+
 
 sub assert {
   my ($self, $message, $color) = @_;
   my $string = ($self->colored) ? Term::ANSIColor::colored($message, $color) : $message;
   return $string.$/;
 };
+
 
 
 __PACKAGE__->meta->make_immutable;
@@ -1126,7 +1238,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-0.5
+0.6
 
 =head1 SYNOPSIS
 
@@ -1261,6 +1373,11 @@ This value can be changed to some other measured elastic energy in
 order to scan the off-axis portion of the spectrum.
 
 C<peak_energy> is an alias for C<energy>.
+
+=item C<incident>
+
+Specify an incident energy for an XES slice through the RIXS.  If not
+specified, it defaults to the midpoint of the energy scan.
 
 =item C<steps>
 
@@ -1436,6 +1553,24 @@ standard output about file written.
 
 When true, the C<animate> argument causes an animated gif file to be
 written containing a movie of the processed elastic masks.
+
+The returned L<Xray::BLA::Return> object conveys no information at
+this time.
+
+=item C<compute_xes>
+
+Take an XES slice through the RIXS map.  Weight the signal at each
+emission energy by the number of pixels illuminated in that mask.
+
+  $spectrum->scan(verbose=>0, xdiini=>$inifile, incident=>$incident);
+
+The C<incident> argument specifies the incident energy of the slice.
+If not given, use the midpoint (by index) of the energy array.  If an
+small integer is given, use that incident energy point.  If an energy
+value is given, use that energy or the nearest larger energy.
+
+When true, the C<verbose> argument causes messages to be printed to
+standard output about file written.
 
 The returned L<Xray::BLA::Return> object conveys no information at
 this time.

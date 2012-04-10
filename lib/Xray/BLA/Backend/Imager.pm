@@ -84,10 +84,6 @@ sub animate {
 
 Xray::BLA::Backends::Imager - Use Imager as the BLA imagine handling backend
 
-=head1 VERSION
-
-0.3
-
 =head1 DESCRIPTION
 
 This provides a role for L<Xray::BLA> for handling 32 bit tiff images

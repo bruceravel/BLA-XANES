@@ -54,20 +54,22 @@ wrapper script around the five bent Laue tasks:
 :  bla herfd [cxeasvnqh] <stub>
 :  bla rixs  [cxasvnqh]  <stub>
 :  bla map   [crvnqh]    <stub>
+:  bla xes   [civnqh]    <stub>
 :  bla mask  [casvnqh]   <stub>
 :  bla point [ceph]      <stub>
 : 
-:     --config  | -c    [string]  configuration file (required)
-:     --energy  | -e    [integer] emission energy (required for herfd/point tasks)
-:     --point   | -p    [integer] data point at which compute HERFD (required for point task)
-:     --xdiini  | -x    [string]  XDI configuration file
-:     --reuse   | -r    [flag]    reuse mask files for energy map if in outfolder
-:     --animate | -a    [flag]    save gif animation of mask creation
-:     --save    | -s    [flag]    save gif with mask
-:     --verbose | -v    [flag]    write progress messages
-:     --nocolor | -n    [flag]    turn off color coding of screen output
-:     --quiet   | -q    [flag]    suppress progress messages
-:     --help    | -h    [flag]    write this message and exit
+:     --config   | -c    [string]  configuration file (required)
+:     --energy   | -e    [integer] emission energy (required for herfd/point tasks)
+:     --incident | -i    [number]  incident energy (required for xes task)
+:     --point    | -p    [integer] data point at which compute HERFD (required for point task)
+:     --xdiini   | -x    [string]  XDI configuration file
+:     --reuse    | -r    [flag]    reuse mask files for energy map if in outfolder
+:     --animate  | -a    [flag]    save gif animation of mask creation
+:     --save     | -s    [flag]    save gif with mask
+:     --verbose  | -v    [flag]    write progress messages
+:     --nocolor  | -n    [flag]    turn off color coding of screen output
+:     --quiet    | -q    [flag]    suppress progress messages
+:     --help     | -h    [flag]    write this message and exit
 
 The ~bla~ script assumes that scan files and image files have
 related names.  In this example, the scan file is called ~Aufoil1.001~
@@ -80,12 +82,13 @@ configuration file.
 :  examples:  bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
 :             bla rixs -c=/path/to/config.ini -a Aufoil1
 :             bla map -c=/path/to/config.ini Aufoil1
+:             bla xes -c=/path/to/config.ini -i=11970 Aufoil1
 :             bla mask -c=/path/to/config.ini -e=9713 Aufoil1
 :             bla point -c=/path/to/config.ini -e=9713 -p=10 Aufoil1
 
 
 Here, "Aufoil1" is the stub, i.e. the basename of the scan and image
-files, and the ~-c~, ~-e~, and ~-a~ command line options are
+files, and the ~-c~, ~-e~, ~-i~, and ~-a~ command line options are
 demonstrated.
 
 Options that are not used by a function (for example ~-e~ for ~rixs~
@@ -119,8 +122,16 @@ environment variable.  The following are equivalent:
 :   export BLAENERGY=9713
 :   bla herfd -c=/path/to/config.ini -a Aufoil1
 
-Both environment variables are overridden by their respective command
-line switches.
+Use of the ~-i~ flag can be avoided by setting the ~BLAINCIDENT~
+environment variable.  The following are equivalent:
+
+:   bla herfd -c=/path/to/config.ini -i=11970 -a Aufoil1
+: 
+:   export BLAINCIDENT=11970
+:   bla herfd -c=/path/to/config.ini -a Aufoil1
+
+Each environment variable is overridden by its respective command line
+switch.
 
 *** Output
 
@@ -137,6 +148,11 @@ line switches.
    vs detector row with the color axis showing energy.  Gif files for
    the masks at each emission energy are also written.
 
+ + The output of the ~xes~ task is a data file containing the XES
+   spectrum from that incident energy with the signal from each
+   emission energy weighted by the number of illuminated pixels in
+   that mask.
+
  + The output of the ~mask~ task is a single gif file containing the
    mask for the specified emission energy.
 
@@ -146,8 +162,10 @@ line switches.
    emission mask do not exist or if any other problem is encountered,
    0 is printed to STDOUT.
 
-The ~herfd~, ~rixs~, and ~map~ tasks are intended for post-processing
-of a full data set.
+On Windows, tiff files are written rather than gif files.
+
+The ~herfd~, ~rixs~, ~map~, and ~xes~ tasks are intended for
+post-processing of a full data set.
 
 The ~mask~ and ~point~ tasks are intended for inlining in the data
 acquisition process.  The ~mask~ task should be run after measuring

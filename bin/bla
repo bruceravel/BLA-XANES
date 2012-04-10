@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+use feature 'switch';
 use Xray::BLA; # automatically turns on strict and warnings
 use Xray::BLA::Image;
 use Config::IniFiles;
@@ -28,24 +29,32 @@ my $result     = GetOptions ("energy|e=i" => \$energy,
 			     'help|h'     => sub { pod2usage(1); exit 0},
 			    );
 
-my $mode = $ARGV[0];
+my $mode = $ARGV[0] || q{none};
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
+my $nonpublic = 'list|none|test';
 
-if ($mode ne 'test' and $mode ne 'list') {
+my $spectrum = Xray::BLA->new();
+my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
+if ($mode !~ m{$re}) {
+  (my $str = $re) =~ s{\|($nonpublic)}{}g;
+  warn("BLA error: \"$mode\" is not a BLA task (task should be one of $str)\n") && exit 1;
+};
+
+if ($mode !~ m{$nonpublic}) {
   warn("BLA error: no file stub specified\n")     && exit 1 if not $ARGV[1];
   warn("BLA error: no config file specified (use the -c switch)\n")   && exit 1 if not $configfile;
   warn("BLA error: $configfile does not exist\n") && exit 1 if not -e $configfile;
   warn("BLA error: $configfile cannot be read\n") && exit 1 if not -r $configfile;
 };
 
-my $spectrum = Xray::BLA->new(task=>$mode);
+$spectrum -> task($mode);
 $spectrum -> stub($ARGV[1]||q{});
 $spectrum -> colored(0) if $nocolor;
 $spectrum -> read_ini($configfile);
 my @elastic =  @{$spectrum -> elastic_energies};
 
-if ($mode !~ m{list|test}) {
+if ($mode !~ m{$nonpublic}) {
   warn("BLA error: no scan folder specified in the configuration file\n")      && exit 1 if not $spectrum->scanfolder;
   warn("BLA error: no tiff folder specified in the configuration file\n")      && exit 1 if not $spectrum->tiffolder;
   warn("BLA error: no output folder specified in the configuration file\n")    && exit 1 if not $spectrum->outfolder;
@@ -54,99 +63,103 @@ if ($mode !~ m{list|test}) {
 };
 
 
+given ($mode) {
+  when  ('herfd') {
+    warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
+    $spectrum -> energy($energy);
+    $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
+    $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+  };
 
-if ($mode eq 'herfd') {
-  warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
-  $spectrum -> energy($energy);
-  $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
-  $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+  when ('mask') {
+    warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
+    $spectrum -> screen($verbose);
+    $spectrum -> energy($energy);
+    $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate);
+  }
 
+  when ('point') {
+    warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
+    warn("BLA error: no energy point specified (use the -p switch)\n")    && exit(1) if ($point < 1);
+    $spectrum -> energy($energy);
+    my $ret = $spectrum -> read_mask(verbose=>0);
+    print(0) && exit(1) if not $ret->status;
+    my $value = $spectrum->apply_mask($point, verbose=>0, silence=>1)->status;
+    print $value.$/;
+  }
 
-} elsif ($mode eq 'mask') {
-  warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
-  $spectrum -> screen($verbose);
-  $spectrum -> energy($energy);
-  $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate);
-
-
-} elsif ($mode eq 'point') {
-  warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
-  warn("BLA error: no energy point specified (use the -p switch)\n")    && exit(1) if ($point < 1);
-  $spectrum -> energy($energy);
-  my $ret = $spectrum -> read_mask(verbose=>0);
-  print(0) && exit(1) if not $ret->status;
-  my $value = $spectrum->apply_mask($point, verbose=>0, silence=>1)->status;
-  print $value.$/;
-
-
-} elsif ($mode eq 'rixs') {
-  warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
-  foreach my $e (@elastic) {
-    $spectrum -> energy($e);
-    my $file = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);
-    if (($Xray::BLA::XDI_exists) and (-e $xdiini)) {
-      $file .= '.xdi';
-    } else {
-      $file .= '.dat';
+  when ('rixs') {
+    warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
+    foreach my $e (@elastic) {
+      $spectrum -> energy($e);
+      my $file = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);
+      if (($Xray::BLA::XDI_exists) and (-e $xdiini)) {
+	$file .= '.xdi';
+      } else {
+	$file .= '.dat';
+      };
+      if (not -e $file) {
+	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+	my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+      } elsif (not $reuse) {
+	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+	my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+      } else {
+	1;			# do nothing
+      };
+      $spectrum -> push_herfd_file_list($file);
+      $spectrum -> push_herfd_pixels_used($spectrum->npixels);
     };
-    if (not -e $file) {
-      $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-      my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
-    } elsif (not $reuse) {
-      $spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-      my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
-    } else {
-      1;			# do nothing
+    $spectrum -> prep_rixs_for_normalization(verbose => $verbose) if $xdiini;
+    $spectrum -> rixs_map(verbose => $verbose);
+  }
+
+  when ('map') {
+    my $need_to_check = 0;
+    warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
+    foreach my $e (@elastic) {
+      $spectrum -> energy($e);
+      my $file = $spectrum->mask_file("mask", 'gif');
+      if (not -e $file) {
+	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
+      } elsif (not $reuse) {
+	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
+      } else {
+	$need_to_check = 1;
+      };
+      $spectrum -> push_elastic_file_list($file);
     };
-    $spectrum -> push_herfd_file_list($file);
-    $spectrum -> push_herfd_pixels_used($spectrum->npixels);
-  };
-  $spectrum -> prep_rixs_for_normalization(verbose => $verbose) if $xdiini;
-  $spectrum -> rixs_map(verbose => $verbose);
-
-
-} elsif ($mode eq 'map') {
-  my $need_to_check = 0;
-  warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
-  foreach my $e (@elastic) {
-    $spectrum -> energy($e);
-    my $file = $spectrum->mask_file("mask", 'gif');
-    if (not -e $file) {
-      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
-    } elsif (not $reuse) {
-      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
-    } else {
-      $need_to_check = 1;
+    if ($need_to_check) {
+      my $ret = $spectrum -> check;
+      die $spectrum->assert($ret->message, 'bold red') if $ret->status == 0;
+      $spectrum -> import_elastic_image;
     };
-    $spectrum -> push_elastic_file_list($file);
-  };
-  if ($need_to_check) {
-    my $ret = $spectrum -> check;
-    die $spectrum->assert($ret->message, 'bold red') if $ret->status == 0;
-    $spectrum -> import_elastic_image;
-  };
-  $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
+    $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
+  }
 
+  when ('list') {
+    my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
+    foreach my $a (@list) {
+      my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, 'bold green') : $a;
+      printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation;
+    };
+  }
 
-} elsif ($mode eq 'list') {
-  my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
-  foreach my $a (@list) {
-    my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, 'bold green') : $a;
-    printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation;
-  };
-} elsif ($mode eq 'test') {
-  die "tests for the BLA code (none currently)...\n";
-} else {
-  pod2usage(1);
-  exit 1;
+  when ('test') {
+    die "tests for the BLA code (none currently)...\n";
+  }
 
+  default {
+    pod2usage(1);
+    exit 1;
+  }
 };
 
 exit 0;
 
 =head1 NAME
 
-bla - wrapper script for bent Laue analyzer HERFD-related tasks
+bla - wrapper script for bent Laue analyzer + Pilatus data processing
 
 =head1 SYNOPSIS
 
@@ -269,4 +282,25 @@ contain signal related to specific emission energies.
 This software uses perl and PDL with Imager or Image Magick to process
 the images into a high resolution XANES spectrum.
 
+=head1 AUTHOR
+
+Bruce Ravel (bravel AT bnl DOT gov)
+
+L<http://cars9.uchicago.edu/~ravel/software/>
+
+This software was created with advice from and in collaboration with
+Jeremy Kropf (kropf AT anl DOT gov)
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlgpl>.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
 =cut
+

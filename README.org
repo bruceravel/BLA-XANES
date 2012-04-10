@@ -1,4 +1,4 @@
-* Convert bent-laue analyzer images to XANES data
+* Convert bent-Laue analyzer images to XANES data
 
 ** Synopsis
 
@@ -44,7 +44,7 @@ wrapper script around the five bent Laue tasks:
  3. ~map~: convert a series of elastic images to an
     energy vs. pixel map
 
- 4. ~mask~: compute the mask file for a secific emission energy
+ 4. ~mask~: compute the mask file for a specific emission energy
 
  5. ~point~: convert a specified BLA image to its HERFD value for a
     specified emission energy
@@ -125,13 +125,13 @@ line switches.
 *** Output
 
  + The output of the ~herfd~ task is a data file containing the
-   HERFD spectrum at the specified eminssion energy and, if requested,
+   HERFD spectrum at the specified emission energy and, if requested,
    gif images with the mask and the mask creation animation.
 
  + The output of the ~rixs~ task is the same as for the ~herfd~
    script at each emission energy.
 
- + The output of the ~map~ task is a datafile in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
+ + The output of the ~map~ task is a data file in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
    which can be read by gnuplot and a gnuplot script for displaying
    the data.  The resulting image will plot a map of detector column
    vs detector row with the color axis showing energy.  Gif files for
@@ -213,7 +213,7 @@ by positively identifying the emission line measured.
 The ~[steps]~ section is used to define the sequence of operations
 used to make the mask at any emission energy.  The syntax of this
 section is somewhat fussy.  It is essential that there are no spaces
-after either instance of the word ~END~.  Other than that, whitespace
+after either instance of the word ~END~.  Other than that, white space
 is not important, but spelling is.
 
 The possible steps to mask creation are:
@@ -230,7 +230,7 @@ The possible steps to mask creation are:
  3. Apply an areal median or mean to each pixel.  The syntax is 
     ~areal <median|mean> radius #~.  The number defines the size of
     the square considered around each pixel.  A value of 1 means a 3x3
-    square, a valueof 2 means a 5x5 square.  The value of each pixel
+    square, a value of 2 means a 5x5 square.  The value of each pixel
     is set to either the mean or the median value of the pixels in the
     square.
 
@@ -242,7 +242,7 @@ The possible steps to mask creation are:
  5. Include all social pixels.  A social pixel is one which is not
     illuminated but is surrounded by enough illuminated pixels.  The
     syntax is ~social #~.  The number defines how many of the
-    surrounding pixles must be illuminated for the pixel to be turned
+    surrounding pixels must be illuminated for the pixel to be turned
     on.
 
  6. Use the entire image.  The syntax is ~entire image~. This step
@@ -279,7 +279,7 @@ the RIXS function.  If XDI metadata is provided, then the
 number is computed from the number of pixels illuminated in the mask
 at each emission energy.  The pixel ratio for an emission energy is
 the number of pixels from the emission energy with the largest number
-of illuminated pixles divided by the number of illuminated pixels at
+of illuminated pixels divided by the number of illuminated pixels at
 that energy.
 
 The pixel ratio can be used to normalize the mu(E) data from each
@@ -304,7 +304,7 @@ HERFD signal.  This file can be imported directly into Athena.
 
 ** Working with Imager
 
-Imager works out of the box on both linux and Windows, although the
+Imager works out of the box on both Linux and Windows, although the
 way it handles 32-bit numbers with its inherent 24-bit sample depth is
 somewhat confusing.
 
@@ -320,7 +320,7 @@ In order to be able to use Image Magick, it must be recompiled with a
 larger bit depth.  This is done by re-compiling from source code.
 
 You must have [[http://www.libtiff.org/][libtiff]] and its development libraries installed so that
-Image Magick gets compiled with support for tiff files.  On Ubunutu,
+Image Magick gets compiled with support for tiff files.  On Ubuntu,
 it is called ~libtiff4-dev~.
 
 Grab the trunk of the Image Magick development version

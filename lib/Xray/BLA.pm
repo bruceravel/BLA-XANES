@@ -41,11 +41,11 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-enum 'BlaTasks' => [qw(herfd rixs point map mask test list), ''];
+enum 'BlaTasks' => [qw(herfd rixs point map mask test list none)];
 coerce 'BlaTasks',
   from 'Str',
   via { lc($_) };
-has 'task'		 => (is => 'rw', isa => 'BlaTasks',  default => q{},
+has 'task'		 => (is => 'rw', isa => 'BlaTasks',  default => q{none},
 			     documentation => "The data processing task as set by the calling program.");
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1,
 			     documentation => "A flag for turning colored output on and off.");
@@ -90,11 +90,11 @@ has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
 has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
 			     documentation => "The value by which to multiply the mask during the multiplication step of mask creation.");
 
-enum 'Projections' => ['median', 'mean'];
-coerce 'Projections',
+enum 'Xray::BLA::Projections' => ['median', 'mean'];
+coerce 'Xray::BLA::Projections',
   from 'Str',
   via { lc($_) };
-has 'operation'          => (is => 'rw', isa => 'Projections', default => q{median},
+has 'operation'          => (is => 'rw', isa => 'Xray::BLA::Projections', default => q{median},
 			     documentation => "The areal operation, either median or mean.");
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
@@ -194,7 +194,7 @@ has 'steps' => (
 	       );
 
 
-enum 'Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
+#enum 'Xray::BLA::Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
 has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
 		    documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
 
@@ -1196,7 +1196,7 @@ sets of tiff images.  Since the Pilatus writes rather unusual tiff
 files with signed 32 bit integer samples, not every image handling
 package can deal gracefully with them.  I have found two choices in
 the perl universe that work well, L<Imager> and C<Image::Magick>,
-although using L<Image::Magick> requires recompiliation to be able to
+although using L<Image::Magick> requires recompilation to be able to
 use 32 bit sample depth.  Happily, L<Imager> works out of the box, so
 I am using it.
 
@@ -1254,7 +1254,7 @@ line.  For example, for the the gold L3 edge experiment, the L alpha 1
 line is likely used.  It's tabulated value is 9715 eV.
 
 The image containing the data measured from the elastic scattering
-with the incident energy at this energy will have a filename something
+with the incident energy at this energy will have a file name something
 like F<E<lt>stubE<gt>_elsatic_E<lt>energyE<gt>_00001.tif>.
 
 This value can be changed to some other measured elastic energy in
@@ -1302,9 +1302,9 @@ n umber of counts are set to 0.
 
 =item C<lonely_pixel_value> [3]
 
-In the second pass over the elastic image, illuminiated pixles with
+In the second pass over the elastic image, illuminated pixels with
 fewer than this number of illuminated neighboring pixels are removed
-fropm the image.  This serves the prupose of removing most stray
+from the image.  This serves the purpose of removing most stray
 pixels not associated with the main image of the peak energy.
 
 This attribute is ignored by the areal median/mean algorithm.
@@ -1314,7 +1314,7 @@ This attribute is ignored by the areal median/mean algorithm.
 In the third pass over the elastic image, dark pixels which are
 surrounded by larger than this number of illuminated pixels are
 presumed to be a part of the image of the peak energy.  They are given
-a value of 5 counts.  This serves the prupose of making the elastic
+a value of 5 counts.  This serves the propose of making the elastic
 image a solid mask with few gaps in the image of the main peak.
 
 This attribute is ignored by the areal median/mean algorithm.
@@ -1323,7 +1323,7 @@ This attribute is ignored by the areal median/mean algorithm.
 
 This determines the size of the square used in the areal median/mean
 algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
-eadch direction.  A value of 2 means to use a 5x5 square.  Thanks to
+each direction.  A value of 2 means to use a 5x5 square.  Thanks to
 PDL, the hit for using a larger radius is quite small.
 
 =item C<elastic_file>
@@ -1416,7 +1416,7 @@ computed by applying the mask to the image file from each data point.
 When true, the C<verbose> argument causes messages to be printed to
 standard output about every data point being processed.
 
-The C<xdiini> argument takes the filename of an ini-style
+The C<xdiini> argument takes the file name of an ini-style
 configuration file for XDI metadata.  If no ini file is supplied, then
 no metadata and no column labels will be written to the output file.
 
@@ -1540,7 +1540,7 @@ image for this data point.
 =head1 MASK SPECIFICATION SYNTAX
 
 The steps to mask creation are specified using a simple imperative
-language.  Here's an example of specfying the steps via the
+language.  Here's an example of specifying the steps via the
 configuration file:
 
     [steps]
@@ -1554,7 +1554,7 @@ configuration file:
     END
 
 Each specification of a step is contained on a single line.
-Whitespace is unimportant, but spelling matters.  The parser has
+White space is unimportant, but spelling matters.  The parser has
 little intelligence.
 
 The possible steps are:
@@ -1597,6 +1597,19 @@ The number is used as the value of C<social_pixel_value>.  If a pixel
 is not illuminated and is surrounded by more than that number of pixels,
 it will be turned on.
 
+=item C<entire image>
+
+Set all pixels in the image to 1.  That is, use all the pixels in a
+image to generate the XANES value.  This is mostly used for testing
+purposes and its incompatible with any of the other steps except the
+bad pixel pass.  To examine the XANES form the entire image, use this
+
+    [steps]
+    steps = <<END
+    bad 400 weak 0
+    entire image
+    END
+
 =back
 
 The steps can be specified in any order and repeated as necessary.
@@ -1628,13 +1641,16 @@ Any warning or error message involving a file will contain the
 complete file name so that the file naming or configuration mistake
 can be tracked down.
 
+Missing information expected to be read from the configuration file
+will issue an error citing the configuration file.
+
 Errors interpreting the contents of an image file are probably not
 handled well.
 
 The output column data file is B<not> written on the fly, so a run
-that dies or is halted early will result in no output being written.
-The save and animation images are written at the time the message is
-written to STDOUT when the C<verbose> switch is on.
+that dies or is halted early will probably result in no output being
+written.  The save and animation images are written at the time the
+message is written to STDOUT when the C<verbose> switch is on.
 
 =head1 XDI OUTPUT
 
@@ -1645,7 +1661,7 @@ C<BLA.pixel_ratio> datum will be written to the output file.  This
 number is computed from the number of pixels illuminated in the mask
 at each emission energy.  The pixel ratio for an emission energy is
 the number of pixels from the emission energy with the largest number
-of illuminated pixles divided by the number of illuminated pixels at
+of illuminated pixels divided by the number of illuminated pixels at
 that energy.
 
 The pixel ratio can be used to normalize the mu(E) data from each
@@ -1746,12 +1762,26 @@ Strawberry Perl.  Currently, the Image Magick backend is disabled.
 
 =item *
 
+More robust error handling.
+
+=item *
+
+Use the energy map to create a mask with a specified energy width.
+
+=item *
+
 Scan file format is currently hardwired.  In the future, will need to
 adapt to different columns.
 
 =item *
 
-Other energy map output formats
+In the future, will need a more sophisticated mechanism for relating
+C<stub> to scan file and to image files -- some kind of templating
+scheme, I suspect
+
+=item *
+
+Other energy map output formats.  A gif would be useful.
 
 =item *
 
@@ -1773,16 +1803,6 @@ range of elastic energies to a table of line energies.
 
 =item *
 
-In the future, will need a more sophisticated mechanism for relating
-C<stub> to scan file and to image files -- some kind of templating
-scheme, I suspect
-
-=item *
-
-More robust error handling.
-
-=item *
-
 Use of XDI is undocumented.
 
 =item *
@@ -1801,6 +1821,9 @@ Patches are welcome.
 Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://cars9.uchicago.edu/~ravel/software/>
+
+This software was created with advice from and in collaboration with
+Jeremy Kropf (kropf AT anl DOT gov)
 
 =head1 LICENCE AND COPYRIGHT
 

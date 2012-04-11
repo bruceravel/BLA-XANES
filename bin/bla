@@ -46,11 +46,10 @@ if ($mode !~ m{$re}) {
 };
 
 if ($mode !~ m{$nonpublic}) {
-  warn("BLA error: no file stub specified\n")     && exit 1 if not $ARGV[1];
-  warn("BLA error: no config file specified (use the -c switch)\n")   && exit 1 if not $configfile;
-  warn("BLA error: $configfile does not exist\n") && exit 1 if not -e $configfile;
-  warn("BLA error: $configfile cannot be read\n") && exit 1 if not -r $configfile;
-  warn("BLA error: incident energy (-i switch) is not a number\n") && exit 1 if not looks_like_number($incident);
+  warn("BLA error: no file stub specified\n")			    && exit 1 if not $ARGV[1];
+  warn("BLA error: no config file specified (use the -c switch)\n") && exit 1 if not $configfile;
+  warn("BLA error: $configfile does not exist\n")		    && exit 1 if not -e $configfile;
+  warn("BLA error: $configfile cannot be read\n")		    && exit 1 if not -r $configfile;
 };
 
 $spectrum -> task($mode);
@@ -60,16 +59,19 @@ $spectrum -> read_ini($configfile);
 my @elastic =  @{$spectrum -> elastic_energies};
 
 if ($mode !~ m{$nonpublic}) {
-  warn("BLA error: no scan folder specified in the configuration file\n")      && exit 1 if not $spectrum->scanfolder;
-  warn("BLA error: no tiff folder specified in the configuration file\n")      && exit 1 if not $spectrum->tiffolder;
-  warn("BLA error: no output folder specified in the configuration file\n")    && exit 1 if not $spectrum->outfolder;
-  warn("BLA error: no absorber element specified in the configuration file\n") && exit 1 if ((not $spectrum->element) and ($mode eq 'map'));
-  warn("BLA error: no emission line specified in the configuration file\n")    && exit 1 if ((not $spectrum->line)    and ($mode eq 'map'));
+  warn("BLA error: no scan folder specified in the configuration file\n")                 && exit 1 if not $spectrum->scanfolder;
+  warn("BLA error: the scan folder specified in the configuration file cannot be read\n") && exit 1 if not -d $spectrum->scanfolder;
+  warn("BLA error: no tiff folder specified in the configuration file\n")                 && exit 1 if not $spectrum->tiffolder;
+  warn("BLA error: no tiff folder specified in the configuration file cannot be read\n")  && exit 1 if not -d $spectrum->tiffolder;
+  warn("BLA error: no output folder specified in the configuration file\n")               && exit 1 if not $spectrum->outfolder;
 };
 
 
 given ($mode) {
   when  ('herfd') {
+    if ((not $energy) and ($#elastic == 0)) {
+      $energy = $elastic[0];
+    };
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> energy($energy);
     $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
@@ -122,6 +124,8 @@ given ($mode) {
   when ('map') {
     my $need_to_check = 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
+    warn("BLA error: no absorber element specified in the configuration file\n")          && exit(1) if (not $spectrum->element);
+    warn("BLA error: no emission line specified in the configuration file\n")             && exit(1) if (not $spectrum->line);
     foreach my $e (@elastic) {
       $spectrum -> energy($e);
       my $file = $spectrum->mask_file("mask", 'gif');
@@ -144,6 +148,7 @@ given ($mode) {
 
   when ('xes') {
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
+    warn("BLA error: incident energy (-i switch) is not a number\n")                      && exit(1) if (not looks_like_number($incident));
     foreach my $e (@elastic) {
       $spectrum -> energy($e);
       my $rixs = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);

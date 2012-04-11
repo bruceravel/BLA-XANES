@@ -241,7 +241,7 @@ sub parse_emission_line {	# return an array reference containing the elastic ene
   my ($self, $string) = @_;
   return [] if not defined $string;
   my @list = split(" ", $string);
-
+  return [$list[0]] if ($#list == 0);  # one energy in list
 
   my @elastic = ();
   given ($list[1]) {
@@ -259,7 +259,7 @@ sub parse_emission_line {	# return an array reference containing the elastic ene
       @elastic = @list
     };
 
-    default {			# list of energies, I guess, perhaps just one...?
+    default {			# list of energies, I guess
       @elastic = @list
     };
 

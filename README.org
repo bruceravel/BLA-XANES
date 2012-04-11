@@ -277,7 +277,6 @@ the HERFD spectra.
 Care is taken at the end to remove bad pixels that might have been
 restored by the areal or social pixel steps.
 
-
 *** Error checking
 
 The script is not particularly robust in terms of flagging problems.
@@ -287,6 +286,28 @@ emission energy value that was not measured as an elastic image.  In
 those cases, the program will almost certainly fail with some kind of
 stack trace, but probably not with an immediately useful error
 message.
+
+*** Saving masks as image files
+
+In order to save mask images or animations, you may need to install
+some additional software on your computer.  PDL uses the NetPBM
+package for image format manipulation.  On Ubuntu, the package is
+called ~netpbm~ and is likely already installed.  This is not
+installed by the Demeter installer for Windows, so you have to install
+it separately.  Download and install [[http://gnuwin32.sourceforge.net/packages/netpbm.htm][the NetPBM Windows installer]].
+
+Note where the binaries get installed.  You must add that location to
+the execution path.  This can be done at the Windows command prompt by
+
+:  set PATH=%PATH%;C:\GnuWin32\bin
+
+substituting ~C:\GnuWin32\bin~ with the location on your computer.
+
+Without NetPBM, an invocation of the bla script with the ~-s~ or ~-a~
+flags will not run to completion. 
+
+Thus far, I have only got this to work on Windows XP, but not on
+Windows 7.
 
 *** XDI Output
 

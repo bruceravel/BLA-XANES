@@ -33,7 +33,7 @@ To install, do the following:
 ** Usage
 
 There is a single program installed from the bin/ folder.  ~bla~ is a
-wrapper script around the five bent Laue tasks:
+wrapper script around the six bent Laue tasks:
 
  1. ~herfd~: make a single HERFD spectrum at a specific
     emission energy
@@ -44,28 +44,30 @@ wrapper script around the five bent Laue tasks:
  3. ~map~: convert a series of elastic images to an
     energy vs. pixel map
 
- 4. ~mask~: compute the mask file for a specific emission energy
+ 4. ~xes~: compute the emission spectrum for a specific incident energy
 
- 5. ~point~: convert a specified BLA image to its HERFD value for a
+ 5. ~mask~: compute the mask file for a specific emission energy
+
+ 6. ~point~: convert a specified BLA image to its HERFD value for a
     specified emission energy
 
 *** The bla script
 
-:  bla herfd [cxeasvnqh] <stub>
-:  bla rixs  [cxasvnqh]  <stub>
-:  bla map   [crvnqh]    <stub>
-:  bla xes   [civnqh]    <stub>
-:  bla mask  [casvnqh]   <stub>
-:  bla point [ceph]      <stub>
+:  bla herfd [cxeaspvnqh] <stub>
+:  bla rixs  [cxaspvnqh]  <stub>
+:  bla map   [crpvnqh]    <stub>
+:  bla xes   [cipvnqh]    <stub>
+:  bla mask  [casvnqh]    <stub>
+:  bla point [ceih]       <stub>
 : 
 :     --config   | -c    [string]  configuration file (required)
 :     --energy   | -e    [integer] emission energy (required for herfd/point tasks)
-:     --incident | -i    [number]  incident energy (required for xes task)
-:     --point    | -p    [integer] data point at which compute HERFD (required for point task)
+:     --incident | -i    [integer] data point at which compute HERFD (required for point task)
 :     --xdiini   | -x    [string]  XDI configuration file
 :     --reuse    | -r    [flag]    reuse mask files for energy map if in outfolder
 :     --animate  | -a    [flag]    save gif animation of mask creation
 :     --save     | -s    [flag]    save gif with mask
+:     --plot     | -p    [flag]    plot data (herfd/rixs/map/xes tasks)
 :     --verbose  | -v    [flag]    write progress messages
 :     --nocolor  | -n    [flag]    turn off color coding of screen output
 :     --quiet    | -q    [flag]    suppress progress messages
@@ -82,18 +84,29 @@ configuration file.
 :  examples:  bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
 :             bla rixs -c=/path/to/config.ini -a Aufoil1
 :             bla map -c=/path/to/config.ini Aufoil1
-:             bla xes -c=/path/to/config.ini -i=11970 Aufoil1
+:             bla xes -c=/path/to/config.ini -p=11970 Aufoil1
 :             bla mask -c=/path/to/config.ini -e=9713 Aufoil1
 :             bla point -c=/path/to/config.ini -e=9713 -p=10 Aufoil1
 
 
 Here, "Aufoil1" is the stub, i.e. the basename of the scan and image
-files, and the ~-c~, ~-e~, ~-i~, and ~-a~ command line options are
+files, and the ~-c~, ~-e~, and ~-a~ command line options are
 demonstrated.
 
+The ~-i~ flag, used by ~point~ and ~xes~ can take either an integer,
+indicating the index of the data point, or a number, indicating the
+incident energy of the datapoint.  So the following may be equivalent:
+
+:             bla point -c=/path/to/config.ini -e=9713 -p=69 Aufoil1
+:             bla point -c=/path/to/config.ini -e=9713 -p=12000 Aufoil1
+
+For the ~point~ task, the ~-i~ flag *must* be sepcified.  For the
+~xes~ task, if the ~-i~ flag is omited, the midpoint of the scan (in
+index, not in energy) will be used.
+
 Options that are not used by a function (for example ~-e~ for ~rixs~
-or ~map~, ~-a~ for ~map~, or ~-p~ for any task other than ~point~)
-will be silently ignored.
+or ~map~, ~-a~ for ~map~, or ~-i~ for any task other than ~point~ or
+~xes~) will be silently ignored.
 
 ~-c~ is required for all functions unless the ~BLACONFIG~ environment
 variable is set.
@@ -103,6 +116,13 @@ acquisition, verbosity is turned off regardless of the command line
 switches.  Use the ~-q~ flag if you want to suppress screen messages
 during the ~mask~ task.  Saving is turned on for the ~mask~ task
 regardless of the command line switches.
+
+~-p~ will cause a plot to be made using Gnuplot before exiting for the
+~herfd~, ~xes~, and ~map~ tasks.  The program and plot will exit when
+you hit return.  For the ~rixs~ task, the most recent HERFD spectrum
+will be plotted before immediately going on to the next emmission
+eenrgy.  The HERFD plots are quite crude, without axis labels or other
+ornaments.
 
 *** Environment variables
 
@@ -122,13 +142,10 @@ environment variable.  The following are equivalent:
 :   export BLAENERGY=9713
 :   bla herfd -c=/path/to/config.ini -a Aufoil1
 
-Use of the ~-i~ flag can be avoided by setting the ~BLAINCIDENT~
-environment variable.  The following are equivalent:
-
-:   bla herfd -c=/path/to/config.ini -i=11970 -a Aufoil1
-: 
-:   export BLAINCIDENT=11970
-:   bla herfd -c=/path/to/config.ini -a Aufoil1
+You can also avoid using the ~-e~ flag by setting a single energy in
+the ~emission~ line of the configuration file.  (Of course, having
+only a single energy in that list will hamper the ~rixs~, ~map~, and
+~xes~ tasks....)
 
 Each environment variable is overridden by its respective command line
 switch.
@@ -175,7 +192,7 @@ HERFD data.  The ~mask~ task takes about 10 seconds.
 The ~point~ task is intended for generating the HERFD value at a
 specific emission energy during the scan.  This value can be used for
 plotting or storing to the output data file.  The ~point~ task takes
-lass than 1 second.
+less than 1 second.
 
 *** The configuration file
 
@@ -213,6 +230,9 @@ equivalent:
 :   emission   = 9703 to 9719 by 2
 
 White space does not matter, but the words ~to~ and ~by~ are required.
+
+If the ~emission~ line has only a single energy, then you can omit the
+~-e~ flag when using the ~herfd~, ~mask~, or ~point~ tasks.
 
 This configuration file can sit anywhere on disk and *must* be
 specified at the command line or via the ~BLACONFIG~ environment

@@ -10,32 +10,31 @@ use Scalar::Util qw(looks_like_number);
 
 my $energy     = 0;
 my $point      = -1;
-my $incident   = 0;
 my $reuse      = 0;
 my $save       = 0;
 my $animate    = 0;
+my $plot       = 0;
 my $verbose    = 1;
 my $configfile = q{};
 my $xdiini     = q{};      # 'share/bla.xdi.ini'
 my $nocolor    = 0;
-my $result     = GetOptions ("energy|e=i"  => \$energy,
-			     "point|p=i"   => \$point,
-			     "incident|i=s"=> \$incident,
-			     'reuse|r'	   => \$reuse,
-			     'save|s'	   => \$save,
-			     'animate|a'   => \$animate,
-			     'verbose|v'   => \$verbose,
-			     'config|c=s'  => \$configfile,
-			     'xdiini|x=s'  => \$xdiini,
-			     'nocolor|n'   => \$nocolor,
-			     'quiet|q'	   => sub { $verbose = 0 },
-			     'help|h'	   => sub { pod2usage(1); exit 0},
+my $result     = GetOptions ("energy|e=i"   => \$energy,
+			     "incident|i=s" => \$point,
+			     'reuse|r'	    => \$reuse,
+			     'save|s'	    => \$save,
+			     'animate|a'    => \$animate,
+			     'plot|p'       => \$plot,
+			     'verbose|v'    => \$verbose,
+			     'config|c=s'   => \$configfile,
+			     'xdiini|x=s'   => \$xdiini,
+			     'nocolor|n'    => \$nocolor,
+			     'quiet|q'	    => sub { $verbose = 0 },
+			     'help|h'	    => sub { pod2usage(1); exit 0},
 			    );
 
 my $mode = $ARGV[0] || q{none};
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
-$incident   ||= $ENV{BLAINCIDENT};
 my $nonpublic = 'list|none|test';
 
 my $spectrum = Xray::BLA->new();
@@ -69,16 +68,16 @@ if ($mode !~ m{$nonpublic}) {
 
 given ($mode) {
   when  ('herfd') {
-    if ((not $energy) and ($#elastic == 0)) {
-      $energy = $elastic[0];
-    };
+    $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> energy($energy);
     $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
-    $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+    my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+    $spectrum -> do_plot($ret->message, type=>'data', title=>$spectrum->stub) if $plot;
   };
 
   when ('mask') {
+    $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> screen($verbose);
     $spectrum -> energy($energy);
@@ -86,12 +85,14 @@ given ($mode) {
   }
 
   when ('point') {
+    $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
     warn("BLA error: no energy point specified (use the -p switch)\n")    && exit(1) if ($point < 1);
     $spectrum -> energy($energy);
     my $ret = $spectrum -> read_mask(verbose=>0);
     print(0) && exit(1) if not $ret->status;
-    my $value = $spectrum->apply_mask($point, verbose=>0, silence=>1)->status;
+    $spectrum->get_incident($point);
+    my $value = $spectrum->apply_mask($spectrum->nincident, verbose=>0, silence=>1)->status;
     print $value.$/;
   }
 
@@ -105,15 +106,17 @@ given ($mode) {
       } else {
 	$file .= '.dat';
       };
+      my $ret = 0;
       if (not -e $file) {
 	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-	my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+	$ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
       } elsif (not $reuse) {
 	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-	my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+	$ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
       } else {
 	1;			# do nothing
       };
+      $spectrum -> do_plot($ret->message, type=>'data', title=>join(", ", $spectrum->stub, $e), pause=>0.1) if ($ret and $plot);
       $spectrum -> push_herfd_file_list($file);
       $spectrum -> push_herfd_pixels_used($spectrum->npixels);
     };
@@ -143,23 +146,23 @@ given ($mode) {
       die $spectrum->assert($ret->message, 'bold red') if $ret->status == 0;
       $spectrum -> import_elastic_image;
     };
-    $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
+    my $ret = $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
+    $spectrum -> do_plot($ret->message, type=>'load') if $plot;
   }
 
   when ('xes') {
+    $point ||= 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
-    warn("BLA error: incident energy (-i switch) is not a number\n")                      && exit(1) if (not looks_like_number($incident));
+    warn("BLA error: incident energy (-p switch) is not a number\n")                      && exit(1) if (not looks_like_number($point));
     foreach my $e (@elastic) {
       $spectrum -> energy($e);
-      my $rixs = File::Spec->catfile($spectrum -> outfolder, $spectrum->stub."_".$e);
-      $rixs .= (($Xray::BLA::XDI_exists) and (-e $xdiini)) ? '.xdi' : '.dat';
-      if (not -e $rixs) {
-	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
-	my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
+      my $file = $spectrum->mask_file("mask", 'gif');
+      if (not -e $file) {
+	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
       };
-      $spectrum -> push_herfd_file_list($rixs);
     };
-    $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$incident);
+    my $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point);
+    $spectrum->do_plot($ret->message, type=>'data', title=>'Ein = '.$spectrum->incident) if $plot;
   }
 
   when ('list') {
@@ -180,6 +183,7 @@ given ($mode) {
   }
 };
 
+
 exit 0;
 
 =head1 NAME
@@ -188,20 +192,21 @@ bla - wrapper script for bent Laue analyzer + Pilatus data processing
 
 =head1 SYNOPSIS
 
- bla (herfd|rixs|map|mask|point) [options] <stub>
+ bla (herfd|rixs|map|xes|mask|point) [options] <stub>
 
  Options:
-   --config  | -c   [string]   configuration file (*required*)
-   --energy  | -e   [integer]  emission energy for HERFD (required for herfd/point tasks)
-   --point   | -p   [integer]  data point at which compute HERFD (required for point task)
-   --xdiini  | -x   [string]   XDI configuration file
-   --reuse   | -r   [flag]     reuse mask files for map if found in outfolder
-   --animate | -a   [flag]     save gif animation of mask or energy map creation
-   --save    | -s   [flag]     save gif with mask
-   --verbose | -v   [flag]     write progress messages
-   --nocolor | -n   [flag]     turn off color coding of screen output
-   --quiet   | -q   [flag]     suppress progress messages
-   --help    | -h   [flag]     write this message and exit
+   --config   | -c   [string]   configuration file (*required*)
+   --energy   | -e   [integer]  emission energy for HERFD (required for herfd/point tasks)
+   --incident | -i   [number]   data point for HERFD or XES (req. for point/xes tasks)
+   --xdiini   | -x   [string]   XDI configuration file
+   --reuse    | -r   [flag]     reuse mask files for map if found in outfolder
+   --animate  | -a   [flag]     save gif animation of mask or energy map creation
+   --save     | -s   [flag]     save gif with mask
+   --plot     | -p   [flag]     plot computed data (herfd/rixs/map/xes tasks)
+   --verbose  | -v   [flag]     write progress messages
+   --nocolor  | -n   [flag]     turn off color coding of screen output
+   --quiet    | -q   [flag]     suppress progress messages
+   --help     | -h   [flag]     write this message and exit
 
 =head1 Options
 
@@ -215,7 +220,7 @@ Specify the location of the ini-style config file.
 
 The emission energy at which to compute the XANES spectrum.
 
-=item B<--point>, B<-p>  (Required for point task)
+=item B<--incident>, B<-i>  (Required for point and xes tasks)
 
 The data point at which to compute the HERFD value.
 
@@ -235,6 +240,10 @@ rixs) or the sequence of emission energy masks (map).
 =item B<--save>, B<-s>
 
 Write a gif file showing the mask.
+
+=item B<--plot>, B<-p>
+
+Plot HERFD, XES, RIXS, or map data.
 
 =item B<--verbose>, B<-v>   (Default)
 

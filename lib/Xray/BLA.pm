@@ -9,6 +9,7 @@ use feature "switch";
 use Moose;
 use Moose::Util qw(apply_all_roles);
 with 'Xray::BLA::Backend::Imager';
+with 'Xray::BLA::Pause';
 use MooseX::Aliases;
 use Moose::Util::TypeConstraints;
 
@@ -19,6 +20,7 @@ use PDL::IO::Pic qw(wim rim);
 use File::Copy;
 use File::Path;
 use File::Spec;
+use Graphics::GnuplotIF;
 use List::Util qw(sum max);
 use List::MoreUtils qw(pairwise);
 use Math::Round qw(round);
@@ -198,6 +200,8 @@ has 'steps' => (
 			     },
 		documentation => "An array reference containing the user-specified steps of the mask creation process."
 	       );
+
+has 'gp' => (is => 'rw', isa => 'Graphics::GnuplotIF', default => sub{Graphics::GnuplotIF->new(style => 'lines')});
 
 
 #enum 'Xray::BLA::Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
@@ -1030,6 +1034,7 @@ sub energy_map {
 					       });
   close $G;
   print $self->assert("Wrote gnuplot script to $gpfile", 'bold green') if $args{verbose};
+  $ret->message($gpfile);
 
   if ($args{animate}) {
     my $animfile = $self->animate('map', @{$self->elastic_file_list});
@@ -1128,21 +1133,20 @@ sub compute_xes {
 
   my @values  = ();
   my @npixels = ();
-  foreach my $r (@{$self->herfd_file_list}) {
-    open(my $F, '<', $r);
-    my $count = 0;
-    while (<$F>) {
-      ++$count if ($_ !~ m{\A\#});
-      if ($count == $self->nincident) {
-	my @list = split(" ", $_);
-	push @values, $list[1];
-      } elsif ($_ =~ m{BLA\.illuminated_pixels: (\d+)}) {
-	push @npixels, $1;
-      } elsif ($_ =~ m{(\d+) illuminated pixels}) {
-	push @npixels, $1;
-      };
-    };
+  my $counter = Term::Sk->new('Computing XES, time elapsed: %8t %15b (emission energy %c of %m)',
+			      {freq => 's', base => 0, target=>$#{$self->elastic_energies}});
+  foreach my $e (@{$self->elastic_energies}) {
+    $counter->up if $self->screen;
+    $self -> energy($e);
+    my $ret = $self -> read_mask(verbose=>0);
+    print(0) && exit(1) if not $ret->status;
+    my $value = $self->apply_mask($self->nincident, verbose=>0, silence=>1)->status;
+    my $np = int($self->elastic_image->flat->sumover->sclr);
+    push @values, $value;
+    push @npixels, $np;
+    #print "$e  $value  $np\n";
   };
+  $counter->close if $self->screen;
   my $max = max(@npixels);
   @npixels = map {$max / $_} @npixels;
 
@@ -1183,12 +1187,12 @@ sub get_incident {
     die "BLA error: incident energy (-i switch) is not a number\n";
   } else {
     my $n = 0;
-    print $in, $/;
     while (($in > $energy[$n]) and ($n < $#energy)) {
       ++$n;
     };
     $self->incident($energy[$n]);
     $self->nincident($n);
+    #print $n, "  ", $energy[$n], $/;
   };
 };
 
@@ -1227,6 +1231,18 @@ sub assert {
   return $string.$/;
 };
 
+sub do_plot {
+  my ($self, $fname, @args) = @_;
+  my %args = @args;
+  $args{type}  ||= q{data};
+  $args{title} ||= q{};
+  $args{pause} ||= q{-1};
+  my $str = ($args{type} eq 'data') ? 'plot \'' . $fname . "' title '" . $args{title} . "'\n"
+          :                           'load \'' . $fname . "'\n";
+  #print $str;
+  $self->gp->gnuplot_cmd($str);
+  $self->pause($args{pause});
+}
 
 
 __PACKAGE__->meta->make_immutable;
@@ -1376,8 +1392,15 @@ C<peak_energy> is an alias for C<energy>.
 
 =item C<incident>
 
-Specify an incident energy for an XES slice through the RIXS.  If not
-specified, it defaults to the midpoint of the energy scan.
+The incident energy for an XES slice through the RIXS or for
+evaluation of single HERFD data point.  If not specified, it defaults
+to the midpoint of the energy scan.
+
+=item C<nincident>
+
+The index of the incident energy for an XES slice through the RIXS or
+for evaluation of single HERFD data point.  If not specified, it
+defaults to the midpoint of the energy scan.
 
 =item C<steps>
 
@@ -1574,6 +1597,17 @@ standard output about file written.
 
 The returned L<Xray::BLA::Return> object conveys no information at
 this time.
+
+=item C<get_incident>
+
+Given an integer (representing a data point index) or an energy value,
+set the C<incident> and C<nincident> attributes with the matching
+energy and index values of that point.
+
+    $spectrum->get_incident($point);
+
+If C<$point> is omitted, the C<incident> and C<nincident> attributes
+are set with the values of the midpoint (by index) of the data range.
 
 =back
 
@@ -1902,6 +1936,10 @@ More robust error handling.
 =item *
 
 Use the energy map to create a mask with a specified energy width.
+
+=item *
+
+A flag for plotting (herfd, xes, and map)
 
 =item *
 

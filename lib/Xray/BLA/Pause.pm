@@ -50,6 +50,7 @@ sub pause {
   my ($self, $length) = @_;
   $length ||= -1;
   $length = -1 if ($length !~ m{$NUMBER});
+  local $|=1;
   my $keypress = $length;
   if ($length > 0) {
     sleep $length;

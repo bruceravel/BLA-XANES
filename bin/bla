@@ -1,5 +1,12 @@
 #!/usr/bin/perl
 
+BEGIN {
+  if ($^O =~ /MSWin32/) {
+    my $fname='C:\strawberry\c\bin\etc\fonts\fonts.conf';
+    $ENV{FONTCONFIG_FILE}=$fname if -e $fname;
+  };
+}
+
 use feature 'switch';
 use Xray::BLA; # automatically turns on strict and warnings
 use Xray::BLA::Image;
@@ -38,6 +45,11 @@ $energy     ||= $ENV{BLAENERGY};
 my $nonpublic = 'list|none|test';
 
 my $spectrum = Xray::BLA->new();
+if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
+  $plot = 0;
+  print $spectrum->assert("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');
+};
+
 my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
 if ($mode !~ m{$re}) {
   (my $str = $re) =~ s{\|($nonpublic)}{}g;

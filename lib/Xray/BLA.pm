@@ -108,7 +108,11 @@ has 'operation'          => (is => 'rw', isa => 'Xray::BLA::Projections', defaul
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "THe fully resolved file name containing the measured elastic image.");
 has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
-			     documentation => "The PDL object containing the elastic image.");
+			     documentation => "The PDL object containing the elastic image.",
+			     trigger => sub{my ($self, $new) = @_; my $max = $new->flat->max; $self->eimax($max)} );
+has 'eimax'              => (is => 'rw', isa => 'Num', default => 0,
+			     documentation => "unit pixel size in mask");
+
 
 has 'bad_pixel_list' => (
 			 traits    => ['Array'],
@@ -366,7 +370,9 @@ sub remove_bad_pixels {
   foreach my $pix (@{$self->bad_pixel_list}) {
     my $co = $pix->[0];
     my $ro = $pix->[1];
+    ##print join("|", $co, $ro, $self->elastic_image->at($co, $ro)), $/;
     $self->elastic_image->($co, $ro) .= 0;
+    $self->eimax($self->elastic_image->flat->max)
     ## for .=, see assgn in PDL::Ops
     ## for ->() syntax see PDL::NiceSlice
   };
@@ -381,6 +387,7 @@ sub do_step {
   } else {
     print $ret->message if $verbose;
   };
+  $self->eimax($self->elastic_image->flat->max)
   $self->npixels($ret->status) if $set_npixels;
   undef $ret;
   return 1;
@@ -850,7 +857,7 @@ sub apply_mask {
     ## sumover: see PDL::Ufunc
     ## flat, sclr: see PDL::Core
     my $masked = $self->elastic_image * Xray::BLA::Image->new(parent=>$self)->Read($image);
-    my $sum = int($masked->flat->sumover->sclr);
+    my $sum = int($masked->flat->sumover->sclr / $self->eimax);
     printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
     $ret->status($sum);
   };
@@ -1141,9 +1148,10 @@ sub compute_xes {
     my $ret = $self -> read_mask(verbose=>0);
     print(0) && exit(1) if not $ret->status;
     my $value = $self->apply_mask($self->nincident, verbose=>0, silence=>1)->status;
+    #my $max = $self->elastic_image->flat->max;
     my $np = int($self->elastic_image->flat->sumover->sclr);
     push @values, $value;
-    push @npixels, $np;
+    push @npixels, $np/$self->eimax;
     #print "$e  $value  $np\n";
   };
   $counter->close if $self->screen;
@@ -1152,7 +1160,7 @@ sub compute_xes {
 
   my @xes = ();
   foreach my $i (0 .. $#npixels) {
-    push @xes, [$self->elastic_energies->[$i], $npixels[$i]*$values[$i]];
+    push @xes, [$self->elastic_energies->[$i], $npixels[$i]*$values[$i], $npixels[$i], $values[$i], ];
   };
   my $outfile;
   if (($XDI_exists) and (-e $args{xdiini})) {
@@ -1216,9 +1224,9 @@ sub dat_xes {
   open(my $O, '>', $outfile);
   print   $O "# XES from " . $self->stub . " at " . $self->incident . ' eV' . $/;
   print   $O "# -------------------------\n";
-  print   $O "#   energy      xes\n";
+  print   $O "#   energy      xes    npixels    raw\n";
   foreach my $p (@$rdata) {
-    printf $O "  %.3f  %.7f\n", @$p;
+    printf $O "  %.3f  %.7f  %.7f  %.7f\n", @$p;
   };
   close   $O;
   return $outfile;
@@ -1237,7 +1245,7 @@ sub do_plot {
   $args{type}  ||= q{data};
   $args{title} ||= q{};
   $args{pause} ||= q{-1};
-  my $str = ($args{type} eq 'data') ? 'plot \'' . $fname . "' title '" . $args{title} . "'\n"
+  my $str = ($args{type} eq 'data') ? 'plot \'' . $fname . "' with lines title '" . $args{title} . "'\n"
           :                           'load \'' . $fname . "'\n";
   #print $str;
   $self->gp->gnuplot_cmd($str);

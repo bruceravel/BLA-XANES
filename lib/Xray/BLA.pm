@@ -387,7 +387,7 @@ sub do_step {
   } else {
     print $ret->message if $verbose;
   };
-  $self->eimax($self->elastic_image->flat->max)
+  $self->eimax($self->elastic_image->flat->max);
   $self->npixels($ret->status) if $set_npixels;
   undef $ret;
   return 1;

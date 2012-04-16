@@ -82,10 +82,10 @@ patterns, this script will fail.  File locations are specified in the
 configuration file.
 
 :  examples:  bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
-:             bla rixs -c=/path/to/config.ini -a Aufoil1
-:             bla map -c=/path/to/config.ini Aufoil1
-:             bla xes -c=/path/to/config.ini -p=11970 Aufoil1
-:             bla mask -c=/path/to/config.ini -e=9713 Aufoil1
+:             bla rixs  -c=/path/to/config.ini -a Aufoil1
+:             bla map   -c=/path/to/config.ini Aufoil1
+:             bla xes   -c=/path/to/config.ini -p=11970 Aufoil1
+:             bla mask  -c=/path/to/config.ini -e=9713 Aufoil1
 :             bla point -c=/path/to/config.ini -e=9713 -p=10 Aufoil1
 
 
@@ -110,6 +110,12 @@ or ~map~, ~-a~ for ~map~, or ~-i~ for any task other than ~point~ or
 
 ~-c~ is required for all functions unless the ~BLACONFIG~ environment
 variable is set.
+
+The ~-r~ flag is a time-saver for the ~rixs~, ~map~, and ~xes~ tasks.
+When present, this flag tells the program to reuse any mask images or
+scan files found in the output folder.  This is safe so long as the
+mask creation parameters in the configuration file have not been
+changed.
 
 Since the ~point~ task returns a number intended for use during data
 acquisition, verbosity is turned off regardless of the command line

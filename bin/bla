@@ -171,6 +171,10 @@ given ($mode) {
       my $file = $spectrum->mask_file("mask", 'gif');
       if (not -e $file) {
 	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
+      } elsif (not $reuse) {
+	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
+      } else {
+	1;			# do nothing
       };
     };
     my $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point);

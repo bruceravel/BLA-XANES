@@ -289,7 +289,14 @@ The possible steps to mask creation are:
     surrounding pixels must be illuminated for the pixel to be turned
     on.
 
- 6. Use the entire image.  The syntax is ~entire image~. This step
+ 6. Use the energy map computed by the ~map~ task.  The syntax is
+    ~map #~ where the number is the width in eV about the emission
+    energy.  Any pixels with a value of ~<emission> +/- <width>~ will
+    be included in the mask.  Note that it makes no sense to use this
+    step with any step other than the bad/weak step, which should
+    precede this step.
+
+ 7. Use the entire image.  The syntax is ~entire image~. This step
     just sets all the pixels in the mask to 1 so that the entire image
     is used to compute the energy point.  Note that it makes no sense
     to use this step with any step other than the bad/weak step, which

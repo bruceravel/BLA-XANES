@@ -99,7 +99,7 @@ given ($mode) {
   when ('point') {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
-    warn("BLA error: no energy point specified (use the -p switch)\n")    && exit(1) if ($point < 1);
+    warn("BLA error: no energy point specified (use the -i switch)\n")    && exit(1) if ($point < 1);
     $spectrum -> energy($energy);
     my $ret = $spectrum -> read_mask(verbose=>0);
     print(0) && exit(1) if not $ret->status;

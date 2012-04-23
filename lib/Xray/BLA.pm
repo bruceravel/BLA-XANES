@@ -16,6 +16,7 @@ use Moose::Util::TypeConstraints;
 use PDL::Lite;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
+use PDL::IO::Dumper;
 
 use File::Copy;
 use File::Path;
@@ -87,6 +88,8 @@ has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3,
 			     documentation => "The number of illuminated neighbors below which a pixel is considered isolated and should be removed from the mask.");
 has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The number of illuminated neighbors above which a pixel is considered as part of the mask.");
+has 'deltae'	         => (is => 'rw', isa => 'Num', default => 1,
+			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
 has 'nbad'               => (is => 'rw', isa => 'Int', default => 0,
@@ -97,6 +100,8 @@ has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The radius used for the areal mean/median step of mask creation.");
 has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
 			     documentation => "The value by which to multiply the mask during the multiplication step of mask creation.");
+has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
+			     documentation => "The number of repotition of the three-point smoothing used in energy map creation.");
 
 enum 'Xray::BLA::Projections' => ['median', 'mean'];
 coerce 'Xray::BLA::Projections',
@@ -342,6 +347,12 @@ sub mask {
 	$self->elastic_image(PDL::Core::ones($self->columns, $self->rows));
       };
 
+      when ('map') {
+	$self->deltae($args[1]);
+	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
+	$self->do_step('mapmask', $out[-1], $args{verbose}, $set_npixels);
+      };
+
       default {
 	print assert("I don't know what to do with \"$st\"", 'bold red');
       };
@@ -520,7 +531,7 @@ sub bad_pixels {
   };
 
   $self->nbad($removed);
-  my $str = $self->assert("Bad/weak pass", 'cyan');
+  my $str = $self->assert("Bad/weak step", 'cyan');
   $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -573,7 +584,7 @@ sub lonely_pixels {
     };
   };
 
-  my $str = $self->assert("Lonely pixel pass", 'cyan');
+  my $str = $self->assert("Lonely pixel step", 'cyan');
   $str   .= "\tRemoved $removed lonely pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -635,7 +646,7 @@ sub social_pixels {
   };
   $self->remove_bad_pixels;
 
-  my $str = $self->assert("Social pixel pass", 'cyan');
+  my $str = $self->assert("Social pixel step", 'cyan');
   $str   .= "\tAdded $added social pixels\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
@@ -646,6 +657,44 @@ sub social_pixels {
   return $ret;
 };
 
+sub mapmask {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{write} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+
+  my $maskfile = $self->mask_file("maskmap", 'gif');
+  if (not -e $maskfile) {
+    $ret->status(0);
+    $ret->message("The energy map file $maskfile does not exist.");
+    return $ret
+  };
+  if (not -r $maskfile) {
+    $ret->status(0);
+    $ret->message("The energy map file $maskfile cannot be read.");
+    return $ret
+  };
+  my $image = frestore($maskfile);
+  $self -> elastic_image($image);
+  $self -> elastic_image->inplace->minus($self->energy,0);
+  $self -> elastic_image->inplace->abs;
+  $self -> elastic_image->inplace->lt($self->deltae,0);
+  $self -> remove_bad_pixels;
+
+  my $on  = $self->elastic_image->flat->sumover->sclr;
+  my $off = $self->columns*$self->rows - $on;
+  my $str = $self->assert("Energy map step", 'cyan');
+  $str   .= sprintf "\tUsing pixels within %.2f eV of %.1f eV\n", $self->deltae, $self->energy;
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $on, $off, $on+$off;
+
+  $self->elastic_image->wim($args{write}) if $args{write};
+
+  $ret->status($on);
+  $ret->message($str);
+  return $ret;
+
+};
 
 sub areal {
   my ($self, @args) = @_;
@@ -692,7 +741,7 @@ sub areal {
   };
   $self->remove_bad_pixels;
 
-  my $str = $self->assert("Areal ".$self->operation." pass", 'cyan');
+  my $str = $self->assert("Areal ".$self->operation." step", 'cyan');
   my $n = 2*$self->radius+1;
   $str   .= "\tSet each pixel to the ".$self->operation." value of a ${n}x$n square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
@@ -718,6 +767,9 @@ sub mask_file {
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $range, "map", "anim").'.');
   } elsif ($which eq 'anim') {
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "mask", "anim").'.');
+  } elsif ($which eq 'maskmap') {
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "mapmask").'.');
+    $type = 'dump';
   } else {
     my $id = ($which eq 'mask') ? q{} :"_$which";
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
@@ -940,9 +992,13 @@ sub energy_map {
   my @images = map {rim($_)} @{$self->elastic_file_list};
   $self -> elastic_image_list(\@images);
 
+  my $mapmask = PDL::Core::zeros($self->columns, $self->rows);
+
   my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (row %c of %m)',
 			      {freq => 's', base => 0, target=>$self->rows});
   my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
+  my $maskfile = $self->mask_file("maskmap", 'gif');
+
   open(my $M, '>', $outfile);
   printf $M "# Energy calibration map for %s\n", $self->stub;
   printf $M "# Elastic energy range [%s : %s]\n", $energies[0], $energies[-1];
@@ -1009,17 +1065,21 @@ sub energy_map {
     };
 
     ## do three-point smoothing to smooth over abrupt steps in energy
-    my @zz = $self->smooth(4, \@linemap);
+    my @zz = $self->smooth($self->nsmooth, \@linemap);
 
     ## write this row
     foreach my $i (0..$#zz) {
       print $M "  $r  $i  $zz[$i]\n";
+      $mapmask->($i, $r) .= $zz[$i];
     };
     print $M $/;
   };
   $counter->close if $self->screen;
   close $M;
+  fdump($mapmask, $maskfile);
   print $self->assert("Wrote calibration map to $outfile", 'bold green') if $args{verbose};
+  print $self->assert("Wrote calibration image to $maskfile", 'bold green') if $args{verbose};
+
 
   ## write a usable gnuplot script for plotting the data
   my $gpfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');

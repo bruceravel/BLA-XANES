@@ -10,7 +10,7 @@ use constant BIT_DEPTH => 2**32;
 
 sub read_image {
   my ($self, $file) = @_;
-  my $p = Imager->new(file=>$file);
+  my $p = Imager->new(file=>$file) or die Imager->errstr();
   return $p;
 };
 

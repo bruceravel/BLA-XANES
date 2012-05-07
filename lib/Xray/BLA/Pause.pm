@@ -22,7 +22,7 @@ use Regexp::Common;
 const our $NUMBER => $RE{num}{real};
 
 #use subs qw(REVERSE UNDERLINE RESET);
-my $ANSIColor_exists = (eval "require Term::ANSIColor");
+my $ANSIColor_exists = exists $INC{'Term/ANSIColor.pm'}; #(eval "require Term::ANSIColor");
 if ($ANSIColor_exists) {
   import Term::ANSIColor qw(:constants);
 } else {
@@ -44,7 +44,7 @@ has 'highlight' => (is => 'rw', isa => 'Str', default => 'underline',
 				   };
 				 },
 		   );
-has 'hl'        => (is => 'rw', isa => 'Str', default => UNDERLINE);
+has 'hl'        => (is => 'rw', isa => 'Str', default => sub{UNDERLINE});
 
 sub pause {
   my ($self, $length) = @_;

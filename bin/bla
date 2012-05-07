@@ -73,7 +73,7 @@ if ($mode !~ m{$nonpublic}) {
   warn("BLA error: no scan folder specified in the configuration file\n")                 && exit 1 if not $spectrum->scanfolder;
   warn("BLA error: the scan folder specified in the configuration file cannot be read\n") && exit 1 if not -d $spectrum->scanfolder;
   warn("BLA error: no tiff folder specified in the configuration file\n")                 && exit 1 if not $spectrum->tiffolder;
-  warn("BLA error: no tiff folder specified in the configuration file cannot be read\n")  && exit 1 if not -d $spectrum->tiffolder;
+  warn("BLA error: the tiff folder specified in the configuration file cannot be read\n") && exit 1 if not -d $spectrum->tiffolder;
   warn("BLA error: no output folder specified in the configuration file\n")               && exit 1 if not $spectrum->outfolder;
 };
 

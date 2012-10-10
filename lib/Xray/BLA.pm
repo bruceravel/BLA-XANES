@@ -3,11 +3,13 @@ use Xray::BLA::Return;
 use Xray::BLA::Image;
 
 use version;
-our $VERSION = version->new('0.6');
+our $VERSION = version->new('0.7');
 use feature "switch";
 
 use Moose;
 use Moose::Util qw(apply_all_roles);
+with 'Xray::BLA::Mask';
+with 'Xray::BLA::IO';
 with 'Xray::BLA::Backend::Imager';
 with 'Xray::BLA::Pause';
 use MooseX::Aliases;
@@ -65,6 +67,8 @@ has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The location on disk of the scan file.");
 has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder',
 			     documentation => "The location on disk of the Pilatus images.");
+has 'tiffcounter'      	 => (is => 'rw', isa => 'Str', default => q{00001},
+			     documentation => "The counter part of the tiff image name.");
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 			     trigger => sub{my ($self, $new) = @_; mkpath($new) if not -d $new;},
 			     documentation => "The location on disk to which processed data and images are written.");
@@ -223,16 +227,29 @@ sub import {
   warnings->import;
 };
 
+
+sub report {
+  my ($self, $string, $color) = @_;
+  my $toscreen = ($self->colored) ? Term::ANSIColor::colored($string, $color) : $string;
+  return $toscreen.$/;
+};
+
+
+##################################################################################
+## initialization file
+##################################################################################
+
 sub read_ini {
   my ($self, $configfile) = @_;
 
   tie my %ini, 'Config::IniFiles', ( -file => $configfile );
 
-  $self -> scanfolder($ini{measure}{scanfolder})      if exists($ini{measure}{scanfolder});
-  $self -> tifffolder($ini{measure}{tiffolder})       if exists($ini{measure}{tiffolder});
-  $self -> outfolder ($ini{measure}{outfolder})       if exists($ini{measure}{outfolder});
-  $self -> element   ($ini{measure}{element})         if exists($ini{measure}{element});
-  $self -> line	     ($ini{measure}{line})            if exists($ini{measure}{line});
+  $self -> scanfolder ($ini{measure}{scanfolder})      if exists($ini{measure}{scanfolder});
+  $self -> tifffolder ($ini{measure}{tiffolder})       if exists($ini{measure}{tiffolder});
+  $self -> tiffcounter($ini{measure}{tiffcounter})     if exists($ini{measure}{tiffcounter});
+  $self -> outfolder  ($ini{measure}{outfolder})       if exists($ini{measure}{outfolder});
+  $self -> element    ($ini{measure}{element})         if exists($ini{measure}{element});
+  $self -> line	      ($ini{measure}{line})            if exists($ini{measure}{line});
 
   $self -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
   $self -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};
@@ -280,509 +297,38 @@ sub parse_emission_line {	# return an array reference containing the elastic ene
   return \@elastic;
 };
 
-sub mask {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{save}    || 0;
-  $args{verbose} || 0;
-  $args{animate} || 0;
-  $args{write}    = 0;
-  $args{write}    = 1 if ($args{animate} or $args{save});
-  local $|=1;
-
-  $self->clear_bad_pixel_list;
-  $self->npixels(0);
-
-  my $ret = $self->check;
-  if ($ret->status == 0) {
-    die $self->assert($ret->message, 'bold red');
-  };
-
-  ## import elastic image and store basic properties
-  my @out = ();
-  $out[0] = ($args{write}) ? $self->mask_file("0", 'gif') : 0;
-  $self->do_step('import_elastic_image', $out[0], $args{verbose}, 0);
-
-  my $i=0;
-  foreach my $st (@{$self->steps}) {
-    my $set_npixels = ($st eq $self->steps->[-1]) ? 1 : 0;
-
-    my @args = split(" ", $st);
-
-    given ($args[0]) {
-      when ('bad')  {
-	$self -> bad_pixel_value($args[1]);
-	$self -> weak_pixel_value($args[3]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('bad_pixels', $out[-1], $args{verbose}, $set_npixels);
-      };
-
-      when ('multiply')  {
-	$self->scalemask($args[2]);
-	print $self->assert("Multiply image by ".$self->scalemask, 'cyan') if $args{verbose};
-	$self->elastic_image->inplace->mult($self->scalemask, 0);
-      };
-
-      when ('areal')  {
-	$self->operation($args[1]);
-	$self->radius($args[3]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('areal', $out[-1], $args{verbose}, $set_npixels);
-      };
-
-      when ('lonely')  {
-	$self->lonely_pixel_value($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('lonely_pixels', $out[-1], $args{verbose}, $set_npixels);
-      };
-
-      when ('social')  {
-	$self->social_pixel_value($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('social_pixels', $out[-1], $args{verbose}, $set_npixels);
-      };
-
-      when ('entire') {
-	print $self->assert("Using entire image", 'cyan') if $args{verbose};
-	$self->elastic_image(PDL::Core::ones($self->columns, $self->rows));
-      };
-
-      when ('map') {
-	$self->deltae($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('mapmask', $out[-1], $args{verbose}, $set_npixels);
-      };
-
-      default {
-	print assert("I don't know what to do with \"$st\"", 'bold red');
-      };
-    };
-  };
-
-  ## bad pixels may have been turned back on in the social, areal, or entire pass, so turn them off again
-  $self->remove_bad_pixels;
-
-  ## construct an animated gif of the mask building process
-  if ($args{animate}) {
-    my $fname = $self->animate('anim', @out);
-    print $self->assert("Wrote $fname", 'yellow'), "\n" if $args{verbose};
-  };
-  if ($args{save}) {
-    my $fname = $self->mask_file("mask", 'gif');
-    $self->elastic_image->wim($fname);
-    print $self->assert("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
-  };
-  unlink $_ foreach @out;
-
-};
-
-sub remove_bad_pixels {
-  my ($self) = @_;
-  foreach my $pix (@{$self->bad_pixel_list}) {
-    my $co = $pix->[0];
-    my $ro = $pix->[1];
-    ##print join("|", $co, $ro, $self->elastic_image->at($co, $ro)), $/;
-    $self->elastic_image->($co, $ro) .= 0;
-    $self->eimax($self->elastic_image->flat->max)
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
-};
-
-
-sub do_step {
-  my ($self, $step, $write, $verbose, $set_npixels) = @_;
-  my $ret = $self->$step(write=>$write, unity=>$set_npixels);
-  if ($ret->status == 0) {
-    die $self->assert($ret->message, 'bold red').$/;
-  } else {
-    print $ret->message if $verbose;
-  };
-  $self->eimax($self->elastic_image->flat->max);
-  $self->npixels($ret->status) if $set_npixels;
-  undef $ret;
-  return 1;
-};
-
-sub check {
-  my ($self) = @_;
-
-  my $ret = Xray::BLA::Return->new;
-
-  ## does elastic file exist?
-  my $elastic = join("_", $self->stub, 'elastic', $self->energy).'_00001.tif';
-  $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
-  if (not -e $self->elastic_file) {
-    $ret->message("Elastic image file \"".$self->elastic_file."\" does not exist");
-    $ret->status(0);
-    return $ret;
-  };
-  if (not -r $self->elastic_file) {
-    $ret->message("Elastic image file \"".$self->elastic_file."\" cannot be read");
-    $ret->status(0);
-    return $ret;
-  };
-
-  ## does scan file exist?
+sub get_incident {
+  my ($self, $in) = @_;
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
   $self->scanfile($scanfile);
-  if (not -e $scanfile) {
-    $ret->message("Scan file \"$elastic\" does not exist");
-    $ret->status(0);
-    return $ret;
+  open(my $S, '<', $self->scanfile);
+  my @energy = ();
+  while (<$S>) {
+    next if ($_ =~ m{\A\#});
+    my @list = split(" ", $_);
+    push @energy, $list[0];
   };
-  if (not -r $scanfile) {
-    $ret->message("Scan file \"$elastic\" cannot be read");
-    $ret->status(0);
-    return $ret;
-  };
-
-  # $self->backend('ImageMagick') if $self->backend eq 'Image::Magick';
-  # if (not $self->backend) {	# try Imager
-  #   my $imager_exists       = eval "require Imager" || 0;
-  #   $self->backend('Imager') if $imager_exists;
-  # };
-  # if (not $self->backend) {	# try Image::Magick
-  #   my $image_magick_exists = eval "require Image::Magick" || 0;
-  #   $self->backend('ImageMagick') if $image_magick_exists;
-  # };
-  # if (not $self->backend) {
-  #   $ret->message("No BLA backend has been defined");
-  #   $ret->status(0);
-  #   return $ret;
-  # };
-
-  # eval {apply_all_roles($self, 'Xray::BLA::Backend::'.$self->backend)};
-  # if ($@) {
-  #   $ret->message("BLA backend Xray::BLA::Backend::".$self->backend." could not be loaded");
-  #   $ret->status(0);
-  #   return $ret;
-  # };
-
-  my $img = Xray::BLA::Image->new(parent=>$self);
-  $self->elastic_image($img->Read($self->elastic_file));
-
-  if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
-    $ret->message("This program requires Imager version 0.87 or later.");
-    $ret->status(0);
-    return $ret;
-  };
-  if (($self->backend eq 'ImageMagick') and ($self->get_version !~ m{Q32})) {
-    $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
-    $ret->status(0);
-    return $ret;
-  };
-
-  return $ret;
-};
-
-sub import_elastic_image {
-  my ($self, @args) = @_;
-  my %args = @args;
-  #$args{write} ||= 0;
-  $args{write} = 0;
-
-  my $ret = Xray::BLA::Return->new;
-
-  my ($c, $r) = $self->elastic_image->dims;
-  $self->columns($c);
-  $self->rows($r);
-  my $str = $self->assert("\nProcessing ".$self->elastic_file, 'yellow');
-  $str   .= sprintf "\tusing the %s backend\n", $self->backend;
-  $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
-    $self->columns, $self->rows, $self->columns*$self->rows;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->message($str);
-  return $ret;
-};
-
-sub bad_pixels {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
-  my $ret = Xray::BLA::Return->new;
-
-  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
-  my $bpv   = $self->bad_pixel_value;
-  my $wpv   = $self->weak_pixel_value;
-  my $nrows = $self->rows - 1;
-
-  my ($removed, $toosmall, $on, $off) = (0,0,0,0);
-  foreach my $co (0 .. $self->columns-1) {
-    foreach my $ro (0 .. $nrows) {
-      my $val = $ei->at($co, $ro);
-      if ($val > $bpv) {
-	$self->push_bad_pixel_list([$co,$ro]);
-  	$ei -> ($co, $ro) .= 0;
-	## for .=, see assgn in PDL::Ops
-	## for ->() syntax see PDL::NiceSlice
-  	++$removed;
-  	++$off;
-      } elsif ($val < $wpv) {
-  	$ei -> ($co, $ro) .= 0;
-  	++$toosmall;
-  	++$off;
-      } else {
-  	if ($val) {++$on} else {++$off};
-      };
-    };
-  };
-
-  $self->nbad($removed);
-  my $str = $self->assert("Bad/weak step", 'cyan');
-  $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->message($str);
-  return $ret;
-};
-
-sub lonely_pixels {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
-  my $ret = Xray::BLA::Return->new;
-
-  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
-  my $lpv   = $self->lonely_pixel_value;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
-
-  my ($removed, $on, $off, $co, $ro, $cc, $rr) = (0,0,0);
-  foreach my $co (0 .. $ncols) {
-    foreach my $ro (0 .. $nrows) {
-
-      ++$off, next if ($ei->at($co, $ro) == 0);
-
-      my $count = 0;
-    OUTER: foreach my $cc (-1 .. 1) {
-	next if (($co == 0) and ($cc < 0));
-	next if (($co == $ncols) and ($cc > 0));
-	foreach my $rr (-1 .. 1) {
-	  next if (($cc == 0) and ($rr == 0));
-	  next if (($ro == 0) and ($rr < 0));
-	  next if (($ro == $nrows) and ($rr > 0));
-
-	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
-	};
-      };
-      if ($count < $lpv) {
-	$ei -> ($co, $ro) .= 0;
-	## for .=, see assgn in PDL::Ops
-	## for ->() syntax see PDL::NiceSlice
-	++$removed;
-	++$off;
-      } else {
-	$ei -> ($co, $ro) .= 1 if ($args{unity});
-	++$on;
-      };
-    };
-  };
-
-  my $str = $self->assert("Lonely pixel step", 'cyan');
-  $str   .= "\tRemoved $removed lonely pixels\n";
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->message($str);
-  return $ret;
-};
-
-sub social_pixels {
-  my ($self, @args) = @_;
-  my %args = @args;
-  my $ret = Xray::BLA::Return->new;
-
-  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
-  my $spv   = $self->social_pixel_value;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
-
-  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
-  my @addlist = ();
-  my ($arg, $val) = (q{}, q{});
-  foreach $co (0 .. $ncols) {
-    foreach $ro (0 .. $nrows) {
-
-      if ($ei->at($co, $ro) > 0) {
-	++$on;
-	$ei -> ($co, $ro) .= 1;
-	next;
-      }
-
-      $count = 0;
-    OUTER: foreach my $cc (-1 .. 1) {
-	next if (($co == 0) and ($cc == -1));
-	next if (($co == $ncols) and ($cc == 1));
-	foreach my $rr (-1 .. 1) {
-	  next if (($cc == 0) and ($rr == 0));
-	  next if (($ro == 0) and ($rr == -1));
-	  next if (($ro == $nrows) and ($rr == 1));
-
-	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
-	  last OUTER if ($count > $spv);
-	};
-      };
-      if ($count > $spv) {
-	push @addlist, [$co, $ro];
-	++$added;
-	++$on;
-      } else {
-	++$off;
-      };
-    };
-  };
-  foreach my $px (@addlist) {
-    $ei -> ($px->[0], $px->[1]) .= 1; # if ($args{unity});
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
-  $self->remove_bad_pixels;
-
-  my $str = $self->assert("Social pixel step", 'cyan');
-  $str   .= "\tAdded $added social pixels\n";
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->status($on);
-  $ret->message($str);
-  return $ret;
-};
-
-sub mapmask {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
-  my $ret = Xray::BLA::Return->new;
-
-  my $maskfile = $self->mask_file("maskmap", 'gif');
-  if (not -e $maskfile) {
-    $ret->status(0);
-    $ret->message("The energy map file $maskfile does not exist.");
-    return $ret
-  };
-  if (not -r $maskfile) {
-    $ret->status(0);
-    $ret->message("The energy map file $maskfile cannot be read.");
-    return $ret
-  };
-  my $image = frestore($maskfile);
-  $self -> elastic_image($image);
-  $self -> elastic_image->inplace->minus($self->energy,0);
-  $self -> elastic_image->inplace->abs;
-  $self -> elastic_image->inplace->lt($self->deltae,0);
-  $self -> remove_bad_pixels;
-
-  my $on  = $self->elastic_image->flat->sumover->sclr;
-  my $off = $self->columns*$self->rows - $on;
-  my $str = $self->assert("Energy map step", 'cyan');
-  $str   .= sprintf "\tUsing pixels within %.2f eV of %.1f eV\n", $self->deltae, $self->energy;
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-
-  $self->elastic_image->wim($args{write}) if $args{write};
-
-  $ret->status($on);
-  $ret->message($str);
-  return $ret;
-
-};
-
-sub areal {
-  my ($self, @args) = @_;
-  my %args = @args;
-  my $ret = Xray::BLA::Return->new;
-
-  $self->remove_bad_pixels;
-  my $ei    = $self->elastic_image;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
-
-  my @list = ();
-
-  my ($removed, $on, $off, $co, $ro, $cc, $rr, $cdn, $cup, $rdn, $rup, $value) = (0,0,0,0,0,0,0,0,0,0,0,0);
-  my $counter = q{};
-  $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
-			   {freq => 's', base => 0, target=>$ncols}) if $self->screen;
-
-  my $radius = $self->radius;
-  foreach my $co (0 .. $ncols) {
-    $counter->up if $self->screen;
-    $cdn = ($co < $radius)        ? 0      : $co-$radius;
-    $cup = ($co > $ncols-$radius) ? $ncols : $co+$radius;
-    foreach my $ro (0 .. $nrows) {
-
-      $rdn = ($ro < $radius)        ? 0      : $ro-$radius;
-      $rup = ($ro > $nrows-$radius) ? $nrows : $ro+$radius;
-      my $slice = $ei->($cdn:$cup, $rdn:$rup);
-      $value = ($self->operation eq 'median') ? $slice->flat->oddmedover : int($slice->flat->average);
-      ## oddmedover, average: see PDL::Ufunc
-      ## flat: see PDL::Core
-      ## also see PDL::NiceSlice for matrix slicing syntax
-
-      $value = 1 if (($value > 0) and ($args{unity}));
-      push @list, [$co, $ro, $value];
-      ($value > 0) ? ++$on : ++$off;
-    };
-  };
-  $counter->close if $self->screen;
-  foreach my $point (@list) {
-    $ei -> ($point->[0], $point->[1]) .= $point->[2];
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
-  $self->remove_bad_pixels;
-
-  my $str = $self->assert("Areal ".$self->operation." step", 'cyan');
-  my $n = 2*$self->radius+1;
-  $str   .= "\tSet each pixel to the ".$self->operation." value of a ${n}x$n square centered at that pixel\n";
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}, {COLOR=>'bw'}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->status($on);
-  $ret->message($str);
-  return $ret;
-};
-
-
-
-
-
-sub mask_file {
-  my ($self, $which, $type) = @_;
-  $type ||= 'gif';
-  $type = 'tif' if ($^O =~ /MSWin32/);
-  my $fname;
-  if ($which eq 'map') {
-    my $range = join("-", $self->elastic_energies->[0], $self->elastic_energies->[-1]);
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $range, "map", "anim").'.');
-  } elsif ($which eq 'anim') {
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "mask", "anim").'.');
-  } elsif ($which eq 'maskmap') {
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "mapmask").'.');
-    $type = 'dump';
+  if ($in == 0) {
+    my $n = int($#energy/2);
+    $self->incident($energy[$n]);
+    $self->nincident($n);
+  } elsif (($in =~ m{\A\d+\z}) and ($in < 1000)) {
+    $self->incident($energy[$in]);
+    $self->nincident($in);
+  } elsif (not looks_like_number($in)) {
+    die "BLA error: incident energy (-i switch) is not a number\n";
   } else {
-    my $id = ($which eq 'mask') ? q{} :"_$which";
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
+    my $n = 0;
+    while (($in > $energy[$n]) and ($n < $#energy)) {
+      ++$n;
+    };
+    $self->incident($energy[$n]);
+    $self->nincident($n);
+    #print $n, "  ", $energy[$n], $/;
   };
-  $fname .= $type;
-  return $fname;
 };
 
 
-# # HERFD scan on Au3MarineCyanos1
-# # ----------------------------------
-# # energy time ring_current i0 it ifl ir roi1 roi2 roi3 roi4 tif
-#     11850.000   20  95.3544291727  1400844   830935   653600   956465      38      18      15      46      1
 
 sub read_mask {
   my ($self, @args) = @_;
@@ -797,92 +343,11 @@ sub read_mask {
   };
   my $image = rim($fname);
   $self -> elastic_image($image);
-  print $self->assert("Read mask from ".$fname, 'yellow') if $args{verbose};
-  return $ret;
-};
-
-sub scan {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{verbose} ||= 0;
-  $args{xdiini}  ||= q{};
-  my $ret = Xray::BLA::Return->new;
-  local $|=1;
-
-  my (@data, @point);
-
-  print $self->assert("Reading scan from ".$self->scanfile, 'yellow') if $args{verbose};
-  open(my $SCAN, "<", $self->scanfile);
-  while (<$SCAN>) {
-    next if m{\A\#};
-    next if m{\A\s*\z};
-    chomp;
-    @point = ();
-    my @list = split(" ", $_);
-
-    my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
-    push @point, $list[0];
-    push @point, sprintf("%.10f", $loop->status/$list[3]);
-    push @point, @list[3..6];
-    push @point, $loop->status;
-    push @point, @list[1..2];
-    push @data, [@point];
-  };
-  close $SCAN;
-
-  my $outfile;
-  if (($XDI_exists) and (-e $args{xdiini})) {
-    $outfile = $self->xdi_out($args{xdiini}, \@data);
-  } else {
-    $outfile = $self->dat_out(\@data);
-  };
-
-  $ret->message($outfile);
-  print $self->assert("Wrote $outfile", 'bold green') if $args{verbose};
+  print $self->report("Read mask from ".$fname, 'yellow') if $args{verbose};
   return $ret;
 };
 
 
-sub xdi_out {
-  my ($self, $xdiini, $rdata) = @_;
-  my $fname = join("_", $self->stub, $self->energy) . '.xdi';
-  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
-
-  my $xdi = Xray::XDI->new();
-  $xdi   -> ini($xdiini);
-  $xdi   -> push_extension(sprintf("BLA.illuminated_pixels: %d", $self->npixels));
-  $xdi   -> push_extension(sprintf("BLA.total_pixels: %d", $self->columns*$self->rows));
-  $xdi   -> push_extension("BLA.pixel_ratio: \%pixel_ratio\%") if ($self->task eq 'rixs');
-  $xdi   -> push_comment("HERFD scan on " . $self->stub);
-  $xdi   -> push_comment("Mask building steps:");
-  foreach my $st (@{$self->steps}) {
-    $xdi -> push_comment("  $st");
-  };
-  $xdi   -> data($rdata);
-  $xdi   -> export($outfile);
-  return $outfile;
-};
-
-sub dat_out {
-  my ($self, $rdata) = @_;
-  my $fname = join("_", $self->stub, $self->energy) . '.dat';
-  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
-
-  open(my $O, '>', $outfile);
-  print   $O "# HERFD scan on " . $self->stub . $/;
-  printf  $O "# %d illuminated pixels (of %d) in the mask\n", $self->npixels, $self->columns*$self->rows;
-  printf  $O "# Mask building steps:\n";
-  foreach my $st (@{$self->steps}) {
-    printf  $O "#    $st\n";
-  };
-  print   $O "# -------------------------\n";
-  print   $O "#   energy      mu           i0           it          ifl         ir          herfd   time    ring_current\n";
-  foreach my $p (@$rdata) {
-    printf $O "  %.3f  %.7f  %10d  %10d  %10d  %10d  %10d  %4d  %8.3f\n", @$p;
-  };
-  close   $O;
-  return $outfile;
-};
 
 sub apply_mask {
   my ($self, $tif, @args) = @_;
@@ -916,6 +381,59 @@ sub apply_mask {
   return $ret;
 };
 
+
+# # HERFD scan on Au3MarineCyanos1
+# # ----------------------------------
+# # energy time ring_current i0 it ifl ir roi1 roi2 roi3 roi4 tif
+#     11850.000   20  95.3544291727  1400844   830935   653600   956465      38      18      15      46      1
+sub scan {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{verbose} ||= 0;
+  $args{xdiini}  ||= q{};
+  my $ret = Xray::BLA::Return->new;
+  local $|=1;
+
+  my (@data, @point);
+
+  print $self->report("Reading scan from ".$self->scanfile, 'yellow') if $args{verbose};
+  open(my $SCAN, "<", $self->scanfile);
+  while (<$SCAN>) {
+    next if m{\A\#};
+    next if m{\A\s*\z};
+    chomp;
+    @point = ();
+    my @list = split(" ", $_);
+
+    my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
+    push @point, $list[0];
+    push @point, sprintf("%.10f", $loop->status/$list[3]);
+    push @point, @list[3..6];
+    push @point, $loop->status;
+    push @point, @list[1..2];
+    push @data, [@point];
+  };
+  close $SCAN;
+
+  my $outfile;
+  if (($XDI_exists) and (-e $args{xdiini})) {
+    $outfile = $self->xdi_out($args{xdiini}, \@data);
+  } else {
+    $outfile = $self->dat_out(\@data);
+  };
+
+  $ret->message($outfile);
+  print $self->report("Wrote $outfile", 'bold green') if $args{verbose};
+  return $ret;
+};
+
+
+
+##################################################################################
+## RIXS functionality
+##################################################################################
+
+
 sub prep_rixs_for_normalization {
   my ($self, @args) = @_;
   my %args = @args;
@@ -934,7 +452,7 @@ sub prep_rixs_for_normalization {
     print $OUT $text;
     close $OUT;
   };
-  print $self->assert("Prepared HERFD files for pixel count normalization", 'yellow') if $args{verbose};
+  print $self->report("Prepared HERFD files for pixel count normalization", 'yellow') if $args{verbose};
   return $ret;
 };
 
@@ -971,142 +489,7 @@ sub rixs_map {
     print $M $/;
   };
   close $M;
-  print $self->assert("Wrote rixs map to $outfile", 'bold green') if $args{verbose};
-
-  return $ret;
-};
-
-sub energy_map {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{verbose} ||= 0;
-  $args{animate} ||= 0;
-  my $ret = Xray::BLA::Return->new;
-  local $|=1;
-
-  ## determine the average step between elastic measurements
-  my @energies = sort {$a <=> $b} @{$self->elastic_energies};
-  my $step = round( sum(map {$energies[$_+1] - $energies[$_]} (0 .. $#energies-1)) / $#energies );
-
-  ## import the gifs of each elastic map
-  my @images = map {rim($_)} @{$self->elastic_file_list};
-  $self -> elastic_image_list(\@images);
-
-  my $mapmask = PDL::Core::zeros($self->columns, $self->rows);
-
-  my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (row %c of %m)',
-			      {freq => 's', base => 0, target=>$self->rows});
-  my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
-  my $maskfile = $self->mask_file("maskmap", 'gif');
-
-  open(my $M, '>', $outfile);
-  printf $M "# Energy calibration map for %s\n", $self->stub;
-  printf $M "# Elastic energy range [%s : %s]\n", $energies[0], $energies[-1];
-  print  $M "# ----------------------------------\n";
-  print  $M "# row  column  interpolated_energy\n\n";
-  my $ncols = $self->columns - 1;
-
-  foreach my $r (0 .. $self->rows-1) {
-    $counter->up if $self->screen;
-
-    my @represented = map {[0]} (0 .. $self->columns-1);
-    my @linemap = map {0} (0 .. $self->columns-1);
-    my (@x, @y);
-    my @all = ();
-
-    ## gather current row from each mask
-    foreach my $ie (0 .. $#{$self->elastic_energies}) {
-      ## extract the $r-th row from each image and fl;atten it to a 1D PDL
-      my $y = $self->elastic_image_list->[$ie] -> (0:$ncols,$r) -> flat;
-      push @all, $y;
-    };
-
-
-    ## accumulate energies at which each pixel is illuminated
-    my $stripe = 0;
-    foreach my $list (@all) {
-      foreach my $p (0 .. $ncols) {
-	if ($list->at($p) > 0) {
-	  push @{$represented[$p]}, $self->elastic_energies->[$stripe];
-	};
-      };
-      ++$stripe;
-    };
-
-    ## make each pixel the average of energies at which the pixel is illuminated
-    foreach my $i (0 .. $#represented) {
-      my $n = sprintf("%.1f", $#{$represented[$i]});
-      my $val = '(' . join('+', @{$represented[$i]}) . ')/' . $n;
-      $linemap[$i] = eval "$val" || 0;
-    };
-
-    ## linearly interpolate from the left to fill in any gaps from the measured masks
-    $linemap[0] ||= $self->elastic_energies->[0]-$step;
-    my $flag = 0;
-    my $first = 0;
-    foreach my $k (1 .. $#linemap) {
-      $flag = 1 if ($linemap[$k] == 0);
-      $first = $k if not $flag;
-      if ($flag and ($linemap[$k] > 0)) {
-	my $emin = $linemap[$first];
-	my $ediff = $linemap[$k] - $emin;
-	foreach my $j ($first .. $k-1) {
-	  $linemap[$j] = $emin + (($j-$first)/($k-$first)) * $ediff;
-	};
-	$flag = 0;
-      };
-    };
-    if ($flag) {
-      my $emin = $linemap[$first-1];
-      my $ediff = $step; # FIXME: this should be the actual step between adjacent elastic measurements
-      foreach my $j ($first .. $#linemap) {
-	$linemap[$j] = $emin + (($j-$first)/($#linemap-$first)) * $ediff;
-      };
-    };
-
-    ## do three-point smoothing to smooth over abrupt steps in energy
-    my @zz = $self->smooth($self->nsmooth, \@linemap);
-
-    ## write this row
-    foreach my $i (0..$#zz) {
-      print $M "  $r  $i  $zz[$i]\n";
-      $mapmask->($i, $r) .= $zz[$i];
-    };
-    print $M $/;
-  };
-  $counter->close if $self->screen;
-  close $M;
-  fdump($mapmask, $maskfile);
-  print $self->assert("Wrote calibration map to $outfile", 'bold green') if $args{verbose};
-  print $self->assert("Wrote calibration image to $maskfile", 'bold green') if $args{verbose};
-
-
-  ## write a usable gnuplot script for plotting the data
-  my $gpfile = File::Spec->catfile($self->outfolder, $self->stub.'.map.gp');
-  my $gp = $self->gnuplot_map;
-  my $tmpl = Text::Template->new(TYPE=>'string', SOURCE=>$gp)
-    or die "Couldn't construct template: $Text::Template::ERROR";
-  open(my $G, '>', $gpfile);
-  (my $stub = $self->stub) =~ s{_}{\\\\_}g;
-  my $peak = Xray::Absorption->get_energy($self->element, $self->line)
-    || ( ($self->elastic_energies->[$#{$self->elastic_energies}]+$self->elastic_energies->[0]) /2 );
-  print $G my $string = $tmpl->fill_in(HASH => {emin  => $self->elastic_energies->[0],
-						emax  => $self->elastic_energies->[$#{$self->elastic_energies}],
-						file  => $outfile,
-						stub  => $stub,
-						nrows => $self->rows,
-						ncols => $self->columns,
-						step  => $step,
-						peak  => $peak,
-					       });
-  close $G;
-  print $self->assert("Wrote gnuplot script to $gpfile", 'bold green') if $args{verbose};
-  $ret->message($gpfile);
-
-  if ($args{animate}) {
-    my $animfile = $self->animate('map', @{$self->elastic_file_list});
-    print $self->assert("Wrote gif animation of energy map to $animfile", 'bold green') if $args{verbose};
-  };
+  print $self->report("Wrote rixs map to $outfile", 'bold green') if $args{verbose};
 
   return $ret;
 };
@@ -1129,64 +512,11 @@ sub energy_map {
 # @line_list = sort {$a->[2] <=> $b->[2]} @line_list;
 
 
-## swiped from ifeffit-1.2.11d/src/lib/decod.f, lines 453-461
-sub smooth {
-  my ($self, $repeats, $rarr) = @_;
-  my @array = @$rarr;
-  return @array if ($repeats == 0);
-  my @smoothed = ();
-  foreach my $x (1 .. $repeats) {
-    $smoothed[0] = 3*$array[0]/4.0 + $array[1]/4.0;
-    foreach my $i (1 .. $#array-1) {
-      $smoothed[$i] = ($array[$i] + ($array[$i+1] + $array[$i-1])/2.0)/2.0;
-    };
-    $smoothed[$#array] = 3*$array[$#array]/4.0 + $array[$#array-1]/4.0;
-    @array = @smoothed;
-  };
-  return @smoothed;
-};
 
+##################################################################################
+## XES functionality
+##################################################################################
 
-sub gnuplot_map {
-  my ($self) = @_;
-  my $text = q<set term wxt font ",9"  enhanced
-
-set auto
-set key default
-set pm3d map
-
-set title "\{/=14 {$stub} energy map\}" offset 0,-5
-set ylabel "\{/=11 columns\}" offset 0,2.5
-
-set view 0,90,1,1
-set origin -0.17,-0.2
-set size 1.4,1.4
-unset grid
-
-unset ztics
-unset zlabel
-set xrange [{$nrows}:0]
-set yrange [0:{$ncols}]
-set cbtics {$emin-$step}, {2*$step}, {$emax+$step}
-set cbrange [{$emin-$step}:{$emax+$step}]
-
-set colorbox vertical size 0.025,0.65 user origin 0.03,0.15
-
-set palette model RGB defined ( {$emin-$step-$peak} 'red', 0 'white', {$emax+$step-$peak} 'blue' )
-
-splot '{$file}' title ''
->;
-  return $text;
-};
-
-## heat scale
-#set palette model RGB defined ( -1 'black', 0 'red', 1 'yellow', 2 'white' )
-
-## undersaturated rainbow
-#set palette model RGB defined (0 '#990000', 1 'red', 2 'orange', 3 'yellow', 4 'green', 5 '#009900', 6 '#006633', 7 '#0066DD', 8 '#000099')
-
-## gray scale
-#set palette model RGB defined ( 0 'black', 1 'white' )
 
 sub compute_xes {
   my ($self, @args) = @_;
@@ -1196,7 +526,7 @@ sub compute_xes {
   my $ret = Xray::BLA::Return->new;
 
   $self->get_incident($args{incident});
-  print $self->assert("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
+  print $self->report("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
 
   my @values  = ();
   my @npixels = ();
@@ -1229,75 +559,10 @@ sub compute_xes {
     $outfile = $self->dat_xes(\@xes);
   };
   $ret->message($outfile);
-  print $self->assert("Wrote $outfile", 'bold green') if $args{verbose};
+  print $self->report("Wrote $outfile", 'bold green') if $args{verbose};
   return $ret;
 };
 
-sub get_incident {
-  my ($self, $in) = @_;
-  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
-  $self->scanfile($scanfile);
-  open(my $S, '<', $self->scanfile);
-  my @energy = ();
-  while (<$S>) {
-    next if ($_ =~ m{\A\#});
-    my @list = split(" ", $_);
-    push @energy, $list[0];
-  };
-  if ($in == 0) {
-    my $n = int($#energy/2);
-    $self->incident($energy[$n]);
-    $self->nincident($n);
-  } elsif (($in =~ m{\A\d+\z}) and ($in < 1000)) {
-    $self->incident($energy[$in]);
-    $self->nincident($in);
-  } elsif (not looks_like_number($in)) {
-    die "BLA error: incident energy (-i switch) is not a number\n";
-  } else {
-    my $n = 0;
-    while (($in > $energy[$n]) and ($n < $#energy)) {
-      ++$n;
-    };
-    $self->incident($energy[$n]);
-    $self->nincident($n);
-    #print $n, "  ", $energy[$n], $/;
-  };
-};
-
-sub xdi_xes {
-  my ($self, $xdiini, $rdata) = @_;
-  my $fname = join("_", $self->stub, 'xes', $self->incident) . '.xdi';
-  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
-
-  my $xdi = Xray::XDI->new();
-  $xdi   -> ini($xdiini);
-  $xdi   -> push_comment("XES from " . $self->stub . " at " . $self->incident . ' eV');
-  $xdi   -> data($rdata);
-  $xdi   -> export($outfile);
-  return $outfile;
-};
-sub dat_xes {
-  my ($self, $rdata) = @_;
-  my $fname = join("_", $self->stub, 'xes', $self->incident) . '.dat';
-  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
-
-  open(my $O, '>', $outfile);
-  print   $O "# XES from " . $self->stub . " at " . $self->incident . ' eV' . $/;
-  print   $O "# -------------------------\n";
-  print   $O "#   energy      xes    npixels    raw\n";
-  foreach my $p (@$rdata) {
-    printf $O "  %.3f  %.7f  %.7f  %.7f\n", @$p;
-  };
-  close   $O;
-  return $outfile;
-};
-
-
-sub assert {
-  my ($self, $message, $color) = @_;
-  my $string = ($self->colored) ? Term::ANSIColor::colored($message, $color) : $message;
-  return $string.$/;
-};
 
 sub do_plot {
   my ($self, $fname, @args) = @_;
@@ -1322,7 +587,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-0.6
+0.7
 
 =head1 SYNOPSIS
 
@@ -1380,12 +645,20 @@ energy point are called F<Aufoil_NNNNN.tif> where C<NNNNN> is the
 index of the energy point.  One of the columns in the scan file
 contains this index so it is unambiguous which tiff image corresponds
 to which energy point.  Finally, the elastic exposures are called
-F<Aufoil_elastic_EEEE_00001.tif> where C<EEEE> is the incident
-energy. For instance, an exposure at the peak of the gold Lalpha1 line
-would be called F<Aufoil_elastic_9713_00001.tif>.
+F<Aufoil_elastic_EEEE_#####.tif> where C<EEEE> is the incident energy
+and C<#####> is the numeric counter for the tiff images.  For
+instance, an exposure at the peak of the gold Lalpha1 line would be
+called F<Aufoil_elastic_9713_00001.tif>.
 
 If you use a different naming convention, this software in its current
 form B<will break>!  See L</"BUGS AND LIMITATIONS">.
+
+This software also makes assumptions about the content of the scan
+file.  The columns are expected to come in a certain order.  If the
+order of columns chnages, the HERFD will still be measured and
+recorded properly, but the remaining columns in the output files may
+be misidentified.  If the first column is not energy, all bets are
+off.
 
 This software uses an image handling back to interact with these two
 sets of tiff images.  Since the Pilatus writes rather unusual tiff
@@ -1437,6 +710,18 @@ constructed from the value of C<stub>.
 The folder containing the image files.  The image file names are
 constructed from the value of C<stub>.  C<tifffolder> (with 3 C<f>'s)
 is an alias.
+
+=item C<tiffcounter>
+
+The counter appended to the name of each tiff image.  By default the
+EPICS camera interface appends C<#####> to the tiff filename.  Since
+one image is measured at each energy, C<00001> is appended, resulting
+in a name like F<Aufoil1_elastic_9713_00001.tif>.  If you have
+configured the camserver to use a different length string or had you
+data acquisition software use a different string altogether, you can
+specify it with this attribute.  Note, though, that this software s
+not very clever about these file names -- it makes strict assumptions
+about the format of the tif file name.
 
 =item C<outfolder>
 
@@ -1614,6 +899,8 @@ These output image files are gif.
 This method is a wrapper around the contents of the C<step> attribute.
 Each entry in C<step> will be parsed and executed in sequence.
 
+See L<Xray::BLA::Mask>
+
 =item C<scan>
 
 Rewrite the scan file with a column containing the HERFD signal as
@@ -1687,6 +974,8 @@ is normal in all cases here) and an string C<message> containing a
 short description of the exception (an empty string indicates no
 exception).
 
+See L<Xray::BLA::Mask> for details about the mask generation steps.
+
 =over 4
 
 =item C<check>
@@ -1711,52 +1000,6 @@ pass in which bad pixels and weak pixels are removed from the image.
 The intermediate image can be saved:
 
   $spectrum -> import_elastic_image(write => "firstpass.tif");
-
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
-
-=item C<lonely_pixels>
-
-Make the second pass over the elastic image.  Remove illuminated
-pixels which are not surrounded by enough other illuminated pixels.
-
-  $spectrum -> lonely_pixels;
-
-The intermediate image can be saved:
-
-  $spectrum -> lonely_pixels(write => "secondpass.tif");
-
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
-
-=item C<social_pixels>
-
-Make the third pass over the elastic image.  Include dark pixels which
-are surrounded by enough illuminated pixels.
-
-  $spectrum -> lonely_pixels;
-
-The final mask image can be saved:
-
-  $spectrum -> lonely_pixels(write => "finalpass.tif");
-
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
-
-=item C<areal>
-
-At each point in the mask, assign its value to the median or mean
-value of a square centered on that point.  The size of the square is
-determined by the value of the C<radius> attribute.
-
-  $spectrum -> areal;
-
-The final mask image can be saved:
-
-  $spectrum -> areal(write => "arealpass.tif");
 
 The C<message> attribute of the return object contains information
 regarding mask creation to be displayed if the C<verbose> argument to
@@ -2019,6 +1262,11 @@ adapt to different columns.
 In the future, will need a more sophisticated mechanism for relating
 C<stub> to scan file and to image files -- some kind of templating
 scheme, I suspect
+
+=item *
+
+Parse columns of scan file, too much assumption goes into the scan
+method
 
 =item *
 

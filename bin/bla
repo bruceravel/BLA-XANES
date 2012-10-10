@@ -47,7 +47,7 @@ my $nonpublic = 'list|none|test';
 my $spectrum = Xray::BLA->new();
 if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
   $plot = 0;
-  print $spectrum->assert("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');
+  print $spectrum->report("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');
 };
 
 my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
@@ -155,7 +155,7 @@ given ($mode) {
     };
     if ($need_to_check) {
       my $ret = $spectrum -> check;
-      die $spectrum->assert($ret->message, 'bold red') if $ret->status == 0;
+      die $spectrum->report($ret->message, 'bold red') if $ret->status == 0;
       $spectrum -> import_elastic_image;
     };
     my $ret = $spectrum -> energy_map(verbose => $verbose, animate=>$animate);

@@ -21,6 +21,8 @@ use PDL::Lite;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
 use PDL::IO::Dumper;
+use List::Util qw(sum max);
+use Math::Round qw(round);
 
 sub import_elastic_image {
   my ($self, @args) = @_;

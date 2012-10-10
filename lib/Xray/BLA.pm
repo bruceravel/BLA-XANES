@@ -1292,6 +1292,10 @@ range of elastic energies to a table of line energies.
 
 =item *
 
+gnuplot file for rixs map
+
+=item *
+
 Use of XDI is undocumented.
 
 =item *

@@ -185,12 +185,50 @@ given ($mode) {
     my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
     foreach my $a (@list) {
       my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, 'bold green') : $a;
-      printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation;
+      printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation||q{};
     };
   }
 
   when ('test') {
-    die "tests for the BLA code (none currently)...\n";
+    #die "tests for the BLA code (none currently)...\n";
+    $spectrum -> screen($verbose);
+    my $sum;
+    foreach my $e (@elastic) {
+      $spectrum -> energy($e);
+      my $ret = $spectrum->check;
+      if ($ret->status == 0) {
+	die $spectrum->report($ret->message, 'bold red');
+      };
+      $spectrum->do_step('import_elastic_image', 0, $verbose, 0);
+      $spectrum->bad_pixel_value(50);
+      $spectrum->weak_pixel_value(0);
+      $spectrum->do_step('bad_pixels', 0, $verbose, 0);
+
+      if (not defined $sum) {
+	$sum = PDL::Core::zeros($spectrum->elastic_image->dims);
+      } else {
+	$sum += $spectrum->elastic_image;
+      };
+    };
+
+    $spectrum->elastic_image($sum);
+
+    $spectrum->operation('mean');
+    $spectrum->radius(4);
+    $spectrum->do_step('areal', 0, $verbose, 0);
+
+    $spectrum->bad_pixel_value(5000);
+    $spectrum->weak_pixel_value(1);
+    $spectrum->do_step('row_normalize', 0, $verbose, 0);
+    # $spectrum->do_step('bad_pixels', 0, $verbose, 0);
+    # $spectrum->do_step('convert_to_and', 0, $verbose, 0);
+    # print $spectrum -> elastic_image -> max;
+    # $spectrum->social_pixel_value(4);
+    # $spectrum->do_step('social_pixels', 0, $verbose, 0);
+    # $spectrum->lonely_pixel_value(3);
+    # $spectrum->do_step('lonely_pixels', 0, $verbose, 0);
+
+    $spectrum->elastic_image->wim("foo.tif");
   }
 
   default {

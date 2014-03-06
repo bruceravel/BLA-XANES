@@ -68,7 +68,9 @@ has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{},
 has 'tiffolder'		 => (is => 'rw', isa => 'Str', default => q{}, alias => 'tifffolder',
 			     documentation => "The location on disk of the Pilatus images.");
 has 'tiffcounter'      	 => (is => 'rw', isa => 'Str', default => q{00001},
-			     documentation => "The counter part of the tiff image name.");
+			     documentation => "The counter part of the elastic tiff image name.");
+has 'energycounterwidth' => (is => 'rw', isa => 'Str', default => 5,
+			     documentation => "The width of the energy counter part of the energy tiff image name.");
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 			     trigger => sub{my ($self, $new) = @_; mkpath($new) if not -d $new;},
 			     documentation => "The location on disk to which processed data and images are written.");
@@ -115,7 +117,7 @@ has 'operation'          => (is => 'rw', isa => 'Xray::BLA::Projections', defaul
 			     documentation => "The areal operation, either median or mean.");
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
-			     documentation => "THe fully resolved file name containing the measured elastic image.");
+			     documentation => "The fully resolved file name containing the measured elastic image.");
 has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			     documentation => "The PDL object containing the elastic image.",
 			     trigger => sub{my ($self, $new) = @_; my $max = $new->flat->max; $self->eimax($max)} );
@@ -247,6 +249,7 @@ sub read_ini {
   $self -> scanfolder ($ini{measure}{scanfolder})      if exists($ini{measure}{scanfolder});
   $self -> tifffolder ($ini{measure}{tiffolder})       if exists($ini{measure}{tiffolder});
   $self -> tiffcounter($ini{measure}{tiffcounter})     if exists($ini{measure}{tiffcounter});
+  $self -> energycounterwidth($ini{measure}{energycounterwidth}) if exists($ini{measure}{energycounterwidth});
   $self -> outfolder  ($ini{measure}{outfolder})       if exists($ini{measure}{outfolder});
   $self -> element    ($ini{measure}{element})         if exists($ini{measure}{element});
   $self -> line	      ($ini{measure}{line})            if exists($ini{measure}{line});
@@ -357,7 +360,8 @@ sub apply_mask {
   my $ret = Xray::BLA::Return->new;
   local $|=1;
 
-  my $fname = sprintf("%s_%5.5d.tif", $self->stub, $tif);
+  my $pattern = '%s_%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd.tif';
+  my $fname = sprintf($pattern, $self->stub, $tif);
   my $image = File::Spec->catfile($self->tiffolder, $fname);
   if (not -e $image) {
     warn "\tskipping $image, file not found\n" if not $args{silence};
@@ -719,7 +723,7 @@ one image is measured at each energy, C<00001> is appended, resulting
 in a name like F<Aufoil1_elastic_9713_00001.tif>.  If you have
 configured the camserver to use a different length string or had you
 data acquisition software use a different string altogether, you can
-specify it with this attribute.  Note, though, that this software s
+specify it with this attribute.  Note, though, that this software is
 not very clever about these file names -- it makes strict assumptions
 about the format of the tif file name.
 

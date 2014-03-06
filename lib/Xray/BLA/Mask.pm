@@ -399,6 +399,79 @@ sub social_pixels {
   return $ret;
 };
 
+sub convert_to_and {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{write} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+
+  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+  my $ei    = $self->elastic_image;
+  my $spv   = $self->social_pixel_value;
+  my $nrows = $self->rows - 1;
+  my $ncols = $self->columns - 1;
+
+  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
+  foreach $co (0 .. $ncols) {
+    foreach $ro (0 .. $nrows) {
+      if ($ei->at($co, $ro) > 0) {
+	++$on;
+	$ei -> ($co, $ro) .= 1;
+      } else {
+	++$off;
+      };
+    };
+  };
+  $self->remove_bad_pixels;
+
+  my $str = $self->report("Convert to AND mask", 'cyan');
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $on, $off, $on+$off;
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
+  $ret->status($on);
+  $ret->message($str);
+  return $ret;
+};
+
+sub row_normalize {
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{write} ||= 0;
+  my $ret = Xray::BLA::Return->new;
+
+  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+  my $ei    = $self->elastic_image;
+  my $nrows = $self->rows - 1;
+  my $ncols = $self->columns - 1;
+
+  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
+  foreach $ro (0 .. $nrows) {
+    my $rownorm = $ei->(:,$ro)->sum;
+    #my ($bins, $pops) = $ei->(:,$ro)->hist(0, $rownorm, $rownorm/6);
+    #my $cutoff = $bins->(3); #($bins->(2) - $bins(1)) / 2;
+    foreach $co (0 .. $ncols) {
+      if ($ei->at($co, $ro) > 0) {
+	$ei -> ($co, $ro) .=  $ei -> ($co, $ro) / $rownorm;
+    	#$ei -> ($co, $ro) .= 1;
+    	++$on;
+      } else {
+    	#$ei -> ($co, $ro) .= 0;
+    	++$off;
+      };
+    };
+  };
+
+  my $str = $self->report("Row normalize", 'cyan');
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $on, $off, $on+$off;
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
+  $ret->status($on);
+  $ret->message($str);
+  return $ret;
+};
+
 sub mapmask {
   my ($self, @args) = @_;
   my %args = @args;

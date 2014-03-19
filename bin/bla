@@ -212,21 +212,14 @@ given ($mode) {
     };
 
     $spectrum->elastic_image($sum);
+    $spectrum->elastic_image->wim("sum.tif");
 
-    $spectrum->operation('mean');
-    $spectrum->radius(4);
-    $spectrum->do_step('areal', 0, $verbose, 0);
-
-    $spectrum->bad_pixel_value(5000);
-    $spectrum->weak_pixel_value(1);
-    $spectrum->do_step('row_normalize', 0, $verbose, 0);
-    # $spectrum->do_step('bad_pixels', 0, $verbose, 0);
-    # $spectrum->do_step('convert_to_and', 0, $verbose, 0);
-    # print $spectrum -> elastic_image -> max;
-    # $spectrum->social_pixel_value(4);
-    # $spectrum->do_step('social_pixels', 0, $verbose, 0);
-    # $spectrum->lonely_pixel_value(3);
-    # $spectrum->do_step('lonely_pixels', 0, $verbose, 0);
+    print $/,$/;
+    $spectrum->elastic_image->inplace->gt(3,0); # 3 needs to be configurable
+    $spectrum->social_pixel_value(3);
+    $spectrum->do_step('social_pixels', 0, $verbose, 0);
+    $spectrum->lonely_pixel_value(3);
+    $spectrum->do_step('lonely_pixels', 0, $verbose, 0);
 
     $spectrum->elastic_image->wim("foo.tif");
   }

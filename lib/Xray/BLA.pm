@@ -137,6 +137,8 @@ has 'bad_pixel_list' => (
 				      },
 			 documentation => "An array reference containing the x,y coordinates of the bad pixels."
 			);
+has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			   documentation => "The PDL object containing the bad pixel mask.");
 
 has 'elastic_energies' => (
 			   traits    => ['Array'],

@@ -23,7 +23,7 @@ use PDL::Lite;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
 use PDL::IO::Dumper;
-
+use PDL::Image2D;
 
 
 sub mask {
@@ -36,7 +36,8 @@ sub mask {
   $args{write}    = 1 if ($args{animate} or $args{save});
   local $|=1;
 
-  $self->clear_bad_pixel_list;
+  #$self->clear_bad_pixel_list;
+  $self->bad_pixel_mask(PDL::null);
   $self->npixels(0);
 
   my $ret = $self->check;
@@ -202,15 +203,16 @@ sub check {
 
 sub remove_bad_pixels {
   my ($self) = @_;
-  foreach my $pix (@{$self->bad_pixel_list}) {
-    my $co = $pix->[0];
-    my $ro = $pix->[1];
-    ##print join("|", $co, $ro, $self->elastic_image->at($co, $ro)), $/;
-    $self->elastic_image->($co, $ro) .= 0;
-    $self->eimax($self->elastic_image->flat->max)
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
+  $self->elastic_image->inplace->mult(1-$self->bad_pixel_mask,0);
+  # foreach my $pix (@{$self->bad_pixel_list}) {
+  #   my $co = $pix->[0];
+  #   my $ro = $pix->[1];
+  #   ##print join("|", $co, $ro, $self->elastic_image->at($co, $ro)), $/;
+  #   $self->elastic_image->($co, $ro) .= 0;
+  #   $self->eimax($self->elastic_image->flat->max)
+  #   ## for .=, see assgn in PDL::Ops
+  #   ## for ->() syntax see PDL::NiceSlice
+  # };
 };
 
 
@@ -252,29 +254,17 @@ sub bad_pixels {
   my $nrows = $self->rows - 1;
 
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
-  foreach my $co (0 .. $self->columns-1) {
-    foreach my $ro (0 .. $nrows) {
-      my $val = $ei->at($co, $ro);
-      if ($val > $bpv) {
-	$self->push_bad_pixel_list([$co,$ro]);
-  	$ei -> ($co, $ro) .= 0;
-	## for .=, see assgn in PDL::Ops
-	## for ->() syntax see PDL::NiceSlice
-  	++$removed;
-  	++$off;
-      } elsif ($val < $wpv) {
-  	$ei -> ($co, $ro) .= 0;
-  	++$toosmall;
-  	++$off;
-      } else {
-  	if ($val) {++$on} else {++$off};
-      };
-    };
-  };
+  my $bad  = $ei->gt($bpv,0);	# mask of bad pixels
+  my $weak = $ei->lt($wpv,0);	# mask of weak pixels
+  $self->nbad($bad->sum);
+  $ei  = $ei * (1-$bad) * (1-$weak); # remove bad and weak pixels
+  $on  = $ei->gt(0,0)->sum;
+  $off = $ei->eq(0,0)->sum;
+  $self->elastic_image($ei);
+  $self->bad_pixel_mask($bad);
 
-  $self->nbad($removed);
   my $str = $self->report("Bad/weak step", 'cyan');
-  $str   .= "\tRemoved $removed bad pixels and $toosmall weak pixels\n";
+  $str   .= sprintf "\tRemoved %d bad pixels and %d weak pixels\n", $self->nbad, $weak->sum;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
   $self->elastic_image->wim($args{write}) if $args{write};
@@ -295,41 +285,53 @@ sub lonely_pixels {
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
 
-  my ($removed, $on, $off, $co, $ro, $cc, $rr) = (0,0,0);
-  foreach my $co (0 .. $ncols) {
-    foreach my $ro (0 .. $nrows) {
 
-      ++$off, next if ($ei->at($co, $ro) == 0);
+  my ($h,$w) = $ei->dims;
+  my $onoff = $ei->gt(0,0);
+  my $before = $onoff->sum;
+  my $smoothed = $onoff->conv2d(PDL::Core::ones(3,3), {Boundary => 'Truncate'});
 
-      my $count = 0;
-    OUTER: foreach my $cc (-1 .. 1) {
-	next if (($co == 0) and ($cc < 0));
-	next if (($co == $ncols) and ($cc > 0));
-	foreach my $rr (-1 .. 1) {
-	  next if (($cc == 0) and ($rr == 0));
-	  next if (($ro == 0) and ($rr < 0));
-	  next if (($ro == $nrows) and ($rr > 0));
+  $ei->inplace->mult(1-$smoothed->le($lpv,0),0);
+  $self->elastic_image($ei);
 
-	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
-	};
-      };
-      if ($count < $lpv) {
-	$ei -> ($co, $ro) .= 0;
-	## for .=, see assgn in PDL::Ops
-	## for ->() syntax see PDL::NiceSlice
-	++$removed;
-	++$off;
-      } else {
-	$ei -> ($co, $ro) .= 1 if ($args{unity});
-	++$on;
-      };
-    };
-  };
+  my $onval  = $ei->gt(0,0)->sum;
+  my $offval = $h*$w-$onval;
+
+  # my ($removed, $on, $off, $co, $ro, $cc, $rr) = (0,0,0);
+  # foreach my $co (0 .. $ncols) {
+  #   foreach my $ro (0 .. $nrows) {
+
+  #     ++$off, next if ($ei->at($co, $ro) == 0);
+
+  #     my $count = 0;
+  #   OUTER: foreach my $cc (-1 .. 1) {
+  # 	next if (($co == 0) and ($cc < 0));
+  # 	next if (($co == $ncols) and ($cc > 0));
+  # 	foreach my $rr (-1 .. 1) {
+  # 	  next if (($cc == 0) and ($rr == 0));
+  # 	  next if (($ro == 0) and ($rr < 0));
+  # 	  next if (($ro == $nrows) and ($rr > 0));
+
+  # 	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
+  # 	};
+  #     };
+  #     if ($count < $lpv) {
+  # 	$ei -> ($co, $ro) .= 0;
+  # 	## for .=, see assgn in PDL::Ops
+  # 	## for ->() syntax see PDL::NiceSlice
+  # 	++$removed;
+  # 	++$off;
+  #     } else {
+  # 	$ei -> ($co, $ro) .= 1 if ($args{unity});
+  # 	++$on;
+  #     };
+  #   };
+  # };
 
   my $str = $self->report("Lonely pixel step", 'cyan');
-  $str   .= "\tRemoved $removed lonely pixels\n";
+  $str   .= sprintf "\tRemoved %d lonely pixels\n", $before - $onval;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
+    $onval, $offval, $onval+$offval;
   $self->elastic_image->wim($args{write}) if $args{write};
   ## wim: see PDL::IO::Pic
   $ret->message($str);
@@ -347,54 +349,69 @@ sub social_pixels {
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
 
-  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
-  my @addlist = ();
-  my ($arg, $val) = (q{}, q{});
-  foreach $co (0 .. $ncols) {
-    foreach $ro (0 .. $nrows) {
 
-      if ($ei->at($co, $ro) > 0) {
-	++$on;
-	$ei -> ($co, $ro) .= 1;
-	next;
-      }
+  my $onoff = $ei->gt(0,0);
+  my $before = $onoff->sum;
+  my $smoothed = $onoff->conv2d(PDL::Core::ones(3,3), {Boundary => 'Truncate'});
+  #print $smoothed->min, $/;
+  #print $smoothed->max, $/;
+  #print $smoothed->hist(0,9,1), $/;
+  #print $before, "  ", $smoothed->gt($spv,0)->sum, $/;
 
-      $count = 0;
-    OUTER: foreach my $cc (-1 .. 1) {
-	next if (($co == 0) and ($cc == -1));
-	next if (($co == $ncols) and ($cc == 1));
-	foreach my $rr (-1 .. 1) {
-	  next if (($cc == 0) and ($rr == 0));
-	  next if (($ro == 0) and ($rr == -1));
-	  next if (($ro == $nrows) and ($rr == 1));
+  my ($h,$w) = $ei->dims;
+  my $on  = $smoothed->gt($spv,0);
+  my $onval  = $on->sum;
+  my $offval = $h*$w-$onval;
+  $self->elastic_image($on);
 
-	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
-	  last OUTER if ($count > $spv);
-	};
-      };
-      if ($count > $spv) {
-	push @addlist, [$co, $ro];
-	++$added;
-	++$on;
-      } else {
-	++$off;
-      };
-    };
-  };
-  foreach my $px (@addlist) {
-    $ei -> ($px->[0], $px->[1]) .= 1; # if ($args{unity});
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
+  # my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
+  # my @addlist = ();
+  # my ($arg, $val) = (q{}, q{});
+  # foreach $co (0 .. $ncols) {
+  #   foreach $ro (0 .. $nrows) {
+
+  #     if ($ei->at($co, $ro) > 0) {
+  # 	++$on;
+  # 	$ei -> ($co, $ro) .= 1;
+  # 	next;
+  #     }
+
+  #     $count = 0;
+  #   OUTER: foreach my $cc (-1 .. 1) {
+  # 	next if (($co == 0) and ($cc == -1));
+  # 	next if (($co == $ncols) and ($cc == 1));
+  # 	foreach my $rr (-1 .. 1) {
+  # 	  next if (($cc == 0) and ($rr == 0));
+  # 	  next if (($ro == 0) and ($rr == -1));
+  # 	  next if (($ro == $nrows) and ($rr == 1));
+
+  # 	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
+  # 	  last OUTER if ($count > $spv);
+  # 	};
+  #     };
+  #     if ($count > $spv) {
+  # 	push @addlist, [$co, $ro];
+  # 	++$added;
+  # 	++$on;
+  #     } else {
+  # 	++$off;
+  #     };
+  #   };
+  # };
+  # foreach my $px (@addlist) {
+  #   $ei -> ($px->[0], $px->[1]) .= 1; # if ($args{unity});
+  #   ## for .=, see assgn in PDL::Ops
+  #   ## for ->() syntax see PDL::NiceSlice
+  # };
   $self->remove_bad_pixels;
 
   my $str = $self->report("Social pixel step", 'cyan');
-  $str   .= "\tAdded $added social pixels\n";
+  $str   .= sprintf "\tAdded %d social pixels\n", $onval-$before;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
+    $onval, $offval, $onval+$offval;
   $self->elastic_image->wim($args{write}) if $args{write};
   ## wim: see PDL::IO::Pic
-  $ret->status($on);
+  $ret->status($onval);
   $ret->message($str);
   return $ret;
 };

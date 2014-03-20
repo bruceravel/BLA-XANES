@@ -47,8 +47,8 @@ sub mask {
 
   ## import elastic image and store basic properties
   my @out = ();
-  $out[0] = ($args{write}) ? $self->mask_file("0", 'gif') : 0;
-  $self->do_step('import_elastic_image', $out[0], $args{verbose}, 0);
+  $out[0] = ($args{write}) ? $self->mask_file("0", $self->outimage) : 0;
+  $self->do_step('import_elastic_image', write=>$out[0], verbose=>$args{verbose}, unity=>0);
 
   my $i=0;
   foreach my $st (@{$self->steps}) {
@@ -60,8 +60,8 @@ sub mask {
       when ('bad')  {
 	$self -> bad_pixel_value($args[1]);
 	$self -> weak_pixel_value($args[3]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('bad_pixels', $out[-1], $args{verbose}, $set_npixels);
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('bad_pixels', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
       };
 
       when ('multiply')  {
@@ -73,20 +73,20 @@ sub mask {
       when ('areal')  {
 	$self->operation($args[1]);
 	$self->radius($args[3]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('areal', $out[-1], $args{verbose}, $set_npixels);
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('areal', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
       };
 
       when ('lonely')  {
 	$self->lonely_pixel_value($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('lonely_pixels', $out[-1], $args{verbose}, $set_npixels);
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('lonely_pixels', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
       };
 
       when ('social')  {
 	$self->social_pixel_value($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('social_pixels', $out[-1], $args{verbose}, $set_npixels);
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('social_pixels', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
       };
 
       when ('entire') {
@@ -96,8 +96,8 @@ sub mask {
 
       when ('map') {
 	$self->deltae($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, 'gif') : 0;
-	$self->do_step('mapmask', $out[-1], $args{verbose}, $set_npixels);
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('mapmask', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
       };
 
       default {
@@ -115,7 +115,7 @@ sub mask {
     print $self->report("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
   if ($args{save}) {
-    my $fname = $self->mask_file("mask", 'gif');
+    my $fname = $self->mask_file("mask", $self->outimage);
     $self->elastic_image->wim($fname);
     print $self->report("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
   };
@@ -218,15 +218,21 @@ sub remove_bad_pixels {
 
 ## See Xray::BLA::Mask for the steps
 sub do_step {
-  my ($self, $step, $write, $verbose, $set_npixels) = @_;
-  my $ret = $self->$step(write=>$write, unity=>$set_npixels);
+  my ($self, $step, @args) = @_;
+  my %args = @args;
+  $args{write}    ||= 0;
+  $args{verbose}  ||= 0;
+  $args{unity}    ||= 0;
+  $args{pass}     ||= 0;
+  $args{vertical} ||= 0;
+  my $ret = $self->$step(\%args);
   if ($ret->status == 0) {
     die $self->report($ret->message, 'bold red').$/;
   } else {
-    print $ret->message if $verbose;
+    print $ret->message if $args{verbose};
   };
   $self->eimax($self->elastic_image->flat->max);
-  $self->npixels($ret->status) if $set_npixels;
+  $self->npixels($ret->status) if $args{unity};
   undef $ret;
   return 1;
 };
@@ -242,9 +248,8 @@ sub do_step {
 ##################################################################################
 
 sub bad_pixels {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -274,9 +279,8 @@ sub bad_pixels {
 };
 
 sub lonely_pixels {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -339,8 +343,8 @@ sub lonely_pixels {
 };
 
 sub social_pixels {
-  my ($self, @args) = @_;
-  my %args = @args;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -352,11 +356,14 @@ sub social_pixels {
 
   my $onoff = $ei->gt(0,0);
   my $before = $onoff->sum;
-  my $smoothed = $onoff->conv2d(PDL::Core::ones(3,3), {Boundary => 'Truncate'});
-  #print $smoothed->min, $/;
-  #print $smoothed->max, $/;
-  #print $smoothed->hist(0,9,1), $/;
-  #print $before, "  ", $smoothed->gt($spv,0)->sum, $/;
+  my $kernel = PDL::Core::ones(3,3);
+  if ($args{vertical}) {
+    $kernel->(0,:) .= 0.001;
+    $kernel->(2,:) .= 0.001;
+    ## rotate this matrix if the shadows are not perpendicular
+  };
+  my $smoothed = $onoff->conv2d($kernel, {Boundary => 'Truncate'});
+
 
   my ($h,$w) = $ei->dims;
   my $on  = $smoothed->gt($spv,0);
@@ -405,7 +412,8 @@ sub social_pixels {
   # };
   $self->remove_bad_pixels;
 
-  my $str = $self->report("Social pixel step", 'cyan');
+  my $text = $args{pass} ? " (pass ".$args{pass}.")" : q{};
+  my $str = $self->report("Social pixel step$text", 'cyan');
   $str   .= sprintf "\tAdded %d social pixels\n", $onval-$before;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $onval, $offval, $onval+$offval;
@@ -417,9 +425,8 @@ sub social_pixels {
 };
 
 sub convert_to_and {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -452,9 +459,8 @@ sub convert_to_and {
 };
 
 sub row_normalize {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
@@ -490,12 +496,11 @@ sub row_normalize {
 };
 
 sub mapmask {
-  my ($self, @args) = @_;
-  my %args = @args;
-  $args{write} ||= 0;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
-  my $maskfile = $self->mask_file("maskmap", 'gif');
+  my $maskfile = $self->mask_file("maskmap", $self->outimage);
   if (not -e $maskfile) {
     $ret->status(0);
     $ret->message("The energy map file $maskfile does not exist.");
@@ -529,8 +534,8 @@ sub mapmask {
 };
 
 sub areal {
-  my ($self, @args) = @_;
-  my %args = @args;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
   $self->remove_bad_pixels;
@@ -540,37 +545,48 @@ sub areal {
 
   my @list = ();
 
-  my ($removed, $on, $off, $co, $ro, $cc, $rr, $cdn, $cup, $rdn, $rup, $value) = (0,0,0,0,0,0,0,0,0,0,0,0);
+  #my ($removed, $on, $off, $co, $ro, $cc, $rr, $cdn, $cup, $rdn, $rup, $value) = (0,0,0,0,0,0,0,0,0,0,0,0);
   my $counter = q{};
-  $counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
-			   {freq => 's', base => 0, target=>$ncols}) if $self->screen;
+  #$counter = Term::Sk->new('Areal '.$self->operation.', time elapsed: %8t %15b (column %c of %m)',
+#			   {freq => 's', base => 0, target=>$ncols}) if $self->screen;
 
+  my ($h,$w) = $ei->dims;
+
+  my $before = $ei->gt(0,0)->sum;
   my $radius = $self->radius;
-  foreach my $co (0 .. $ncols) {
-    $counter->up if $self->screen;
-    $cdn = ($co < $radius)        ? 0      : $co-$radius;
-    $cup = ($co > $ncols-$radius) ? $ncols : $co+$radius;
-    foreach my $ro (0 .. $nrows) {
+  my $kernel = PDL::Core::ones(2*$radius+1,2*$radius+1) / (2*$radius+1)**2;
+  my $smoothed = $ei->conv2d($kernel, {Boundary => 'Truncate'});
+  $smoothed = $smoothed->gt(1,0);
+  my $on = $smoothed->sum;
+  my $off = $h*$w - $on;
 
-      $rdn = ($ro < $radius)        ? 0      : $ro-$radius;
-      $rup = ($ro > $nrows-$radius) ? $nrows : $ro+$radius;
-      my $slice = $ei->($cdn:$cup, $rdn:$rup);
-      $value = ($self->operation eq 'median') ? $slice->flat->oddmedover : int($slice->flat->average);
-      ## oddmedover, average: see PDL::Ufunc
-      ## flat: see PDL::Core
-      ## also see PDL::NiceSlice for matrix slicing syntax
+#  my $radius = $self->radius;
+  # foreach my $co (0 .. $ncols) {
+  #   $counter->up if $self->screen;
+  #   $cdn = ($co < $radius)        ? 0      : $co-$radius;
+  #   $cup = ($co > $ncols-$radius) ? $ncols : $co+$radius;
+  #   foreach my $ro (0 .. $nrows) {
 
-      $value = 1 if (($value > 0) and ($args{unity}));
-      push @list, [$co, $ro, $value];
-      ($value > 0) ? ++$on : ++$off;
-    };
-  };
-  $counter->close if $self->screen;
-  foreach my $point (@list) {
-    $ei -> ($point->[0], $point->[1]) .= $point->[2];
-    ## for .=, see assgn in PDL::Ops
-    ## for ->() syntax see PDL::NiceSlice
-  };
+  #     $rdn = ($ro < $radius)        ? 0      : $ro-$radius;
+  #     $rup = ($ro > $nrows-$radius) ? $nrows : $ro+$radius;
+  #     my $slice = $ei->($cdn:$cup, $rdn:$rup);
+  #     $value = ($self->operation eq 'median') ? $slice->flat->oddmedover : int($slice->flat->average);
+  #     ## oddmedover, average: see PDL::Ufunc
+  #     ## flat: see PDL::Core
+  #     ## also see PDL::NiceSlice for matrix slicing syntax
+
+  #     $value = 1 if (($value > 0) and ($args{unity}));
+  #     push @list, [$co, $ro, $value];
+  #     ($value > 0) ? ++$on : ++$off;
+  #   };
+  # };
+  # $counter->close if $self->screen;
+  # foreach my $point (@list) {
+  #   $ei -> ($point->[0], $point->[1]) .= $point->[2];
+  #   ## for .=, see assgn in PDL::Ops
+  #   ## for ->() syntax see PDL::NiceSlice
+  # };
+  $self->elastic_image($smoothed);
   $self->remove_bad_pixels;
 
   my $str = $self->report("Areal ".$self->operation." step", 'cyan');
@@ -584,6 +600,7 @@ sub areal {
   $ret->message($str);
   return $ret;
 };
+
 
 
 1;

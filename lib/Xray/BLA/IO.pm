@@ -25,10 +25,8 @@ use List::Util qw(sum max);
 use Math::Round qw(round);
 
 sub import_elastic_image {
-  my ($self, @args) = @_;
-  my %args = @args;
-  #$args{write} ||= 0;
-  $args{write} = 0;
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
 
   my $ret = Xray::BLA::Return->new;
 
@@ -169,7 +167,7 @@ sub energy_map {
   my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (row %c of %m)',
 			      {freq => 's', base => 0, target=>$self->rows});
   my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
-  my $maskfile = $self->mask_file("maskmap", 'gif');
+  my $maskfile = $self->mask_file("maskmap", $self->outimage);
 
   open(my $M, '>', $outfile);
   printf $M "# Energy calibration map for %s\n", $self->stub;

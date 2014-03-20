@@ -15,42 +15,47 @@ use Getopt::Long;
 use Pod::Usage;
 use Scalar::Util qw(looks_like_number);
 
-my $energy     = 0;
-my $point      = -1;
-my $reuse      = 0;
-my $save       = 0;
-my $animate    = 0;
-my $plot       = 0;
-my $verbose    = 1;
-my $configfile = q{};
-my $xdiini     = q{};      # 'share/bla.xdi.ini'
-my $nocolor    = 0;
-my $result     = GetOptions ("energy|e=i"   => \$energy,
-			     "incident|i=s" => \$point,
-			     'reuse|r'	    => \$reuse,
-			     'save|s'	    => \$save,
-			     'animate|a'    => \$animate,
-			     'plot|p'       => \$plot,
-			     'verbose|v'    => \$verbose,
-			     'config|c=s'   => \$configfile,
-			     'xdiini|x=s'   => \$xdiini,
-			     'nocolor|n'    => \$nocolor,
-			     'quiet|q'	    => sub { $verbose = 0 },
-			     'help|h'	    => sub { pod2usage(1); exit 0},
+my $energy      = 0;
+my $point       = -1;
+my $reuse       = 0;
+my $save        = 0;
+my $animate     = 0;
+my $plot        = 0;
+my $verbose     = 1;
+my $configfile  = q{};
+my $xdiini      = q{};      # 'share/bla.xdi.ini'
+my $nocolor     = 0;
+my $imageformat = 'gif';
+my $result      = GetOptions ("energy|e=i"   => \$energy,
+			      "incident|i=s" => \$point,
+			      'reuse|r'	     => \$reuse,
+			      'save|s'	     => \$save,
+			      'animate|a'    => \$animate,
+			      'plot|p'       => \$plot,
+			      'verbose|v'    => \$verbose,
+			      'config|c=s'   => \$configfile,
+			      'xdiini|x=s'   => \$xdiini,
+			      'nocolor|n'    => \$nocolor,
+			      'format|f=s'   => \$imageformat,
+			      'quiet|q'	     => sub { $verbose = 0 },
+			      'help|h'	     => sub { pod2usage(1); exit 0},
 			    );
 
 my $mode = $ARGV[0] || q{none};
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
+$imageformat = 'gif' if $imageformat ne 'tif';
+
 my $nonpublic = 'list|none|test';
 
-my $spectrum = Xray::BLA->new();
+my $spectrum = Xray::BLA->new(outimage=>$imageformat);
 if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
   $plot = 0;
   print $spectrum->report("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');
 };
 
-my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
+#my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
+my $re = join("|", qw(herfd rixs point map mask xes test list none));
 if ($mode !~ m{$re}) {
   (my $str = $re) =~ s{\|($nonpublic)}{}g;
   warn("BLA error: \"$mode\" is not a BLA task (task should be one of $str)\n") && exit 1;
@@ -67,6 +72,8 @@ $spectrum -> task($mode);
 $spectrum -> stub($ARGV[1]||q{});
 $spectrum -> colored(0) if $nocolor;
 $spectrum -> read_ini($configfile);
+warn("BLA error: no processing steps specified in the configuration file\n") && exit 1 if $#{$spectrum->steps} == 0;
+
 my @elastic =  @{$spectrum -> elastic_energies};
 
 if ($mode !~ m{$nonpublic}) {
@@ -143,7 +150,7 @@ given ($mode) {
     warn("BLA error: no emission line specified in the configuration file\n")             && exit(1) if (not $spectrum->line);
     foreach my $e (@elastic) {
       $spectrum -> energy($e);
-      my $file = $spectrum->mask_file("mask", 'gif');
+      my $file = $spectrum->mask_file("mask", $spectrum->outimage);
       if (not -e $file) {
 	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
       } elsif (not $reuse) {
@@ -168,7 +175,7 @@ given ($mode) {
     warn("BLA error: incident energy (-p switch) is not a number\n")                      && exit(1) if (not looks_like_number($point));
     foreach my $e (@elastic) {
       $spectrum -> energy($e);
-      my $file = $spectrum->mask_file("mask", 'gif');
+      my $file = $spectrum->mask_file("mask", $spectrum->outimage);
       if (not -e $file) {
 	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
       } elsif (not $reuse) {
@@ -199,10 +206,10 @@ given ($mode) {
       if ($ret->status == 0) {
 	die $spectrum->report($ret->message, 'bold red');
       };
-      $spectrum->do_step('import_elastic_image', 0, $verbose, 0);
+      $spectrum->do_step('import_elastic_image', write=>0, verbose=>$verbose, unity=>0);
       $spectrum->bad_pixel_value(50);
       $spectrum->weak_pixel_value(0);
-      $spectrum->do_step('bad_pixels', 0, $verbose, 0);
+      $spectrum->do_step('bad_pixels', write=>0, verbose=>$verbose, unity=>0);
 
       if (not defined $sum) {
 	$sum = PDL::Core::zeros($spectrum->elastic_image->dims);
@@ -217,11 +224,15 @@ given ($mode) {
     print $/,$/;
     $spectrum->elastic_image->inplace->gt(3,0); # 3 needs to be configurable
     $spectrum->social_pixel_value(3);
-    $spectrum->do_step('social_pixels', 0, $verbose, 0);
+    $spectrum->do_step('social_pixels', write=>0, verbose=>$verbose, unity=>0);
     $spectrum->lonely_pixel_value(3);
-    $spectrum->do_step('lonely_pixels', 0, $verbose, 0);
+    $spectrum->do_step('lonely_pixels', write=>0, verbose=>$verbose, unity=>0);
+    $spectrum->social_pixel_value(1);
+    foreach my $i (1..5) {
+      $spectrum->do_step('social_pixels', write=>0, verbose=>$verbose, unity=>0, pass=>$i, vertical=>1);
+      $spectrum->elastic_image->wim("social$i.tif");
+    };
 
-    $spectrum->elastic_image->wim("foo.tif");
   }
 
   default {
@@ -252,6 +263,7 @@ bla - wrapper script for bent Laue analyzer + Pilatus data processing
    --plot     | -p   [flag]     plot computed data (herfd/rixs/map/xes tasks)
    --verbose  | -v   [flag]     write progress messages
    --nocolor  | -n   [flag]     turn off color coding of screen output
+   --format   | -f   [string]   output static image format, gif or tif
    --quiet    | -q   [flag]     suppress progress messages
    --help     | -h   [flag]     write this message and exit
 
@@ -299,6 +311,10 @@ Write progress messages to STDOUT.
 =item B<--nocolor>, B<-n>
 
 Turn off color coding of screen output
+
+=item -B<--format>, B<-f>
+
+Specify output format for static (non-animated) images (gif|tif)
 
 =item B<--quiet>, B<-q>
 

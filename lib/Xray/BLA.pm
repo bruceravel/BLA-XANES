@@ -7,13 +7,13 @@ our $VERSION = version->new('0.7');
 use feature "switch";
 
 use Moose;
-use Moose::Util qw(apply_all_roles);
+#use Moose::Util qw(apply_all_roles);
 with 'Xray::BLA::Mask';
 with 'Xray::BLA::IO';
 with 'Xray::BLA::Backend::Imager';
 with 'Xray::BLA::Pause';
 use MooseX::Aliases;
-use Moose::Util::TypeConstraints;
+#use Moose::Util::TypeConstraints;
 
 use PDL::Lite;
 use PDL::NiceSlice;
@@ -48,11 +48,11 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-enum 'BlaTasks' => [qw(herfd rixs point map mask xes test list none)];
-coerce 'BlaTasks',
-  from 'Str',
-  via { lc($_) };
-has 'task'		 => (is => 'rw', isa => 'BlaTasks',  default => q{none},
+#enum 'BlaTasks' => [qw(herfd rixs point map mask xes test list none)];
+#coerce 'BlaTasks',
+#  from 'Str',
+#  via { lc($_) };
+has 'task'		 => (is => 'rw', isa => 'Str',  default => q{none},
 			     documentation => "The data processing task as set by the calling program.");
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1,
 			     documentation => "A flag for turning colored output on and off.");
@@ -74,6 +74,8 @@ has 'energycounterwidth' => (is => 'rw', isa => 'Str', default => 5,
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 			     trigger => sub{my ($self, $new) = @_; mkpath($new) if not -d $new;},
 			     documentation => "The location on disk to which processed data and images are written.");
+has 'outimage'           => (is => 'rw', isa => 'Str', default => q{gif},
+			     documentation => "The default output image type, typically either gif or tif.");
 
 has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy',
 			     documentation => "The specific emission energy at which to perform the calculation.");
@@ -109,11 +111,11 @@ has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
 has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
 			     documentation => "The number of repotition of the three-point smoothing used in energy map creation.");
 
-enum 'Xray::BLA::Projections' => ['median', 'mean'];
-coerce 'Xray::BLA::Projections',
-  from 'Str',
-  via { lc($_) };
-has 'operation'          => (is => 'rw', isa => 'Xray::BLA::Projections', default => q{median},
+#enum 'Xray::BLA::Projections' => ['median', 'mean'];
+#coerce 'Xray::BLA::Projections',
+#  from 'Str',
+#  via { lc($_) };
+has 'operation'          => (is => 'rw', isa => 'Str', default => q{median},
 			     documentation => "The areal operation, either median or mean.");
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
@@ -340,7 +342,7 @@ sub read_mask {
   my %args = @args;
   $args{verbose} ||= 0;
   my $ret = Xray::BLA::Return->new;
-  my $fname = $self->mask_file("mask", 'gif');
+  my $fname = $self->mask_file("mask", $self->outimage);
   if (not -e $fname) {
     $ret->status(0);
     $ret->message("mask file $fname does not exist");
@@ -380,7 +382,8 @@ sub apply_mask {
     ## sumover: see PDL::Ufunc
     ## flat, sclr: see PDL::Core
     my $masked = $self->elastic_image * Xray::BLA::Image->new(parent=>$self)->Read($image);
-    my $sum = int($masked->flat->sumover->sclr / $self->eimax);
+    #my $sum = int($masked->flat->sumover->sclr / $self->eimax);
+    my $sum = int($masked->sum / $self->eimax);
     printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
     $ret->status($sum);
   };

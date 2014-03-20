@@ -53,12 +53,12 @@ wrapper script around the six bent Laue tasks:
 
 *** The bla script
 
-:  bla herfd [cxeaspvnqh] <stub>
-:  bla rixs  [cxaspvnqh]  <stub>
-:  bla map   [crpvnqh]    <stub>
-:  bla xes   [cipvnqh]    <stub>
-:  bla mask  [casvnqh]    <stub>
-:  bla point [ceih]       <stub>
+:  bla herfd [cxeaspvnfqh] <stub>
+:  bla rixs  [cxaspvnfqh]  <stub>
+:  bla map   [crpvnqh]     <stub>
+:  bla xes   [cipvnqh]     <stub>
+:  bla mask  [casvnfqh]    <stub>
+:  bla point [ceih]        <stub>
 : 
 :     --config   | -c    [string]  configuration file (required)
 :     --energy   | -e    [integer] emission energy (required for herfd/point tasks)
@@ -70,6 +70,7 @@ wrapper script around the six bent Laue tasks:
 :     --plot     | -p    [flag]    plot data (herfd/rixs/map/xes tasks)
 :     --verbose  | -v    [flag]    write progress messages
 :     --nocolor  | -n    [flag]    turn off color coding of screen output
+:     --format   | -f    [string]  output static image format, gif or tif
 :     --quiet    | -q    [flag]    suppress progress messages
 :     --help     | -h    [flag]    write this message and exit
 

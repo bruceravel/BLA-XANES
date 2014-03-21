@@ -14,12 +14,21 @@ sub read_image {
   return $p;
 };
 
+# sub get_row {
+#   my ($self, $image, $y) = @_;
+#   my @colors = $image->getscanline(y=>$y, type=>'float');
+#   my @y = map { my @rgba = $_->rgba; $rgba[0]*BIT_DEPTH } @colors;
+#   return @y;
+# };
+
+## this is the optimized and obfuscated version of the method
+## commented out above.  it is about twice as fast as the above.  note
+## that the scaling by the BIT_DEPTH is pushed out to Image.pm where
+## it can be done by PDL.
 sub get_row {
-  my ($self, $image, $y) = @_;
-  my @colors = $image->getscanline(y=>$y, type=>'float');
-  my @y = map { my @rgba = $_->rgba; $rgba[0]*BIT_DEPTH } @colors;
-  return @y;
+  return map { ($_->rgba)[0] } ($_[1]->gsl($_[2]));
 };
+
 
 sub get_columns {
   my ($self, $image) = @_;
@@ -44,6 +53,19 @@ sub animate {
     or die Imager->errstr;
   return $fname;
 };
+
+
+## this is ripped from Imager's getscanline method and stripped down
+## to do only the chore that needs to be done here
+package Imager;
+
+sub gsl {
+  #my $self = shift;
+  #my $y    = shift;
+  #$_[0]->_valid_image or return;
+  return i_glinf($_[0]->{IMG}, 0, $_[0]->getwidth, $_[1]);
+};
+
 
 #has 'elastic_image' => (is => 'rw', isa => 'Imager');
 

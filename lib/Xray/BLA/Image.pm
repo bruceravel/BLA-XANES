@@ -17,6 +17,8 @@ has 'image' =>  (is => 'rw', isa => 'PDL', default => sub {PDL::null});
 # 			     }
 # 	       );
 
+use constant BIT_DEPTH => 2**32;
+
 sub Read {
   my ($self, $file) = @_;
   my @lol = ();
@@ -27,6 +29,7 @@ sub Read {
     #$self->push_image(\@row);
   };
   my $p = PDL->new(\@lol);
+  $p = $p * BIT_DEPTH;
   $self->image($p);
 };
 

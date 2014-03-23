@@ -4,7 +4,8 @@ use strict;
 use warnings;
 
 use Cwd;
-use Chemistry::Elements qw(get_symbol);
+use Chemistry::Elements qw(get_Z get_symbol);
+use File::Basename;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
@@ -24,39 +25,51 @@ sub new {
 
   my $gbs = Wx::GridBagSizer->new( 5,5 );
 
-  my @elements = map {sprintf "%s", get_symbol($_)} (1 .. 96);
+  my @elements = map {sprintf "%s: %s", $_, get_symbol($_)} (1 .. 96);
   my $stub    = $app->{spectrum}->stub    || q{};
   my $element = $app->{spectrum}->element || q{};
   my $line    = $app->{spectrum}->line    || q{};
   $self->{stub_label}    = Wx::StaticText -> new($self, -1, "File stub");
   $self->{stub}          = Wx::TextCtrl   -> new($self, -1, $stub, wxDefaultPosition, [150,-1]);
   $self->{element_label} = Wx::StaticText -> new($self, -1, "Element");
-  $self->{element}       = Wx::ComboBox   -> new($self, -1, $element, wxDefaultPosition, wxDefaultSize, \@elements, wxCB_READONLY);
+  $self->{element}       = Wx::ComboBox   -> new($self, -1, q{}, wxDefaultPosition, [100,-1], \@elements, wxCB_READONLY);
   $self->{line_label}    = Wx::StaticText -> new($self, -1, "Line");
-  $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, wxDefaultSize, [qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll)], wxCB_READONLY);
+  $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], [qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll)], wxCB_READONLY);
   $gbs -> Add($self->{stub_label},    Wx::GBPosition->new(0,0));
   $gbs -> Add($self->{stub},          Wx::GBPosition->new(0,1));
   $gbs -> Add($self->{element_label}, Wx::GBPosition->new(0,2));
   $gbs -> Add($self->{element},       Wx::GBPosition->new(0,3));
   $gbs -> Add($self->{line_label},    Wx::GBPosition->new(0,4));
   $gbs -> Add($self->{line},          Wx::GBPosition->new(0,5));
-  $self->{element}->SetStringSelection($element);
+  $self->{element}->SetSelection(get_Z($element)-1);
   $self->{line}->SetStringSelection($line);
+  $app->mouseover($self->{stub}, "Specify the base of the scan and image filenames.");
+  $app->mouseover($self->{element}, "Specify the absorber element.");
+  $app->mouseover($self->{stub}, "Specify the measured emission line.");
+
+  my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', , 'share', "metis_logo.png");
+  my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
+  $gbs -> Add(Wx::StaticBitmap->new($self, -1, $logo, wxDefaultPosition, [100,100]),
+	      Wx::GBPosition->new(0,6), Wx::GBSpan->new(4,1));
+
 
   my $scanfolder = $app->{spectrum}->scanfolder || q{};
   $self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
   $self->{scan} = Wx::TextCtrl->new($self, -1, $scanfolder, wxDefaultPosition, [500,-1],);
   $gbs -> Add($self->{scan_label}, Wx::GBPosition->new(1,0));
   $gbs -> Add($self->{scan},       Wx::GBPosition->new(1,1), Wx::GBSpan->new(1,5));
+  $app->mouseover($self->{scan}, "Specify the location of the scan files.");
 
   my $tifffolder = $app->{spectrum}->tifffolder || q{};
   $self->{image_label} = Wx::StaticText -> new($self, -1, "Image folder");
   $self->{image} = Wx::TextCtrl->new($self, -1, $tifffolder, wxDefaultPosition, [500,-1],);
   $gbs -> Add($self->{image_label}, Wx::GBPosition->new(2,0));
   $gbs -> Add($self->{image},       Wx::GBPosition->new(2,1), Wx::GBSpan->new(1,5));
+  $app->mouseover($self->{image}, "Specify the location of the image files.");
 
-  $self->{fetch} = Wx::Button->new($self, -1, "Fetch file lists");
+  $self->{fetch} = Wx::Button->new($self, -1, "&Fetch file lists");
   $gbs -> Add($self->{fetch},       Wx::GBPosition->new(3,1));
+  $app->mouseover($self->{image}, "Fetch all image files and populate the file lists below.");
 
   $vbox -> Add($gbs, 0, wxGROW|wxALL, 5);
 
@@ -71,6 +84,7 @@ sub new {
   $elasticboxsizer -> Add($self->{elastic_list}, 1, wxGROW);
   $hbox -> Add($elasticboxsizer, 1, wxGROW|wxALL, 5);
   EVT_LISTBOX_DCLICK($self, $self->{elastic_list}, sub{view(@_, $app, 'elastic')});
+  $app->mouseover($self->{elastic_list}, "Double click to display an elastic image file.");
 
   my $imagebox       = Wx::StaticBox->new($self, -1, 'Image files', wxDefaultPosition, wxDefaultSize);
   my $imageboxsizer  = Wx::StaticBoxSizer->new( $imagebox, wxVERTICAL );
@@ -79,6 +93,7 @@ sub new {
   $imageboxsizer -> Add($self->{image_list}, 1, wxGROW);
   $hbox -> Add($imageboxsizer, 1, wxGROW|wxALL, 5);
   EVT_LISTBOX_DCLICK($self, $self->{image_list}, sub{view(@_, $app, 'image')});
+  $app->mouseover($self->{image_list}, "Double click to display the image file for a data point.");
 
   $vbox -> Add($hbox, 1, wxGROW|wxALL, 5);
 
@@ -94,12 +109,8 @@ sub fetch {
   my $image_folder   = $self->{image}->GetValue;
   #print join("\n", $stub, $scan_folder, $elastic_folder, $image_folder), $/;
 
-  $app->{spectrum} -> element($self->{element}->GetStringSelection);
-  $app->{spectrum} -> line($self->{line}->GetStringSelection);
-  $app->{spectrum} -> scanfolder($scan_folder);
-  $app->{spectrum} -> tifffolder($image_folder);
+  $app->set_parameters;
   $app->{spectrum} -> clear_elastic_energies;
-
 
   opendir(my $E, $image_folder);
   my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{$stub}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
@@ -121,14 +132,8 @@ sub fetch {
     };
   };
 
-  $app->{yaml}->[0]->{stub} = $stub;
-  $app->{yaml}->[0]->{scanfolder} = $scan_folder;
-  $app->{yaml}->[0]->{tifffolder} = $image_folder;
-  $app->{yaml}->[0]->{element} = $app->{spectrum}->element;
-  $app->{yaml}->[0]->{line} = $app->{spectrum}->line;
-  $app->{yaml}->write($app->{yamlfile});
 
-  foreach my $k (qw(stub reset energylabel energy)) {
+  foreach my $k (qw(stub energylabel energy)) {
     $app->{Mask}->{$k} -> Enable(1);
   };
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
@@ -136,7 +141,7 @@ sub fetch {
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{spectrum}->elastic_energies};
   #$app->{Mask}->{energy} -> SetSelection(0);
 
-  $::app->{main}->status("Found elastic and image files for $stub");
+  $app->{main}->status("Found elastic and image files for $stub");
 
 };
 
@@ -148,7 +153,8 @@ sub view {
   my $file   = File::Spec->catfile($folder, $img);
 
   if ($which eq 'image') {
-    $::app->{main}->status("Not plotting energy points yet...");
+    $app->{spectrum}->plot_energy_point($file);
+    $app->{main}->status("Plotted energy point $file");
     return;
   };
 
@@ -157,26 +163,26 @@ sub view {
   if ($file =~ m{elastic_(\d+)_}) {
     $app->{spectrum} -> energy($1);
   } else {
-    $::app->{main}->status("Can't figure out energy...");
+    $app->{main}->status("Can't figure out energy...", 'alert');
     return;
   };
 
   $app->{spectrum}->elastic_file($file);
   my $ret = $app->{spectrum}->check;
   if ($ret->status == 0) {
-     $::app->{main}->status($ret->message);
+     $app->{main}->status($ret->message, 'alert');
      return;
   };
 
   my $cbm = int($app->{spectrum}->elastic_image->max);
   if ($cbm < 1) {
     $cbm = 1;
-  } elsif ($cbm > $app->{spectrum}->bad_pixel_value/40) {
-    $cbm = $app->{spectrum}->bad_pixel_value/40;
+  } elsif ($cbm > $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale) {
+    $cbm = $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale;
   };
   $app->{spectrum}->cbmax($cbm);# if $step =~ m{social};
   $app->{spectrum}->plot_mask;
-  $::app->{main}->status("Plotted ".$app->{spectrum}->elastic_file);
+  $app->{main}->status("Plotted ".$app->{spectrum}->elastic_file);
 
 };
 

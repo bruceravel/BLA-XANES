@@ -18,6 +18,7 @@ package Xray::BLA::Plot;
 use Moose::Role;
 use PDL::Graphics::Simple;
 use PDL::Graphics::Gnuplot qw(gplot image);
+use File::Basename;
 
 has 'cbmax' => (is => 'rw', isa => 'Int', default => 20);
 
@@ -29,7 +30,22 @@ has 'palette' => (is => 'rw', isa => 'Str',
 
 sub plot_mask {
   my ($self) = @_;
-  image({cbrange=>[0,$self->cbmax], palette=>$self->palette}, $self->elastic_image);
+  (my $title = basename($self->elastic_file)) =~ s{_}{\\\\_}g;
+  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
+	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
+	$self->elastic_image);
+};
+
+sub plot_energy_point {
+  my ($self, $file) = @_;
+  my $img = Xray::BLA::Image->new(parent=>$self);
+  my $point = $img->Read($file);
+  my $cbm = $self->bad_pixel_value/$self->imagescale;
+  (my $title = basename($file)) =~ s{_}{\\\\_}g;
+  image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title,
+	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
+	$point);
+  undef $img; undef $point;
 };
 
 sub plot_xanes {
@@ -38,7 +54,8 @@ sub plot_xanes {
   $args{title} ||= q{};
   $args{pause} = q{-1} if not defined $args{pause};
 
-  gplot(with=>'lines', legend=>$args{title}, PDL->new($self->xdata), PDL->new($self->ydata));
+  gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
+	with=>'lines', legend=>$args{title}, PDL->new($self->xdata), PDL->new($self->ydata));
   $self->pause($args{pause}) if $args{pause};
 }
 

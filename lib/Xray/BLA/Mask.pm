@@ -252,8 +252,8 @@ sub do_step {
     my $cbm = int($self->elastic_image->max);
     if ($cbm < 1) {
       $cbm = 1;
-    } elsif ($cbm > $self->bad_pixel_value/10) {
-      $cbm = $self->bad_pixel_value/10;
+    } elsif ($cbm > $self->bad_pixel_value/$self->imagescale) {
+      $cbm = $self->bad_pixel_value/$self->imagescale;
     };
     $self->cbmax($cbm);# if $step =~ m{social};
     $self->plot_mask;

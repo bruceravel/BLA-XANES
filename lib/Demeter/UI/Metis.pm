@@ -5,10 +5,12 @@ use warnings;
 
 use Xray::BLA;
 
+use Chemistry::Elements qw(get_Z get_symbol);
 use File::Basename;
 use File::Copy;
 use File::Path;
 use File::Spec;
+use Scalar::Util qw(looks_like_number);
 use YAML::Tiny;
 
 use Wx qw(:everything);
@@ -21,12 +23,19 @@ use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 use base 'Wx::App';
 
 my $icon_dimension = 30;
-my @utilities = qw(Files Mask Data); # Help);
+my @utilities = qw(Files Mask Data Config); # Help);
+
+use Const::Fast;
+const my $Files  => Wx::NewId();
+const my $Mask   => Wx::NewId();
+const my $Data   => Wx::NewId();
+const my $Config => Wx::NewId();
+
 
 sub OnInit {
   my ($app) = @_;
 
-  $app->{main} = Wx::Frame->new(undef, -1, 'Athena [XAS data processing]', wxDefaultPosition, [800,500],);
+  $app->{main} = Wx::Frame->new(undef, -1, 'Metis [BLA data processing]', wxDefaultPosition, [850,500],);
   my $iconfile = File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "metis_icon.png");
   my $icon = Wx::Icon->new( $iconfile, wxBITMAP_TYPE_ANY );
   $app->{main} -> SetIcon($icon);
@@ -45,6 +54,11 @@ sub OnInit {
     foreach my $k (qw(stub scanfolder tifffolder element line)) {
       $app->{spectrum}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
+    foreach my $c (qw(imagescale tiffcounter energycounterwidth imageformat)) {
+      $app->{spectrum}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
+    };
+  } else {
+    $app->{yaml} = YAML::Tiny -> new;
   };
 
 
@@ -80,10 +94,22 @@ sub OnInit {
   };
   $vbox -> Add($tb, 1, wxEXPAND|wxALL, 0);
 
+  my $bar = Wx::MenuBar->new;
+  my $filemenu   = Wx::Menu->new;
+  $filemenu->Append($Files,    "Show Files tool\tCtrl+1" );
+  $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
+  $filemenu->Append($Data,     "Show Data tool\tCtrl+3" );
+  $filemenu->Append($Config,   "Show Data tool\tCtrl+4" );
+  $filemenu->AppendSeparator;
+  $filemenu->Append(wxID_EXIT, "E&xit\tCtrl+q" );
+  $bar->Append( $filemenu,     "&Metis" );
+  $app->{main}->SetMenuBar( $bar );
+  EVT_MENU($app->{main}, -1, sub{my ($frame,  $event) = @_; OnMenuClick($frame, $event, $app)} );
+
   $app->{main} -> Show( 1 );
   $app->{main} -> Refresh;
   $app->{main} -> Update;
-  $app->{main} -> status("Welcome to Metis");
+  $app->{main} -> status("Welcome to Metis, copyright 2012-2014 Bruce Ravel, Jeremy Kropf");
 
   $app->{main} -> SetSizer($vbox);
   #$vbox -> Fit($tb);
@@ -95,6 +121,63 @@ sub OnInit {
 #  my ($app) = @_;
 #  $app->Destroy;
 #};
+
+sub OnMenuClick {
+  my ($self, $event, $app) = @_;
+  my $id = (looks_like_number($event)) ? $event : $event->GetId;
+ SWITCH: {
+    ($id == $Files)    and do {
+      $app->{book}->SetSelection(0);
+      return;
+    };
+    ($id == $Mask)     and do {
+      $app->{book}->SetSelection(1);
+      return;
+    };
+    ($id == $Data)     and do {
+      $app->{book}->SetSelection(2);
+      return;
+    };
+    ($id == $Config)   and do {
+      $app->{book}->SetSelection(3);
+      return;
+    };
+    ($id == wxID_EXIT) and do {
+      $self->Close;
+      return;
+    };
+  };
+};
+
+sub mouseover {
+  my ($app, $widget, $text) = @_;
+  my $sb = $app->{main}->GetStatusBar;
+  EVT_ENTER_WINDOW($widget, sub{$sb->PushStatusText($text); $_[1]->Skip});
+  EVT_LEAVE_WINDOW($widget, sub{$sb->PopStatusText if ($sb->GetStatusText eq $text); $_[1]->Skip});
+};
+
+sub set_parameters {
+  my ($app) = @_;
+  $app->{spectrum} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
+  $app->{spectrum} -> line($app->{Files}->{line}->GetStringSelection);
+  $app->{spectrum} -> scanfolder($app->{Files}->{scan}->GetValue);
+  $app->{spectrum} -> tifffolder($app->{Files}->{image}->GetValue);
+
+  $app->{spectrum} -> imagescale($app->{Config}->{imagescale}->GetValue);
+  $app->{spectrum} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
+  $app->{spectrum} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
+  $app->{spectrum} -> imageformat($app->{Config}->{imageformat}->GetStringSelection);
+
+
+  $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
+  foreach my $k (qw(scanfolder tifffolder element line
+		    imagescale imageformat energycounterwidth tiffcounter)) {
+    $app->{yaml}->[0]->{$k} = $app->{spectrum}->$k;
+  };
+  $app->{yaml}->write($app->{yamlfile});
+
+  return $app;
+};
 
 
 package Wx::Frame;

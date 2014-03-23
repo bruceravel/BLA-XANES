@@ -117,6 +117,11 @@ has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
 has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
 			     documentation => "The number of repotition of the three-point smoothing used in energy map creation.");
 
+has 'imagescale'         => (is => 'rw', isa => 'Num', default => 40,
+			     documentation => "A scaling factor for the color scale when plotting images.  A bigger number leads to a smaller range of the plot.");
+has 'imageformat'        => (is => 'rw', isa => 'Str', default => 'gif',
+			     documentation => "The output static image format, typically either gif or tif");
+
 #enum 'Xray::BLA::Projections' => ['median', 'mean'];
 #coerce 'Xray::BLA::Projections',
 #  from 'Str',
@@ -448,6 +453,7 @@ sub scan {
 
   my (@data, @point);
 
+  my $i = 1;
   print $self->report("Reading scan from ".$self->scanfile, 'yellow') if $args{verbose};
   open(my $SCAN, "<", $self->scanfile);
   while (<$SCAN>) {
@@ -457,7 +463,7 @@ sub scan {
     @point = ();
     my @list = split(" ", $_);
 
-    $self->call_sentinal($list[-1]);
+    $self->call_sentinal($list[-1]) if not ($i % 5);
     my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
     push @point, $list[0];
     push @point, sprintf("%.10f", $loop->status/$list[3]);
@@ -467,6 +473,7 @@ sub scan {
     push @data, [@point];
     $self->push_xdata($point[0]);
     $self->push_ydata($point[1]);
+    ++$i;
   };
   close $SCAN;
 

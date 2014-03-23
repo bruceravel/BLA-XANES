@@ -50,6 +50,7 @@ sub new {
   $ebox->Add($self->{energylabel}, 0, wxALL, 5);
   $ebox->Add($self->{energy}, 0, wxALL, 5);
   EVT_COMBOBOX($self, $self->{energy}, sub{SelectEnergy(@_, $app)});
+  $app->mouseover($self->{energy}, "Select the emission energy at which to prepare a mask.");
 
   $vbox ->  Add(1, 1, 1);
 
@@ -58,7 +59,7 @@ sub new {
   my $gbs = Wx::GridBagSizer->new( 5,5 );
   $vbox ->  Add($gbs, 0, wxGROW|wxALL, 5);
 
-  $self->{do_bad}    = Wx::Button->new($self, -1, "Bad/weak step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_bad}    = Wx::Button->new($self, -1, "&Bad/weak step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{badlabel}  = Wx::StaticText->new($self, -1, 'Bad value:');
   $self->{badvalue}  = Wx::TextCtrl->new($self, -1, $app->{spectrum}->bad_pixel_value);
   $self->{weaklabel} = Wx::StaticText->new($self, -1, 'Weak value:');
@@ -68,29 +69,38 @@ sub new {
   $gbs ->Add($self->{badvalue},  Wx::GBPosition->new(0,2));
   $gbs ->Add($self->{weaklabel}, Wx::GBPosition->new(0,3));
   $gbs ->Add($self->{weakvalue}, Wx::GBPosition->new(0,4));
+  $app->mouseover($self->{do_bad},    "Remove bad pixels weak pixels from the image.");
+  $app->mouseover($self->{badvalue},  "Pixels above this value are considered bad.");
+  $app->mouseover($self->{weakvalue}, "Pixels below this value are considered weak.");
 
-  $self->{do_social} = Wx::Button->new($self, -1, "Social pixels step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{sociallabel}  = Wx::StaticText->new($self, -1, 'Social value:');
   $self->{socialvalue}  = Wx::TextCtrl->new($self, -1, $app->{spectrum}->social_pixel_value);
-  $self->{socialvertical} = Wx::CheckBox->new($self, -1, 'Vertical');
+  $self->{socialvertical} = Wx::CheckBox->new($self, -1, '&Vertical');
   $gbs ->Add($self->{do_social},   Wx::GBPosition->new(1,0));
   $gbs ->Add($self->{sociallabel}, Wx::GBPosition->new(1,1));
   $gbs ->Add($self->{socialvalue}, Wx::GBPosition->new(1,2));
   $gbs ->Add($self->{socialvertical}, Wx::GBPosition->new(1,3));
+  $app->mouseover($self->{do_social},   "Include \"social\" pixels -- unlit pixels surrounded by enough lit pixels.");
+  $app->mouseover($self->{socialvalue}, "The number of neighboring lit pixels marking an unlit pixel as social.");
+  $app->mouseover($self->{socialvalue}, "Perform the social pixel step, but only considering pixels directly above and below.");
 
-  $self->{do_lonely} = Wx::Button->new($self, -1, "Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{lonelylabel}  = Wx::StaticText->new($self, -1, 'Lonely value:');
   $self->{lonelyvalue}  = Wx::TextCtrl->new($self, -1, $app->{spectrum}->lonely_pixel_value);
   $gbs ->Add($self->{do_lonely},    Wx::GBPosition->new(2,0));
   $gbs ->Add($self->{lonelylabel}, Wx::GBPosition->new(2,1));
   $gbs ->Add($self->{lonelyvalue}, Wx::GBPosition->new(2,2));
+  $app->mouseover($self->{do_lonely},   "Remove \"lonely\" pixels -- lit pixels surrounded by too many unlit pixels.");
+  $app->mouseover($self->{lonelyvalue}, "The number of neighboring unlit pixels marking an lit pixel as lonely.");
 
-  $self->{do_multiply} = Wx::Button->new($self, -1, "Multiply by", wxDefaultPosition, [$buttonwidth,-1]);
-  $self->{multiplyvalue}  = Wx::TextCtrl->new($self, -1, '1');
+  $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 2, 1000);
   $gbs ->Add($self->{do_multiply},    Wx::GBPosition->new(3,0));
   $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new(3,1));
+  $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
 
-  $self->{do_areal}   = Wx::Button->new($self, -1, "Areal step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_areal}   = Wx::Button->new($self, -1, "&Areal step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{arealtype}  = Wx::Choice->new($self, -1, wxDefaultPosition, wxDefaultSize,
 					[qw(mean median)]);
   $self->{areallabel} = Wx::StaticText->new($self, -1, 'Radius:');
@@ -100,6 +110,9 @@ sub new {
   $gbs ->Add($self->{areallabel}, Wx::GBPosition->new(4,2));
   $gbs ->Add($self->{arealvalue}, Wx::GBPosition->new(4,3));
   $self->{arealtype}->SetSelection(0);
+  $app->mouseover($self->{do_areal},   "Set each pixel to the average value of its neighbors within some radius.");
+  $app->mouseover($self->{arealtype},  "Do the areal averaging as a mean or a median of surrounding pixels.  (Median is currently not implemented.)");
+  $app->mouseover($self->{arealvalue}, "The \"radius\" of the averaging, a value of 1 uses a 3x3 square, 2 uses a 5x5 square.");
 
   foreach my $k (qw(bad social lonely multiply areal)) {
     EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
@@ -107,12 +120,16 @@ sub new {
 
   $vbox ->  Add(1, 1, 2);
 
-  $self->{replot} = Wx::Button -> new($self, -1, 'Replot');
+  $self->{replot} = Wx::Button -> new($self, -1, '&Replot');
   $vbox->Add($self->{replot}, 0, wxGROW|wxALL, 5);
-  $self->{reset} = Wx::Button -> new($self, -1, 'Reset');
+  $self->{reset} = Wx::Button -> new($self, -1, 'Rese&t');
   $vbox->Add($self->{reset}, 0, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{replot}, sub{replot(@_, $app)});
   EVT_BUTTON($self, $self->{reset}, sub{Reset(@_, $app)});
+  $self->{replot}->Enable(0);
+  $self->{reset}->Enable(0);
+  $app->mouseover($self->{replot}, "Replot the mask after rerunning the processing steps.");
+  $app->mouseover($self->{reset},  "Return to the measured elastic image and restart the mask.");
 
   $vbox ->  Add(1, 1, 2);
 
@@ -137,7 +154,7 @@ sub SelectEnergy {
 
   my $ret = $app->{spectrum}->check;
   if ($ret->status == 0) {
-     $::app->{main}->status($ret->message);
+     $app->{main}->status($ret->message, 'alert');
      return;
   };
 
@@ -163,7 +180,7 @@ sub Reset {
 
   my $ret = $app->{spectrum}->check;
   if ($ret->status == 0) {
-     $::app->{main}->status($ret->message);
+     $app->{main}->status($ret->message, 'alert');
      return;
   };
   foreach my $k (qw(do_social sociallabel socialvalue socialvertical
@@ -174,10 +191,12 @@ sub Reset {
     $self->{$k}->Enable(0);
   };
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
-  $app->{Data}->{energy}->SetLabel("Emission energy is <undefined>");
+  $app->{Data}->{energy}->SetLabel("Current mask energy is <undefined>");
   foreach my $k (qw(stub energy herfd save_herfd)) {
     $app->{Data}->{$k}->Enable(0);
   };
+  $self->{replot}->Enable(0);
+  $self->{reset}->Enable(0);
 
   $self->plot($app);
 };
@@ -186,7 +205,7 @@ sub do_step {
   my ($self, $event, $app, $which) = @_;
   my $energy = $self->{energy}->GetStringSelection;
   if ($energy eq q{}) {
-    $::app->{main}->status("You haven't selected an emission energy.", 'alert');
+    $app->{main}->status("You haven't selected an emission energy.", 'alert');
     return;
   };
 
@@ -209,9 +228,11 @@ sub do_step {
 		      savesteps)) {
       $self->{$k}->Enable(1);
     };
+    $self->{replot}->Enable(1);
+    $self->{reset}->Enable(1);
     $app->{Data}->{stub}->SetLabel("Stub is ".$app->{spectrum}->stub);
-    $app->{Data}->{energy}->SetLabel("Emission energy is ".$app->{spectrum}->energy);
-    foreach my $k (qw(stub energy herfd save_herfd)) {
+    $app->{Data}->{energy}->SetLabel("Current mask energy is ".$app->{spectrum}->energy);
+    foreach my $k (qw(stub energy herfd)) {
       $app->{Data}->{$k}->Enable(1);
     };
 
@@ -237,7 +258,7 @@ sub do_step {
     $app->{spectrum} -> operation($self->{arealtype}->GetStringSelection);
     $app->{spectrum} -> radius($self->{arealvalue}->GetValue);
     if ($app->{spectrum} -> operation eq 'median') {
-      $::app->{main}->status("Areal median is not available yet.", 'alert');
+      $app->{main}->status("Areal median is not available yet.", 'alert');
       return;
     };
     $app->{spectrum} -> do_step('areal', %args);
@@ -247,7 +268,7 @@ sub do_step {
 
   };
   $self->plot($app);
-  $::app->{main}->status("Plotted result of $which step.");
+  $app->{main}->status("Plotted result of $which step.");
 
 };
 
@@ -257,8 +278,8 @@ sub plot {
   my $cbm = int($app->{spectrum}->elastic_image->max);
   if ($cbm < 1) {
     $cbm = 1;
-  } elsif ($cbm > $app->{spectrum}->bad_pixel_value/40) {
-    $cbm = $app->{spectrum}->bad_pixel_value/40;
+  } elsif ($cbm > $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale) {
+    $cbm = $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale;
   };
   $app->{spectrum}->cbmax($cbm);# if $step =~ m{social};
   $app->{spectrum}->plot_mask;
@@ -274,7 +295,7 @@ sub replot {
 
   my $ret = $app->{spectrum}->check;
   if ($ret->status == 0) {
-     $::app->{main}->status($ret->message);
+     $app->{main}->status($ret->message, 'alert');
      return;
   };
   $app->{spectrum}->clear_steps;
@@ -289,16 +310,6 @@ sub replot {
 
 sub save_steps {
   my ($self, $event, $app) = @_;
-  my $text = "[measure]\n";
-  $text .= 'emission = ' . join(" ", @{$app->{spectrum}->elastic_energies}) . "\n";
-  foreach my $k (qw(scanfolder tifffolder element line)) {
-    $text .= sprintf("%s = %s\n", $k, $app->{spectrum}->$k);
-  };
-  $text .= "\n[steps]\nsteps <<END\n";
-  foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
-    $text .= $self->{steps_list}->GetString($n) . "\n";
-  };
-  $text .= "END\n";
 
   my $fname = $app->{spectrum}->stub . ".ini";
   my $fd = Wx::FileDialog->new( $app->{main}, "Save ini file", cwd, $fname,
@@ -310,6 +321,19 @@ sub save_steps {
     return;
   };
   my $file = $fd->GetPath;
+
+  my $text = "[measure]\n";
+  $text .= 'emission = ' . join(" ", @{$app->{spectrum}->elastic_energies}) . "\n";
+  foreach my $k (qw(scanfolder tifffolder element line)) {
+    $text .= sprintf("%s = %s\n", $k, $app->{spectrum}->$k);
+  };
+  $text .= "outfolder = " . $fd->GetDirectory . "\n";
+  $text .= "\n[steps]\nsteps <<END\n";
+  foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
+    $text .= $self->{steps_list}->GetString($n) . "\n";
+  };
+  $text .= "END\n";
+
   open(my $INI, '>', $file);
   print $INI $text;
   close $INI;

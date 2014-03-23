@@ -13,20 +13,21 @@ my $build = Module::Build
 				'perl'                      => '5.10.0',
 				'PDL'                       => '0',
 				'Moose'			    => '1.21',
-				#'MooseX::MutatorAttributes' => 0,
-				#'MooseX::AttributeHelpers'  => 0, now using Moose::Meta::Attribute::Native like a good boy
 				'MooseX::Aliases'           => '0',
-				'Config::IniFiles'          => 0,
-				'Math::Round'               => 0,
+				'Config::IniFiles'          =>  0,
+				'Math::Round'               =>  0,
 				#'Xray::XDI'                 => 0,
 				'Term::Sk'                  => '0.07',
-				'Text::Template'            => 0,
-				'Imager'                    => 0.87,
+				'Text::Template'            =>  0,
+				'Imager'                    =>  0.87,
+				'YAML::Tiny'                =>  0,
 			       },
-	 #recommends         => {
+	 recommends         => {
 	 #			'Image::Magick'             => 0,
 	 #			'Imager'                    => 0.87,
-	 #		       },
+				'PDL::Graphics::Simple'     =>  0,
+				'PDL::Graphics::Gnuplot'    =>  0,
+	 		       },
 	 sign               => 1,
 	);
 $build->create_build_script;

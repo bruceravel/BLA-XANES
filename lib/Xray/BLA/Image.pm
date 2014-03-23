@@ -29,6 +29,7 @@ sub Read {
     #$self->push_image(\@row);
   };
   my $p = PDL->new(\@lol);
+  ## this multiplication is faster done here with PDL than in X::B::Backend::Imager
   $p = $p * BIT_DEPTH;
   $self->image($p);
 };

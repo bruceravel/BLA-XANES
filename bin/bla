@@ -54,8 +54,8 @@ if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
   print $spectrum->report("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');
 };
 
-#my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
-my $re = join("|", qw(herfd rixs point map mask xes test list none));
+my $re = join("|", @{$spectrum->meta->get_attribute('task')->type_constraint->values});
+#my $re = join("|", qw(herfd rixs point map mask xes test list none));
 if ($mode !~ m{$re}) {
   (my $str = $re) =~ s{\|($nonpublic)}{}g;
   warn("BLA error: \"$mode\" is not a BLA task (task should be one of $str)\n") && exit 1;
@@ -85,25 +85,27 @@ if ($mode !~ m{$nonpublic}) {
 };
 
 
-given ($mode) {
-  when  ('herfd') {
+MODE: {
+  ($mode eq 'herfd') and do {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> energy($energy);
-    $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate);
+    $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate, plot=>$plot);
     my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
-    $spectrum -> do_plot($ret->message, type=>'data', title=>$spectrum->stub) if $plot;
+    $spectrum -> plot_xanes($ret->message, type=>'data', title=>$spectrum->stub) if $plot;
+    last MODE;
   };
 
-  when ('mask') {
+  ($mode eq 'mask') and do {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> screen($verbose);
     $spectrum -> energy($energy);
-    $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate);
-  }
+    $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate, plot=>$plot);
+    last MODE;
+  };
 
-  when ('point') {
+  ($mode eq 'point') and do {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
     warn("BLA error: no energy point specified (use the -i switch)\n")    && exit(1) if ($point < 1);
@@ -113,9 +115,10 @@ given ($mode) {
     $spectrum->get_incident($point);
     my $value = $spectrum->apply_mask($spectrum->nincident, verbose=>0, silence=>1)->status;
     print $value.$/;
-  }
+    last MODE;
+  };
 
-  when ('rixs') {
+  ($mode eq 'rixs') and do {
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
     foreach my $e (@elastic) {
       $spectrum -> energy($e);
@@ -135,15 +138,16 @@ given ($mode) {
       } else {
 	1;			# do nothing
       };
-      $spectrum -> do_plot($ret->message, type=>'data', title=>join(", ", $spectrum->stub, $e), pause=>0.1) if ($ret and $plot);
+      $spectrum -> plot_rixs($ret->message, type=>'data', title=>join(", ", $spectrum->stub, $e), pause=>0.1) if ($ret and $plot);
       $spectrum -> push_herfd_file_list($file);
       $spectrum -> push_herfd_pixels_used($spectrum->npixels);
     };
     $spectrum -> prep_rixs_for_normalization(verbose => $verbose) if $xdiini;
     $spectrum -> rixs_map(verbose => $verbose);
-  }
+    last MODE;
+  };
 
-  when ('map') {
+  ($mode eq 'map') and do {
     my $need_to_check = 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
     warn("BLA error: no absorber element specified in the configuration file\n")          && exit(1) if (not $spectrum->element);
@@ -166,10 +170,11 @@ given ($mode) {
       $spectrum -> import_elastic_image;
     };
     my $ret = $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
-    $spectrum -> do_plot($ret->message, type=>'load') if $plot;
-  }
+    $spectrum -> plot_map($ret->message, type=>'load') if $plot;
+    last MODE;
+  };
 
-  when ('xes') {
+  ($mode eq 'xes') and do {
     $point ||= 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
     warn("BLA error: incident energy (-p switch) is not a number\n")                      && exit(1) if (not looks_like_number($point));
@@ -185,18 +190,20 @@ given ($mode) {
       };
     };
     my $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point);
-    $spectrum->do_plot($ret->message, type=>'data', title=>'Ein = '.$spectrum->incident) if $plot;
-  }
+    $spectrum->plot_xes($ret->message, type=>'data', title=>'Ein = '.$spectrum->incident) if $plot;
+    last MODE;
+  };
 
-  when ('list') {
+  ($mode eq 'list') and do {
     my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
     foreach my $a (@list) {
       my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, 'bold green') : $a;
       printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation||q{};
     };
-  }
+    last MODE;
+  };
 
-  when ('test') {
+  ($mode eq 'test') and do {
     #die "tests for the BLA code (none currently)...\n";
     $spectrum -> screen($verbose);
     my $sum;
@@ -233,12 +240,11 @@ given ($mode) {
       $spectrum->elastic_image->wim("social$i.tif");
     };
 
-  }
+    last MODE;
+  };
 
-  default {
-    pod2usage(1);
-    exit 1;
-  }
+  pod2usage(1);
+  exit 1;
 };
 
 

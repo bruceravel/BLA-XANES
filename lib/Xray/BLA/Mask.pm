@@ -29,11 +29,15 @@ use PDL::Image2D;
 sub mask {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{save}    || 0;
-  $args{verbose} || 0;
-  $args{animate} || 0;
-  $args{write}    = 0;
-  $args{write}    = 1 if ($args{animate} or $args{save});
+  $args{unity}    ||= 0;
+  $args{pass}     ||= 0;
+  $args{vertical} ||= 0;
+  $args{save}     ||= 0;
+  $args{verbose}  ||= 0;
+  $args{animate}  ||= 0;
+  $args{plot}     ||= 0;
+  $args{write}      = 0;
+  $args{write}      = 1 if ($args{animate} or $args{save});
   local $|=1;
 
   #$self->clear_bad_pixel_list;
@@ -48,7 +52,11 @@ sub mask {
   ## import elastic image and store basic properties
   my @out = ();
   $out[0] = ($args{write}) ? $self->mask_file("0", $self->outimage) : 0;
-  $self->do_step('import_elastic_image', write=>$out[0], verbose=>$args{verbose}, unity=>0);
+
+  $args{write}   = $out[0];
+  $args{verbose} = $args{verbose};
+  $args{unity}   = 0;
+  $self->do_step('import_elastic_image', %args);
 
   my $i=0;
   foreach my $st (@{$self->steps}) {
@@ -56,53 +64,62 @@ sub mask {
 
     my @args = split(" ", $st);
 
-    given ($args[0]) {		# see Xray::BLA::Mask
-      when ('bad')  {
+    $args{write}   = $out[-1];
+    $args{verbose} = $args{verbose};
+    $args{unity}   = $set_npixels;
+
+  STEPS: {
+      ($args[0] eq 'bad') and do {
 	$self -> bad_pixel_value($args[1]);
 	$self -> weak_pixel_value($args[3]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
-	$self->do_step('bad_pixels', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
+	$self->do_step('bad_pixels', %args);
+	last STEPS;
       };
 
-      when ('multiply')  {
+      ($args[0] eq 'multiply') and do  {
 	$self->scalemask($args[2]);
-	print $self->report("Multiply image by ".$self->scalemask, 'cyan') if $args{verbose};
-	$self->elastic_image->inplace->mult($self->scalemask, 0);
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('multiply', %args);
+	last STEPS;
       };
 
-      when ('areal')  {
+      ($args[0] eq 'areal') and do  {
 	$self->operation($args[1]);
 	$self->radius($args[3]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
-	$self->do_step('areal', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
+	$self->do_step('areal', %args);
+	last STEPS;
       };
 
-      when ('lonely')  {
+      ($args[0] eq 'lonely') and do  {
 	$self->lonely_pixel_value($args[1]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
-	$self->do_step('lonely_pixels', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
+	$self->do_step('lonely_pixels', %args);
+	last STEPS;
       };
 
-      when ('social')  {
+      ($args[0] eq 'social') and do  {
 	$self->social_pixel_value($args[1]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
-	$self->do_step('social_pixels', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
+	$self->do_step('social_pixels', %args);
+	last STEPS;
       };
 
-      when ('entire') {
+      ($args[0] eq 'entire') and do {
 	print $self->report("Using entire image", 'cyan') if $args{verbose};
 	$self->elastic_image(PDL::Core::ones($self->columns, $self->rows));
+	last STEPS;
       };
 
-      when ('map') {
+      ($args[0] eq 'map') and do {
 	$self->deltae($args[1]);
 	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
-	$self->do_step('mapmask', write=>$out[-1], verbose=>$args{verbose}, unity=>$set_npixels);
+	$self->do_step('mapmask', %args);
+	last STEPS;
       };
 
-      default {
-	print report("I don't know what to do with \"$st\"", 'bold red');
-      };
+      print report("I don't know what to do with \"$st\"", 'bold red');
     };
   };
 
@@ -220,11 +237,6 @@ sub remove_bad_pixels {
 sub do_step {
   my ($self, $step, @args) = @_;
   my %args = @args;
-  $args{write}    ||= 0;
-  $args{verbose}  ||= 0;
-  $args{unity}    ||= 0;
-  $args{pass}     ||= 0;
-  $args{vertical} ||= 0;
   my $ret = $self->$step(\%args);
   if ($ret->status == 0) {
     die $self->report($ret->message, 'bold red').$/;
@@ -233,6 +245,22 @@ sub do_step {
   };
   $self->eimax($self->elastic_image->flat->max);
   $self->npixels($ret->status) if $args{unity};
+
+  if ($args{plot}) {
+    my $save = $self->prompt;
+    $self->prompt('        Hit return to plot the next step>');
+    my $cbm = int($self->elastic_image->max);
+    if ($cbm < 1) {
+      $cbm = 1;
+    } elsif ($cbm > $self->bad_pixel_value/10) {
+      $cbm = $self->bad_pixel_value/10;
+    };
+    $self->cbmax($cbm);# if $step =~ m{social};
+    $self->plot_mask;
+    $self->pause(-1);
+    $self->prompt($save);
+  };
+
   undef $ret;
   return 1;
 };
@@ -278,6 +306,21 @@ sub bad_pixels {
   return $ret;
 };
 
+sub multiply {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+
+  $self->elastic_image->inplace->mult($self->scalemask, 0);
+
+  my $str = $self->report("Multiply image by ".$self->scalemask, 'cyan');
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
+  $ret->message($str);
+  return $ret;
+
+};
+
 sub lonely_pixels {
   my ($self, $rargs) = @_;
   my %args = %$rargs;
@@ -293,44 +336,15 @@ sub lonely_pixels {
   my ($h,$w) = $ei->dims;
   my $onoff = $ei->gt(0,0);
   my $before = $onoff->sum;
+  ## this simple convolution will measure the number of neighbors
   my $smoothed = $onoff->conv2d(PDL::Core::ones(3,3), {Boundary => 'Truncate'});
 
+  ## set pixels smaller than $lpv to 0
   $ei->inplace->mult(1-$smoothed->le($lpv,0),0);
   $self->elastic_image($ei);
 
   my $onval  = $ei->gt(0,0)->sum;
   my $offval = $h*$w-$onval;
-
-  # my ($removed, $on, $off, $co, $ro, $cc, $rr) = (0,0,0);
-  # foreach my $co (0 .. $ncols) {
-  #   foreach my $ro (0 .. $nrows) {
-
-  #     ++$off, next if ($ei->at($co, $ro) == 0);
-
-  #     my $count = 0;
-  #   OUTER: foreach my $cc (-1 .. 1) {
-  # 	next if (($co == 0) and ($cc < 0));
-  # 	next if (($co == $ncols) and ($cc > 0));
-  # 	foreach my $rr (-1 .. 1) {
-  # 	  next if (($cc == 0) and ($rr == 0));
-  # 	  next if (($ro == 0) and ($rr < 0));
-  # 	  next if (($ro == $nrows) and ($rr > 0));
-
-  # 	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
-  # 	};
-  #     };
-  #     if ($count < $lpv) {
-  # 	$ei -> ($co, $ro) .= 0;
-  # 	## for .=, see assgn in PDL::Ops
-  # 	## for ->() syntax see PDL::NiceSlice
-  # 	++$removed;
-  # 	++$off;
-  #     } else {
-  # 	$ei -> ($co, $ro) .= 1 if ($args{unity});
-  # 	++$on;
-  #     };
-  #   };
-  # };
 
   my $str = $self->report("Lonely pixel step", 'cyan');
   $str   .= sprintf "\tRemoved %d lonely pixels\n", $before - $onval;
@@ -586,7 +600,7 @@ sub areal {
   #   ## for .=, see assgn in PDL::Ops
   #   ## for ->() syntax see PDL::NiceSlice
   # };
-  $self->elastic_image($smoothed);
+  $self->elastic_image($ei*$smoothed);
   $self->remove_bad_pixels;
 
   my $str = $self->report("Areal ".$self->operation." step", 'cyan');

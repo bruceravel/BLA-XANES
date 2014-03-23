@@ -12,8 +12,12 @@ with 'Xray::BLA::Mask';
 with 'Xray::BLA::IO';
 with 'Xray::BLA::Backend::Imager';
 with 'Xray::BLA::Pause';
+with 'Xray::BLA::Plot';
+
+with 'Demeter::Project';
+
 use MooseX::Aliases;
-#use Moose::Util::TypeConstraints;
+use Moose::Util::TypeConstraints;
 
 use PDL::Lite;
 use PDL::NiceSlice;
@@ -23,9 +27,9 @@ use PDL::IO::Dumper;
 use File::Copy;
 use File::Path;
 use File::Spec;
-use Graphics::GnuplotIF;
 use List::Util qw(sum max);
 use List::MoreUtils qw(pairwise);
+use Math::Random;
 use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 use Term::Sk;
@@ -48,11 +52,11 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-#enum 'BlaTasks' => [qw(herfd rixs point map mask xes test list none)];
-#coerce 'BlaTasks',
-#  from 'Str',
-#  via { lc($_) };
-has 'task'		 => (is => 'rw', isa => 'Str',  default => q{none},
+enum 'BlaTasks' => [qw(herfd rixs point map mask xes test list none)];
+coerce 'BlaTasks',
+  from 'Str',
+  via { lc($_) };
+has 'task'		 => (is => 'rw', isa => 'BlaTasks',  default => q{none},
 			     documentation => "The data processing task as set by the calling program.");
 has 'colored'		 => (is => 'rw', isa => 'Bool', default => 1,
 			     documentation => "A flag for turning colored output on and off.");
@@ -74,6 +78,8 @@ has 'energycounterwidth' => (is => 'rw', isa => 'Str', default => 5,
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 			     trigger => sub{my ($self, $new) = @_; mkpath($new) if not -d $new;},
 			     documentation => "The location on disk to which processed data and images are written.");
+has 'cleanup'		 => (is => 'rw', isa => 'Bool', default => 0,
+			     documentation => "A flag for removing outfolder when the process finishes -- should be 0 for CLI and 1 for GUI.");
 has 'outimage'           => (is => 'rw', isa => 'Str', default => q{gif},
 			     documentation => "The default output image type, typically either gif or tif.");
 
@@ -220,8 +226,35 @@ has 'steps' => (
 		documentation => "An array reference containing the user-specified steps of the mask creation process."
 	       );
 
-has 'gp' => (is => 'rw', isa => 'Graphics::GnuplotIF', default => sub{Graphics::GnuplotIF->new(style => 'lines')});
+#has 'gp' => (is => 'rw', isa => 'Graphics::GnuplotIF', default => sub{Graphics::GnuplotIF->new(style => 'lines')});
+has 'xdata' => (
+		traits    => ['Array'],
+		is        => 'rw',
+		isa       => 'ArrayRef',
+		default   => sub { [] },
+		handles   => {
+			      'push_xdata'  => 'push',
+			      'pop_xdata'   => 'pop',
+			      'clear_xdata' => 'clear',
+			     },
+		documentation => "An array reference containing the x-axis data for plotting."
+	       );
+has 'ydata' => (
+		traits    => ['Array'],
+		is        => 'rw',
+		isa       => 'ArrayRef',
+		default   => sub { [] },
+		handles   => {
+			      'push_ydata'  => 'push',
+			      'pop_ydata'   => 'pop',
+			      'clear_ydata' => 'clear',
+			     },
+		documentation => "An array reference containing the y-axis data for plotting."
+	       );
 
+has 'sentinal'  => (traits  => ['Code'],
+		    is => 'rw', isa => 'CodeRef', default => sub{sub{1}},
+		    handles => {call_sentinal => 'execute',});
 
 #enum 'Xray::BLA::Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
 has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
@@ -233,6 +266,14 @@ sub import {
   warnings->import;
 };
 
+sub DEMOLISH {
+  my ($self) = @_;
+  return $self if not $self->cleanup;
+  my $err;
+  rmtree($self -> outfolder, {error=>\$err}) if -d $self->outfolder;
+  #print $err, $/ if $err;
+  return $self;
+};
 
 sub report {
   my ($self, $string, $color) = @_;
@@ -281,24 +322,24 @@ sub parse_emission_line {	# return an array reference containing the elastic ene
   return [$list[0]] if ($#list == 0);  # one energy in list
 
   my @elastic = ();
-  given ($list[1]) {
+ EMISSION: {
 
-    when ('to') {		# <start> to <end> by <step>
+    ($list[1] eq 'to') and do {	# <start> to <end> by <step>
       my $eee = $list[0];	#    0     1   2    3    4
       push @elastic, $eee;
       while ($eee < $list[2]) {
 	$eee += $list[4];
 	push @elastic, $eee;
       };
+      last EMISSION;
     };
 
-    when (m{\d+}) {		# list of energies
-      @elastic = @list
+    ($list[1] =~ m{\d+}) and do { # list of energies
+      @elastic = @list;
+      last EMISSION;
     };
 
-    default {			# list of energies, I guess
-      @elastic = @list
-    };
+    @elastic = @list;
 
   };
   return \@elastic;
@@ -402,6 +443,8 @@ sub scan {
   $args{xdiini}  ||= q{};
   my $ret = Xray::BLA::Return->new;
   local $|=1;
+  $self->clear_xdata;
+  $self->clear_ydata;
 
   my (@data, @point);
 
@@ -414,6 +457,7 @@ sub scan {
     @point = ();
     my @list = split(" ", $_);
 
+    $self->call_sentinal($list[-1]);
     my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
     push @point, $list[0];
     push @point, sprintf("%.10f", $loop->status/$list[3]);
@@ -421,6 +465,8 @@ sub scan {
     push @point, $loop->status;
     push @point, @list[1..2];
     push @data, [@point];
+    $self->push_xdata($point[0]);
+    $self->push_ydata($point[1]);
   };
   close $SCAN;
 
@@ -572,19 +618,24 @@ sub compute_xes {
   return $ret;
 };
 
+sub randomstring {
+  my ($self, $length) = @_;
+  $length ||= 6;
+  my $rs = q{};
+  foreach (1..$length) {
+    $rs .= chr(int(26*random_uniform)+97);
+  };
+  return $rs;
+};
 
-sub do_plot {
-  my ($self, $fname, @args) = @_;
-  my %args = @args;
-  $args{type}  ||= q{data};
-  $args{title} ||= q{};
-  $args{pause} ||= q{-1};
-  my $str = ($args{type} eq 'data') ? 'plot \'' . $fname . "' with lines title '" . $args{title} . "'\n"
-          :                           'load \'' . $fname . "'\n";
-  #print $str;
-  $self->gp->gnuplot_cmd($str);
-  $self->pause($args{pause});
-}
+sub is_windows {
+  my ($class) = @_;
+  return (($^O eq 'MSWin32') or ($^O eq 'cygwin'));
+};
+sub is_osx {
+  my ($class) = @_;
+  return ($^O eq 'darwin');
+};
 
 
 __PACKAGE__->meta->make_immutable;

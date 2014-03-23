@@ -59,52 +59,21 @@ sub animate {
 ## to do only the chore that needs to be done here
 package Imager;
 
+use vars qw($WIDTH);
+$WIDTH = 487;
+
 sub gsl {
   #my $self = shift;
   #my $y    = shift;
   #$_[0]->_valid_image or return;
-  return i_glinf($_[0]->{IMG}, 0, $_[0]->getwidth, $_[1]);
+  return i_glinf($_[0]->{IMG}, 0, $WIDTH, $_[1]);
 };
-
-
-#has 'elastic_image' => (is => 'rw', isa => 'Imager');
-
-# sub copy_image {
-#   my ($self, $image) = @_;
-#   my $p = $image->copy();
-#   return $p;
-# };
-
-# sub write_image {
-#   my ($self, $image, $file) = @_;
-#   $image->write(file=>$file);
-#   return $image;
-# };
-
-# sub get_pixel {
-#   my ($self, $image, $x, $y) = @_;
-#   my @rgba = $image->getpixel(x=>$x, y=>$y, type=>'float')->rgba;
-#   return round($rgba[0]*BIT_DEPTH);
-# };
-
-# ## see http://www.molar.is/en/lists/imager-devel/2012-01/0000.shtml
-# ## and http://www.molar.is/en/lists/imager-devel/2012-01/0001.shtml
-# sub set_pixel {
-#   my ($self, $image, $x, $y, $value) = @_;
-#   $value ||= 0;
-#   $image->setpixel(x=>$x, y=>$y, color=>Imager::Color::Float->new($value/BIT_DEPTH, 0, 0));
-# };
-
-
-
 
 1;
 
-
-
 =head1 NAME
 
-Xray::BLA::Backends::Imager - Use Imager as the BLA imagine handling backend
+Xray::BLA::Backends::Imager - Use Imager as the BLA image handling backend
 
 =head1 DESCRIPTION
 

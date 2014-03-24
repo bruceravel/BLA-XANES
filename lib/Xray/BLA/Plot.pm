@@ -54,8 +54,9 @@ sub plot_xanes {
   $args{title} ||= q{};
   $args{pause} = q{-1} if not defined $args{pause};
 
+  (my $legend = $args{title}) =~ s{_}{\\\\_}g;
   gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
-	with=>'lines', legend=>$args{title}, PDL->new($self->xdata), PDL->new($self->ydata));
+	with=>'lines', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata));
   $self->pause($args{pause}) if $args{pause};
 }
 

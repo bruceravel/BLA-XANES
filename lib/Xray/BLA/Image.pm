@@ -2,37 +2,60 @@ package Xray::BLA::Image;
 
 use Moose;
 use PDL::Lite;
+use PDL::Graphics::Simple;
+use PDL::Graphics::Gnuplot;
+use PDL::IO::FlexRaw;
+use PDL::NiceSlice;
 
 has 'parent' => (is => 'rw', isa => 'Xray::BLA');
 has 'image' =>  (is => 'rw', isa => 'PDL', default => sub {PDL::null});
-# has 'image' => (
-# 		metaclass => 'Collection::Array',
-# 		is        => 'rw',
-# 		isa       => 'ArrayRef[ArrayRef]',
-# 		default   => sub { [] },
-# 		provides  => {
-# 			      'push'  => 'push_image',
-# 			      'pop'   => 'pop_image',
-# 			      'clear' => 'clear_image',
-# 			     }
-# 	       );
 
-use constant BIT_DEPTH => 2**32;
+use Const::Fast;
+##const my $BIT_DEPTH   => 2**32;
+const my $IMAGE_WIDTH => 487;
 
+## A million thanks to Chris Marshall for his help on the problem
+## of reading signed 32 bit tiff files!
+## see http://mailman.jach.hawaii.edu/pipermail/perldl/2014-March/008623.html
 sub Read {
   my ($self, $file) = @_;
-  my @lol = ();
-  my $img = $self->parent->read_image($file);
-  foreach my $r (0 .. $self->parent->get_rows($img)-1) {
-    my @row = $self->parent->get_row($img, $r);
-    push @lol, \@row;
-    #$self->push_image(\@row);
-  };
-  my $p = PDL->new(\@lol);
-  ## this multiplication is faster done here with PDL than in X::B::Backend::Imager
-  $p = $p * BIT_DEPTH;
-  $self->image($p);
+  my $bytes =  -s $file;
+  my $longs = $bytes / 4;
+
+  my $img  = readflex($file, [ { Type=>'long', NDims=>1, Dims=>[$longs] } ]);
+  my $im2d = $img(1024:-1)->splitdim(0,$IMAGE_WIDTH);
+  $im2d->badflag(1);
+  #$im2d->inplace->setvaltobad(0);
+  $self->image($im2d);
 };
+
+# use Inline C => Config => LIBS => '-ltiff';
+# use Inline C => <<'END';
+#   #include <tiffio.h>
+#   void tvx_img_size (const char *file) {
+#     TIFF *tif=TIFFOpen(file, "r");
+#     uint32 width, height;
+#     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
+#     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
+#     TIFFClose(tif);
+#
+#     Inline_Stack_Vars;
+# Inline_Stack_Reset;
+# Inline_Stack_Push(sv_2mortal(newSViv(width)));
+# Inline_Stack_Push(sv_2mortal(newSViv(height)));
+# Inline_Stack_Done;
+#   }
+# END
+
+# sub dimensions {
+#   my ($self, $file) = @_;
+#   my ($width,$height) = tvx_img_size('example-s32.tif');
+#   #print "width = $width\nheight = $height\n";
+#   $self->image_width($width);
+#   $self->image_height($height);
+#   return $self;
+# };
+
 
 
 __PACKAGE__->meta->make_immutable;

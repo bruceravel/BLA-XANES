@@ -10,7 +10,7 @@ use Moose;
 #use Moose::Util qw(apply_all_roles);
 with 'Xray::BLA::Mask';
 with 'Xray::BLA::IO';
-with 'Xray::BLA::Backend::Imager';
+#with 'Xray::BLA::Backend::Imager';
 with 'Xray::BLA::Pause';
 with 'Xray::BLA::Plot';
 
@@ -262,8 +262,8 @@ has 'sentinal'  => (traits  => ['Code'],
 		    handles => {call_sentinal => 'execute',});
 
 #enum 'Xray::BLA::Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
-has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
-		    documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
+#has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
+#		    documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
 
 sub import {
   my ($class) = @_;
@@ -463,7 +463,7 @@ sub scan {
     @point = ();
     my @list = split(" ", $_);
 
-    $self->call_sentinal($list[-1]) if not ($i % 5);
+    $self->call_sentinal($list[-1]) if not ($i % 20);
     my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
     push @point, $list[0];
     push @point, sprintf("%.10f", $loop->status/$list[3]);
@@ -893,7 +893,7 @@ from the values of C<stub>, C<energy>, and C<tiffolder>.
 
 =item C<elastic_image>
 
-This contains the backend object corresponding to the elastic image.
+This contains the PDL of the elastic image.
 
 =item C<npixels>
 
@@ -1048,9 +1048,7 @@ See L<Xray::BLA::Mask> for details about the mask generation steps.
 =item C<check>
 
 Confirm that the scan file and elastic image taken from the values of
-C<stub> and C<energy> exist and can be read.  Import an imaging
-backend and perform checks to make sure that it can support the 32 bit
-tiff images.
+C<stub> and C<energy> exist and can be read.
 
 This is the first thing done by the C<mask> method and must be the
 initial chore of any script using this library.
@@ -1239,19 +1237,12 @@ This requires perl 5.10 or later.
 
 =item *
 
-L<PDL>
+L<PDL>, L<PDL::IO::FlexRaw>, L<PDL::IO::Pic>,
+L<PDL::Graphics::Simple>, L<PDL::Graphics::Gnuplot>
 
 =item *
 
-L<Moose>
-
-=item *
-
-L<MooseX::AttributeHelpers>
-
-=item *
-
-L<MooseX::Aliases>
+L<Moose>, L<MooseX::AttributeHelpers>, L<MooseX::Aliases>
 
 =item *
 
@@ -1271,37 +1262,9 @@ L<Text::Template>
 
 =item *
 
-L<Imager>
-
-=item *
-
 L<Xray::XDI>  (optional)
 
 =back
-
-=head2 Image Magick
-
-As delivered to an Ubuntu system, Image Magick cannot handle the TIFF
-files as written by the Pilatus 100K imagine detector.  In order to be
-able to use Image Magick, it must be recompiled with a larger bit
-depth.  This is done by downloading and unpacking the tarball, then
-doing
-
-      ./configure --with-quantum-depth=32
-
-I also rebuilt the perl wrapper which comes with the Image Magick
-source code.  This also was a bit tricky.  My Ubuntu system has perl
-5.10.1 and therefore has a F<libperl.5.10.1.so>.  It did not, however,
-have a F<libperl.so> symlinked to it.  To get the perl wrapper to
-build, I had to do
-
-      sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
-
-Adjust the version number on the perl library as needed.
-
-I have not been able to rebuild Image Magick with Windows and
-MinGW. Happily L<Imager> works out of the box with MinGW and
-Strawberry Perl.  Currently, the Image Magick backend is disabled.
 
 =head1 BUGS AND LIMITATIONS
 

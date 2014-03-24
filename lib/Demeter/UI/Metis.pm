@@ -109,7 +109,7 @@ sub OnInit {
   $app->{main} -> Show( 1 );
   $app->{main} -> Refresh;
   $app->{main} -> Update;
-  $app->{main} -> status("Welcome to Metis, copyright 2012-2014 Bruce Ravel, Jeremy Kropf");
+  $app->{main} -> status("Welcome to Metis version $Xray::BLA::VERSION, copyright 2012-2014 Bruce Ravel, Jeremy Kropf");
 
   $app->{main} -> SetSizer($vbox);
   return 1;
@@ -176,6 +176,30 @@ sub set_parameters {
 
   return $app;
 };
+
+sub howlong {
+  my ($self, $start, $id) = @_;
+  my $finish = DateTime->now( time_zone => 'floating' );
+  my $dur = $finish->delta_ms($start);
+  $id ||= 'That';
+  my $text;
+  if ($dur->minutes) {
+    if ($dur->minutes == 1) {
+      $text = sprintf "%s took %d minute and %d seconds.", $id, $dur->minutes, $dur->seconds;
+    } else {
+      $text = sprintf "%s took %d minutes and %d seconds.", $id, $dur->minutes, $dur->seconds;
+    };
+  } else {
+    if ($dur->seconds == 1) {
+      $text = sprintf "%s took %d second.", $id, $dur->seconds;
+    } else {
+      $text = sprintf "%s took %d seconds.", $id, $dur->seconds;
+    };
+  };
+  return $text;
+};
+
+
 
 
 package Wx::Frame;

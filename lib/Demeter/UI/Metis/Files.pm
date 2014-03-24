@@ -41,7 +41,7 @@ sub new {
   $gbs -> Add($self->{element},       Wx::GBPosition->new(0,3));
   $gbs -> Add($self->{line_label},    Wx::GBPosition->new(0,4));
   $gbs -> Add($self->{line},          Wx::GBPosition->new(0,5));
-  $self->{element}->SetSelection(get_Z($element)-1);
+  $self->{element}->SetSelection(get_Z($element)-1) if $element;
   $self->{line}->SetStringSelection($line);
   $app->mouseover($self->{stub}, "Specify the base of the scan and image filenames.");
   $app->mouseover($self->{element}, "Specify the absorber element.");

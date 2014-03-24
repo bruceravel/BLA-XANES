@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Cwd;
+use DateTime;
 use File::Copy;
 
 use Wx qw( :everything );
@@ -88,6 +89,7 @@ sub new {
 sub plot_herfd {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
+  my $start = DateTime->now( time_zone => 'floating' );
   my $np = $app->{Files}->{image_list}->GetCount;
   $app->{spectrum}->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
   my $ret = $app->{spectrum} -> scan(verbose=>0, xdiini=>q{});
@@ -98,7 +100,7 @@ sub plot_herfd {
   $self->{save_herfd}   -> Enable(1);
   $self->{herfdbox}->SetLabel(' HERFD ('.$app->{spectrum}->energy.')');
   $self->{current} = $app->{spectrum}->energy;
-  $app->{main}->status("Plotted HERFD with emission energy = ".$app->{spectrum}->energy);
+  $app->{main}->status("Plotted HERFD with emission energy = ".$app->{spectrum}->energy.$app->howlong($start, '.  That'));
   undef $busy;
 };
 
@@ -124,6 +126,8 @@ sub save_herfd {
   copy(File::Spec->catfile($app->{spectrum}->outfolder, $fname), $file);
   $app->{main}->status("Saved HERFD to ".$file);
 };
+
+
 
 1;
 

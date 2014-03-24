@@ -179,28 +179,6 @@ sub check {
     return $ret;
   };
 
-  # $self->backend('ImageMagick') if $self->backend eq 'Image::Magick';
-  # if (not $self->backend) {	# try Imager
-  #   my $imager_exists       = eval "require Imager" || 0;
-  #   $self->backend('Imager') if $imager_exists;
-  # };
-  # if (not $self->backend) {	# try Image::Magick
-  #   my $image_magick_exists = eval "require Image::Magick" || 0;
-  #   $self->backend('ImageMagick') if $image_magick_exists;
-  # };
-  # if (not $self->backend) {
-  #   $ret->message("No BLA backend has been defined");
-  #   $ret->status(0);
-  #   return $ret;
-  # };
-
-  # eval {apply_all_roles($self, 'Xray::BLA::Backend::'.$self->backend)};
-  # if ($@) {
-  #   $ret->message("BLA backend Xray::BLA::Backend::".$self->backend." could not be loaded");
-  #   $ret->status(0);
-  #   return $ret;
-  # };
-
   my $img = Xray::BLA::Image->new(parent=>$self);
   $self->elastic_image($img->Read($self->elastic_file));
 

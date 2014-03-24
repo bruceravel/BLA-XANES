@@ -79,15 +79,25 @@ sub plot_xes {
 
 Xray::BLA::Plot - A plotting method for BLA-XANES
 
-=head1 SYNOPSIS
-
-   $spectrum->plot_mask;
-
 =head1 DESCRIPTION
 
 =head1 METHODS
 
+=over 4
 
+=item C<plot_mask>
+
+=item C<plot_energy_point>
+
+=item C<plot_xanes>
+
+=item C<plot_xes>
+
+=item C<plot_rixs>
+
+=item C<plot_map>
+
+=back
 
 =head1 DEPENDENCIES
 

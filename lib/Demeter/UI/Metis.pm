@@ -23,7 +23,7 @@ use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 use base 'Wx::App';
 
 my $icon_dimension = 30;
-my @utilities = qw(Files Mask Data Config); # Help);
+my @utilities = qw(Files Mask Data Config);
 
 use Const::Fast;
 const my $Files  => Wx::NewId();
@@ -99,7 +99,7 @@ sub OnInit {
   $filemenu->Append($Files,    "Show Files tool\tCtrl+1" );
   $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
   $filemenu->Append($Data,     "Show Data tool\tCtrl+3" );
-  $filemenu->Append($Config,   "Show Data tool\tCtrl+4" );
+  $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4" );
   $filemenu->AppendSeparator;
   $filemenu->Append(wxID_EXIT, "E&xit\tCtrl+q" );
   $bar->Append( $filemenu,     "&Metis" );
@@ -112,8 +112,6 @@ sub OnInit {
   $app->{main} -> status("Welcome to Metis, copyright 2012-2014 Bruce Ravel, Jeremy Kropf");
 
   $app->{main} -> SetSizer($vbox);
-  #$vbox -> Fit($tb);
-  #$vbox -> SetSizeHints($tb);
   return 1;
 };
 
@@ -210,3 +208,116 @@ sub status {
 };
 
 1;
+
+=head1 NAME
+
+Demeter::UI::Metis - BLA data processing
+
+=head1 VERSION
+
+This documentation refers to Xray::BLA version 1.
+
+=head1 DESCRIPTION
+
+Metis is a graphical interface the Xray::BLA package for processing
+data from an energy dispersive bent Laue analyzer spectrometer in
+which the signal is dispersed onto the face of a Pilatus camera.
+
+=head1 DEPENDENCIES
+
+Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
+
+=head1 BUGS AND LIMITATIONS
+
+=over 4
+
+=item *
+
+More error checking, edge cases.  For example, what happens when a
+stub + folders does not return a sensible pile of stuff?
+
+=item *
+
+Debugging tools.  A text dialog with the Xray::BLA atributes would be
+very helpful.
+
+=item *
+
+Persistance?  Is anytihng more that the preferences yaml necessary?
+
+=item *
+
+pixel count in output column data file is not set
+
+=item *
+
+widgets for selecting folders
+
+=item *
+
+how are element and line used?
+
+=item *
+
+save steps is not quite complete -- need all the things from Config
+tool
+
+=item *
+
+XES
+
+=item *
+
+RIXS
+
+=item *
+
+Map and mapmask
+
+=item *
+
+entire image mask
+
+=item *
+
+aggregate map from set of elastic images
+
+=item *
+
+save processed elastic image / final map; mask development animations
+
+=item *
+
+PNG option for output images
+
+=item *
+
+some kind of system for specifying file naming patterns
+
+=back
+
+Please report problems as issues at the github site
+L<https://github.com/bruceravel/BLA-XANES>
+
+Patches are welcome.
+
+=head1 AUTHOR
+
+Bruce Ravel (bravel AT bnl DOT gov)
+
+L<http://bruceravel.github.io/BLA-XANES/>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2006-2014 Bruce Ravel and Jeremy Kropf.  All rights
+reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See L<perlgpl>.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=cut
+

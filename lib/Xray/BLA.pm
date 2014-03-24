@@ -3,7 +3,7 @@ use Xray::BLA::Return;
 use Xray::BLA::Image;
 
 use version;
-our $VERSION = version->new('0.7');
+our $VERSION = version->new('1');
 use feature "switch";
 
 use Moose;

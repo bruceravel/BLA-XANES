@@ -49,8 +49,10 @@ sub new {
 
   my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', , 'share', "metis_logo.png");
   my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
+  $gbs -> Add(Wx::StaticText->new($self, -1, q{ }, wxDefaultPosition, [50,-1]),
+	      Wx::GBPosition->new(0,6));
   $gbs -> Add(Wx::StaticBitmap->new($self, -1, $logo, wxDefaultPosition, [100,100]),
-	      Wx::GBPosition->new(0,6), Wx::GBSpan->new(4,1));
+	      Wx::GBPosition->new(0,7), Wx::GBSpan->new(4,1));
 
 
   my $scanfolder = $app->{spectrum}->scanfolder || q{};
@@ -127,9 +129,8 @@ sub fetch {
   $self->{image_list}->InsertItems(\@image_list,0);
 
   foreach my $e (@elastic_list) {
-    if ($e =~ m{elastic_(\d+)_}) {
+    ($e =~ m{elastic_(\d+)_}) and
       $app->{spectrum}->push_elastic_energies($1);
-    };
   };
 
 
@@ -139,7 +140,6 @@ sub fetch {
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{spectrum}->elastic_energies};
-  #$app->{Mask}->{energy} -> SetSelection(0);
 
   $app->{main}->status("Found elastic and image files for $stub");
 
@@ -187,3 +187,54 @@ sub view {
 };
 
 1;
+
+
+=head1 NAME
+
+Demeter::UI::Metis::Files - Metis' file organization tool
+
+=head1 VERSION
+
+This documentation refers to Xray::BLA version 1.
+
+=head1 DESCRIPTION
+
+Metis is a graphical interface the Xray::BLA package for processing
+data from an energy dispersive bent Laue analyzer spectrometer in
+which the signal is dispersed onto the face of a Pilatus camera.
+
+The Files tool is used to organize the mountain of images from the
+Pilatus and to prepare for further data processing.  This tool also
+facilitates visualization of the raw images.
+
+=head1 DEPENDENCIES
+
+Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
+
+=head1 BUGS AND LIMITATIONS
+
+Please report problems to the Ifeffit Mailing List
+(L<http://cars9.uchicago.edu/mailman/listinfo/ifeffit/>)
+
+Patches are welcome.
+
+=head1 AUTHOR
+
+Bruce Ravel (bravel AT bnl DOT gov)
+
+L<http://bruceravel.github.io/demeter/>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2006-2014 Bruce Ravel and Jeremy Kropf.  All rights
+reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See L<perlgpl>.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=cut
+

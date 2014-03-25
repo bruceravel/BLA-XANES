@@ -296,17 +296,11 @@ Persistance?  Is anything more than the preferences yaml necessary?
 
 =item *
 
-need to enforce flattening to 1 as the last step.  currently social
-flattens and nothing else does.  social should not flatten and there
-should be a flattening step that happens automatically.
-
-=item *
-
 widgets for selecting folders
 
 =item *
 
-how are element and line used?  (needed for map making)
+how are element and line used?  (needed to set white color band in a map)
 
 =item *
 
@@ -329,7 +323,11 @@ outside of metis.
 
 =item *
 
-some kind of system for specifying file naming patterns
+some kind of system for specifying file naming patterns -- this is
+somewhat less important now that the contents of the elastic and image
+lists on the Files tool are used explicitly.  if this is still
+ambiguous, a file selection dialog can be used to select content for
+the lists.
 
 =back
 

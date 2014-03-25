@@ -119,6 +119,12 @@ sub mask {
 	last STEPS;
       };
 
+      ($args[0] eq 'andmask') and do {
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('andmask', %args);
+	last STEPS;
+      };
+
       print report("I don't know what to do with \"$st\"", 'bold red');
     };
   };
@@ -147,12 +153,12 @@ sub mask {
 ##################################################################################
 
 sub check {
-  my ($self) = @_;
+  my ($self, $elastic) = @_;
 
   my $ret = Xray::BLA::Return->new;
 
   ## does elastic file exist?
-  my $elastic = join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
+  $elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
   $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
   if (not -e $self->elastic_file) {
     $ret->message("Elastic image file \"".$self->elastic_file."\" does not exist");
@@ -199,15 +205,6 @@ sub check {
 sub remove_bad_pixels {
   my ($self) = @_;
   $self->elastic_image->inplace->mult(1-$self->bad_pixel_mask,0);
-  # foreach my $pix (@{$self->bad_pixel_list}) {
-  #   my $co = $pix->[0];
-  #   my $ro = $pix->[1];
-  #   ##print join("|", $co, $ro, $self->elastic_image->at($co, $ro)), $/;
-  #   $self->elastic_image->($co, $ro) .= 0;
-  #   $self->eimax($self->elastic_image->flat->max)
-  #   ## for .=, see assgn in PDL::Ops
-  #   ## for ->() syntax see PDL::NiceSlice
-  # };
 };
 
 
@@ -262,7 +259,6 @@ sub bad_pixels {
   my $ei    = $self->elastic_image;
   my $bpv   = $self->bad_pixel_value;
   my $wpv   = $self->weak_pixel_value;
-  my $nrows = $self->rows - 1;
 
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
   my $bad  = $ei->gt($bpv,0);	# mask of bad pixels
@@ -311,6 +307,19 @@ sub entire_image {
   return $ret;
 };
 
+sub andmask {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+
+  $self->elastic_image->inplace->gt(0,0);
+  my $str = $self->report("Making AND mask", 'cyan');
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
+  $ret->message($str);
+  return $ret;
+};
+
 sub lonely_pixels {
   my ($self, $rargs) = @_;
   my %args = %$rargs;
@@ -319,8 +328,6 @@ sub lonely_pixels {
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
   my $ei    = $self->elastic_image;
   my $lpv   = $self->lonely_pixel_value;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
 
 
   my ($h,$w) = $ei->dims;
@@ -352,13 +359,9 @@ sub social_pixels {
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
   my $spv   = $self->social_pixel_value;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
 
-
-  my $onoff = $ei->gt(0,0);
+  my $onoff = $self->elastic_image->gt(0,0);
   my $before = $onoff->sum;
   my $kernel = PDL::Core::ones(3,3);
   if ($args{vertical}) {
@@ -368,52 +371,11 @@ sub social_pixels {
   };
   my $smoothed = $onoff->conv2d($kernel, {Boundary => 'Truncate'});
 
-
-  my ($h,$w) = $ei->dims;
-  my $on  = $smoothed->gt($spv,0);
+  my ($h,$w) = $self->elastic_image->dims;
+  my $on  = $smoothed->ge($spv,0);
   my $onval  = $on->sum;
   my $offval = $h*$w-$onval;
-  $self->elastic_image($on);
-
-  # my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
-  # my @addlist = ();
-  # my ($arg, $val) = (q{}, q{});
-  # foreach $co (0 .. $ncols) {
-  #   foreach $ro (0 .. $nrows) {
-
-  #     if ($ei->at($co, $ro) > 0) {
-  # 	++$on;
-  # 	$ei -> ($co, $ro) .= 1;
-  # 	next;
-  #     }
-
-  #     $count = 0;
-  #   OUTER: foreach my $cc (-1 .. 1) {
-  # 	next if (($co == 0) and ($cc == -1));
-  # 	next if (($co == $ncols) and ($cc == 1));
-  # 	foreach my $rr (-1 .. 1) {
-  # 	  next if (($cc == 0) and ($rr == 0));
-  # 	  next if (($ro == 0) and ($rr == -1));
-  # 	  next if (($ro == $nrows) and ($rr == 1));
-
-  # 	  ++$count if ($ei->at($co+$cc, $ro+$rr) != 0);
-  # 	  last OUTER if ($count > $spv);
-  # 	};
-  #     };
-  #     if ($count > $spv) {
-  # 	push @addlist, [$co, $ro];
-  # 	++$added;
-  # 	++$on;
-  #     } else {
-  # 	++$off;
-  #     };
-  #   };
-  # };
-  # foreach my $px (@addlist) {
-  #   $ei -> ($px->[0], $px->[1]) .= 1; # if ($args{unity});
-  #   ## for .=, see assgn in PDL::Ops
-  #   ## for ->() syntax see PDL::NiceSlice
-  # };
+  $self->elastic_image($self->elastic_image->or2($on,0));
   $self->remove_bad_pixels;
 
   my $text = $args{pass} ? " (pass ".$args{pass}.")" : q{};
@@ -428,76 +390,76 @@ sub social_pixels {
   return $ret;
 };
 
-sub convert_to_and {
-  my ($self, $rargs) = @_;
-  my %args = %$rargs;
-  my $ret = Xray::BLA::Return->new;
+# sub convert_to_and {
+#   my ($self, $rargs) = @_;
+#   my %args = %$rargs;
+#   my $ret = Xray::BLA::Return->new;
 
-  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
-  my $spv   = $self->social_pixel_value;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
+#   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+#   my $ei    = $self->elastic_image;
+#   my $spv   = $self->social_pixel_value;
+#   my $nrows = $self->rows - 1;
+#   my $ncols = $self->columns - 1;
 
-  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
-  foreach $co (0 .. $ncols) {
-    foreach $ro (0 .. $nrows) {
-      if ($ei->at($co, $ro) > 0) {
-	++$on;
-	$ei -> ($co, $ro) .= 1;
-      } else {
-	++$off;
-      };
-    };
-  };
-  $self->remove_bad_pixels;
+#   my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
+#   foreach $co (0 .. $ncols) {
+#     foreach $ro (0 .. $nrows) {
+#       if ($ei->at($co, $ro) > 0) {
+# 	++$on;
+# 	$ei -> ($co, $ro) .= 1;
+#       } else {
+# 	++$off;
+#       };
+#     };
+#   };
+#   $self->remove_bad_pixels;
 
-  my $str = $self->report("Convert to AND mask", 'cyan');
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->status($on);
-  $ret->message($str);
-  return $ret;
-};
+#   my $str = $self->report("Convert to AND mask", 'cyan');
+#   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+#     $on, $off, $on+$off;
+#   $self->elastic_image->wim($args{write}) if $args{write};
+#   ## wim: see PDL::IO::Pic
+#   $ret->status($on);
+#   $ret->message($str);
+#   return $ret;
+# };
 
-sub row_normalize {
-  my ($self, $rargs) = @_;
-  my %args = %$rargs;
-  my $ret = Xray::BLA::Return->new;
+# sub row_normalize {
+#   my ($self, $rargs) = @_;
+#   my %args = %$rargs;
+#   my $ret = Xray::BLA::Return->new;
 
-  ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
-  my $nrows = $self->rows - 1;
-  my $ncols = $self->columns - 1;
+#   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
+#   my $ei    = $self->elastic_image;
+#   my $nrows = $self->rows - 1;
+#   my $ncols = $self->columns - 1;
 
-  my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
-  foreach $ro (0 .. $nrows) {
-    my $rownorm = $ei->(:,$ro)->sum;
-    #my ($bins, $pops) = $ei->(:,$ro)->hist(0, $rownorm, $rownorm/6);
-    #my $cutoff = $bins->(3); #($bins->(2) - $bins(1)) / 2;
-    foreach $co (0 .. $ncols) {
-      if ($ei->at($co, $ro) > 0) {
-	$ei -> ($co, $ro) .=  $ei -> ($co, $ro) / $rownorm;
-    	#$ei -> ($co, $ro) .= 1;
-    	++$on;
-      } else {
-    	#$ei -> ($co, $ro) .= 0;
-    	++$off;
-      };
-    };
-  };
+#   my ($added, $on, $off, $count, $co, $ro) = (0,0,0,0,0,0);
+#   foreach $ro (0 .. $nrows) {
+#     my $rownorm = $ei->(:,$ro)->sum;
+#     #my ($bins, $pops) = $ei->(:,$ro)->hist(0, $rownorm, $rownorm/6);
+#     #my $cutoff = $bins->(3); #($bins->(2) - $bins(1)) / 2;
+#     foreach $co (0 .. $ncols) {
+#       if ($ei->at($co, $ro) > 0) {
+# 	$ei -> ($co, $ro) .=  $ei -> ($co, $ro) / $rownorm;
+#     	#$ei -> ($co, $ro) .= 1;
+#     	++$on;
+#       } else {
+#     	#$ei -> ($co, $ro) .= 0;
+#     	++$off;
+#       };
+#     };
+#   };
 
-  my $str = $self->report("Row normalize", 'cyan');
-  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
-    $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->status($on);
-  $ret->message($str);
-  return $ret;
-};
+#   my $str = $self->report("Row normalize", 'cyan');
+#   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+#     $on, $off, $on+$off;
+#   $self->elastic_image->wim($args{write}) if $args{write};
+#   ## wim: see PDL::IO::Pic
+#   $ret->status($on);
+#   $ret->message($str);
+#   return $ret;
+# };
 
 sub mapmask {
   my ($self, $rargs) = @_;
@@ -560,11 +522,11 @@ sub areal {
   my $radius = $self->radius;
   my $kernel = PDL::Core::ones(2*$radius+1,2*$radius+1) / (2*$radius+1)**2;
   my $smoothed = $ei->conv2d($kernel, {Boundary => 'Truncate'});
-  $smoothed = $smoothed->gt(1,0);
-  my $on = $smoothed->sum;
+  #$smoothed = $smoothed->gt(1,0);
+  my $on = $smoothed->gt(0,0)->sum;
   my $off = $h*$w - $on;
 
-  $self->elastic_image($ei*$smoothed);
+  $self->elastic_image($smoothed);
   $self->remove_bad_pixels;
 
   my $str = $self->report("Areal ".$self->operation." step", 'cyan');

@@ -6,6 +6,7 @@ use warnings;
 use Cwd;
 use DateTime;
 use File::Copy;
+use File::Spec;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
@@ -93,6 +94,23 @@ sub plot_herfd {
   my $np = $app->{Files}->{image_list}->GetCount;
   $app->{spectrum}->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
   $app->{spectrum}->npixels($app->{spectrum}->elastic_image->sum);
+
+  ## make sure the AND mask step has been done.  doing it twice has no impact
+  my %args = ();
+  $args{write}   = q{};
+  $args{verbose} = 0;
+  $args{unity}   = 0;
+  $app->{spectrum} -> do_step('andmask', %args);
+  my $steplist = $app->{Mask}->{steps_list};
+  if ($steplist->GetString($steplist->GetCount-1) ne 'andmask') {
+    $steplist->Append("andmask");
+  };
+
+  my $image_list = $app->{Files}->{image_list};
+  foreach my $i (0 .. $image_list->GetCount-1) {
+    $app->{spectrum}->push_scan_file_list(File::Spec->catfile($app->{spectrum}->tifffolder, $image_list->GetString($i)));
+  };
+
   my $ret = $app->{spectrum} -> scan(verbose=>0, xdiini=>q{});
   my $title = $app->{spectrum}->stub . ' at ' . $app->{spectrum}->energy;
   $app->{spectrum} -> plot_xanes($ret->message, title=>$title, pause=>0);

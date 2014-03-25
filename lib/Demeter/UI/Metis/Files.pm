@@ -169,7 +169,7 @@ sub view {
   };
 
   $app->{spectrum}->elastic_file($file);
-  my $ret = $app->{spectrum}->check;
+  my $ret = $app->{spectrum}->check($img);
   if ($ret->status == 0) {
      $app->{main}->status($ret->message, 'alert');
      return;

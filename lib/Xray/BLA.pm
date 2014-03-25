@@ -188,6 +188,19 @@ has 'elastic_image_list' => (
 			    documentation => "An array reference containing the PDL objects of the measured elastic images."
 			    );
 
+has 'scan_file_list' => (
+			    traits    => ['Array'],
+			    is        => 'rw',
+			    isa       => 'ArrayRef',
+			    default   => sub { [] },
+			    handles   => {
+					  'push_scan_file_list'  => 'push',
+					  'pop_scan_file_list'   => 'pop',
+					  'clear_scan_file_list' => 'clear',
+					 },
+			    documentation => "An array reference containing the fully resolved file names of the measured images at every energy point in a scan."
+			   );
+
 has 'herfd_file_list' => (
 			  traits    => ['Array'],
 			  is        => 'rw',
@@ -408,9 +421,14 @@ sub apply_mask {
   my $ret = Xray::BLA::Return->new;
   local $|=1;
 
-  my $pattern = '%s_%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd.tif';
-  my $fname = sprintf($pattern, $self->stub, $tif);
-  my $image = File::Spec->catfile($self->tiffolder, $fname);
+  my $image;
+  if ($self->scan_file_list) {
+    $image = $self->scan_file_list->[$tif-1];
+  } else {
+    my $pattern = '%s_%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd.tif';
+    my $fname = sprintf($pattern, $self->stub, $tif);
+    $image = File::Spec->catfile($self->tiffolder, $fname);
+  };
   if (not -e $image) {
     warn "\tskipping $image, file not found\n" if not $args{silence};
     $ret->message("skipping $image, file not found\n");

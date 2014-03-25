@@ -59,67 +59,79 @@ sub new {
   my $gbs = Wx::GridBagSizer->new( 5,5 );
   $vbox ->  Add($gbs, 0, wxGROW|wxALL, 5);
 
+  my $row = 0;
+
   $self->{do_bad}    = Wx::Button->new($self, -1, "&Bad/weak step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{badlabel}  = Wx::StaticText->new($self, -1, 'Bad value:');
-  $self->{badvalue}  = Wx::TextCtrl->new($self, -1, $app->{spectrum}->bad_pixel_value);
+  $self->{badvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->bad_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 10000);
   $self->{weaklabel} = Wx::StaticText->new($self, -1, 'Weak value:');
-  $self->{weakvalue} = Wx::TextCtrl->new($self, -1, $app->{spectrum}->weak_pixel_value);
-  $gbs ->Add($self->{do_bad},    Wx::GBPosition->new(0,0));
-  $gbs ->Add($self->{badlabel},  Wx::GBPosition->new(0,1));
-  $gbs ->Add($self->{badvalue},  Wx::GBPosition->new(0,2));
-  $gbs ->Add($self->{weaklabel}, Wx::GBPosition->new(0,3));
-  $gbs ->Add($self->{weakvalue}, Wx::GBPosition->new(0,4));
+  $self->{weakvalue} = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->weak_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 1000);
+  $gbs ->Add($self->{do_bad},    Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{badlabel},  Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{badvalue},  Wx::GBPosition->new($row,2));
+  $gbs ->Add($self->{weaklabel}, Wx::GBPosition->new($row,3));
+  $gbs ->Add($self->{weakvalue}, Wx::GBPosition->new($row,4));
   $app->mouseover($self->{do_bad},    "Remove bad pixels weak pixels from the image.");
   $app->mouseover($self->{badvalue},  "Pixels above this value are considered bad.");
   $app->mouseover($self->{weakvalue}, "Pixels below this value are considered weak.");
 
-  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1]);
-  $self->{sociallabel}  = Wx::StaticText->new($self, -1, 'Social value:');
-  $self->{socialvalue}  = Wx::TextCtrl->new($self, -1, $app->{spectrum}->social_pixel_value);
-  $self->{socialvertical} = Wx::CheckBox->new($self, -1, '&Vertical');
-  $gbs ->Add($self->{do_social},   Wx::GBPosition->new(1,0));
-  $gbs ->Add($self->{sociallabel}, Wx::GBPosition->new(1,1));
-  $gbs ->Add($self->{socialvalue}, Wx::GBPosition->new(1,2));
-  $gbs ->Add($self->{socialvertical}, Wx::GBPosition->new(1,3));
-  $app->mouseover($self->{do_social},   "Include \"social\" pixels -- unlit pixels surrounded by enough lit pixels.");
-  $app->mouseover($self->{socialvalue}, "The number of neighboring lit pixels marking an unlit pixel as social.");
-  $app->mouseover($self->{socialvalue}, "Perform the social pixel step, but only considering pixels directly above and below.");
-
-  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1]);
-  $self->{lonelylabel}  = Wx::StaticText->new($self, -1, 'Lonely value:');
-  $self->{lonelyvalue}  = Wx::TextCtrl->new($self, -1, $app->{spectrum}->lonely_pixel_value);
-  $gbs ->Add($self->{do_lonely},    Wx::GBPosition->new(2,0));
-  $gbs ->Add($self->{lonelylabel}, Wx::GBPosition->new(2,1));
-  $gbs ->Add($self->{lonelyvalue}, Wx::GBPosition->new(2,2));
-  $app->mouseover($self->{do_lonely},   "Remove \"lonely\" pixels -- lit pixels surrounded by too many unlit pixels.");
-  $app->mouseover($self->{lonelyvalue}, "The number of neighboring unlit pixels marking an lit pixel as lonely.");
-
-  $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1]);
-  $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 2, 1000);
-  $gbs ->Add($self->{do_multiply},    Wx::GBPosition->new(3,0));
-  $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new(3,1));
-  $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
-
+  ++$row;
   $self->{do_areal}   = Wx::Button->new($self, -1, "&Areal step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{arealtype}  = Wx::Choice->new($self, -1, wxDefaultPosition, wxDefaultSize,
 					[qw(mean median)]);
   $self->{areallabel} = Wx::StaticText->new($self, -1, 'Radius:');
-  $self->{arealvalue} = Wx::TextCtrl->new($self, -1, $app->{spectrum}->radius);
-  $gbs ->Add($self->{do_areal},   Wx::GBPosition->new(4,0));
-  $gbs ->Add($self->{arealtype},  Wx::GBPosition->new(4,1));
-  $gbs ->Add($self->{areallabel}, Wx::GBPosition->new(4,2));
-  $gbs ->Add($self->{arealvalue}, Wx::GBPosition->new(4,3));
+  $self->{arealvalue} = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->radius, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 10);
+  $gbs ->Add($self->{do_areal},   Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{arealtype},  Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{areallabel}, Wx::GBPosition->new($row,2));
+  $gbs ->Add($self->{arealvalue}, Wx::GBPosition->new($row,3));
   $self->{arealtype}->SetSelection(0);
   $app->mouseover($self->{do_areal},   "Set each pixel to the average value of its neighbors within some radius.");
   $app->mouseover($self->{arealtype},  "Do the areal averaging as a mean or a median of surrounding pixels.  (Median is currently not implemented.)");
   $app->mouseover($self->{arealvalue}, "The \"radius\" of the averaging, a value of 1 uses a 3x3 square, 2 uses a 5x5 square.");
 
+  ++$row;
+  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{lonelylabel}  = Wx::StaticText->new($self, -1, 'Lonely value:');
+  $self->{lonelyvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->lonely_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 8);
+  $gbs ->Add($self->{do_lonely},   Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{lonelylabel}, Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{lonelyvalue}, Wx::GBPosition->new($row,2));
+  $app->mouseover($self->{do_lonely},   "Remove \"lonely\" pixels -- lit pixels surrounded by too many unlit pixels.");
+  $app->mouseover($self->{lonelyvalue}, "A lit pixel is lonely and will be removed if less than or equal to this number of neighbors are unlit.");
+
+  ++$row;
+  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{sociallabel}  = Wx::StaticText->new($self, -1, 'Social value:');
+  $self->{socialvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->social_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 8);
+  $self->{socialvertical} = Wx::CheckBox->new($self, -1, '&Vertical');
+  $gbs ->Add($self->{do_social},   Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{sociallabel}, Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{socialvalue}, Wx::GBPosition->new($row,2));
+  $gbs ->Add($self->{socialvertical}, Wx::GBPosition->new($row,3));
+  $app->mouseover($self->{do_social},   "Include \"social\" pixels -- unlit pixels surrounded by enough lit pixels.");
+  $app->mouseover($self->{socialvalue}, "An unlit pixel is social and will be included if greater tan or equal to this number of neighbors are lit.");
+  $app->mouseover($self->{socialvalue}, "Perform the social pixel step, but only considering pixels directly above and below.");
+
+  ++$row;
+  $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 2, 1000);
+  $gbs ->Add($self->{do_multiply},   Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
+  $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
+
+  ++$row;
   $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1]);
-  $gbs ->Add($self->{do_entire},   Wx::GBPosition->new(5,0));
+  $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,0));
   $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
 
+  ++$row;
+  $self->{do_andmask} = Wx::Button->new($self, -1, "Make AND mask", wxDefaultPosition, [$buttonwidth,-1]);
+  $gbs ->Add($self->{do_andmask},   Wx::GBPosition->new($row,0));
+  $app->mouseover($self->{do_andmask}, "Explicitly convert current mask to an AND mask (i.e. with only 0 and 1 values).");
 
-  foreach my $k (qw(bad social lonely multiply areal entire)) {
+
+  foreach my $k (qw(bad social lonely multiply areal entire andmask)) {
     EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
   };
 
@@ -157,7 +169,7 @@ sub new {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire savemask animation
+		    do_entire do_andmask savemask animation
 		    stub reset energylabel energy savesteps)) {
     $self->{$k} -> Enable(0);
   };
@@ -170,7 +182,16 @@ sub SelectEnergy {
   my $energy = $self->{energy}->GetStringSelection;
   $app->{spectrum}->energy($energy);
 
-  my $ret = $app->{spectrum}->check;
+  my $elastic_file;
+  my $elastic_list = $app->{Files}->{elastic_list};
+  foreach my $i (0 .. $elastic_list->GetCount-1) {
+    if ($elastic_list->GetString($i) =~ m{$energy}) {
+      $elastic_file = $elastic_list->GetString($i);
+      last;
+    };
+  };
+
+  my $ret = $app->{spectrum}->check($elastic_file);
   if ($ret->status == 0) {
      $app->{main}->status($ret->message, 'alert');
      return;
@@ -183,7 +204,7 @@ sub SelectEnergy {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire savemask animation)) {
+		    do_entire do_andmask savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $self->{steps_list}->Clear;
@@ -206,7 +227,7 @@ sub Reset {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire savesteps savemask animation)) {
+		    do_entire do_andmask savesteps savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
@@ -244,7 +265,7 @@ sub do_step {
 		      do_lonely lonelylabel lonelyvalue
 		      do_multiply multiplyvalue
 		      do_areal arealtype areallabel arealvalue
-		      do_entire savemask
+		      do_entire do_andmask savemask
 		      savesteps)) { # animation
       $self->{$k}->Enable(1);
     };
@@ -288,6 +309,10 @@ sub do_step {
   } elsif ($which eq 'entire') {
     $app->{spectrum} -> do_step('entire_image', %args);
     $self->{steps_list}->Append("entire image");
+
+  } elsif ($which eq 'andmask') {
+    $app->{spectrum} -> do_step('andmask', %args);
+    $self->{steps_list}->Append("andmask");
 
   };
   $app->{spectrum}->remove_bad_pixels;

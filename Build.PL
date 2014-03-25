@@ -20,17 +20,15 @@ my $build = Module::Build
 				#'Xray::XDI'                 => 0,
 				'Term::Sk'                  => '0.07',
 				'Text::Template'            =>  0,
-				#'Imager'                    =>  0.87,
 				'YAML::Tiny'                =>  0,
 			       },
 	 recommends         => {
-	 			#'Image::Magick'             => 0,
-	 			#'Imager'                    => 0.87,
 				'PDL::Graphics::Simple'     =>  0,
 				'PDL::Graphics::Gnuplot'    =>  0,
 	 		       },
 	 sign               => 1,
 	);
 $build->add_build_element('png');
+$build->add_build_element('ico');
 $build->create_build_script;
 

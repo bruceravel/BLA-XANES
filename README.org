@@ -14,10 +14,10 @@ A measurement set consists of
    energy.  These are used to make a mask which identifies which
    pixels contain signal related to specific emission energies.
 
-This software uses perl, [[https://metacpan.org/module/Imager][Imager]], and [[http://pdl.perl.org][PDL]] to process the images into a
-high resolution XANES spectrum.  Imager is used to import data from
-the signed 32 bit numbers.  That data is immediately pushed into a PDL
-object for all further processing.
+This software uses perl, [[https://metacpan.org/release/Moose][Moose]], and [[http://pdl.perl.org][PDL]] to process the images into a
+high resolution XANES spectrum.  The GUI, called Metis, uses WxWidgets
+and its perl bindings.  See [[file:lib/Xray/BLA/Image.pm][Xray::BLA::Image]] for how to import the
+signed 32 bit tiff images directly into PDL.
 
 ** Installation
 
@@ -374,51 +374,3 @@ This sum is the HERFD signal at that incident energy.
 A column data file is written containing the energy and several
 scalars from the original measurement and a column containing the
 HERFD signal.  This file can be imported directly into Athena.
-
-** Working with Imager
-
-Imager works out of the box on both Linux and Windows, although the
-way it handles 32-bit numbers with its inherent 24-bit sample depth is
-somewhat confusing.
-
-** Working with Image Magick
-
-In principle [[http://www.imagemagick.org/script/index.php][Image Magick]] can be used instead of Imager, but doing so
-is a bit of work.
-
-I am using [[http://www.imagemagick.org/script/index.php][Image Magick]] and its [[http://www.imagemagick.org/script/perl-magick.php][Perl interface]] as one of the image
-handling backends for this project.  As delivered, Image Magick cannot
-handle the TIFF files as written by the [[http://www.dectris.com/sites/pilatus100k.html][Pilatus 100K]] imagine detector.
-In order to be able to use Image Magick, it must be recompiled with a
-larger bit depth.  This is done by re-compiling from source code.
-
-You must have [[http://www.libtiff.org/][libtiff]] and its development libraries installed so that
-Image Magick gets compiled with support for tiff files.  On Ubuntu,
-it is called ~libtiff4-dev~.
-
-Grab the trunk of the Image Magick development version
-
-:       svn co https://www.imagemagick.org/subversion/ImageMagick/trunk ImageMagick
-
-then
-
-:      ./configure --with-quantum-depth=32
-
-Presumably, the same could be done with any Image Magick source
-tarball.
-
-I also rebuilt the perl wrapper which comes with the Image Magick
-source code in the ~PerlMagick~ folder.  This also was a bit tricky.
-My Ubuntu system has perl 5.10.1 and therefore has a
-~libperl.5.10.1.so~.  It did not, however, have a ~libperl.so~
-symlinked to it.  To get the perl wrapper to build, I had to do
-
-:      sudo ln -s /usr/lib/libperl.so.5.10.1 /usr/lib/libperl.so
-
-Adjust the version number on the perl library as needed for your
-computer.
-
-I was unable to compile Image Magick for Windows using MinGW, even
-armed with a fairly complete set of GnuWin32 libraries and even
-attempting it with a stable version (as opposed to the development
-trunk).  Oh well....

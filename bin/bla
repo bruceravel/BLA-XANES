@@ -7,7 +7,6 @@ BEGIN {
   };
 }
 
-use feature 'switch';
 use Xray::BLA; # automatically turns on strict and warnings
 use Xray::BLA::Image;
 use Config::IniFiles;
@@ -396,7 +395,7 @@ Jeremy Kropf (kropf AT anl DOT gov)
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.
+Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

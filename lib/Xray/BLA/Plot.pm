@@ -2,7 +2,7 @@ package Xray::BLA::Plot;
 
 =for Copyright
  .
- Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov).
+ Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf.
  All rights reserved.
  .
  This file is free software; you can redistribute it and/or

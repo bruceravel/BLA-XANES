@@ -44,11 +44,10 @@ sub OnInit {
   #EVT_CLOSE($app->{main}, sub{$app->on_close($_[1])});
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
-  $app->{spectrum}  = Xray::BLA->new();
+  $app->{spectrum}  = Xray::BLA->new(ui=>'wx', cleanup=>1);
   $app->{spectrum} -> task('herfd');
   $app->{spectrum} -> outfolder(File::Spec->catfile($app->{spectrum}->stash_folder,
 						    'metis-'.$app->{spectrum}->randomstring(5)));
-  $app->{spectrum} -> cleanup(1);
 
   $app->{yamlfile} = File::Spec->catfile($app->{spectrum}->dot_folder, 'metis.yaml');
   if (-e $app->{yamlfile}) {

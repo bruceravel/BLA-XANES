@@ -3,7 +3,7 @@ package Xray::BLA::IO;
 
 =for Copyright
  .
- Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov).
+ Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf.
  All rights reserved.
  .
  This file is free software; you can redistribute it and/or
@@ -163,8 +163,9 @@ sub energy_map {
 
   my $mapmask = PDL::Core::zeros($self->columns, $self->rows);
 
-  my $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (row %c of %m)',
-			      {freq => 's', base => 0, target=>$self->rows});
+  my $counter;
+  $counter = Term::Sk->new('Making map, time elapsed: %8t %15b (row %c of %m)',
+			   {freq => 's', base => 0, target=>$self->rows}) if ($self->ui eq 'cli');
   my $outfile = File::Spec->catfile($self->outfolder, $self->stub.'.map');
   my $maskfile = $self->mask_file("maskmap", $self->outimage);
 
@@ -176,7 +177,7 @@ sub energy_map {
   my $ncols = $self->columns - 1;
 
   foreach my $r (0 .. $self->rows-1) {
-    $counter->up if $self->screen;
+    $counter->up if ($self->screen and ($self->ui eq 'cli'));
 
     my @represented = map {[0]} (0 .. $self->columns-1);
     my @linemap = map {0} (0 .. $self->columns-1);
@@ -243,7 +244,7 @@ sub energy_map {
     };
     print $M $/;
   };
-  $counter->close if $self->screen;
+  $counter->close if ($self->screen and ($self->ui eq 'cli'));
   close $M;
   fdump($mapmask, $maskfile);
   print $self->report("Wrote calibration map to $outfile", 'bold green') if $args{verbose};

@@ -4,7 +4,6 @@ use Xray::BLA::Image;
 
 use version;
 our $VERSION = version->new('1');
-use feature "switch";
 
 use Moose;
 #use Moose::Util qw(apply_all_roles);
@@ -47,6 +46,12 @@ eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 
 ##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
 
+enum 'BlaModes' => [qw(cli wx)];
+coerce 'BlaModes',
+  from 'Str',
+  via { lc($_) };
+has 'ui'                 => (is => 'rw', isa => 'BlaModes', default => q{cli},
+			     documentation => "The user interaction mode of the current program, currently cli or wx.");
 has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The two-letter symbol of the absorber element.");
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
@@ -109,7 +114,6 @@ has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 has 'nbad'               => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of bad pixels found in the elastic image.");
 
-#has 'maskmode'           => (is => 'rw', isa => 'Int', default => 2, documentation => "<deprecated>");
 has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The radius used for the areal mean/median step of mask creation.");
 has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
@@ -136,18 +140,18 @@ has 'eimax'              => (is => 'rw', isa => 'Num', default => 0,
 			     documentation => "unit pixel size in mask");
 
 
-has 'bad_pixel_list' => (
-			 traits    => ['Array'],
-			 is        => 'rw',
-			 isa       => 'ArrayRef',
-			 default   => sub { [] },
-			 handles   => {
-				       'push_bad_pixel_list'  => 'push',
-				       'pop_bad_pixel_list'   => 'pop',
-				       'clear_bad_pixel_list' => 'clear',
-				      },
-			 documentation => "An array reference containing the x,y coordinates of the bad pixels."
-			);
+# has 'bad_pixel_list' => (
+# 			 traits    => ['Array'],
+# 			 is        => 'rw',
+# 			 isa       => 'ArrayRef',
+# 			 default   => sub { [] },
+# 			 handles   => {
+# 				       'push_bad_pixel_list'  => 'push',
+# 				       'pop_bad_pixel_list'   => 'pop',
+# 				       'clear_bad_pixel_list' => 'clear',
+# 				      },
+# 			 documentation => "An array reference containing the x,y coordinates of the bad pixels."
+# 			);
 has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			   documentation => "The PDL object containing the bad pixel mask.");
 
@@ -573,23 +577,6 @@ sub rixs_map {
 };
 
 
-# ## snarf (quietly!) the list of energies from the list used for the
-# ## next_energy function in Xray::Absoprtion::Elam
-# my $hash;
-# do {
-#   no warnings;
-#   $hash = $$Xray::Absorption::Elam::r_elam{line_list};
-# };
-# my @line_list = ();
-# foreach my $key (keys %$hash) {
-#   next unless exists $$hash{$key}->[2];
-#   next unless ($$hash{$key}->[2] > 100);
-#   push @line_list, $$hash{$key};
-# };
-# ## and sort by increasing energy
-# @line_list = sort {$a->[2] <=> $b->[2]} @line_list;
-
-
 
 ##################################################################################
 ## XES functionality
@@ -608,10 +595,11 @@ sub compute_xes {
 
   my @values  = ();
   my @npixels = ();
-  my $counter = Term::Sk->new('Computing XES, time elapsed: %8t %15b (emission energy %c of %m)',
-			      {freq => 's', base => 0, target=>$#{$self->elastic_energies}});
+  my $counter;
+  $counter = Term::Sk->new('Computing XES, time elapsed: %8t %15b (emission energy %c of %m)',
+			   {freq => 's', base => 0, target=>$#{$self->elastic_energies}}) if ($self->ui eq 'cli');
   foreach my $e (@{$self->elastic_energies}) {
-    $counter->up if $self->screen;
+    $counter->up if ($self->screen and ($self->ui eq 'cli'));
     $self -> energy($e);
     my $ret = $self -> read_mask(verbose=>0);
     print(0) && exit(1) if not $ret->status;
@@ -622,7 +610,7 @@ sub compute_xes {
     push @npixels, $np/$self->eimax;
     #print "$e  $value  $np\n";
   };
-  $counter->close if $self->screen;
+  $counter->close if ($self->screen and ($self->ui eq 'cli'));
   my $max = max(@npixels);
   @npixels = map {$max / $_} @npixels;
 
@@ -689,7 +677,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-0.7
+1
 
 =head1 SYNOPSIS
 
@@ -1373,7 +1361,7 @@ L<http://cars9.uchicago.edu/~ravel/software/>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011-2012 Bruce Ravel, Jeremy Kropf. All rights reserved.
+Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

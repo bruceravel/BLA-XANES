@@ -278,6 +278,7 @@ sub do_step {
 		      savesteps)) { # animation
       $self->{$k}->Enable(1);
     };
+    $self->{savemask}->Enable(0) if ($app->{spectrum}->is_windows);
     $self->{replot}->Enable(1);
     $self->{reset}->Enable(1);
     $app->{Data}->{stub}->SetLabel("Stub is ".$app->{spectrum}->stub);
@@ -380,12 +381,23 @@ sub replot {
   undef $busy;
 };
 
+## Need to install NetPbm and Tiff tools
+##   http://gnuwin32.sourceforge.net/packages/netpbm.htm
+##   http://gnuwin32.sourceforge.net/packages/tiff.htm
+## then need to make a copy of C:\GnuWin32\bin\ppm2tiff called C:\GnuWin32\bin\ppmtotiff
+##
+## Insanity!
+
 sub savemask {
   my ($self, $event, $app) = @_;
 
-  my $fname = $app->{spectrum}->stub . "_" . $app->{spectrum}->energy . "." . $app->{spectrum}->outimage;
+  my $fname = $app->{spectrum}->stub . "_" . $app->{spectrum}->energy . ".";
+  $fname .= ($app->{spectrum}->is_windows) ? 'tif' : $app->{spectrum}->outimage;
+  my $extensions = ($app->{spectrum}->is_windows) ?
+    "TIF (*.tif)|*.tif|All files (*)|*" :
+      "TIF, GIF, and PNG (*.tif;*.gif*.png)|*.tif|TIF (*.tif)|*.tif|GIF (*.gif)|*.gif|PNG (*.png)|*.png|All files (*)|*";
   my $fd = Wx::FileDialog->new( $app->{main}, "Save mask image", cwd, $fname,
-				"TIF, GIF, and PNG (*.tif;*.gif*.png)|*.tif|TIF (*.tif)|*.tif|GIF (*.gif)|*.gif|PNG (*.png)|*.png|All files (*)|*",
+				$extensions,
 				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
 				wxDefaultPosition);
   if ($fd->ShowModal == wxID_CANCEL) {
@@ -393,7 +405,13 @@ sub savemask {
     return;
   };
   my $file = $fd->GetPath;
-  $app->{spectrum}->elastic_image->wim($file);
+  my $args = ($app->{spectrum}->is_windows) ? {FORMAT=>'TIFF'} : {};
+  $app->{spectrum}->elastic_image->wim($file, $args);
+  if (($app->{spectrum}->is_windows) and ($file !~ m{tif\z})) {
+    $app->{main}->status("TIFF is the only output format for Windows.  A TIFF file was written regardless of the filename.");
+  } else {
+    $app->{main}->status("Saved mask image to $file");
+  };
 };
 
 sub animation {

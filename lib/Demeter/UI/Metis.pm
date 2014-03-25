@@ -286,6 +286,11 @@ Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
 
 =item *
 
+Fetching on Files page should reset Mask page, including unsetting the
+energy selection
+
+=item *
+
 More error checking, edge cases.  For example, what happens when a
 stub + folders does not return a sensible pile of stuff?
 

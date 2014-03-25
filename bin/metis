@@ -8,6 +8,11 @@ BEGIN {
   #use Wx::Perl::SplashFast Demeter::Here->here.'UI/Athena/share/logo.jpg', 4000;
   ## munge the PATH list on Windows so that Demeter's MinGW gets found first
   if (($^O eq 'MSWin32') or ($^O eq 'cygwin')) {
+    use File::Basename;
+    use File::Spec;
+    my @list = split(/\/|\\/, $0);
+    $ENV{GNUPLOT_BINARY} = File::Spec->catfile($list[0],$list[1],'c','bin','gnuplot','bin','gnuplot.exe');
+
     my (@not, @mingw);
     foreach my $folder (split(/;/, $ENV{PATH})) {
       if ($folder =~ m{mingw}i) { push @mingw, $folder } else { push @not, $folder };

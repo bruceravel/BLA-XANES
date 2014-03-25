@@ -31,5 +31,6 @@ my $build = Module::Build
 	 		       },
 	 sign               => 1,
 	);
+$build->add_build_element('png');
 $build->create_build_script;
 

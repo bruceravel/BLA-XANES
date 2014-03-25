@@ -29,6 +29,7 @@ use PDL::Image2D;
 sub mask {
   my ($self, @args) = @_;
   my %args = @args;
+  $args{elastic}  ||= q{};
   $args{unity}    ||= 0;
   $args{pass}     ||= 0;
   $args{vertical} ||= 0;
@@ -44,7 +45,7 @@ sub mask {
   $self->bad_pixel_mask(PDL::null);
   $self->npixels(0);
 
-  my $ret = $self->check;
+  my $ret = $self->check($args{elastic});
   if ($ret->status == 0) {
     die $self->report($ret->message, 'bold red');
   };

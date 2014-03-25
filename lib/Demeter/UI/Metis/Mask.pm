@@ -63,9 +63,9 @@ sub new {
 
   $self->{do_bad}    = Wx::Button->new($self, -1, "&Bad/weak step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{badlabel}  = Wx::StaticText->new($self, -1, 'Bad value:');
-  $self->{badvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->bad_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 10000);
+  $self->{badvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->bad_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 10000);
   $self->{weaklabel} = Wx::StaticText->new($self, -1, 'Weak value:');
-  $self->{weakvalue} = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->weak_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 1000);
+  $self->{weakvalue} = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->weak_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 0, 1000);
   $gbs ->Add($self->{do_bad},    Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{badlabel},  Wx::GBPosition->new($row,1));
   $gbs ->Add($self->{badvalue},  Wx::GBPosition->new($row,2));
@@ -80,7 +80,7 @@ sub new {
   $self->{arealtype}  = Wx::Choice->new($self, -1, wxDefaultPosition, wxDefaultSize,
 					[qw(mean median)]);
   $self->{areallabel} = Wx::StaticText->new($self, -1, 'Radius:');
-  $self->{arealvalue} = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->radius, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 10);
+  $self->{arealvalue} = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->radius, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 10);
   $gbs ->Add($self->{do_areal},   Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{arealtype},  Wx::GBPosition->new($row,1));
   $gbs ->Add($self->{areallabel}, Wx::GBPosition->new($row,2));
@@ -93,7 +93,7 @@ sub new {
   ++$row;
   $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{lonelylabel}  = Wx::StaticText->new($self, -1, 'Lonely value:');
-  $self->{lonelyvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->lonely_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 8);
+  $self->{lonelyvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->lonely_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 8);
   $gbs ->Add($self->{do_lonely},   Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{lonelylabel}, Wx::GBPosition->new($row,1));
   $gbs ->Add($self->{lonelyvalue}, Wx::GBPosition->new($row,2));
@@ -103,7 +103,7 @@ sub new {
   ++$row;
   $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1]);
   $self->{sociallabel}  = Wx::StaticText->new($self, -1, 'Social value:');
-  $self->{socialvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->social_pixel_value, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 8);
+  $self->{socialvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->social_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 8);
   $self->{socialvertical} = Wx::CheckBox->new($self, -1, '&Vertical');
   $gbs ->Add($self->{do_social},   Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{sociallabel}, Wx::GBPosition->new($row,1));
@@ -115,7 +115,7 @@ sub new {
 
   ++$row;
   $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1]);
-  $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 2, 1000);
+  $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 2, 1000);
   $gbs ->Add($self->{do_multiply},   Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
   $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
@@ -126,7 +126,7 @@ sub new {
   $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
 
   ++$row;
-  $self->{do_andmask} = Wx::Button->new($self, -1, "Make AND mask", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_andmask} = Wx::Button->new($self, -1, "Finish mask", wxDefaultPosition, [$buttonwidth,-1]);
   $gbs ->Add($self->{do_andmask},   Wx::GBPosition->new($row,0));
   $app->mouseover($self->{do_andmask}, "Explicitly convert current mask to an AND mask (i.e. with only 0 and 1 values).");
 
@@ -218,7 +218,16 @@ sub Reset {
   my $energy = $self->{energy}->GetStringSelection;
   $app->{spectrum}->energy($energy);
 
-  my $ret = $app->{spectrum}->check;
+  my $elastic_file;
+  my $elastic_list = $app->{Files}->{elastic_list};
+  foreach my $i (0 .. $elastic_list->GetCount-1) {
+    if ($elastic_list->GetString($i) =~ m{$energy}) {
+      $elastic_file = $elastic_list->GetString($i);
+      last;
+    };
+  };
+
+  my $ret = $app->{spectrum}->check($elastic_file);
   if ($ret->status == 0) {
      $app->{main}->status($ret->message, 'alert');
      return;
@@ -343,7 +352,16 @@ sub replot {
   my $energy = $self->{energy}->GetStringSelection;
   $app->{spectrum}->energy($energy);
 
-  my $ret = $app->{spectrum}->check;
+  my $elastic_file;
+  my $elastic_list = $app->{Files}->{elastic_list};
+  foreach my $i (0 .. $elastic_list->GetCount-1) {
+    if ($elastic_list->GetString($i) =~ m{$energy}) {
+      $elastic_file = $elastic_list->GetString($i);
+      last;
+    };
+  };
+
+  my $ret = $app->{spectrum}->check($elastic_file);
   if ($ret->status == 0) {
      $app->{main}->status($ret->message, 'alert');
      return;
@@ -355,7 +373,7 @@ sub replot {
   if ($animate) {
     $app->{spectrum}->mask(animate=>1);
   } else {
-    $app->{spectrum}->mask;
+    $app->{spectrum}->mask(elastic=>$elastic_file);
   };
   $self->plot($app);
   $app->{main}->status("Replotted mask for $energy.");

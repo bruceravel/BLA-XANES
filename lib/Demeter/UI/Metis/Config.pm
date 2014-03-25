@@ -33,20 +33,20 @@ sub new {
   $self->{tiffcounter}       = Wx::TextCtrl   -> new($self, -1, $app->{spectrum}->tiffcounter, wxDefaultPosition, [150,-1]);
   $gbs -> Add($self->{tiffcounter_label},    Wx::GBPosition->new(1,0));
   $gbs -> Add($self->{tiffcounter},          Wx::GBPosition->new(1,1));
-  $app->mouseover($self->{tiffcounter}, "The counter part of the name of the elastic TIFF file.");
+  $app->mouseover($self->{tiffcounter}, "The counter part of the name of the elastic TIFF file, eg the \"00001\" in \"Aufoil1_elastic_9713_00001.tif\".");
 
   $self->{energycounterwidth_label} = Wx::StaticText -> new($self, -1, "Energy index width");
   $self->{energycounterwidth}       = Wx::SpinCtrl   -> new($self, -1, $app->{spectrum}->energycounterwidth, wxDefaultPosition, [150,-1], wxSP_ARROW_KEYS, 1, 6);
   $gbs -> Add($self->{energycounterwidth_label},    Wx::GBPosition->new(2,0));
   $gbs -> Add($self->{energycounterwidth},          Wx::GBPosition->new(2,1));
-  $app->mouseover($self->{energycounterwidth}, "The width of the part of the TIFF file name for an energy point indicating the energy index.");
+  $app->mouseover($self->{energycounterwidth}, "The width of the part of the energy point TIFF file name indicating the energy index, eg the 5 digits in \"Aufoil1_00040.tif\".");
 
-  $self->{imageformat_label} = Wx::StaticText -> new($self, -1, "Output image format");
-  $self->{imageformat}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(gif tif)]);
-  $gbs -> Add($self->{imageformat_label},    Wx::GBPosition->new(3,0));
-  $gbs -> Add($self->{imageformat},          Wx::GBPosition->new(3,1));
-  $self->{imageformat}->SetStringSelection($app->{spectrum}->imageformat);
-  $app->mouseover($self->{imageformat}, "The file format used for static mask images.");
+  $self->{outimage_label} = Wx::StaticText -> new($self, -1, "Output image format");
+  $self->{outimage}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(gif tif png)]);
+  $gbs -> Add($self->{outimage_label},    Wx::GBPosition->new(3,0));
+  $gbs -> Add($self->{outimage},          Wx::GBPosition->new(3,1));
+  $self->{outimage}->SetStringSelection($app->{spectrum}->outimage);
+  $app->mouseover($self->{outimage}, "The file format used for static mask images.");
 
   $self->{set} = Wx::Button->new($self, -1, 'Set parameters');
   $gbs -> Add($self->{set},    Wx::GBPosition->new(4,0));
@@ -90,8 +90,8 @@ Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
 
 =head1 BUGS AND LIMITATIONS
 
-Please report problems to the Ifeffit Mailing List
-(L<http://cars9.uchicago.edu/mailman/listinfo/ifeffit/>)
+Please report problems as issues at the github site
+L<https://github.com/bruceravel/BLA-XANES>
 
 Patches are welcome.
 
@@ -99,7 +99,7 @@ Patches are welcome.
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
-L<http://bruceravel.github.io/demeter/>
+L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 

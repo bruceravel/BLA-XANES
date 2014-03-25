@@ -25,7 +25,7 @@ my $verbose     = 1;
 my $configfile  = q{};
 my $xdiini      = q{};      # 'share/bla.xdi.ini'
 my $nocolor     = 0;
-my $imageformat = 'gif';
+my $outimage    = 'gif';
 my $result      = GetOptions ("energy|e=i"   => \$energy,
 			      "incident|i=s" => \$point,
 			      'reuse|r'	     => \$reuse,
@@ -36,7 +36,7 @@ my $result      = GetOptions ("energy|e=i"   => \$energy,
 			      'config|c=s'   => \$configfile,
 			      'xdiini|x=s'   => \$xdiini,
 			      'nocolor|n'    => \$nocolor,
-			      'format|f=s'   => \$imageformat,
+			      'format|f=s'   => \$outimage,
 			      'quiet|q'	     => sub { $verbose = 0 },
 			      'help|h'	     => sub { pod2usage(1); exit 0},
 			    );
@@ -44,11 +44,11 @@ my $result      = GetOptions ("energy|e=i"   => \$energy,
 my $mode = $ARGV[0] || q{none};
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
-$imageformat = 'gif' if $imageformat ne 'tif';
+$outimage = 'gif' if ($outimage !~ m{png|tif});
 
 my $nonpublic = 'list|none|test';
 
-my $spectrum = Xray::BLA->new(outimage=>$imageformat);
+my $spectrum = Xray::BLA->new(outimage=>$outimage);
 if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
   $plot = 0;
   print $spectrum->report("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');

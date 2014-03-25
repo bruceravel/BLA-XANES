@@ -119,8 +119,6 @@ has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
 
 has 'imagescale'         => (is => 'rw', isa => 'Num', default => 40,
 			     documentation => "A scaling factor for the color scale when plotting images.  A bigger number leads to a smaller range of the plot.");
-has 'imageformat'        => (is => 'rw', isa => 'Str', default => 'gif',
-			     documentation => "The output static image format, typically either gif or tif");
 
 #enum 'Xray::BLA::Projections' => ['median', 'mean'];
 #coerce 'Xray::BLA::Projections',
@@ -624,6 +622,25 @@ sub compute_xes {
   print $self->report("Wrote $outfile", 'bold green') if $args{verbose};
   return $ret;
 };
+
+
+######################################################################
+#### debuging tools
+
+sub attribute_report {
+  my ($self) = @_;
+  my @list = $self->meta->get_attribute_list;
+  my $text = q{};
+  foreach my $a (sort @list) {
+    my $this = $self->$a;
+    $this = join("  ;  ", @{$this}) if ($a eq 'steps');
+    $text .= sprintf "%-20s : %s\n", $a, $this;
+  };
+  return $text;
+};
+
+######################################################################
+#### general tools
 
 sub randomstring {
   my ($self, $length) = @_;
@@ -1280,15 +1297,6 @@ Use the energy map to create a mask with a specified energy width.
 
 =item *
 
-A flag for plotting (herfd, xes, and map)
-
-=item *
-
-Scan file format is currently hardwired.  In the future, will need to
-adapt to different columns.
-
-=item *
-
 In the future, will need a more sophisticated mechanism for relating
 C<stub> to scan file and to image files -- some kind of templating
 scheme, I suspect
@@ -1345,12 +1353,9 @@ Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://cars9.uchicago.edu/~ravel/software/>
 
-This software was created with advice from and in collaboration with
-Jeremy Kropf (kropf AT anl DOT gov)
-
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.
+Copyright (c) 2011-2012 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

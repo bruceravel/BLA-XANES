@@ -92,6 +92,7 @@ sub plot_herfd {
   my $start = DateTime->now( time_zone => 'floating' );
   my $np = $app->{Files}->{image_list}->GetCount;
   $app->{spectrum}->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
+  $app->{spectrum}->npixels($app->{spectrum}->elastic_image->sum);
   my $ret = $app->{spectrum} -> scan(verbose=>0, xdiini=>q{});
   my $title = $app->{spectrum}->stub . ' at ' . $app->{spectrum}->energy;
   $app->{spectrum} -> plot_xanes($ret->message, title=>$title, pause=>0);
@@ -100,6 +101,7 @@ sub plot_herfd {
   $self->{save_herfd}   -> Enable(1);
   $self->{herfdbox}->SetLabel(' HERFD ('.$app->{spectrum}->energy.')');
   $self->{current} = $app->{spectrum}->energy;
+  $app->set_parameters;	    # save config file becasue, presumably, we like the current mask creation values
   $app->{main}->status("Plotted HERFD with emission energy = ".$app->{spectrum}->energy.$app->howlong($start, '.  That'));
   undef $busy;
 };
@@ -158,8 +160,8 @@ Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
 
 XES and RIXS tools not yet working.
 
-Please report problems to the Ifeffit Mailing List
-(L<http://cars9.uchicago.edu/mailman/listinfo/ifeffit/>)
+Please report problems as issues at the github site
+L<https://github.com/bruceravel/BLA-XANES>
 
 Patches are welcome.
 
@@ -167,7 +169,7 @@ Patches are welcome.
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
-L<http://bruceravel.github.io/demeter/>
+L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 

@@ -107,8 +107,8 @@ sub mask {
       };
 
       ($args[0] eq 'entire') and do {
-	print $self->report("Using entire image", 'cyan') if $args{verbose};
-	$self->elastic_image(PDL::Core::ones($self->columns, $self->rows));
+	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
+	$self->do_step('entire_image', %args);
 	last STEPS;
       };
 
@@ -182,16 +182,16 @@ sub check {
   my $img = Xray::BLA::Image->new(parent=>$self);
   $self->elastic_image($img->Read($self->elastic_file));
 
-  if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
-    $ret->message("This program requires Imager version 0.87 or later.");
-    $ret->status(0);
-    return $ret;
-  };
-  if (($self->backend eq 'ImageMagick') and ($self->get_version !~ m{Q32})) {
-    $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
-    $ret->status(0);
-    return $ret;
-  };
+  # if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
+  #   $ret->message("This program requires Imager version 0.87 or later.");
+  #   $ret->status(0);
+  #   return $ret;
+  # };
+  # if (($self->backend eq 'ImageMagick') and ($self->get_version !~ m{Q32})) {
+  #   $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
+  #   $ret->status(0);
+  #   return $ret;
+  # };
 
   return $ret;
 };
@@ -296,7 +296,19 @@ sub multiply {
   ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
+};
 
+sub entire_image {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+
+  $self->elastic_image(PDL::Core::ones($self->elastic_image->dims));
+  my $str = $self->report("Using entire image", 'cyan');
+  $self->elastic_image->wim($args{write}) if $args{write};
+  ## wim: see PDL::IO::Pic
+  $ret->message($str);
+  return $ret;
 };
 
 sub lonely_pixels {
@@ -552,32 +564,6 @@ sub areal {
   my $on = $smoothed->sum;
   my $off = $h*$w - $on;
 
-#  my $radius = $self->radius;
-  # foreach my $co (0 .. $ncols) {
-  #   $counter->up if $self->screen;
-  #   $cdn = ($co < $radius)        ? 0      : $co-$radius;
-  #   $cup = ($co > $ncols-$radius) ? $ncols : $co+$radius;
-  #   foreach my $ro (0 .. $nrows) {
-
-  #     $rdn = ($ro < $radius)        ? 0      : $ro-$radius;
-  #     $rup = ($ro > $nrows-$radius) ? $nrows : $ro+$radius;
-  #     my $slice = $ei->($cdn:$cup, $rdn:$rup);
-  #     $value = ($self->operation eq 'median') ? $slice->flat->oddmedover : int($slice->flat->average);
-  #     ## oddmedover, average: see PDL::Ufunc
-  #     ## flat: see PDL::Core
-  #     ## also see PDL::NiceSlice for matrix slicing syntax
-
-  #     $value = 1 if (($value > 0) and ($args{unity}));
-  #     push @list, [$co, $ro, $value];
-  #     ($value > 0) ? ++$on : ++$off;
-  #   };
-  # };
-  # $counter->close if $self->screen;
-  # foreach my $point (@list) {
-  #   $ei -> ($point->[0], $point->[1]) .= $point->[2];
-  #   ## for .=, see assgn in PDL::Ops
-  #   ## for ->() syntax see PDL::NiceSlice
-  # };
   $self->elastic_image($ei*$smoothed);
   $self->remove_bad_pixels;
 
@@ -682,14 +668,11 @@ C<mask> is true.
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
-L<http://cars9.uchicago.edu/~ravel/software/>
-
-This software was created with advice from and in collaboration with
-Jeremy Kropf (kropf AT anl DOT gov)
+L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All
+Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf. All
 rights reserved.
 
 This module is free software; you can redistribute it and/or modify it

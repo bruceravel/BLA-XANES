@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Xray::BLA;
+use Demeter::UI::Artemis::ShowText;
 
 use Chemistry::Elements qw(get_Z get_symbol);
 use File::Basename;
@@ -30,6 +31,7 @@ const my $Files  => Wx::NewId();
 const my $Mask   => Wx::NewId();
 const my $Data   => Wx::NewId();
 const my $Config => Wx::NewId();
+const my $Object => Wx::NewId();
 
 
 sub OnInit {
@@ -54,8 +56,12 @@ sub OnInit {
     foreach my $k (qw(stub scanfolder tifffolder element line)) {
       $app->{spectrum}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
-    foreach my $c (qw(imagescale tiffcounter energycounterwidth imageformat)) {
+    foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage)) {
       $app->{spectrum}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
+    };
+    foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
+		      lonely_pixel_value scalemask radius)) {
+      $app->{spectrum}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
     };
   } else {
     $app->{yaml} = YAML::Tiny -> new;
@@ -101,6 +107,8 @@ sub OnInit {
   $filemenu->Append($Data,     "Show Data tool\tCtrl+3" );
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4" );
   $filemenu->AppendSeparator;
+  $filemenu->Append($Object,   "View Xray::BLA attributes\tCtrl+0" );
+  $filemenu->AppendSeparator;
   $filemenu->Append(wxID_EXIT, "E&xit\tCtrl+q" );
   $bar->Append( $filemenu,     "&Metis" );
   $app->{main}->SetMenuBar( $bar );
@@ -140,6 +148,10 @@ sub OnMenuClick {
       $app->{book}->SetSelection(3);
       return;
     };
+    ($id == $Object)   and do {
+      $app->view_attributes;
+      return;
+    };
     ($id == wxID_EXIT) and do {
       $self->Close;
       return;
@@ -164,18 +176,36 @@ sub set_parameters {
   $app->{spectrum} -> imagescale($app->{Config}->{imagescale}->GetValue);
   $app->{spectrum} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
   $app->{spectrum} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
-  $app->{spectrum} -> imageformat($app->{Config}->{imageformat}->GetStringSelection);
+  $app->{spectrum} -> outimage($app->{Config}->{outimage}->GetStringSelection);
 
+  $app->{spectrum} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
+  $app->{spectrum} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
+  $app->{spectrum} -> social_pixel_value($app->{Mask}->{socialvalue}->GetValue);
+  $app->{spectrum} -> lonely_pixel_value($app->{Mask}->{lonelyvalue}->GetValue);
+  $app->{spectrum} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
+  $app->{spectrum} -> radius($app->{Mask}->{arealvalue}->GetValue);
 
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
   foreach my $k (qw(scanfolder tifffolder element line
-		    imagescale imageformat energycounterwidth tiffcounter)) {
+		    imagescale outimage energycounterwidth tiffcounter
+		    bad_pixel_value weak_pixel_value social_pixel_value
+		    lonely_pixel_value scalemask radius
+		  )) {
     $app->{yaml}->[0]->{$k} = $app->{spectrum}->$k;
   };
   $app->{yaml}->write($app->{yamlfile});
 
   return $app;
 };
+
+sub view_attributes {
+  my ($app) = @_;
+  my $dialog = Demeter::UI::Artemis::ShowText
+    -> new($app->{main}, $app->{spectrum}->attribute_report, 'Structure of Xray::BLA object')
+      -> Show;
+
+};
+
 
 sub howlong {
   my ($self, $start, $id) = @_;
@@ -262,16 +292,13 @@ stub + folders does not return a sensible pile of stuff?
 
 =item *
 
-Debugging tools.  A text dialog with the Xray::BLA atributes would be
-very helpful.
+Persistance?  Is anything more than the preferences yaml necessary?
 
 =item *
 
-Persistance?  Is anytihng more that the preferences yaml necessary?
-
-=item *
-
-pixel count in output column data file is not set
+need to enforce flattening to 1 as the last step.  currently social
+flattens and nothing else does.  social should not flatten and there
+should be a flattening step that happens automatically.
 
 =item *
 
@@ -279,20 +306,11 @@ widgets for selecting folders
 
 =item *
 
-how are element and line used?
+how are element and line used?  (needed for map making)
 
 =item *
 
-save steps is not quite complete -- need all the things from Config
-tool
-
-=item *
-
-XES
-
-=item *
-
-RIXS
+implement XES and RIXS
 
 =item *
 
@@ -300,19 +318,14 @@ Map and mapmask
 
 =item *
 
-entire image mask
-
-=item *
-
 aggregate map from set of elastic images
 
 =item *
 
-save processed elastic image / final map; mask development animations
-
-=item *
-
-PNG option for output images
+mask development animations.  according to the PERLDL mailing list,
+giving file.gif to wmpeg will cause it to write an animated gif,
+assuming ffmpeg is installed on the computer.  this needs testing
+outside of metis.
 
 =item *
 

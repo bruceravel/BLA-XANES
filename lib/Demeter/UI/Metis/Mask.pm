@@ -114,17 +114,34 @@ sub new {
   $app->mouseover($self->{arealtype},  "Do the areal averaging as a mean or a median of surrounding pixels.  (Median is currently not implemented.)");
   $app->mouseover($self->{arealvalue}, "The \"radius\" of the averaging, a value of 1 uses a 3x3 square, 2 uses a 5x5 square.");
 
-  foreach my $k (qw(bad social lonely multiply areal)) {
+  $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1]);
+  $gbs ->Add($self->{do_entire},   Wx::GBPosition->new(5,0));
+  $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
+
+
+  foreach my $k (qw(bad social lonely multiply areal entire)) {
     EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
   };
 
   $vbox ->  Add(1, 1, 2);
 
+  my $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
+  $self->{savemask} = Wx::Button -> new($self, -1, 'Save mask');
+  $svbox->Add($self->{savemask}, 1, wxGROW|wxALL, 5);
+  $self->{animation} = Wx::Button -> new($self, -1, 'Save animation');
+  $svbox->Add($self->{animation}, 1, wxGROW|wxALL, 5);
+  EVT_BUTTON($self, $self->{savemask}, sub{savemask(@_, $app)});
+  EVT_BUTTON($self, $self->{animation}, sub{animation(@_, $app)});
+  $app->mouseover($self->{savemask}, "Write the current mask to an image file.");
+  $app->mouseover($self->{animation}, "Save the mask processing steps as an animated gif.");
+
+
   $self->{replot} = Wx::Button -> new($self, -1, '&Replot');
   $vbox->Add($self->{replot}, 0, wxGROW|wxALL, 5);
   $self->{reset} = Wx::Button -> new($self, -1, 'Rese&t');
   $vbox->Add($self->{reset}, 0, wxGROW|wxALL, 5);
-  EVT_BUTTON($self, $self->{replot}, sub{replot(@_, $app)});
+  EVT_BUTTON($self, $self->{replot}, sub{replot(@_, $app, 0)});
   EVT_BUTTON($self, $self->{reset}, sub{Reset(@_, $app)});
   $self->{replot}->Enable(0);
   $self->{reset}->Enable(0);
@@ -140,6 +157,7 @@ sub new {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
+		    do_entire savemask animation
 		    stub reset energylabel energy savesteps)) {
     $self->{$k} -> Enable(0);
   };
@@ -164,7 +182,8 @@ sub SelectEnergy {
   foreach my $k (qw(do_social sociallabel socialvalue socialvertical
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
-		    do_areal arealtype areallabel arealvalue)) {
+		    do_areal arealtype areallabel arealvalue
+		    do_entire savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $self->{steps_list}->Clear;
@@ -187,7 +206,7 @@ sub Reset {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    savesteps)) {
+		    do_entire savesteps savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
@@ -225,7 +244,8 @@ sub do_step {
 		      do_lonely lonelylabel lonelyvalue
 		      do_multiply multiplyvalue
 		      do_areal arealtype areallabel arealvalue
-		      savesteps)) {
+		      do_entire savemask
+		      savesteps)) { # animation
       $self->{$k}->Enable(1);
     };
     $self->{replot}->Enable(1);
@@ -265,8 +285,12 @@ sub do_step {
     $self->{steps_list}->Append(sprintf("areal %s radius %d",
 					$app->{spectrum} -> operation,
 					$app->{spectrum} -> radius));
+  } elsif ($which eq 'entire') {
+    $app->{spectrum} -> do_step('entire_image', %args);
+    $self->{steps_list}->Append("entire image");
 
   };
+  $app->{spectrum}->remove_bad_pixels;
   $self->plot($app);
   $app->{main}->status("Plotted result of $which step.");
 
@@ -288,7 +312,8 @@ sub plot {
 
 
 sub replot {
-  my ($self, $event, $app) = @_;
+  my ($self, $event, $app, $animate) = @_;
+  $animate ||= 0;
   my $busy = Wx::BusyCursor->new();
   my $energy = $self->{energy}->GetStringSelection;
   $app->{spectrum}->energy($energy);
@@ -302,10 +327,45 @@ sub replot {
   foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
     $app->{spectrum}->push_steps($self->{steps_list}->GetString($n));
   };
-  $app->{spectrum}->mask;
+  if ($animate) {
+    $app->{spectrum}->mask(animate=>1);
+  } else {
+    $app->{spectrum}->mask;
+  };
   $self->plot($app);
   $app->{main}->status("Replotted mask for $energy.");
   undef $busy;
+};
+
+sub savemask {
+  my ($self, $event, $app) = @_;
+
+  my $fname = $app->{spectrum}->stub . "_" . $app->{spectrum}->energy . "." . $app->{spectrum}->outimage;
+  my $fd = Wx::FileDialog->new( $app->{main}, "Save mask image", cwd, $fname,
+				"TIF, GIF, and PNG (*.tif;*.gif*.png)|*.tif|TIF (*.tif)|*.tif|GIF (*.gif)|*.gif|PNG (*.png)|*.png|All files (*)|*",
+				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Saving mask image canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  $app->{spectrum}->elastic_image->wim($file);
+};
+
+sub animation {
+  my ($self, $event, $app) = @_;
+  my $fname = $app->{spectrum}->stub . "_" . $app->{spectrum}->energy . "." . $app->{spectrum}->outimage;
+  my $fd = Wx::FileDialog->new( $app->{main}, "Save mask image", cwd, $fname,
+				"GIF (*.gif)|*.gif|All files (*)|*",
+				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Saving animation canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  $self->replot($event, $app, 1);
 };
 
 sub save_steps {
@@ -323,11 +383,12 @@ sub save_steps {
   my $file = $fd->GetPath;
 
   my $text = "[measure]\n";
-  $text .= 'emission = ' . join(" ", @{$app->{spectrum}->elastic_energies}) . "\n";
-  foreach my $k (qw(scanfolder tifffolder element line)) {
-    $text .= sprintf("%s = %s\n", $k, $app->{spectrum}->$k);
+  $text .= 'emission           = ' . join(" ", @{$app->{spectrum}->elastic_energies}) . "\n";
+  foreach my $k (qw(scanfolder tifffolder element line tiffcounter energycounterwidth
+		    imagescale outimage)) {
+    $text .= sprintf("%-18s = %s\n", $k, $app->{spectrum}->$k);
   };
-  $text .= "outfolder = " . $fd->GetDirectory . "\n";
+  $text .= "outfolder          = " . $fd->GetDirectory . "\n";
   $text .= "\n[steps]\nsteps <<END\n";
   foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
     $text .= $self->{steps_list}->GetString($n) . "\n";
@@ -366,8 +427,8 @@ Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
 
 =head1 BUGS AND LIMITATIONS
 
-Please report problems to the Ifeffit Mailing List
-(L<http://cars9.uchicago.edu/mailman/listinfo/ifeffit/>)
+Please report problems as issues at the github site
+L<https://github.com/bruceravel/BLA-XANES>
 
 Patches are welcome.
 
@@ -375,7 +436,7 @@ Patches are welcome.
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
-L<http://bruceravel.github.io/demeter/>
+L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 

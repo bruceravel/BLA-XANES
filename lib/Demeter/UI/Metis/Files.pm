@@ -113,6 +113,7 @@ sub fetch {
 
   $app->set_parameters;
   $app->{spectrum} -> clear_elastic_energies;
+  $app->{spectrum} -> stub($stub);
 
   opendir(my $E, $image_folder);
   my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{$stub}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
@@ -213,8 +214,8 @@ Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
 
 =head1 BUGS AND LIMITATIONS
 
-Please report problems to the Ifeffit Mailing List
-(L<http://cars9.uchicago.edu/mailman/listinfo/ifeffit/>)
+Please report problems as issues at the github site
+L<https://github.com/bruceravel/BLA-XANES>
 
 Patches are welcome.
 
@@ -222,7 +223,7 @@ Patches are welcome.
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
-L<http://bruceravel.github.io/demeter/>
+L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 

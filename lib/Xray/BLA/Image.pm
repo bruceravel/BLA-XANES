@@ -27,6 +27,10 @@ sub Read {
   $im2d->badflag(1);
   #$im2d->inplace->setvaltobad(0);
   $self->image($im2d);
+  my ($c, $r) = $im2d->dims;
+  $self->parent->columns($c);
+  $self->parent->rows($r);
+  return $im2d;
 };
 
 # use Inline C => Config => LIBS => '-ltiff';

@@ -145,7 +145,8 @@ Write animation as a gif
 
 =back
 
-Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
+Please report problems as issues at the github site
+L<https://github.com/bruceravel/BLA-XANES>
 
 Patches are welcome.
 
@@ -153,11 +154,11 @@ Patches are welcome.
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
-L<http://cars9.uchicago.edu/~ravel/software/>
+L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011-2012 Bruce Ravel (bravel AT bnl DOT gov). All rights reserved.
+Copyright (c) 2011-2012 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

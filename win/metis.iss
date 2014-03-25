@@ -18,7 +18,7 @@
 ; TODO: check for other perl installations (eg. in the Path variable) and warn or even abort if there is another one
 
 [Setup]
-AppId={714B39D5-58E8-4545-877C-D89A238C4B23}
+AppId={{714B39D5-58E8-4545-877C-D89A238C4B23}
 AppName={#Metis} {#MyAppVersion}
 AppVersion={#MyAppVersion}
 DefaultDirName=\strawberry
@@ -27,7 +27,7 @@ DefaultGroupName={#Demeter}
 Compression=lzma2
 SolidCompression=yes
 SourceDir=c:\strawberry
-OutputDir=c:\output\{#MyAppVersion}
+OutputDir=c:\output\Metis\version{#MyAppVersion}
 OutputBaseFilename={#MyInstName}_{#MyAppVersion}
 AppComments=XAS Data Processing and Analysis
 AppContact={#MyAppURL}
@@ -106,115 +106,3 @@ begin
   Result := Pos(getPath(''), OrigPath) = 0;
 end;
 
-function RemovePath(): boolean;
-var
-  OrigPath: string;
-  start_pos: Longint;
-  end_pos: Longint;
-  new_str: string;
-begin
-  if not RegQueryStringValue(HKEY_LOCAL_MACHINE,
-    'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
-    'Path', OrigPath)
-  then begin
-    Result := True;
-    exit;
-  end;
-  start_pos  := Pos(getPath(''), OrigPath);
-  end_pos    := start_pos + Length(getPath(''));
-  new_str    := Copy(OrigPath, 0, start_pos-1) + Copy(OrigPath, end_pos, Length(OrigPath));
-  RegWriteExpandStringValue(HKEY_LOCAL_MACHINE,
-    'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
-    'Path', new_str);
-  Result := True;
-end;
-function InitializeUninstall(): Boolean;
-begin
-  Result := True;
-//  Result := MsgBox('InitializeUninstall:' #13#13 'Uninstall is initializing. Do you really want to start Uninstall?', mbConfirmation, MB_YESNO) = idYes;
-//  if Result = False then
-//    MsgBox('InitializeUninstall:' #13#13 'Ok, bye bye.', mbInformation, MB_OK);
-  RemovePath();  
-end;
-// C:\Program Files\CollabNet\Subversion Client;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin;;C:\Str\perl\bin;C:\Str\perl\site\bin;C:\Str\c\bin;d:\;
-
-
-// Restrict the installation path to have no space 
-function NextButtonClick(CurPageID: Integer): Boolean;
-begin
-  Result :=True;
-  case CurPageID of
-    wpSelectDir :
-    begin
-    if Pos(' ', ExpandConstant('{app}') ) <> 0 then
-      begin
-        MsgBox('You cannot install to a path containing spaces. Please select a different path.', mbError, mb_Ok);
-        Result := False;
-      end;
-    end;
-  end;
-end;
-
-
-
-
-
-// see http://stackoverflow.com/questions/2000296/innosetup-how-to-automatically-uninstall-previous-installed-version
-/////////////////////////////////////////////////////////////////////
-function GetUninstallString(): String;
-var
-  sUnInstPath: String;
-  sUnInstallString: String;
-begin
-  sUnInstPath := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\Strawberry_Perl_with_Demeter_is1');
-  sUnInstallString := '';
-  if not RegQueryStringValue(HKLM, sUnInstPath, 'UninstallString', sUnInstallString) then
-    RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
-  Result := sUnInstallString;
-end;
-
-
-/////////////////////////////////////////////////////////////////////
-function IsUpgrade(): Boolean;
-begin
-  Result := (GetUninstallString() <> '');
-end;
-
-
-/////////////////////////////////////////////////////////////////////
-function UnInstallOldVersion(): Integer;
-var
-  sUnInstallString: String;
-  iResultCode: Integer;
-begin
-// Return Values:
-// 1 - uninstall string is empty
-// 2 - error executing the UnInstallString
-// 3 - successfully executed the UnInstallString
-
-  // default return value
-  Result := 0;
-
-  // get the uninstall string of the old app
-  sUnInstallString := GetUninstallString();
-  if sUnInstallString <> '' then begin
-    sUnInstallString := RemoveQuotes(sUnInstallString);
-    if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then
-      Result := 3
-    else
-      Result := 2;
-  end else
-    Result := 1;
-end;
-
-/////////////////////////////////////////////////////////////////////
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if (CurStep=ssInstall) then
-  begin
-    if (IsUpgrade()) then
-    begin
-      UnInstallOldVersion();
-    end;
-  end;
-end;

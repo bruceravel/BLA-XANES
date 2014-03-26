@@ -4,13 +4,14 @@ use strict;
 use warnings;
 
 use Cwd;
-use DateTime;
 use File::Copy;
 use File::Spec;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
 use Wx::Event qw( EVT_BUTTON);
+
+use Demeter::UI::Wx::SpecialCharacters qw($MU);
 
 sub new {
   my ($class, $page, $app) = @_;
@@ -49,6 +50,15 @@ sub new {
   $app->mouseover($self->{herfd}, "Process HERFD data using the current mask.");
   $app->mouseover($self->{replot_herfd}, "Replot the last HERFD spectrum.");
   $app->mouseover($self->{save_herfd},   "Save the last HERFD data to a column data file.");
+
+  ## this is a dandy idea, except that it requires normalization and I
+  ## don't want to import Demeter.  normalization can be implemented in PDL
+  my $hfbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $herfdboxsizer -> Add($hfbox, 0, wxGROW|wxALL, 0);
+  $self->{mue} = Wx::CheckBox->new($self, -1, "Include conventional $MU(E) in plot");
+  $hfbox -> Add($self->{mue}, 0, wxGROW|wxALL, 0);
+  $self->{mue}->SetValue(0);
+  $self->{mue}->Show(0);
 
   $vbox->Add(1,30,0);
 
@@ -113,21 +123,23 @@ sub plot_herfd {
 
   my $ret = $app->{spectrum} -> scan(verbose=>0, xdiini=>q{});
   my $title = $app->{spectrum}->stub . ' at ' . $app->{spectrum}->energy;
-  $app->{spectrum} -> plot_xanes($ret->message, title=>$title, pause=>0);
+  $app->{spectrum} -> plot_xanes($ret->message, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
   $app->{spectrum}->sentinal(sub{1});
   $self->{replot_herfd} -> Enable(1);
   $self->{save_herfd}   -> Enable(1);
   $self->{herfdbox}->SetLabel(' HERFD ('.$app->{spectrum}->energy.')');
   $self->{current} = $app->{spectrum}->energy;
   $app->set_parameters;	    # save config file becasue, presumably, we like the current mask creation values
-  $app->{main}->status("Plotted HERFD with emission energy = ".$app->{spectrum}->energy.$app->howlong($start, '.  That'));
+  $app->{main}->status("Plotted HERFD with emission energy = " .
+		       $app->{spectrum}->energy .
+		       $app->{spectrum}->howlong($start, '.  That'));
   undef $busy;
 };
 
 sub replot_herfd {
   my ($self, $event, $app) = @_;
   my $title = $app->{spectrum}->stub . ' at ' . $self->{current};
-  $app->{spectrum} -> plot_xanes(q{}, title=>$title, pause=>0);
+  $app->{spectrum} -> plot_xanes(q{}, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
   $app->{main}->status("Replotted HERFD with emission energy = ".$self->{current});
 };
 

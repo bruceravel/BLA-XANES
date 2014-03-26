@@ -206,28 +206,6 @@ sub view_attributes {
 };
 
 
-sub howlong {
-  my ($self, $start, $id) = @_;
-  my $finish = DateTime->now( time_zone => 'floating' );
-  my $dur = $finish->delta_ms($start);
-  $id ||= 'That';
-  my $text;
-  if ($dur->minutes) {
-    if ($dur->minutes == 1) {
-      $text = sprintf "%s took %d minute and %d seconds.", $id, $dur->minutes, $dur->seconds;
-    } else {
-      $text = sprintf "%s took %d minutes and %d seconds.", $id, $dur->minutes, $dur->seconds;
-    };
-  } else {
-    if ($dur->seconds == 1) {
-      $text = sprintf "%s took %d second.", $id, $dur->seconds;
-    } else {
-      $text = sprintf "%s took %d seconds.", $id, $dur->seconds;
-    };
-  };
-  return $text;
-};
-
 
 
 
@@ -278,62 +256,11 @@ which the signal is dispersed onto the face of a Pilatus camera.
 
 =head1 DEPENDENCIES
 
-Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
+Xray::BLA and Metis dependencies are in the F<Build.PL> file.
 
 =head1 BUGS AND LIMITATIONS
 
-=over 4
-
-=item *
-
-Fetching on Files page should reset Mask page, including unsetting the
-energy selection
-
-=item *
-
-More error checking, edge cases.  For example, what happens when a
-stub + folders does not return a sensible pile of stuff?
-
-=item *
-
-Persistance?  Is anything more than the preferences yaml necessary?
-
-=item *
-
-widgets for selecting folders
-
-=item *
-
-how are element and line used?  (needed to set white color band in a map)
-
-=item *
-
-implement XES and RIXS
-
-=item *
-
-Map and mapmask
-
-=item *
-
-aggregate map from set of elastic images
-
-=item *
-
-mask development animations.  according to the PERLDL mailing list,
-giving file.gif to wmpeg will cause it to write an animated gif,
-assuming ffmpeg is installed on the computer.  this needs testing
-outside of metis.
-
-=item *
-
-some kind of system for specifying file naming patterns -- this is
-somewhat less important now that the contents of the elastic and image
-lists on the Files tool are used explicitly.  if this is still
-ambiguous, a file selection dialog can be used to select content for
-the lists.
-
-=back
+See F<todo.org>
 
 Please report problems as issues at the github site
 L<https://github.com/bruceravel/BLA-XANES>

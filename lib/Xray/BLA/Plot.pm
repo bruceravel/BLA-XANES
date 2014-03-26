@@ -51,11 +51,19 @@ sub plot_xanes {
   my ($self, $fname, @args) = @_;
   my %args = @args;
   $args{title} ||= q{};
+  $args{mue}   ||= 0;
   $args{pause} = q{-1} if not defined $args{pause};
 
   (my $legend = $args{title}) =~ s{_}{\\\\_}g;
-  gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
-	with=>'lines', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata));
+  if ($args{mue}) {
+    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
+	  with=>'lines', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata),
+	  with=>'lines', legend=>'conventional {/Symbol m}(E)', PDL->new($self->xdata), PDL->new($self->mudata)
+	 );
+  } else {
+    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
+	  with=>'lines', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata));
+  };
   $self->pause($args{pause}) if $args{pause};
 }
 

@@ -5,11 +5,10 @@ use version;
 our $VERSION = version->new('1');
 
 use Moose;
-#use Moose::Util qw(apply_all_roles);
+with 'Xray::BLA::Tools';
 with 'Xray::BLA::Image';
 with 'Xray::BLA::Mask';
 with 'Xray::BLA::IO';
-#with 'Xray::BLA::Backend::Imager';
 with 'Xray::BLA::Pause';
 with 'Xray::BLA::Plot';
 
@@ -28,7 +27,6 @@ use File::Path;
 use File::Spec;
 use List::Util qw(sum max);
 use List::MoreUtils qw(pairwise);
-use Math::Random;
 use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 use Term::Sk;
@@ -271,6 +269,18 @@ has 'ydata' => (
 			     },
 		documentation => "An array reference containing the y-axis data for plotting."
 	       );
+has 'mudata' => (
+		traits    => ['Array'],
+		is        => 'rw',
+		isa       => 'ArrayRef',
+		default   => sub { [] },
+		handles   => {
+			      'push_mudata'  => 'push',
+			      'pop_mudata'   => 'pop',
+			      'clear_mudata' => 'clear',
+			     },
+		documentation => "An array reference containing the conventional mu(E) for plotting."
+	       );
 
 has 'sentinal'  => (traits  => ['Code'],
 		    is => 'rw', isa => 'CodeRef', default => sub{sub{1}},
@@ -493,6 +503,7 @@ sub scan {
     push @data, [@point];
     $self->push_xdata($point[0]);
     $self->push_ydata($point[1]);
+    $self->push_mudata(log($point[2]/$point[3]));
     ++$i;
   };
   close $SCAN;
@@ -645,27 +656,6 @@ sub attribute_report {
   return $text;
 };
 
-######################################################################
-#### general tools
-
-sub randomstring {
-  my ($self, $length) = @_;
-  $length ||= 6;
-  my $rs = q{};
-  foreach (1..$length) {
-    $rs .= chr(int(26*random_uniform)+97);
-  };
-  return $rs;
-};
-
-sub is_windows {
-  my ($class) = @_;
-  return (($^O eq 'MSWin32') or ($^O eq 'cygwin'));
-};
-sub is_osx {
-  my ($class) = @_;
-  return ($^O eq 'darwin');
-};
 
 
 __PACKAGE__->meta->make_immutable;
@@ -1276,63 +1266,7 @@ L<Xray::XDI>  (optional)
 
 =head1 BUGS AND LIMITATIONS
 
-=over 4
-
-=item *
-
-More robust error handling.
-
-=item *
-
-Use the energy map to create a mask with a specified energy width.
-
-=item *
-
-In the future, will need a more sophisticated mechanism for relating
-C<stub> to scan file and to image files -- some kind of templating
-scheme, I suspect
-
-=item *
-
-Parse columns of scan file, too much assumption goes into the scan
-method
-
-=item *
-
-Other energy map output formats.  A gif would be useful.
-
-=item *
-
-bin with 2x2 or 3x3 bins
-
-=item *
-
-MooseX::MutatorAttributes or MooseX::GetSet would certainly be nice....
-
-=item *
-
-It should not be necessary to specify the list of elastic energies in
-the config file.  They could be culled from the file names.
-
-=item *
-
-Figure out element and emission line by comparing the midpoint of the
-range of elastic energies to a table of line energies.
-
-=item *
-
-gnuplot file for rixs map
-
-=item *
-
-Use of XDI is undocumented.
-
-=item *
-
-Wouldn't it be awesome to have all the data&images stored in an HDF5
-file?
-
-=back
+See F<todo.org>
 
 Please report problems to Bruce Ravel (bravel AT bnl DOT gov)
 

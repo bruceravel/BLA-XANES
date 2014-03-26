@@ -1,0 +1,70 @@
+* Bugs and limitations in Xray::BLA and Metis
+
+** Issues with Xray::BLA [0/12]
+
+ - [ ] More robust error handling.
+
+ - [ ] Use the energy map to create a mask with a specified energy width.
+
+ - [ ] In the future, will need a more sophisticated mechanism for
+   relating C<stub> to scan file and to image files -- some kind of
+   templating scheme, I suspect
+
+ - [ ] Parse columns of scan file and patern match to find the useful
+   columns.  Too much assumption goes into the scan method.
+
+ - [ ] Drop current crop of gnuplot+Text::Template methods in favor of
+   PDL::Graphics::Gnuplot
+
+ - [ ] gnuplot file for rixs map (much easier with above...)
+
+ - [ ] Other energy map output formats.  A gif would be useful.  (Much
+   easier using PDL)
+
+ - [ ] consider using MooseX::GetSet
+
+ - [ ] It should not be necessary to specify the list of elastic
+   energies in the config file.  They could be culled from the file
+   names or from a file of metadata
+
+ - [ ] Figure out element and emission line by comparing the midpoint
+   of the range of elastic energies to a table of line energies.
+
+ - [ ] Use of XDI is undocumented.  And incomplete.  And, frankly,
+   Xray::XDI needs attention.
+
+ - [ ] Think about how to use HDF5 to store images, scans, scan
+   metadata, and Xray::BLA metadata.
+
+** Issues with Metis [0/9]
+
+ - [ ] implement XES and RIXS
+
+ - [ ] implement Map and mapmask
+
+ - [ ] implement aggregate map from set of elastic images
+
+ - [ ] widgets for selecting folders.  Wx::FileDialog was causing
+   crashes on my home computer.
+
+ - [ ] More error checking, edge cases.  For example, what happens
+   when a stub + folders does not return a sensible pile of stuff?
+
+ - [ ] mask development animations.  according to the PERLDL mailing
+   list, giving file.gif to wmpeg will cause it to write an animated
+   gif, assuming ffmpeg is installed on the computer.  this needs
+   testing outside of metis.
+
+ - [ ] some kind of system for specifying file naming patterns -- this
+   is somewhat less important now that the contents of the elastic and
+   image lists on the Files tool are used explicitly.  if this is
+   still ambiguous, a file selection dialog can be used to select
+   content for the lists.
+
+ - [ ] Persistance?  Is anything more than the preferences yaml
+   necessary?
+
+ - [ ] how are element and line used?  (answer: they are used to set
+   the white color band in a map)
+
+

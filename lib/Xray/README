@@ -347,20 +347,6 @@ METHODS
 
           $spectrum -> check;
 
-    "import_elastic_image"
-        Import the file containing the elastic image and perform the first
-        pass in which bad pixels and weak pixels are removed from the image.
-
-          $spectrum -> import_elastic_image;
-
-        The intermediate image can be saved:
-
-          $spectrum -> import_elastic_image(write => "firstpass.tif");
-
-        The "message" attribute of the return object contains information
-        regarding mask creation to be displayed if the "verbose" argument to
-        "mask" is true.
-
     "apply_mask"
         Apply the mask to the image for a given data point to obtain the
         HERFD signal for that data point.

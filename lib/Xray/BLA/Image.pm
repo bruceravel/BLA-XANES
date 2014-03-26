@@ -1,17 +1,11 @@
 package Xray::BLA::Image;
 
-use Moose;
+use Moose::Role;
 use PDL::Lite;
-use PDL::Graphics::Simple;
-use PDL::Graphics::Gnuplot;
 use PDL::IO::FlexRaw;
 use PDL::NiceSlice;
 
-has 'parent' => (is => 'rw', isa => 'Xray::BLA');
-has 'image' =>  (is => 'rw', isa => 'PDL', default => sub {PDL::null});
-
 use Const::Fast;
-##const my $BIT_DEPTH   => 2**32;
 const my $IMAGE_WIDTH => 487;
 
 ## A million thanks to Chris Marshall for his help on the problem
@@ -26,10 +20,9 @@ sub Read {
   my $im2d = $img(1024:-1)->splitdim(0,$IMAGE_WIDTH);
   $im2d->badflag(1);
   #$im2d->inplace->setvaltobad(0);
-  $self->image($im2d);
   my ($c, $r) = $im2d->dims;
-  $self->parent->columns($c);
-  $self->parent->rows($r);
+  $self->columns($c);
+  $self->rows($r);
   return $im2d;
 };
 
@@ -55,12 +48,37 @@ sub Read {
 #   my ($self, $file) = @_;
 #   my ($width,$height) = tvx_img_size('example-s32.tif');
 #   #print "width = $width\nheight = $height\n";
-#   $self->image_width($width);
-#   $self->image_height($height);
+#   $self->columns($width);
+#   $self->rows($height);
 #   return $self;
 # };
 
-
-
-__PACKAGE__->meta->make_immutable;
 1;
+
+=head1 NAME
+
+Xray::BLA::Image - Role for manipulating signed 32 big TIFF files
+
+=head1 VERSION
+
+See L<Xray::BLA>
+
+=head1 AUTHOR
+
+Bruce Ravel (bravel AT bnl DOT gov)
+
+L<http://github.com/bruceravel/BLA-XANES>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf. All
+rights reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See L<perlgpl>.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=cut

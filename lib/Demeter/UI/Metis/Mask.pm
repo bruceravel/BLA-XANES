@@ -216,7 +216,7 @@ sub Reset {
   my ($self, $event, $app) = @_;
   $self->{steps_list}->Clear;
   my $energy = $self->{energy}->GetStringSelection;
-  $app->{spectrum}->energy($energy);
+  $app->{spectrum}->energy($energy) if $energy;
 
   my $elastic_file;
   my $elastic_list = $app->{Files}->{elastic_list};

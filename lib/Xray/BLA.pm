@@ -1,12 +1,12 @@
 package Xray::BLA;
 use Xray::BLA::Return;
-use Xray::BLA::Image;
 
 use version;
 our $VERSION = version->new('1');
 
 use Moose;
 #use Moose::Util qw(apply_all_roles);
+with 'Xray::BLA::Image';
 with 'Xray::BLA::Mask';
 with 'Xray::BLA::IO';
 #with 'Xray::BLA::Backend::Imager';
@@ -447,7 +447,7 @@ sub apply_mask {
     ## * is pixel by pixel multiplication of mask and datapoint: see mult in PDL::Ops
     ## sumover: see PDL::Ufunc
     ## flat, sclr: see PDL::Core
-    my $masked = $self->elastic_image * Xray::BLA::Image->new(parent=>$self)->Read($image);
+    my $masked = $self->elastic_image * $self->Read($image);
     #my $sum = int($masked->flat->sumover->sclr / $self->eimax);
     my $sum = int($masked->sum / $self->eimax);
     printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
@@ -483,7 +483,7 @@ sub scan {
     @point = ();
     my @list = split(" ", $_);
 
-    $self->call_sentinal($list[-1]) if not ($i % 20);
+    $self->call_sentinal($list[-1]) if not ($i % 30);
     my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
     push @point, $list[0];
     push @point, sprintf("%.10f", $loop->status/$list[3]);
@@ -1077,21 +1077,6 @@ This is the first thing done by the C<mask> method and must be the
 initial chore of any script using this library.
 
   $spectrum -> check;
-
-=item C<import_elastic_image>
-
-Import the file containing the elastic image and perform the first
-pass in which bad pixels and weak pixels are removed from the image.
-
-  $spectrum -> import_elastic_image;
-
-The intermediate image can be saved:
-
-  $spectrum -> import_elastic_image(write => "firstpass.tif");
-
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
 
 =item C<apply_mask>
 

@@ -24,24 +24,6 @@ use PDL::IO::Dumper;
 use List::Util qw(sum max);
 use Math::Round qw(round);
 
-sub import_elastic_image {
-  my ($self, $rargs) = @_;
-  my %args = %$rargs;
-
-  my $ret = Xray::BLA::Return->new;
-
-  my ($c, $r) = $self->elastic_image->dims;
-  $self->columns($c);
-  $self->rows($r);
-  my $str = $self->report("\nProcessing ".$self->elastic_file, 'yellow');
-  $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
-    $self->columns, $self->rows, $self->columns*$self->rows;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
-  $ret->message($str);
-  return $ret;
-};
-
 sub mask_file {
   my ($self, $which, $type) = @_;
   $type ||= 'gif';

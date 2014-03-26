@@ -50,11 +50,10 @@ sub mask {
   ## import elastic image and store basic properties
   my @out = ();
   $out[0] = ($args{write}) ? $self->mask_file("0", $self->outimage) : 0;
-
   $args{write}   = $out[0];
   $args{verbose} = $args{verbose};
   $args{unity}   = 0;
-  $self->do_step('import_elastic_image', %args);
+  #$self->do_step('import_elastic_image', %args);
 
   my $i=0;
   foreach my $st (@{$self->steps}) {
@@ -62,6 +61,7 @@ sub mask {
 
     my @args = split(" ", $st);
 
+    push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
     $args{write}   = $out[-1];
     $args{verbose} = $args{verbose};
     $args{unity}   = $set_npixels;
@@ -70,14 +70,12 @@ sub mask {
       ($args[0] eq 'bad') and do {
 	$self -> bad_pixel_value($args[1]);
 	$self -> weak_pixel_value($args[3]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('bad_pixels', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'multiply') and do  {
 	$self->scalemask($args[2]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('multiply', %args);
 	last STEPS;
       };
@@ -85,40 +83,34 @@ sub mask {
       ($args[0] eq 'areal') and do  {
 	$self->operation($args[1]);
 	$self->radius($args[3]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('areal', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'lonely') and do  {
 	$self->lonely_pixel_value($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('lonely_pixels', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'social') and do  {
 	$self->social_pixel_value($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('social_pixels', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'entire') and do {
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('entire_image', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'map') and do {
 	$self->deltae($args[1]);
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('mapmask', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'andmask') and do {
-	push @out, ($args{write}) ? $self->mask_file(++$i, $self->outimage) : 0;
 	$self->do_step('andmask', %args);
 	last STEPS;
       };
@@ -183,8 +175,7 @@ sub check {
     return $ret;
   };
 
-  my $img = Xray::BLA::Image->new(parent=>$self);
-  $self->elastic_image($img->Read($self->elastic_file));
+  $self->elastic_image($self->Read($self->elastic_file));
 
   # if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
   #   $ret->message("This program requires Imager version 0.87 or later.");
@@ -211,6 +202,8 @@ sub do_step {
   my ($self, $step, @args) = @_;
   my %args = @args;
   my $ret = $self->$step(\%args);
+  ## wim: see PDL::IO::Pic
+  $self->elastic_image->wim($args{write}) if $args{write};
   if ($ret->status == 0) {
     die $self->report($ret->message, 'bold red').$/;
   } else {
@@ -241,12 +234,24 @@ sub do_step {
 
 ##################################################################################
 ## mask creation steps
-##   bad pixels: note and remove spuriously large pixels from the image
-##   lonely: remove illuminated pixels that are surrouned by too few illuminated pixels
-##   social: include dark pixels that are surrounded by enough illuminated pixels
-##   mapmask: make a mask from a previously calculated energy map
-##   areal: average pixel count over a square with a count cut-off
-##################################################################################
+
+sub import_elastic_image {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+
+  my $ret = Xray::BLA::Return->new;
+
+  my ($c, $r) = $self->elastic_image->dims;
+  $self->columns($c);
+  $self->rows($r);
+  my $str = $self->report("\nProcessing ".$self->elastic_file, 'yellow');
+  $str   .= sprintf "\t%d columns, %d rows, %d total pixels\n",
+    $self->columns, $self->rows, $self->columns*$self->rows;
+  $ret->message($str);
+  return $ret;
+};
+
+
 
 sub bad_pixels {
   my ($self, $rargs) = @_;
@@ -272,8 +277,6 @@ sub bad_pixels {
   $str   .= sprintf "\tRemoved %d bad pixels and %d weak pixels\n", $self->nbad, $weak->sum;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -286,8 +289,6 @@ sub multiply {
   $self->elastic_image->inplace->mult($self->scalemask, 0);
 
   my $str = $self->report("Multiply image by ".$self->scalemask, 'cyan');
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -299,8 +300,6 @@ sub entire_image {
 
   $self->elastic_image(PDL::Core::ones($self->elastic_image->dims));
   my $str = $self->report("Using entire image", 'cyan');
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -312,8 +311,6 @@ sub andmask {
 
   $self->elastic_image->inplace->gt(0,0);
   my $str = $self->report("Making AND mask", 'cyan');
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -345,8 +342,6 @@ sub lonely_pixels {
   $str   .= sprintf "\tRemoved %d lonely pixels\n", $before - $onval;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $onval, $offval, $onval+$offval;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->message($str);
   return $ret;
 };
@@ -363,8 +358,8 @@ sub social_pixels {
   my $before = $onoff->sum;
   my $kernel = PDL::Core::ones(3,3);
   if ($args{vertical}) {
-    $kernel->(0,:) .= 0.001;
-    $kernel->(2,:) .= 0.001;
+    $kernel->(0,:) .= 0.000001;
+    $kernel->(2,:) .= 0.000001;
     ## rotate this matrix if the shadows are not perpendicular
   };
   my $smoothed = $onoff->conv2d($kernel, {Boundary => 'Truncate'});
@@ -381,8 +376,6 @@ sub social_pixels {
   $str   .= sprintf "\tAdded %d social pixels\n", $onval-$before;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $onval, $offval, $onval+$offval;
-  $self->elastic_image->wim($args{write}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->status($onval);
   $ret->message($str);
   return $ret;
@@ -418,8 +411,6 @@ sub mapmask {
   $str   .= sprintf "\tUsing pixels within %.2f eV of %.1f eV\n", $self->deltae, $self->energy;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-
-  $self->elastic_image->wim($args{write}) if $args{write};
 
   $ret->status($on);
   $ret->message($str);
@@ -457,8 +448,6 @@ sub areal {
   $str   .= "\tSet each pixel to the ".$self->operation." value of a ${n}x$n square centered at that pixel\n";
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
-  $self->elastic_image->wim($args{write}, {COLOR=>'bw'}) if $args{write};
-  ## wim: see PDL::IO::Pic
   $ret->status($on);
   $ret->message($str);
   return $ret;
@@ -478,6 +467,8 @@ See L<Xray::BLA>
 
 =head1 METHODS
 
+=head2 General methods
+
 =over 4
 
 =item C<mask>
@@ -485,51 +476,117 @@ See L<Xray::BLA>
 Create a mask from the elastic image measured at the energy given by
 C<energy>.
 
-  $spectrum->mask(verbose=>0, save=>0, animate=>0);
+  $spectrum->mask(@args);
 
-When true, the C<verbose> argument causes messages to be printed to
-standard output with information about each stage of mask creation.
+where the arguments are given using fat commas, as in C<verbose=>0,
+save=>0, animate=>0>.
 
-When true, the C<save> argument causes a tif file to be saved at each
-stage of processing the mask.
+The arguments are:
 
-When true, the C<animate> argument causes a properly scaled animation
-to be written showing the stages of mask creation.
+=over 4
 
-These output image files are gif.
+=item C<verbose>
 
-This method is a wrapper around the contents of the C<step> attribute.
-Each entry in C<step> will be parsed and executed in sequence.
+When true, this causes messages to be printed to standard output with
+information about each stage of mask creation.  Only used in CLI mode.
+
+=item C<save>
+
+When true, this causes an image file to be saved at each stage of
+processing the mask.  Usually only used in CLI mode.
+
+=item C<animate>
+
+This causes a properly scaled animation to be written showing the
+stages of mask creation.
+
+=item C<elastic>
+
+Explicitly specify a file to use as the elastic image.  In CLI mode,
+this is usually determined algorithmicly, but in Metis it is taken
+from one of the image lists on the Files page.
+
+=item C<unity>
+
+??
+
+=item C<pass>
+
+This is a counter for multiple passes of the C<social> step.
+
+=item C<vertical>
+
+When true, this tells the C<social> step to only consider pixels
+directly above and below.
+
+=item C<plot>
+
+When true, this will generate a plot at each stage of mask creation
+along with a pause for viewing it.  This is only used in CLI mode.
+
+=item C<write>
+
+When given a filename, an image file will be written at the end of a
+mask creation step.  When given a false value, the image file will be
+written.
+
+=back
+
+These output image files are gif on linux and tif on Windows.
+
+This method is a wrapper around the contents of the C<steps>
+attribute.  Each entry in C<steps> will be parsed and executed in
+sequence.
+
+=item C<check>
+
+Verify that the elastic image file exists, can be read, and be
+imported as an image file.  This sets the C<elastic_file> and
+C<elastic_image> attributes.
+
+=item C<remove_bad_pixels>
+
+This removes the bad pixels from the map using the C<bad_pixel_mask>
+attribute.  Some of the steps, C<areal> for example, can reinsert a
+bad pixel, so it is necessary to follow each step with this method to
+ensure that the bad pixels are not used in HERFD processing.
+
+=item C<do_step>
+
+A wrapper around the various mask processing steps.  This calls the
+various steps, manages screen messages, sets some attributes, manages
+plotting in CLI mode, and manages saving images of steps in the mask
+creation process when in CLI mode.  In Metis, this is usually called
+directly without calling the C<mask> method.
+
+=back
+
+=head2 Methods for the steps of mask creation
+
+=over 4
+
+=item C<bad_pixels>
+
+Remove pixels that are larger than the value of the C<bad_pixel_value>
+attribute and smaller than the C<weak_pixel_value> attribute.  This
+must be the first step in mask processing.  This also sets the
+C<bad_pixel_mask> attribute, which identifies the pixels marked as bad
+pixels.
+
+Controlling attributes: C<bad_pixel_value>, C<weak_pixel_value>
 
 =item C<lonely_pixels>
 
-Make the second pass over the elastic image.  Remove illuminated
-pixels which are not surrounded by enough other illuminated pixels.
+Remove illuminated pixels which are not surrounded by enough other
+illuminated pixels.
 
-  $spectrum -> lonely_pixels;
-
-The intermediate image can be saved:
-
-  $spectrum -> lonely_pixels(write => "secondpass.tif");
-
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
+Controlling attribute: C<lonely_pixel_value>
 
 =item C<social_pixels>
 
-Make the third pass over the elastic image.  Include dark pixels which
-are surrounded by enough illuminated pixels.
+Include dark pixels which are surrounded by enough illuminated pixels.
 
-  $spectrum -> lonely_pixels;
-
-The final mask image can be saved:
-
-  $spectrum -> lonely_pixels(write => "finalpass.tif");
-
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
+Controlling attribute: C<social_pixel_value>
 
 =item C<areal>
 
@@ -537,15 +594,36 @@ At each point in the mask, assign its value to the median or mean
 value of a square centered on that point.  The size of the square is
 determined by the value of the C<radius> attribute.
 
-  $spectrum -> areal;
+The median operation is not currently supported.
 
-The final mask image can be saved:
+Controlling attributes: C<operation>, C<radius>
 
-  $spectrum -> areal(write => "arealpass.tif");
+=item C<multiply>
 
-The C<message> attribute of the return object contains information
-regarding mask creation to be displayed if the C<verbose> argument to
-C<mask> is true.
+Multiply the entire image by a scaling factor.
+
+Controlling attribute: C<scalemask>
+
+=item C<entire_image>
+
+Set every pixel in the mask to 1.  This makes the "HERFD" using the
+entire image at each energy point.  This is used for testing and
+demonstration purposes and is not actually useful step for making high
+energy resolution data.
+
+Controlling attributes: none
+
+=item C<mapmask>
+
+(coming soon)
+
+=item C<andmask>
+
+This is the final step in mask creation.  It sets all non-zero pixels
+to 1 so that the mask can be directly multiplied by images at each
+data point in a HERFD scan.
+
+Controlling attributes: none
 
 =back
 

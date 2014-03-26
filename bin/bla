@@ -8,7 +8,6 @@ BEGIN {
 }
 
 use Xray::BLA; # automatically turns on strict and warnings
-use Xray::BLA::Image;
 use Config::IniFiles;
 use Getopt::Long;
 use Pod::Usage;
@@ -166,7 +165,7 @@ MODE: {
     if ($need_to_check) {
       my $ret = $spectrum -> check;
       die $spectrum->report($ret->message, 'bold red') if $ret->status == 0;
-      $spectrum -> import_elastic_image;
+      #$spectrum -> import_elastic_image;
     };
     my $ret = $spectrum -> energy_map(verbose => $verbose, animate=>$animate);
     $spectrum -> plot_map($ret->message, type=>'load') if $plot;
@@ -212,7 +211,7 @@ MODE: {
       if ($ret->status == 0) {
 	die $spectrum->report($ret->message, 'bold red');
       };
-      $spectrum->do_step('import_elastic_image', write=>0, verbose=>$verbose, unity=>0);
+      #$spectrum->do_step('import_elastic_image', write=>0, verbose=>$verbose, unity=>0);
       $spectrum->bad_pixel_value(50);
       $spectrum->weak_pixel_value(0);
       $spectrum->do_step('bad_pixels', write=>0, verbose=>$verbose, unity=>0);
@@ -381,17 +380,11 @@ contain signal related to specific emission energies.
 
 =back
 
-This software uses perl and PDL with Imager or Image Magick to process
-the images into a high resolution XANES spectrum.
-
 =head1 AUTHOR
 
 Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://cars9.uchicago.edu/~ravel/software/>
-
-This software was created with advice from and in collaboration with
-Jeremy Kropf (kropf AT anl DOT gov)
 
 =head1 LICENCE AND COPYRIGHT
 

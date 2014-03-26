@@ -26,6 +26,8 @@ sub new {
   my $gbs = Wx::GridBagSizer->new( 5,5 );
 
   my @elements = map {sprintf "%s: %s", $_, get_symbol($_)} (1 .. 96);
+  my @lines = (qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll));
+
   my $stub    = $app->{spectrum}->stub    || q{};
   my $element = $app->{spectrum}->element || q{};
   my $line    = $app->{spectrum}->line    || q{};
@@ -34,7 +36,7 @@ sub new {
   $self->{element_label} = Wx::StaticText -> new($self, -1, "Element");
   $self->{element}       = Wx::ComboBox   -> new($self, -1, q{}, wxDefaultPosition, [100,-1], \@elements, wxCB_READONLY);
   $self->{line_label}    = Wx::StaticText -> new($self, -1, "Line");
-  $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], [qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll)], wxCB_READONLY);
+  $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], \@lines, wxCB_READONLY);
   $gbs -> Add($self->{stub_label},    Wx::GBPosition->new(0,0));
   $gbs -> Add($self->{stub},          Wx::GBPosition->new(0,1));
   $gbs -> Add($self->{element_label}, Wx::GBPosition->new(0,2));
@@ -47,7 +49,7 @@ sub new {
   $app->mouseover($self->{element}, "Specify the absorber element.");
   $app->mouseover($self->{stub}, "Specify the measured emission line.");
 
-  my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', , 'share', "metis_logo.png");
+  my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "metis_logo.png");
   my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
   $gbs -> Add(Wx::StaticText->new($self, -1, q{ }, wxDefaultPosition, [50,-1]),
 	      Wx::GBPosition->new(0,6));
@@ -109,21 +111,26 @@ sub fetch {
   my $stub           = $self->{stub}->GetValue;
   my $scan_folder    = $self->{scan}->GetValue;
   my $image_folder   = $self->{image}->GetValue;
-  #print join("\n", $stub, $scan_folder, $elastic_folder, $image_folder), $/;
+
+  if (($stub eq $app->{spectrum}->stub) and ($self->{elastic_list}->GetCount)) {
+    $app->{main}->status("Stub $stub hasn't changed.");
+    return;
+  };
 
   $app->set_parameters;
   $app->{spectrum} -> clear_elastic_energies;
   $app->{spectrum} -> stub($stub);
 
+  my $us = q{_};
   opendir(my $E, $image_folder);
-  my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{$stub}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
+  my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
   closedir $E;
   #print join($/, @elastic_list), $/;
   $self->{elastic_list}->Clear;
   $self->{elastic_list}->InsertItems(\@elastic_list,0);
 
   opendir(my $I, $image_folder);
-  my @image_list = sort {$a cmp $b} grep {$_ =~ m{$stub}} (grep {$_ !~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $I));
+  my @image_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ !~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $I));
   closedir $I;
   #print join($/, @image_list), $/;
   $self->{image_list}->Clear;
@@ -138,9 +145,21 @@ sub fetch {
   foreach my $k (qw(stub energylabel energy)) {
     $app->{Mask}->{$k} -> Enable(1);
   };
+
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
   $app->{Mask}->{energy} -> Clear;
+  $app->{Mask}->{energy} -> SetStringSelection(q{});
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{spectrum}->elastic_energies};
+  foreach my $k (qw(do_social sociallabel socialvalue socialvertical
+		    do_lonely lonelylabel lonelyvalue
+		    do_multiply multiplyvalue
+		    do_areal arealtype areallabel arealvalue
+		    do_entire do_andmask savesteps savemask animation
+		    replot reset)) {
+    $app->{Mask}->{$k}->Enable(0);
+  };
+  $app->{Mask}->{steps_list}->Clear;
+
 
   $app->{main}->status("Found elastic and image files for $stub");
 

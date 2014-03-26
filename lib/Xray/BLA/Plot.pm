@@ -38,14 +38,13 @@ sub plot_mask {
 
 sub plot_energy_point {
   my ($self, $file) = @_;
-  my $img = Xray::BLA::Image->new(parent=>$self);
-  my $point = $img->Read($file);
+  my $point = $self->Read($file);
   my $cbm = $self->bad_pixel_value/$self->imagescale;
   (my $title = basename($file)) =~ s{_}{\\\\_}g;
   image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title,
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
 	$point);
-  undef $img; undef $point;
+  undef $point;
 };
 
 sub plot_xanes {

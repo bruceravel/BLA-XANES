@@ -1,8 +1,10 @@
 * Bugs and limitations in Xray::BLA and Metis
 
-** Issues with Xray::BLA [0/12]
+** Issues with Xray::BLA [1/13]
 
  - [ ] More robust error handling.
+
+ - [ ] More testing.
 
  - [ ] Use the energy map to create a mask with a specified energy width.
 
@@ -25,9 +27,9 @@
 
  - [ ] It should not be necessary to specify the list of elastic
    energies in the config file.  They could be culled from the file
-   names or from a file of metadata
+   names or from a file of metadata.
 
- - [ ] Figure out element and emission line by comparing the midpoint
+ - [X] Figure out element and emission line by comparing the midpoint
    of the range of elastic energies to a table of line energies.
 
  - [ ] Use of XDI is undocumented.  And incomplete.  And, frankly,

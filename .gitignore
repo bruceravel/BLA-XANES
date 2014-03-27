@@ -1,5 +1,6 @@
 _build/*
 blib/*
+_Inline/*
 *.bak
 Build
 MYMETA.*

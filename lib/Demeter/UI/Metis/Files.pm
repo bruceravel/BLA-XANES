@@ -141,6 +141,13 @@ sub fetch {
       $app->{spectrum}->push_elastic_energies($1);
   };
 
+  if ((not $self->{element}->GetStringSelection) and (not $self->{line}->GetStringSelection)) {
+    my ($el, $li) = $app->{spectrum}->guess_element_and_line;
+    $self->{element}->SetSelection(get_Z($el)-1);
+    #$self->{element}->SetStringSelection(sprintf("%s: %s", get_Z($el), $el));
+    $self->{line}->SetStringSelection($li);
+    $app->set_parameters;
+  };
 
   foreach my $k (qw(stub energylabel energy)) {
     $app->{Mask}->{$k} -> Enable(1);

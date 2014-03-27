@@ -1,6 +1,9 @@
 package Xray::BLA;
 use Xray::BLA::Return;
 
+use Statistics::Descriptive;
+use Xray::Absorption;
+
 use version;
 our $VERSION = version->new('1');
 
@@ -40,6 +43,9 @@ $ENV{TERM} = 'dumb' if not defined $ENV{TERM};
 $ENV{TERM} = 'dumb' if ($ENV{TERM} =~ m{\A\s*\z});
 eval 'use Term::ANSIColor ()';
 eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 'dumb'));
+
+my @line_list = @{$$Xray::Absorption::Elam::r_elam{sorted}};
+
 
 ##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
@@ -407,6 +413,23 @@ sub get_incident {
 };
 
 
+sub guess_element_and_line {
+  my ($self) = @_;
+  my $stat = Statistics::Descriptive::Full->new();
+  foreach my $e (@{$self->elastic_energies}) {
+    $stat->add_data($e);
+  };
+
+  my ($med, $diff, $el, $li) = ($stat->median, 999999, q{}, q{});
+  foreach my $l (@line_list) {
+    if (abs($l->[2] - $med) < $diff) {
+      $diff = abs($l->[2] - $med);
+      $el = ucfirst($l->[0]);
+      $li = ucfirst($l->[1]);
+    };
+  };
+  return ($el, $li);
+};
 
 sub read_mask {
   my ($self, @args) = @_;

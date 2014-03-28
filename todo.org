@@ -1,8 +1,13 @@
+#+STARTUP: showall
 * Bugs and limitations in Xray::BLA and Metis
 
-** Issues with Xray::BLA [1/13]
+** Issues with Xray::BLA [1/14]
 
  - [ ] More robust error handling.
+
+ - [ ] When a mask processing step results in 0 illuminated pixels,
+   Metis crashes.  Should reset working_image to prior state if 0
+   pixels illuminated.
 
  - [ ] More testing.
 

@@ -37,14 +37,14 @@ const my $Object => Wx::NewId();
 sub OnInit {
   my ($app) = @_;
 
-  $app->{main} = Wx::Frame->new(undef, -1, 'Metis [BLA data processing]', wxDefaultPosition, [850,500],);
+  $app->{main} = Wx::Frame->new(undef, -1, 'Metis [BLA data processing]', wxDefaultPosition, [850,550],);
   my $iconfile = File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "metis_icon.png");
   my $icon = Wx::Icon->new( $iconfile, wxBITMAP_TYPE_ANY );
   $app->{main} -> SetIcon($icon);
   #EVT_CLOSE($app->{main}, sub{$app->on_close($_[1])});
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
-  $app->{spectrum}  = Xray::BLA->new(ui=>'wx', cleanup=>1);
+  $app->{spectrum}  = Xray::BLA->new(ui=>'wx', cleanup=>1, masktype=>'single');
   $app->{spectrum} -> task('herfd');
   $app->{spectrum} -> outfolder(File::Spec->catfile($app->{spectrum}->stash_folder,
 						    'metis-'.$app->{spectrum}->randomstring(5)));

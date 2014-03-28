@@ -23,6 +23,31 @@ use PDL::IO::Dumper;
 use PDL::Image2D;
 
 
+sub set_working_image {
+  my ($self, $which) = @_;
+  $which ||= $self->masktype;
+  if ($which eq 'single') {
+    $self->working_image($self->elastic_image->copy);
+  } elsif ($which eq 'aggregate') {
+    $self->working_image($self->aggregate_image->copy);
+  } else {			# clear working_image
+    $self->working_image(PDL::null);
+  };
+  return $self->working_image;
+};
+sub push_working_image {
+  my ($self, $which) = @_;
+  $which ||= $self->masktype;
+  if ($which eq 'single') {
+    $self->elastic_image($self->working_image->copy);
+  } elsif ($which eq 'aggregate') {
+    $self->aggregate_image($self->working_image->copy);
+  } else {			# clear working_image
+    #$self->working_image(PDL::null);
+  };
+  return $self->working_image;
+};
+
 sub mask {
   my ($self, @args) = @_;
   my %args = @args;
@@ -38,7 +63,6 @@ sub mask {
   $args{write}      = 1 if ($args{animate} or $args{save});
   local $|=1;
 
-  #$self->clear_bad_pixel_list;
   $self->bad_pixel_mask(PDL::null);
   $self->npixels(0);
 
@@ -95,12 +119,19 @@ sub mask {
 
       ($args[0] eq 'social') and do  {
 	$self->social_pixel_value($args[1]);
+	$args[2] = (defined($args[2]) and ($args[2] eq 'vertical'));
+	$self->vertical($args[2]);
 	$self->do_step('social_pixels', %args);
 	last STEPS;
       };
 
       ($args[0] eq 'entire') and do {
 	$self->do_step('entire_image', %args);
+	last STEPS;
+      };
+
+      ($args[0] eq 'aggregate') and do {
+	$self->do_step('andaggregate', %args);
 	last STEPS;
       };
 
@@ -129,7 +160,7 @@ sub mask {
   };
   if ($args{save}) {
     my $fname = $self->mask_file("mask", $self->outimage);
-    $self->elastic_image->wim($fname);
+    $self->working_image->wim($fname);
     print $self->report("Saved mask to $fname", 'yellow'), "\n" if $args{verbose};
   };
   unlink $_ foreach @out;
@@ -147,53 +178,47 @@ sub check {
 
   my $ret = Xray::BLA::Return->new;
 
-  ## does elastic file exist?
-  $elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
-  $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
-  if (not -e $self->elastic_file) {
-    $ret->message("Elastic image file \"".$self->elastic_file."\" does not exist");
-    $ret->status(0);
-    return $ret;
-  };
-  if (not -r $self->elastic_file) {
-    $ret->message("Elastic image file \"".$self->elastic_file."\" cannot be read");
-    $ret->status(0);
-    return $ret;
+  $self->set_working_image;
+
+  if ($self->masktype eq 'single') {
+    ## does elastic file exist?
+    $elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
+    $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
+    if (not -e $self->elastic_file) {
+      $ret->message("Elastic image file \"".$self->elastic_file."\" does not exist");
+      $ret->status(0);
+      return $ret;
+    };
+    if (not -r $self->elastic_file) {
+      $ret->message("Elastic image file \"".$self->elastic_file."\" cannot be read");
+      $ret->status(0);
+      return $ret;
+    };
+
+    ## does scan file exist?
+    my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
+    $self->scanfile($scanfile);
+    if (not -e $scanfile) {
+      $ret->message("Scan file \"$elastic\" does not exist");
+      $ret->status(0);
+      return $ret;
+    };
+    if (not -r $scanfile) {
+      $ret->message("Scan file \"$elastic\" cannot be read");
+      $ret->status(0);
+      return $ret;
+    };
   };
 
-  ## does scan file exist?
-  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
-  $self->scanfile($scanfile);
-  if (not -e $scanfile) {
-    $ret->message("Scan file \"$elastic\" does not exist");
-    $ret->status(0);
-    return $ret;
-  };
-  if (not -r $scanfile) {
-    $ret->message("Scan file \"$elastic\" cannot be read");
-    $ret->status(0);
-    return $ret;
-  };
-
-  $self->elastic_image($self->Read($self->elastic_file));
-
-  # if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
-  #   $ret->message("This program requires Imager version 0.87 or later.");
-  #   $ret->status(0);
-  #   return $ret;
-  # };
-  # if (($self->backend eq 'ImageMagick') and ($self->get_version !~ m{Q32})) {
-  #   $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
-  #   $ret->status(0);
-  #   return $ret;
-  # };
+  $self->working_image($self->Read($self->elastic_file));
+  $self->push_working_image;
 
   return $ret;
 };
 
 sub remove_bad_pixels {
   my ($self) = @_;
-  $self->elastic_image->inplace->mult(1-$self->bad_pixel_mask,0);
+  $self->working_image->inplace->mult(1-$self->bad_pixel_mask,0);
 };
 
 
@@ -201,21 +226,27 @@ sub remove_bad_pixels {
 sub do_step {
   my ($self, $step, @args) = @_;
   my %args = @args;
+
+  my $saved_image = $self->working_image->copy;
   my $ret = $self->$step(\%args);
-  ## wim: see PDL::IO::Pic
-  $self->elastic_image->wim($args{write}) if $args{write};
-  if ($ret->status == 0) {
+  if (($ret->status == 0) and ($self->ui eq 'wx')) {
+    $self->working_image($saved_image);
+    return 0;
+  } elsif ($ret->status == 0) {
     die $self->report($ret->message, 'bold red').$/;
   } else {
     print $ret->message if $args{verbose};
   };
-  $self->eimax($self->elastic_image->flat->max);
+  $self->remove_bad_pixels;
+  ## wim: see PDL::IO::Pic
+  $self->working_image->wim($args{write}) if $args{write};
+  $self->eimax($self->working_image->flat->max);
   $self->npixels($ret->status) if $args{unity};
 
   if ($args{plot}) {
     my $save = $self->prompt;
     $self->prompt('        Hit return to plot the next step>');
-    my $cbm = int($self->elastic_image->max);
+    my $cbm = int($self->working_image->max);
     if ($cbm < 1) {
       $cbm = 1;
     } elsif ($cbm > $self->bad_pixel_value/$self->imagescale) {
@@ -226,6 +257,7 @@ sub do_step {
     $self->pause(-1);
     $self->prompt($save);
   };
+  $self->push_working_image;
 
   undef $ret;
   return 1;
@@ -259,7 +291,7 @@ sub bad_pixels {
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
+  my $ei    = $self->working_image;
   my $bpv   = $self->bad_pixel_value;
   my $wpv   = $self->weak_pixel_value;
 
@@ -270,13 +302,14 @@ sub bad_pixels {
   $ei  = $ei * (1-$bad) * (1-$weak); # remove bad and weak pixels
   $on  = $ei->gt(0,0)->sum;
   $off = $ei->eq(0,0)->sum;
-  $self->elastic_image($ei);
+  $self->working_image($ei);
   $self->bad_pixel_mask($bad);
 
   my $str = $self->report("Bad/weak step", 'cyan');
   $str   .= sprintf "\tRemoved %d bad pixels and %d weak pixels\n", $self->nbad, $weak->sum;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $on, $off, $on+$off;
+  $ret->status($ei->gt(0,0)->sum);
   $ret->message($str);
   return $ret;
 };
@@ -286,9 +319,24 @@ sub multiply {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
-  $self->elastic_image->inplace->mult($self->scalemask, 0);
+  $self->working_image->inplace->mult($self->scalemask, 0);
 
   my $str = $self->report("Multiply image by ".$self->scalemask, 'cyan');
+  $ret->status($self->working_image->gt(0,0)->sum);
+  $ret->message($str);
+  return $ret;
+};
+
+sub andaggregate {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+
+  $self->aggregate_image->wim('foo.tif');
+
+  $self->working_image -> inplace -> mult($self->aggregate_image, 0);
+  my $str = $self->report("Multiply by aggregate mask", 'cyan');
+  $ret->status($self->working_image->gt(0,0)->sum);
   $ret->message($str);
   return $ret;
 };
@@ -298,8 +346,9 @@ sub entire_image {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
-  $self->elastic_image(PDL::Core::ones($self->elastic_image->dims));
+  $self->working_image(PDL::Core::ones($self->working_image->dims));
   my $str = $self->report("Using entire image", 'cyan');
+  $ret->status($self->working_image->gt(0,0)->sum);
   $ret->message($str);
   return $ret;
 };
@@ -309,8 +358,9 @@ sub andmask {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
-  $self->elastic_image->inplace->gt(0,0);
+  $self->working_image->inplace->gt(0,0);
   my $str = $self->report("Making AND mask", 'cyan');
+  $ret->status($self->working_image->gt(0,0)->sum);
   $ret->message($str);
   return $ret;
 };
@@ -321,7 +371,7 @@ sub lonely_pixels {
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
+  my $ei    = $self->working_image;
   my $lpv   = $self->lonely_pixel_value;
 
 
@@ -333,7 +383,7 @@ sub lonely_pixels {
 
   ## set pixels smaller than $lpv to 0
   $ei->inplace->mult(1-$smoothed->le($lpv,0),0);
-  $self->elastic_image($ei);
+  $self->working_image($ei);
 
   my $onval  = $ei->gt(0,0)->sum;
   my $offval = $h*$w-$onval;
@@ -342,6 +392,7 @@ sub lonely_pixels {
   $str   .= sprintf "\tRemoved %d lonely pixels\n", $before - $onval;
   $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
     $onval, $offval, $onval+$offval;
+  $ret->status($ei->gt(0,0)->sum);
   $ret->message($str);
   return $ret;
 };
@@ -354,22 +405,21 @@ sub social_pixels {
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
   my $spv   = $self->social_pixel_value;
 
-  my $onoff = $self->elastic_image->gt(0,0);
+  my $onoff = $self->working_image->gt(0,0);
   my $before = $onoff->sum;
   my $kernel = PDL::Core::ones(3,3);
   if ($args{vertical}) {
-    $kernel->(0,:) .= 0.000001;
-    $kernel->(2,:) .= 0.000001;
+    $kernel->(0,:) .= 0.00001;
+    $kernel->(2,:) .= 0.00001;
     ## rotate this matrix if the shadows are not perpendicular
   };
   my $smoothed = $onoff->conv2d($kernel, {Boundary => 'Truncate'});
 
-  my ($h,$w) = $self->elastic_image->dims;
+  my ($h,$w) = $self->working_image->dims;
   my $on  = $smoothed->ge($spv,0);
   my $onval  = $on->sum;
   my $offval = $h*$w-$onval;
-  $self->elastic_image($self->elastic_image->or2($on,0));
-  $self->remove_bad_pixels;
+  $self->working_image($self->working_image->or2($on,0));
 
   my $text = $args{pass} ? " (pass ".$args{pass}.")" : q{};
   my $str = $self->report("Social pixel step$text", 'cyan');
@@ -399,13 +449,12 @@ sub mapmask {
     return $ret
   };
   my $image = frestore($maskfile);
-  $self -> elastic_image($image);
-  $self -> elastic_image->inplace->minus($self->energy,0);
-  $self -> elastic_image->inplace->abs;
-  $self -> elastic_image->inplace->lt($self->deltae,0);
-  $self -> remove_bad_pixels;
+  $self -> working_image($image);
+  $self -> working_image->inplace->minus($self->energy,0);
+  $self -> working_image->inplace->abs;
+  $self -> working_image->inplace->lt($self->deltae,0);
 
-  my $on  = $self->elastic_image->flat->sumover->sclr;
+  my $on  = $self->working_image->flat->sumover->sclr;
   my $off = $self->columns*$self->rows - $on;
   my $str = $self->report("Energy map step", 'cyan');
   $str   .= sprintf "\tUsing pixels within %.2f eV of %.1f eV\n", $self->deltae, $self->energy;
@@ -424,7 +473,7 @@ sub areal {
   my $ret = Xray::BLA::Return->new;
 
   $self->remove_bad_pixels;
-  my $ei    = $self->elastic_image;
+  my $ei    = $self->working_image;
   my $nrows = $self->rows - 1;
   my $ncols = $self->columns - 1;
 
@@ -440,8 +489,7 @@ sub areal {
   my $on = $smoothed->gt(0,0)->sum;
   my $off = $h*$w - $on;
 
-  $self->elastic_image($smoothed);
-  $self->remove_bad_pixels;
+  $self->working_image($smoothed);
 
   my $str = $self->report("Areal ".$self->operation." step", 'cyan');
   my $n = 2*$self->radius+1;
@@ -453,6 +501,33 @@ sub areal {
   return $ret;
 };
 
+
+sub aggregate {
+  my ($self) = @_;
+  my $save = $self->energy;
+  $self->masktype('single');
+  $self->aggregate_image(PDL::null);
+  my $sum; # = PDL::Core::zeros($self->working_image->dims);
+  foreach my $e (@{$self->elastic_energies}) {
+    $self -> energy($e);
+    my $ret = $self->check();
+    if ($ret->status == 0) {
+      die $self->report($ret->message, 'bold red');
+    };
+    $self->do_step('bad_pixels', write=>0, verbose=>0, unity=>0);
+    if (not defined($sum)) {
+      $sum += $self->working_image;
+    } else {
+      $sum += $self->working_image;
+    };
+  };
+
+  $self->masktype('aggregate');
+  $self->aggregate_image($sum);
+  $self->set_working_image;
+
+  $self->energy($save);
+};
 
 
 1;

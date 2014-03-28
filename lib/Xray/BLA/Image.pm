@@ -26,6 +26,11 @@ sub Read {
   return $im2d;
 };
 
+## The following is from Tim Haines:
+##   http://mailman.jach.hawaii.edu/pipermail/perldl/2014-March/008624.html
+## This will find the dimensions of the s32 tiff file (or, indeed, any
+## other tiff file not readable by rpic).
+
 # use Inline C => Config => LIBS => '-ltiff';
 # use Inline C => <<'END';
 #   #include <tiffio.h>
@@ -57,7 +62,7 @@ sub Read {
 
 =head1 NAME
 
-Xray::BLA::Image - Role for manipulating signed 32 big TIFF files
+Xray::BLA::Image - Role for manipulating signed 32 bit TIFF files
 
 =head1 VERSION
 

@@ -144,12 +144,11 @@ sub fetch {
   if ((not $self->{element}->GetStringSelection) and (not $self->{line}->GetStringSelection)) {
     my ($el, $li) = $app->{spectrum}->guess_element_and_line;
     $self->{element}->SetSelection(get_Z($el)-1);
-    #$self->{element}->SetStringSelection(sprintf("%s: %s", get_Z($el), $el));
     $self->{line}->SetStringSelection($li);
     $app->set_parameters;
   };
 
-  foreach my $k (qw(stub energylabel energy)) {
+  foreach my $k (qw(stub energylabel energy rbox)) {
     $app->{Mask}->{$k} -> Enable(1);
   };
 
@@ -194,6 +193,8 @@ sub view {
     return;
   };
 
+  my $save = $app->{spectrum}->masktype;
+  $app->{spectrum}->masktype('single');
   $app->{spectrum}->elastic_file($file);
   my $ret = $app->{spectrum}->check($img);
   if ($ret->status == 0) {
@@ -207,6 +208,7 @@ sub view {
   } elsif ($cbm > $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale) {
     $cbm = $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale;
   };
+  $app->{spectrum}->masktype($save);
   $app->{spectrum}->cbmax($cbm);# if $step =~ m{social};
   $app->{spectrum}->plot_mask;
   $app->{main}->status("Plotted ".$app->{spectrum}->elastic_file);

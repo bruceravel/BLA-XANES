@@ -111,6 +111,8 @@ has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3,
 			     documentation => "The number of illuminated neighbors below which a pixel is considered isolated and should be removed from the mask.");
 has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The number of illuminated neighbors above which a pixel is considered as part of the mask.");
+has 'vertical'           => (is => 'rw', isa => 'Bool', default => 0,
+			     documentation => "A flag indicating the the social pixel step of mask creation should only consider pixels in the vertical direction.");
 has 'deltae'	         => (is => 'rw', isa => 'Num', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
@@ -135,6 +137,16 @@ has 'imagescale'         => (is => 'rw', isa => 'Num', default => 40,
 has 'operation'          => (is => 'rw', isa => 'Str', default => q{median},
 			     documentation => "The areal operation, either median or mean.");
 
+enum 'MaskTypes' => [qw(single aggregate)];
+coerce 'MaskTypes',
+  from 'Str',
+  via { lc($_) };
+has 'masktype'           => (is => 'rw', isa => 'MaskTypes', default => q{median},
+			     documentation => "The current working mask type, single or aggregate.");
+has 'working_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			     documentation => "This containing the PDL of the image currently being work upon, so it is a copy of either elastic_image or aggregate_image.");
+
+
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The fully resolved file name containing the measured elastic image.");
 has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
@@ -142,20 +154,10 @@ has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null
 			     trigger => sub{my ($self, $new) = @_; my $max = $new->flat->max; $self->eimax($max)} );
 has 'eimax'              => (is => 'rw', isa => 'Num', default => 0,
 			     documentation => "unit pixel size in mask");
+has 'aggregate_image'    => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			     documentation => "The PDL object containing the aggragate image of all elastic measurements.");
 
 
-# has 'bad_pixel_list' => (
-# 			 traits    => ['Array'],
-# 			 is        => 'rw',
-# 			 isa       => 'ArrayRef',
-# 			 default   => sub { [] },
-# 			 handles   => {
-# 				       'push_bad_pixel_list'  => 'push',
-# 				       'pop_bad_pixel_list'   => 'pop',
-# 				       'clear_bad_pixel_list' => 'clear',
-# 				      },
-# 			 documentation => "An array reference containing the x,y coordinates of the bad pixels."
-# 			);
 has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			   documentation => "The PDL object containing the bad pixel mask.");
 
@@ -292,9 +294,6 @@ has 'sentinal'  => (traits  => ['Code'],
 		    is => 'rw', isa => 'CodeRef', default => sub{sub{1}},
 		    handles => {call_sentinal => 'execute',});
 
-#enum 'Xray::BLA::Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
-#has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
-#		    documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
 
 sub import {
   my ($class) = @_;
@@ -458,8 +457,9 @@ sub apply_mask {
   my $ret = Xray::BLA::Return->new;
   local $|=1;
 
+  $self->push_working_image;
   my $image;
-  if ($self->scan_file_list) {
+  if ($#{$self->scan_file_list} > -1) {
     $image = $self->scan_file_list->[$tif-1];
   } else {
     my $pattern = '%s_%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd.tif';
@@ -478,10 +478,7 @@ sub apply_mask {
     printf("  %3d, %s", $tif, $image) if ($args{verbose} and (not $tif % 10));
 
     ## * is pixel by pixel multiplication of mask and datapoint: see mult in PDL::Ops
-    ## sumover: see PDL::Ufunc
-    ## flat, sclr: see PDL::Core
     my $masked = $self->elastic_image * $self->Read($image);
-    #my $sum = int($masked->flat->sumover->sclr / $self->eimax);
     my $sum = int($masked->sum / $self->eimax);
     printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
     $ret->status($sum);
@@ -980,6 +977,14 @@ Import an ini-style configuration file to set attributes of the
 Xray::BLA object.
 
   $spectrum -> read_ini("myconfig.ini");
+
+=item C<guess_element_and_line>
+
+Using the median of the list of energies in the C<elastic_energies>
+attribute, guess the element and line using a list of tabiulated line
+energies from L<Xray::Absorption>.
+
+  my ($el, $li) = $spectrum->guess_element_and_line;
 
 =item C<mask>
 

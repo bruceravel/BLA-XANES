@@ -1,0 +1,23 @@
+
+From Xray::BLA
+
+#enum 'Xray::BLA::Backends' => ['Imager', 'Image::Magick', 'ImageMagick'];
+#has 'backend'	=> (is => 'rw', isa => 'Str', default => q{Imager},
+#		    documentation => 'The tiff reading backend, usually Imager, possible Image::Magick.');
+
+
+From Xray::BLA::Mask::check 
+
+  # if (($self->backend eq 'Imager') and ($self->get_version < 0.87)) {
+  #   $ret->message("This program requires Imager version 0.87 or later.");
+  #   $ret->status(0);
+  #   return $ret;
+  # };
+  # if (($self->backend eq 'ImageMagick') and ($self->get_version !~ m{Q32})) {
+  #   $ret->message("The version of Image Magick on your computer does not support 32-bit depth.");
+  #   $ret->status(0);
+  #   return $ret;
+  # };
+
+
+

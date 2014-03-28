@@ -4,14 +4,17 @@ use strict;
 use warnings;
 
 use Cwd;
+use File::Spec;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
-use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON);
+use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX);
 
 sub new {
   my ($class, $page, $app) = @_;
   my $self = $class->SUPER::new($page, -1, wxDefaultPosition, wxDefaultSize, wxMAXIMIZE_BOX );
+
+  $self->{masktype} = 'single';
 
   my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
 
@@ -45,10 +48,15 @@ sub new {
   my $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxALL, 5);
 
+  $self->{rbox} = Wx::RadioBox->new($self, -1, 'Mask type', wxDefaultPosition, wxDefaultSize,
+				    ['Single energy', 'Aggregate'], 1, wxRA_SPECIFY_COLS);
+  $ebox->Add($self->{rbox}, 0, wxALL, 5);
+  EVT_RADIOBOX($self, $self->{rbox}, sub{MaskType(@_, $app)});
+
   $self->{energylabel} = Wx::StaticText->new($self, -1, "Emission energy");
-  $self->{energy} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, wxDefaultSize, [], wxCB_READONLY);
-  $ebox->Add($self->{energylabel}, 0, wxALL, 5);
-  $ebox->Add($self->{energy}, 0, wxALL, 5);
+  $self->{energy} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, wxDefaultSize, [75,-1], wxCB_READONLY);
+  $ebox->Add($self->{energylabel}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{energy}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
   EVT_COMBOBOX($self, $self->{energy}, sub{SelectEnergy(@_, $app)});
   $app->mouseover($self->{energy}, "Select the emission energy at which to prepare a mask.");
 
@@ -121,30 +129,29 @@ sub new {
   $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
 
   ++$row;
+  $self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1]);
+  $gbs ->Add($self->{do_aggregate},   Wx::GBPosition->new($row,0));
+  $app->mouseover($self->{do_aggregate},   "Multiply the current mask by the aggregate mask.");
+
+  ++$row;
   $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1]);
   $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,0));
   $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
 
-  ++$row;
-  $self->{do_andmask} = Wx::Button->new($self, -1, "Finish mask", wxDefaultPosition, [$buttonwidth,-1]);
-  $gbs ->Add($self->{do_andmask},   Wx::GBPosition->new($row,0));
-  $app->mouseover($self->{do_andmask}, "Explicitly convert current mask to an AND mask (i.e. with only 0 and 1 values).");
-
-
-  foreach my $k (qw(bad social lonely multiply areal entire andmask)) {
-    EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
-  };
 
   $vbox ->  Add(1, 1, 2);
 
   my $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
+  $self->{do_andmask} = Wx::Button->new($self, -1, "Finish mask", wxDefaultPosition, wxDefaultSize);
+  $svbox->Add($self->{do_andmask}, 1, wxGROW|wxALL, 5);
   $self->{savemask} = Wx::Button -> new($self, -1, 'Save mask');
   $svbox->Add($self->{savemask}, 1, wxGROW|wxALL, 5);
   $self->{animation} = Wx::Button -> new($self, -1, 'Save animation');
   $svbox->Add($self->{animation}, 1, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{savemask}, sub{savemask(@_, $app)});
   EVT_BUTTON($self, $self->{animation}, sub{animation(@_, $app)});
+  $app->mouseover($self->{do_andmask}, "Explicitly convert current mask to an AND mask (i.e. with only 0 and 1 values).");
   $app->mouseover($self->{savemask}, "Write the current mask to an image file.");
   $app->mouseover($self->{animation}, "Save the mask processing steps as an animated gif.");
 
@@ -162,6 +169,11 @@ sub new {
 
   $vbox ->  Add(1, 1, 2);
 
+  foreach my $k (qw(bad social lonely multiply areal entire aggregate andmask)) {
+    EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
+  };
+  EVT_CHECKBOX($self, $self->{socialvertical}, sub{$app->{spectrum}->vertical($self->{socialvertical}->GetValue)});
+
   $self -> SetSizerAndFit( $hbox );
 
   foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue
@@ -169,13 +181,46 @@ sub new {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask savemask animation
-		    stub reset energylabel energy savesteps)) {
+		    do_entire do_aggregate do_andmask savemask animation
+		    stub reset energylabel energy savesteps rbox)) {
     $self->{$k} -> Enable(0);
   };
 
   return $self;
 };
+
+sub MaskType {
+  my ($self, $event, $app) = @_;
+  my $type = $self->{rbox}->GetStringSelection;
+  if ($type eq 'Single energy') {
+    $app->{spectrum}->aggregate_image($app->{spectrum}->working_image);
+    $self->{energy}->Enable(1);
+    $self->{energylabel}->Enable(1);
+    $self->{masktype} = 'single';
+    $app->{spectrum}->masktype('single');
+  } elsif ($type eq 'Aggregate') {
+    $app->{spectrum}->elastic_image($app->{spectrum}->working_image);
+    $self->{energy}->Enable(0);
+    $self->{energylabel}->Enable(0);
+    $self->{masktype} = 'aggregate';
+    $app->{spectrum}->masktype('aggregate');
+    $app->{spectrum}->aggregate;
+    $app->{spectrum}->plot_aggregate;
+  };
+
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue)) {
+    $self->{$k}->Enable(1);
+  };
+  foreach my $k (qw(do_social sociallabel socialvalue socialvertical
+		    do_lonely lonelylabel lonelyvalue
+		    do_multiply multiplyvalue
+		    do_areal arealtype areallabel arealvalue
+		    do_entire do_andmask do_aggregate savemask animation)) {
+    $self->{$k}->Enable(0);
+  };
+  $self->{steps_list}->Clear;
+};
+
 
 sub SelectEnergy {
   my ($self, $event, $app) = @_;
@@ -204,7 +249,7 @@ sub SelectEnergy {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask savemask animation)) {
+		    do_entire do_andmask do_aggregate savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $self->{steps_list}->Clear;
@@ -236,7 +281,7 @@ sub Reset {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask savesteps savemask animation)) {
+		    do_entire do_andmask do_aggregate savesteps savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
@@ -247,29 +292,32 @@ sub Reset {
   $self->{replot}->Enable(0);
   $self->{reset}->Enable(0);
 
+  $app->{spectrum}->aggregate if ($app->{spectrum}->masktype eq 'aggregate');
   $self->plot($app);
 };
 
 sub do_step {
   my ($self, $event, $app, $which) = @_;
   my $energy = $self->{energy}->GetStringSelection;
-  if ($energy eq q{}) {
+  if ($app->{spectrum}->masktype eq 'single' and ($energy eq q{})) {
     $app->{main}->status("You haven't selected an emission energy.", 'alert');
     return;
   };
 
   my %args = ();
-  $args{write}   = q{};
-  $args{verbose} = 0;
-  $args{unity}   = 0;
+  $args{write}    = q{};
+  $args{verbose}  = 0;
+  $args{unity}    = 0;
+  $args{vertical} = $app->{spectrum}->vertical;
 
+  my $success;
   if ($which eq 'bad') {
     $app->{spectrum} -> bad_pixel_value($self->{badvalue}->GetValue);
     $app->{spectrum} -> weak_pixel_value($self->{weakvalue}->GetValue);
-    $app->{spectrum} -> do_step('bad_pixels', %args);
+    $success = $app->{spectrum} -> do_step('bad_pixels', %args);
     $self->{steps_list}->Append(sprintf("bad %d weak %d",
 					$app->{spectrum} -> bad_pixel_value,
-					$app->{spectrum} -> weak_pixel_value));
+					$app->{spectrum} -> weak_pixel_value)) if $success;
     foreach my $k (qw(do_social sociallabel socialvalue socialvertical
 		      do_lonely lonelylabel lonelyvalue
 		      do_multiply multiplyvalue
@@ -278,6 +326,7 @@ sub do_step {
 		      savesteps)) { # animation
       $self->{$k}->Enable(1);
     };
+    $self->{do_aggregate}->Enable(1) if ($app->{spectrum}->masktype eq 'single');
     $self->{savemask}->Enable(0) if ($app->{spectrum}->is_windows);
     $self->{replot}->Enable(1);
     $self->{reset}->Enable(1);
@@ -289,21 +338,22 @@ sub do_step {
 
   } elsif ($which eq 'social') {
     $app->{spectrum} -> social_pixel_value($self->{socialvalue}->GetValue);
-    $app->{spectrum} -> do_step('social_pixels', %args);
-    $self->{steps_list}->Append(sprintf("social %d",
-					$app->{spectrum} -> social_pixel_value));
+    $success = $app->{spectrum} -> do_step('social_pixels', %args);
+    my $vert_text = ($app->{spectrum}->vertical) ? q{ vertical} : q{};
+    $self->{steps_list}->Append(sprintf("social %d%s",
+					$app->{spectrum} -> social_pixel_value, $vert_text)) if $success;
 
   } elsif ($which eq 'lonely') {
     $app->{spectrum} -> lonely_pixel_value($self->{lonelyvalue}->GetValue);
-    $app->{spectrum} -> do_step('lonely_pixels', %args);
+    $success = $app->{spectrum} -> do_step('lonely_pixels', %args);
     $self->{steps_list}->Append(sprintf("lonely %d",
-					$app->{spectrum} -> lonely_pixel_value));
+					$app->{spectrum} -> lonely_pixel_value)) if $success;
 
   } elsif ($which eq 'multiply') {
     $app->{spectrum} -> scalemask($self->{multiplyvalue}->GetValue);
-    $app->{spectrum} -> do_step('multiply', %args);
+    $success = $app->{spectrum} -> do_step('multiply', %args);
     $self->{steps_list}->Append(sprintf("multiply by %d",
-					$app->{spectrum} -> scalemask));
+					$app->{spectrum} -> scalemask)) if $success;
 
   } elsif ($which eq 'areal') {
     $app->{spectrum} -> operation($self->{arealtype}->GetStringSelection);
@@ -312,36 +362,52 @@ sub do_step {
       $app->{main}->status("Areal median is not available yet.", 'alert');
       return;
     };
-    $app->{spectrum} -> do_step('areal', %args);
+    $success = $app->{spectrum} -> do_step('areal', %args);
     $self->{steps_list}->Append(sprintf("areal %s radius %d",
 					$app->{spectrum} -> operation,
-					$app->{spectrum} -> radius));
+					$app->{spectrum} -> radius)) if $success;
   } elsif ($which eq 'entire') {
-    $app->{spectrum} -> do_step('entire_image', %args);
-    $self->{steps_list}->Append("entire image");
+    $success = $app->{spectrum} -> do_step('entire_image', %args);
+    $self->{steps_list}->Append("entire image") if $success;
+
+  } elsif ($which eq 'aggregate') {
+    if ($app->{spectrum}->aggregate_image->isnull) {
+      $app->{main}->status("You haven't made an aggregate mask yet.", 'alert');
+      return;
+    };
+    $success = $app->{spectrum} -> do_step('andaggregate', %args);
+    $self->{steps_list}->Append("aggregate") if $success;
 
   } elsif ($which eq 'andmask') {
-    $app->{spectrum} -> do_step('andmask', %args);
-    $self->{steps_list}->Append("andmask");
+    $success = $app->{spectrum} -> do_step('andmask', %args);
+    $self->{steps_list}->Append("andmask") if $success;
 
   };
   $app->{spectrum}->remove_bad_pixels;
   $self->plot($app);
-  $app->{main}->status("Plotted result of $which step.");
+  if ($success) {
+    $app->{main}->status("Plotted result of $which step.");
+  } else {
+    $app->{main}->status("That action resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
+  };
 
 };
 
 
 sub plot {
   my ($self, $app) = @_;
-  my $cbm = int($app->{spectrum}->elastic_image->max);
+  my $cbm = int($app->{spectrum}->working_image->max);
   if ($cbm < 1) {
     $cbm = 1;
   } elsif ($cbm > $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale) {
     $cbm = $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale;
   };
   $app->{spectrum}->cbmax($cbm);# if $step =~ m{social};
-  $app->{spectrum}->plot_mask;
+  if ($app->{spectrum}->masktype eq 'single') {
+    $app->{spectrum}->plot_mask;
+  } else {
+    $app->{spectrum}->plot_aggregate;
+  };
   $app->{main}->status("Plotted ".$app->{spectrum}->elastic_file);
 };
 
@@ -391,12 +457,14 @@ sub replot {
 sub savemask {
   my ($self, $event, $app) = @_;
 
-  my $fname = $app->{spectrum}->stub . "_" . $app->{spectrum}->energy . ".";
+  my $id = ($app->{spectrum}->masktype eq 'aggregate') ? 'aggregate' : $app->{spectrum}->energy;
+  my $fname = $app->{spectrum}->stub . "_" . $id . ".";
   $fname .= ($app->{spectrum}->is_windows) ? 'tif' : $app->{spectrum}->outimage;
   my $extensions = ($app->{spectrum}->is_windows) ?
     "TIF (*.tif)|*.tif|All files (*)|*" :
       "TIF, GIF, and PNG (*.tif;*.gif*.png)|*.tif|TIF (*.tif)|*.tif|GIF (*.gif)|*.gif|PNG (*.png)|*.png|All files (*)|*";
-  my $fd = Wx::FileDialog->new( $app->{main}, "Save mask image", cwd, $fname,
+  my $ag = ($app->{spectrum}->masktype eq 'aggregate') ? ' aggregate' : q{};
+  my $fd = Wx::FileDialog->new( $app->{main}, "Save$ag mask image", cwd, $fname,
 				$extensions,
 				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
 				wxDefaultPosition);
@@ -406,7 +474,7 @@ sub savemask {
   };
   my $file = $fd->GetPath;
   my $args = ($app->{spectrum}->is_windows) ? {FORMAT=>'TIFF'} : {};
-  $app->{spectrum}->elastic_image->wim($file, $args);
+  $app->{spectrum}->working_image->wim($file, $args);
   if (($app->{spectrum}->is_windows) and ($file !~ m{tif\z})) {
     $app->{main}->status("TIFF is the only output format for Windows.  A TIFF file was written regardless of the filename.");
   } else {

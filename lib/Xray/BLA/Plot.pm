@@ -36,6 +36,14 @@ sub plot_mask {
 	$self->elastic_image);
 };
 
+sub plot_aggregate {
+  my ($self) = @_;
+  (my $title = basename($self->stub)) =~ s{_}{\\\\_}g;
+  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title." aggregate",
+	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
+	$self->aggregate_image);
+};
+
 sub plot_energy_point {
   my ($self, $file) = @_;
   my $point = $self->Read($file);

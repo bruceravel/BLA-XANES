@@ -46,7 +46,7 @@ $outimage = 'gif' if ($outimage !~ m{png|tif});
 
 my $nonpublic = 'list|none|test';
 
-my $spectrum = Xray::BLA->new(outimage=>$outimage);
+my $spectrum = Xray::BLA->new(outimage=>$outimage, masktype=>'single');
 if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
   $plot = 0;
   print $spectrum->report("Drat! Plotting with gnuplot could not be enabled.\n", 'bold red');
@@ -126,7 +126,7 @@ MODE: {
       } else {
 	$file .= '.dat';
       };
-      my $ret = 0;
+      my $ret = Xray::BLA::Return->new;
       if (not -e $file) {
 	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
 	$ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
@@ -134,9 +134,9 @@ MODE: {
 	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
 	$ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
       } else {
-	1;			# do nothing
+	$ret->status(0); # do nothing
       };
-      $spectrum -> plot_rixs($ret->message, type=>'data', title=>join(", ", $spectrum->stub, $e), pause=>0.1) if ($ret and $plot);
+      $spectrum -> plot_rixs($ret->message, type=>'data', title=>join(", ", $spectrum->stub, $e), pause=>0.1) if ($ret->status and $plot);
       $spectrum -> push_herfd_file_list($file);
       $spectrum -> push_herfd_pixels_used($spectrum->npixels);
     };

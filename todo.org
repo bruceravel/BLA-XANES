@@ -1,11 +1,11 @@
 #+STARTUP: showall
 * Bugs and limitations in Xray::BLA and Metis
 
-** Issues with Xray::BLA [1/14]
+** Issues with Xray::BLA [2/14]
 
  - [ ] More robust error handling.
 
- - [ ] When a mask processing step results in 0 illuminated pixels,
+ - [X] When a mask processing step results in 0 illuminated pixels,
    Metis crashes.  Should reset working_image to prior state if 0
    pixels illuminated.
 
@@ -21,7 +21,8 @@
    columns.  Too much assumption goes into the scan method.
 
  - [ ] Drop current crop of gnuplot+Text::Template methods in favor of
-   PDL::Graphics::Gnuplot
+   PDL::Graphics::Gnuplot.  or not -- it's handy to write out the .gp
+   file.
 
  - [ ] gnuplot file for rixs map (much easier with above...)
 
@@ -32,7 +33,7 @@
 
  - [ ] It should not be necessary to specify the list of elastic
    energies in the config file.  They could be culled from the file
-   names or from a file of metadata.
+   names or from a file of metadata.  (As in Metis)
 
  - [X] Figure out element and emission line by comparing the midpoint
    of the range of elastic energies to a table of line energies.
@@ -43,13 +44,20 @@
  - [ ] Think about how to use HDF5 to store images, scans, scan
    metadata, and Xray::BLA metadata.
 
-** Issues with Metis [0/9]
+** Issues with Metis [1/11]
+
+ - [ ] Version 2 will have Xray::BLA objects for each emission energy
+   and one for the aggregate object.  That will make XES and RIXS much
+   simpler to implement sensibly.  Will also allow me to dump the
+   working_image concept.
 
  - [ ] implement XES and RIXS
 
  - [ ] implement Map and mapmask
 
- - [ ] implement aggregate map from set of elastic images
+ - [X] implement aggregate mask from set of elastic images
+
+ - [ ] separate stubs for elastic and data images
 
  - [ ] widgets for selecting folders.  Wx::FileDialog was causing
    crashes on my home computer.
@@ -69,7 +77,8 @@
    content for the lists.
 
  - [ ] Persistance?  Is anything more than the preferences yaml
-   necessary?
+   necessary? *Yes!* Need to save group of masks.  Need to save
+   aggregate mask.  Need to reimport them.
 
  - [ ] how are element and line used?  (answer: they are used to set
    the white color band in a map)

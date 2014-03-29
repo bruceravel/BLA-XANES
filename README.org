@@ -1,3 +1,4 @@
+#+STARTUP: showall
 * Convert bent-Laue analyzer images to XANES data
 
 ** Synopsis
@@ -32,19 +33,19 @@ To install, do the following:
 
 ** Usage
 
-There is a single program installed from the bin/ folder.  ~bla~ is a
-wrapper script around the six bent Laue tasks:
+~bla~, found in the ~bin/~ folder, is a wrapper script around the six
+bent Laue tasks:
 
- 1. ~herfd~: make a single HERFD spectrum at a specific
-    emission energy
+ 1. ~herfd~: make a single HERFD spectrum at a specific emission
+    energy
 
- 2. ~rixs~: generate a sequence of HERFD spectra at a
-    sequence of emission energies
+ 2. ~rixs~: generate a sequence of HERFD spectra at a sequence of
+    emission energies
 
- 3. ~map~: convert a series of elastic images to an
-    energy vs. pixel map
+ 3. ~xes~: compute the emission spectrum for a specific incident energy
 
- 4. ~xes~: compute the emission spectrum for a specific incident energy
+ 4. ~map~: convert a series of elastic images to an energy vs. pixel
+    map
 
  5. ~mask~: compute the mask file for a specific emission energy
 
@@ -55,8 +56,8 @@ wrapper script around the six bent Laue tasks:
 
 :  bla herfd [cxeaspvnfqh] <stub>
 :  bla rixs  [cxaspvnfqh]  <stub>
-:  bla map   [crpvnqh]     <stub>
 :  bla xes   [cipvnqh]     <stub>
+:  bla map   [crpvnqh]     <stub>
 :  bla mask  [casvnfqh]    <stub>
 :  bla point [ceih]        <stub>
 : 
@@ -98,10 +99,10 @@ The ~-i~ flag, used by ~point~ and ~xes~ can take either an integer,
 indicating the index of the data point, or a number, indicating the
 incident energy of the datapoint.  So the following may be equivalent:
 
-:             bla point -c=/path/to/config.ini -e=9713 -p=69 Aufoil1
-:             bla point -c=/path/to/config.ini -e=9713 -p=12000 Aufoil1
+:      bla point -c=/path/to/config.ini -e=9713 -p=69 Aufoil1
+:      bla point -c=/path/to/config.ini -e=9713 -p=12000 Aufoil1
 
-For the ~point~ task, the ~-i~ flag *must* be sepcified.  For the
+For the ~point~ task, the ~-i~ flag *must* be specified.  For the
 ~xes~ task, if the ~-i~ flag is omited, the midpoint of the scan (in
 index, not in energy) will be used.
 
@@ -163,19 +164,28 @@ switch.
    HERFD spectrum at the specified emission energy and, if requested,
    gif images with the mask and the mask creation animation.
 
+   At each energy point, the HERFD signal is computed from the Pilatus
+   image using the mask created as described above.  The counts on
+   each pixel lying within the illuminated portion of the mask are
+   summed.  This sum is the HERFD signal at that incident energy.
+
+   A column data file is written containing the energy and several
+   scalars from the original measurement and a column containing the
+   HERFD signal.  This file can be imported directly into Athena.
+
  + The output of the ~rixs~ task is the same as for the ~herfd~
    script at each emission energy.
+
+ + The output of the ~xes~ task is a data file containing the XES
+   spectrum from that incident energy with the signal from each
+   emission energy weighted by the number of illuminated pixels in
+   that mask.
 
  + The output of the ~map~ task is a data file in a [[http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2][simple format]]
    which can be read by gnuplot and a gnuplot script for displaying
    the data.  The resulting image will plot a map of detector column
    vs detector row with the color axis showing energy.  Gif files for
    the masks at each emission energy are also written.
-
- + The output of the ~xes~ task is a data file containing the XES
-   spectrum from that incident energy with the signal from each
-   emission energy weighted by the number of illuminated pixels in
-   that mask.
 
  + The output of the ~mask~ task is a single gif file containing the
    mask for the specified emission energy.
@@ -188,7 +198,7 @@ switch.
 
 On Windows, tiff files are written rather than gif files.
 
-The ~herfd~, ~rixs~, ~map~, and ~xes~ tasks are intended for
+The ~herfd~, ~rixs~, ~xes~, and ~map~ tasks are intended for
 post-processing of a full data set.
 
 The ~mask~ and ~point~ tasks are intended for inlining in the data
@@ -340,8 +350,7 @@ substituting ~C:\GnuWin32\bin~ with the location on your computer.
 Without NetPBM, an invocation of the bla script with the ~-s~ or ~-a~
 flags will not run to completion. 
 
-Thus far, I have only got this to work on Windows XP, but not on
-Windows 7.
+This does not yet work on Windows.
 
 *** XDI Output
 
@@ -363,14 +372,3 @@ equally represented on the face of the detector.
 The version of Athena based on Demeter will be able to use these
 values as importance or plot multiplier values if the ~Xray::XDI~
 module is available.
-
-** Scan conversion
-
-At each energy point, the HERFD signal is computed from the Pilatus
-image using the mask created as described above.  The counts on each
-pixel lying within the illuminated portion of the mask are summed.
-This sum is the HERFD signal at that incident energy.
-
-A column data file is written containing the energy and several
-scalars from the original measurement and a column containing the
-HERFD signal.  This file can be imported directly into Athena.

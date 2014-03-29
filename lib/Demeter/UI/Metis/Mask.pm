@@ -69,7 +69,7 @@ sub new {
 
   my $row = 0;
 
-  $self->{do_bad}    = Wx::Button->new($self, -1, "&Bad/weak step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_bad}    = Wx::Button->new($self, -1, "&Bad/weak step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{badlabel}  = Wx::StaticText->new($self, -1, 'Bad value:');
   $self->{badvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->bad_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 10000);
   $self->{weaklabel} = Wx::StaticText->new($self, -1, 'Weak value:');
@@ -84,7 +84,7 @@ sub new {
   $app->mouseover($self->{weakvalue}, "Pixels below this value are considered weak.");
 
   ++$row;
-  $self->{do_areal}   = Wx::Button->new($self, -1, "&Areal step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_areal}   = Wx::Button->new($self, -1, "&Areal step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{arealtype}  = Wx::Choice->new($self, -1, wxDefaultPosition, wxDefaultSize,
 					[qw(mean median)]);
   $self->{areallabel} = Wx::StaticText->new($self, -1, 'Radius:');
@@ -99,7 +99,7 @@ sub new {
   $app->mouseover($self->{arealvalue}, "The \"radius\" of the averaging, a value of 1 uses a 3x3 square, 2 uses a 5x5 square.");
 
   ++$row;
-  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{lonelylabel}  = Wx::StaticText->new($self, -1, 'Lonely value:');
   $self->{lonelyvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->lonely_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 8);
   $gbs ->Add($self->{do_lonely},   Wx::GBPosition->new($row,0));
@@ -109,7 +109,7 @@ sub new {
   $app->mouseover($self->{lonelyvalue}, "A lit pixel is lonely and will be removed if less than or equal to this number of neighbors are unlit.");
 
   ++$row;
-  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{sociallabel}  = Wx::StaticText->new($self, -1, 'Social value:');
   $self->{socialvalue}  = Wx::SpinCtrl->new($self, -1, $app->{spectrum}->social_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 8);
   $self->{socialvertical} = Wx::CheckBox->new($self, -1, '&Vertical');
@@ -122,20 +122,20 @@ sub new {
   $app->mouseover($self->{socialvalue}, "Perform the social pixel step, but only considering pixels directly above and below.");
 
   ++$row;
-  $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 2, 1000);
   $gbs ->Add($self->{do_multiply},   Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
   $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
 
   ++$row;
-  $self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1]);
+  $self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $gbs ->Add($self->{do_aggregate},   Wx::GBPosition->new($row,0));
   $app->mouseover($self->{do_aggregate},   "Multiply the current mask by the aggregate mask.");
 
-  ++$row;
-  $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1]);
-  $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,0));
+  #++$row;
+  $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,3), Wx::GBSpan->new(1,2));
   $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
 
 
@@ -202,6 +202,9 @@ sub MaskType {
     $app->{spectrum}->elastic_image($app->{spectrum}->working_image);
     $self->{energy}->Enable(0);
     $self->{energylabel}->Enable(0);
+    foreach my $e (0 .. $app->{Files}->{elastic_list}->GetCount-1) {
+      $app->{spectrum}->push_elastic_file_list($app->{Files}->{elastic_list}->GetString($e));
+    };
     $self->{masktype} = 'aggregate';
     $app->{spectrum}->masktype('aggregate');
     $app->{spectrum}->aggregate;

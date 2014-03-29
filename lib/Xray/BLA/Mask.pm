@@ -508,9 +508,11 @@ sub aggregate {
   $self->masktype('single');
   $self->aggregate_image(PDL::null);
   my $sum; # = PDL::Core::zeros($self->working_image->dims);
+  my $i = 0;
   foreach my $e (@{$self->elastic_energies}) {
     $self -> energy($e);
-    my $ret = $self->check();
+    my $file = ($#{$self->elastic_file_list} > -1) ? $self->elastic_file_list->[$i] : q{};
+    my $ret = $self->check($file);
     if ($ret->status == 0) {
       die $self->report($ret->message, 'bold red');
     };
@@ -520,6 +522,7 @@ sub aggregate {
     } else {
       $sum += $self->working_image;
     };
+    ++$i;
   };
 
   $self->masktype('aggregate');

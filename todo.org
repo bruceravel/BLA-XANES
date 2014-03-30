@@ -44,14 +44,14 @@
  - [ ] Think about how to use HDF5 to store images, scans, scan
    metadata, and Xray::BLA metadata.
 
-** Issues with Metis [1/11]
+** Issues with Metis [2/11]
 
- - [ ] Version 2 will have Xray::BLA objects for each emission energy
+ - [X] Version 2 will have Xray::BLA objects for each emission energy
    and one for the aggregate object.  That will make XES and RIXS much
    simpler to implement sensibly.  Will also allow me to dump the
    working_image concept.
 
- - [ ] implement XES and RIXS
+ - [ ] implement +XES and+ RIXS
 
  - [ ] implement Map and mapmask
 
@@ -83,4 +83,14 @@
  - [ ] how are element and line used?  (answer: they are used to set
    the white color band in a map)
 
+** Mask algorithm possibilities
 
+ - proper edge detection
+ - Fourier filtering
+
+** Rough milestones
+
+ - *Version 2* : XES and RIXS working in Metis
+ - *Version 3* : proper test suite, test for and handle edge cases
+ - *Version 4* : map and mapmask working in Metis
+ - *Version 5* : persistance in Metis, save and recover to current position

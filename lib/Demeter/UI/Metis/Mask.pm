@@ -205,7 +205,7 @@ sub MaskType {
     $self->{energy}->Enable(0);
     $self->{energylabel}->Enable(0);
     $app->{bla_of}->{aggregate}->aggregate;
-    $app->{bla_of}->{aggregate}->plot_aggregate;
+    $app->{bla_of}->{aggregate}->plot_mask('aggregate');
     undef $busy;
   };
 
@@ -334,9 +334,16 @@ sub do_step {
     $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
     $app->{Data}->{energy} = $spectrum->energy;
-    foreach my $k (qw(stub energylabel herfd)) {
+    foreach my $k (qw(stub energylabel herfd xes incident incident_label)) {
       $app->{Data}->{$k}->Enable(1);
     };
+    $spectrum->get_incident_energies;
+    my $rlist = $spectrum->incident_energies;
+    foreach my $key (keys %{$app->{bla_of}}) {
+      $app->{bla_of}->{$key}->incident_energies($rlist);
+    };
+    $app->{Data}->{incident}->Append($_) foreach @$rlist;
+    $app->{Data}->{incident}->SetSelection(int($#{$rlist}/2));
 
   } elsif ($which eq 'social') {
     $spectrum -> social_pixel_value($self->{socialvalue}->GetValue);
@@ -415,7 +422,7 @@ sub plot {
   if ($spectrum->masktype eq 'single') {
     $spectrum->plot_mask;
   } else {
-    $spectrum->plot_aggregate;
+    $spectrum->plot_mask('aggregate');
   };
   $app->{main}->status("Plotted ".$spectrum->elastic_file);
 };

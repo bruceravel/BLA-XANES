@@ -233,6 +233,18 @@ has 'herfd_pixels_used' => (
 			    documentation => "An array reference containing numbers of illuminate pixels from a RIXS sequence."
 			   );
 
+has 'incident_energies' => (
+			    traits    => ['Array'],
+			    is        => 'rw',
+			    isa       => 'ArrayRef',
+			    default   => sub { [] },
+			    handles   => {
+					  'push_incident_energies'  => 'push',
+					  'pop_incident_energies'   => 'pop',
+					  'clear_incident_energies' => 'clear',
+					 },
+			    documentation => "An array reference containing the incident energies of the scan."
+			   );
 
 
 has 'steps' => (
@@ -481,6 +493,21 @@ sub apply_mask {
   return $ret;
 };
 
+
+sub get_incident_energies {
+  my ($self) = @_;
+  open(my $SCAN, "<", $self->scanfile);
+  my @list;
+  while (<$SCAN>) {
+    next if m{\A\#};
+    next if m{\A\s*\z};
+    chomp;
+    @list = split(" ", $_);
+    $self->push_incident_energies($list[0]);
+  };
+  close $SCAN;
+  return $self;
+};
 
 # # HERFD scan on Au3MarineCyanos1
 # # ----------------------------------

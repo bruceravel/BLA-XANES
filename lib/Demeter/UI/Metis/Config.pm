@@ -61,9 +61,10 @@ sub new {
   $gbs -> Add($self->{energycounterwidth},          Wx::GBPosition->new($row,1));
   $app->mouseover($self->{energycounterwidth}, "The width of the part of the energy point TIFF file name indicating the energy index, eg the 5 digits in \"Aufoil1_00040.tif\".");
 
-  ++$row;
+  $vbox -> Add(1,30,0);
+
   $self->{set} = Wx::Button->new($self, -1, 'Set parameters');
-  $gbs -> Add($self->{set},    Wx::GBPosition->new($row,0));
+  $vbox -> Add($self->{set}, 0, wxGROW|wxALL, 10);
   EVT_BUTTON($self, $self->{set}, sub{$app->set_parameters});
   $app->mouseover($self->{set}, "Set parameters and save Metis' current configuration.");
 

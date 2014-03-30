@@ -52,17 +52,16 @@ sub set_palette {
 
 
 sub plot_mask {
-  my ($self) = @_;
-  (my $title = basename($self->elastic_file)) =~ s{_}{\\\\_}g;
+  my ($self, $type) = @_;
+  $type ||= 'single';
+  my $title;
+  if ($type eq 'aggregate') {
+    $title = $self->stub . ' aggregate';
+  } else {
+    $title = basename($self->elastic_file);
+  };
+  $title =~ s{_}{\\\\_}g;
   image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
-	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
-	$self->elastic_image);
-};
-
-sub plot_aggregate {
-  my ($self) = @_;
-  (my $title = $self->stub) =~ s{_}{\\\\_}g;
-  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title." aggregate",
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
 	$self->elastic_image);
 };
@@ -107,9 +106,21 @@ sub plot_map {
   warn "no map plot yet\n";
 }
 sub plot_xes {
-  my ($self) = @_;
-  warn "no xes plot yet\n";
-}
+  my ($self, @args) = @_;
+  my %args = @args;
+  $args{incident} ||= 0;
+  $args{pause}      = q{-1} if not defined $args{pause};
+  my (@e, @xes);
+  foreach my $p (@{$args{xes}}) {
+    push @e, $p->[0];
+    push @xes, $p->[1];
+  };
+  gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
+	with=>'lines', legend=>'incident energy = '.$args{incident},
+	PDL->new(\@e), PDL->new(\@xes));
+  my $xesout = $self->dat_xes($args{xes});
+  return $xesout;
+};
 
 
 1;
@@ -143,7 +154,7 @@ default), blue, green, orange, purple, and red.
 
   $spectrum -> set_palette($color);
 
-An unkown color is ignored.
+An unknown color is ignored.
 
 =back
 

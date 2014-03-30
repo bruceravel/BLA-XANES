@@ -143,8 +143,6 @@ coerce 'MaskTypes',
   via { lc($_) };
 has 'masktype'           => (is => 'rw', isa => 'MaskTypes', default => q{single},
 			     documentation => "The current working mask type, single or aggregate.");
-has 'working_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
-			     documentation => "This containing the PDL of the image currently being work upon, so it is a copy of either elastic_image or aggregate_image.");
 
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
@@ -154,8 +152,6 @@ has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null
 			     trigger => sub{my ($self, $new) = @_; my $max = $new->flat->max; $self->eimax($max)} );
 has 'eimax'              => (is => 'rw', isa => 'Num', default => 0,
 			     documentation => "unit pixel size in mask");
-has 'aggregate_image'    => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
-			     documentation => "The PDL object containing the aggragate image of all elastic measurements.");
 
 
 has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
@@ -669,7 +665,7 @@ sub attribute_report {
   my $text = q{};
   foreach my $a (sort @list) {
     my $this = $self->$a;
-    $this = join("  ;  ", @{$this}) if ($a eq 'steps');
+    $this = join(", ", @{$this}) if ($a eq 'steps');
     $text .= sprintf "%-20s : %s\n", $a, $this;
   };
   return $text;
@@ -681,8 +677,7 @@ sub clone {
   my $new = Xray::BLA->new;
   my @list = $self->meta->get_attribute_list;
   foreach my $a (sort @list) {
-    next if (any {$a eq $_} qw(elastic_file elastic_image aggregate_image
-			       xdata ydata bad_pixel_mask));
+    next if (any {$a eq $_} qw(elastic_file elastic_image xdata ydata bad_pixel_mask));
     if (ref($self->$a) =~ m{PDL}) {
       $new->$a($self->$a->copy);
     } else {

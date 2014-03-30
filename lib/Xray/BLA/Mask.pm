@@ -23,31 +23,6 @@ use PDL::IO::Dumper;
 use PDL::Image2D;
 
 
-sub set_working_image {
-  my ($self, $which) = @_;
-  $which ||= $self->masktype;
-  if ($which eq 'single') {
-    $self->working_image($self->elastic_image->copy);
-  } elsif ($which eq 'aggregate') {
-    $self->working_image($self->aggregate_image->copy);
-  } else {			# clear working_image
-    $self->working_image(PDL::null);
-  };
-  return $self->working_image;
-};
-sub push_working_image {
-  my ($self, $which) = @_;
-  $which ||= $self->masktype;
-  if ($which eq 'single') {
-    $self->elastic_image($self->working_image->copy);
-  } elsif ($which eq 'aggregate') {
-    $self->aggregate_image($self->working_image->copy);
-  } else {			# clear working_image
-    #$self->working_image(PDL::null);
-  };
-  return $self->working_image;
-};
-
 sub mask {
   my ($self, @args) = @_;
   my %args = @args;
@@ -325,10 +300,17 @@ sub andaggregate {
   my ($self, $rargs) = @_;
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
+  if ((not defined($args{aggregate})) or
+      (ref($args{aggregate}) !~ m{BLA}) or
+      ($args{aggregate}->masktype ne 'aggregate')
+     ) {
+    $ret->status(0);
+    $ret->message("No aggregate image supplied (perhaps you haven't created it yet...)");
+  }
 
-  $self->aggregate_image->wim('foo.tif');
+  ##$self->elastic_image->wim('foo.tif');
 
-  $self->elastic_image -> inplace -> mult($self->aggregate_image, 0);
+  $self->elastic_image -> inplace -> mult($args{aggregate}->elastic_image, 0);
   my $str = $self->report("Multiply by aggregate mask", 'cyan');
   $ret->status($self->elastic_image->gt(0,0)->sum);
   $ret->message($str);

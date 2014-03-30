@@ -22,11 +22,34 @@ use File::Basename;
 
 has 'cbmax' => (is => 'rw', isa => 'Int', default => 20);
 
+has 'color'   => (is => 'rw', isa => 'Str', default => 'grey');
 has 'palette' => (is => 'rw', isa => 'Str',
-		  #default=>"negative defined ( 0 '#D53E4F', 1 '#F46D43', 2 '#FDAE61', 3 '#FEE08B', 4 '#E6F598', 5 '#ABDDA4', 6 '#66C2A5', 7 '#3288BD' )",
-		  #default => "defined ( 0 '#FFFFFF', 1 '#F0F0F0', 2 '#D9D9D9', 3 '#BDBDBD', 4 '#969696', 5 '#737373', 6 '#525252', 7 '#252525' )",
+		  ## greys
 		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
 		  );
+
+## These are the single hue, sequential palettes from Color Brewer
+##   http://colorbrewer2.org/
+## The gnuplot definitions are from
+##   https://github.com/aschn/gnuplot-colorbrewer
+## I reversed the order so that white is the top of the color scale in each case
+my %color_choices = (
+		     grey   => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
+		     green  => "defined ( 0 '#005A32', 1 '#238B45', 2 '#41AB5D', 3 '#74C476', 4 '#A1D99B', 5 '#C7E9C0', 6 '#E5F5E0', 7 '#F7FCF5' )",
+		     blue   => "defined ( 0 '#084594', 1 '#2171B5', 2 '#4292C6', 3 '#6BAED6', 4 '#9ECAE1', 5 '#C6DBEF', 6 '#DEEBF7', 7 '#F7FBFF' )",
+		     orange => "defined ( 0 '#8C2D04', 1 '#D94801', 2 '#F16913', 3 '#FD8D3C', 4 '#FDAE6B', 5 '#FDD0A2', 6 '#FEE6CE', 7 '#FFF5EB' )",
+		     purple => "defined ( 0 '#4A1486', 1 '#6A51A3', 2 '#807DBA', 3 '#9E9AC8', 4 '#BCBDDC', 5 '#DADAEB', 6 '#EFEDF5', 7 '#FCFBFD' )",
+		     red    => "defined ( 0 '#99000D', 1 '#CB181D', 2 '#EF3B2C', 3 '#FB6A4A', 4 '#FC9272', 5 '#FCBBA1', 6 '#FEE0D2', 7 '#FFF5F0' )",
+		    );
+
+sub set_palette {
+  my ($self, $color) = @_;
+  if (exists($color_choices{$color})) {
+    $self->palette($color_choices{$color});
+  };
+  return $self;
+};
+
 
 sub plot_mask {
   my ($self) = @_;
@@ -113,6 +136,15 @@ Xray::BLA::Plot - A plotting method for BLA-XANES
 
 =item C<plot_map>
 
+=item C<set_palette>
+
+Change the hue of the image plots.  The choices are grey (the
+default), blue, green, orange, purple, and red.
+
+  $spectrum -> set_palette($color);
+
+An unkown color is ignored.
+
 =back
 
 =head1 DEPENDENCIES
@@ -131,6 +163,11 @@ Patches are welcome.
 Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://github.com/bruceravel/BLA-XANES>
+
+gnuplot-colorbrewer is written and maintained by Anna Schneider
+<annarschneider AT gmail DOT com> and released under the Apache
+License 2.0.  ColorBrewer is a project of Cynthia Brewer, Mark
+Harrower, and The Pennsylvania State University.
 
 =head1 LICENCE AND COPYRIGHT
 

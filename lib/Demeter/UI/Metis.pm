@@ -53,7 +53,7 @@ sub OnInit {
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, 'metis.yaml');
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});
-    foreach my $k (qw(stub scanfolder tifffolder element line)) {
+    foreach my $k (qw(stub scanfolder tifffolder element line color)) {
       $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
     foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage)) {
@@ -66,6 +66,7 @@ sub OnInit {
   } else {
     $app->{yaml} = YAML::Tiny -> new;
   };
+  $app->{base}->set_palette($app->{base}->color);
 
   $app->{bla_of}    = {};
   $app->{bla_of}->{aggregate}  = $app->{base}->clone();
@@ -192,6 +193,8 @@ sub set_parameters {
   $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
   $app->{base} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
   $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
+  $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
+  $app->{base} -> set_palette($app->{base}->color);
 
   $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
   $app->{base} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
@@ -201,7 +204,7 @@ sub set_parameters {
   $app->{base} -> radius($app->{Mask}->{arealvalue}->GetValue);
 
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
-  foreach my $k (qw(scanfolder tifffolder element line
+  foreach my $k (qw(scanfolder tifffolder element line color palette
 		    imagescale outimage energycounterwidth tiffcounter
 		    bad_pixel_value weak_pixel_value social_pixel_value
 		    lonely_pixel_value scalemask radius

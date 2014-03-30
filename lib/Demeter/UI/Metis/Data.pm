@@ -120,6 +120,10 @@ sub plot_herfd {
   if ($steplist->GetString($steplist->GetCount-1) ne 'andmask') {
     $steplist->Append("andmask");
   };
+  $spectrum->clear_steps;
+  foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
+    $spectrum->push_steps($app->{Mask}->{steps_list}->GetString($n));
+  };
 
   my $image_list = $app->{Files}->{image_list};
   foreach my $i (0 .. $image_list->GetCount-1) {

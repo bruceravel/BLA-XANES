@@ -191,9 +191,15 @@ sub new {
 sub MaskType {
   my ($self, $event, $app) = @_;
   my $type = $self->{rbox}->GetStringSelection;
+
   if ($type eq 'Single energy') {
     $self->{energy}->Enable(1);
     $self->{energylabel}->Enable(1);
+    my $energy = $self->{energy}->GetStringSelection;
+    if ($energy) {
+      $self->plot($app, $app->{bla_of}->{$energy});
+    };
+
   } elsif ($type eq 'Aggregate') {
     my $busy = Wx::BusyCursor->new();
     $self->{energy}->Enable(0);
@@ -263,14 +269,6 @@ sub Reset {
 
   my $elastic_file;
   if ($spectrum->masktype eq 'single') {
-    # my $elastic_list = $app->{Files}->{elastic_list};
-    # foreach my $i (0 .. $elastic_list->GetCount-1) {
-    #   if ($elastic_list->GetString($i) =~ m{$energy}) {
-    # 	$elastic_file = $elastic_list->GetString($i);
-    # 	last;
-    #   };
-    # };
-
     my $ret = $spectrum->check(basename($spectrum->elastic_file));
     if ($ret->status == 0) {
       $app->{main}->status($ret->message, 'alert');
@@ -287,7 +285,7 @@ sub Reset {
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
   $app->{Data}->{energylabel}->SetLabel("Current mask energy is <undefined>");
   $app->{Data}->{energy} = 0;
-  foreach my $k (qw(stub energy herfd save_herfd)) {
+  foreach my $k (qw(stub energylabel herfd save_herfd)) {
     $app->{Data}->{$k}->Enable(0);
   };
   $self->{replot}->Enable(0);
@@ -342,6 +340,7 @@ sub do_step {
 
   } elsif ($which eq 'social') {
     $spectrum -> social_pixel_value($self->{socialvalue}->GetValue);
+    $spectrum -> vertical($self->{socialvertical}->GetValue);
     $success = $spectrum -> do_step('social_pixels', %args);
     my $vert_text = ($spectrum->vertical) ? q{ vertical} : q{};
     $self->{steps_list}->Append(sprintf("social %d%s",
@@ -375,16 +374,22 @@ sub do_step {
     $self->{steps_list}->Append("entire image") if $success;
 
   } elsif ($which eq 'aggregate') {
-    if ($spectrum->aggregate_image->isnull) {
+    if ($app->{bla_of}->{aggregate}->elastic_image->isnull) {
       $app->{main}->status("You haven't made an aggregate mask yet.", 'alert');
       return;
     };
+    $app->{bla_of}->{aggregate} -> do_step('andmask', %args); # gotta be sure!
+    $args{aggregate} = $app->{bla_of}->{aggregate};
     $success = $spectrum -> do_step('andaggregate', %args);
     $self->{steps_list}->Append("aggregate") if $success;
 
   } elsif ($which eq 'andmask') {
     $success = $spectrum -> do_step('andmask', %args);
     $self->{steps_list}->Append("andmask") if $success;
+    $spectrum->clear_steps;
+    foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
+      $spectrum->push_steps($self->{steps_list}->GetString($n));
+    };
 
   };
   $spectrum->remove_bad_pixels;
@@ -406,7 +411,7 @@ sub plot {
   } elsif ($cbm > $spectrum->bad_pixel_value/$spectrum->imagescale) {
     $cbm = $spectrum->bad_pixel_value/$spectrum->imagescale;
   };
-  $spectrum->cbmax($cbm);# if $step =~ m{social};
+  $spectrum->cbmax($cbm);
   if ($spectrum->masktype eq 'single') {
     $spectrum->plot_mask;
   } else {

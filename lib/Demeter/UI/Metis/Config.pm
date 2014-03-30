@@ -32,6 +32,14 @@ sub new {
   $app->mouseover($self->{imagescale}, "This sets the colorbar scale of an image plot.  Bigger number -> smaller dynamic range.");
 
   ++$row;
+  $self->{color_label} = Wx::StaticText -> new($self, -1, "Output image format");
+  $self->{color}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(grey green blue orange purple red)]);
+  $gbs -> Add($self->{color_label},    Wx::GBPosition->new($row,0));
+  $gbs -> Add($self->{color},          Wx::GBPosition->new($row,1));
+  $self->{color}->SetStringSelection($app->{base}->color);
+  $app->mouseover($self->{color}, "The color palette used to plot mask images.");
+
+  ++$row;
   $self->{outimage_label} = Wx::StaticText -> new($self, -1, "Output image format");
   $self->{outimage}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(gif tif png)]);
   $gbs -> Add($self->{outimage_label},    Wx::GBPosition->new($row,0));

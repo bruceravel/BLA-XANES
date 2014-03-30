@@ -32,6 +32,7 @@ const my $Mask   => Wx::NewId();
 const my $Data   => Wx::NewId();
 const my $Config => Wx::NewId();
 const my $Object => Wx::NewId();
+const my $About  => Wx::NewId();
 
 
 sub OnInit {
@@ -44,28 +45,32 @@ sub OnInit {
   #EVT_CLOSE($app->{main}, sub{$app->on_close($_[1])});
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
-  $app->{spectrum}  = Xray::BLA->new(ui=>'wx', cleanup=>1, masktype=>'single');
-  $app->{spectrum} -> task('herfd');
-  $app->{spectrum} -> outfolder(File::Spec->catfile($app->{spectrum}->stash_folder,
-						    'metis-'.$app->{spectrum}->randomstring(5)));
+  $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
+  $app->{base} -> task('herfd');
+  $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
+						'metis-'.$app->{base}->randomstring(5)));
 
-  $app->{yamlfile} = File::Spec->catfile($app->{spectrum}->dot_folder, 'metis.yaml');
+  $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, 'metis.yaml');
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});
     foreach my $k (qw(stub scanfolder tifffolder element line)) {
-      $app->{spectrum}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
+      $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
     foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage)) {
-      $app->{spectrum}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
+      $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
     foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
 		      lonely_pixel_value scalemask radius)) {
-      $app->{spectrum}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
+      $app->{base}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
     };
   } else {
     $app->{yaml} = YAML::Tiny -> new;
   };
 
+  $app->{bla_of}    = {};
+  $app->{bla_of}->{aggregate}  = $app->{base}->clone();
+  $app->{bla_of}->{aggregate} -> cleanup(1);
+  $app->{bla_of}->{aggregate} -> masktype('aggregate');
 
   ## -------- status bar
   $app->{main}->{statusbar} = $app->{main}->CreateStatusBar;
@@ -106,10 +111,15 @@ sub OnInit {
   $filemenu->Append($Data,     "Show Data tool\tCtrl+3" );
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4" );
   $filemenu->AppendSeparator;
-  $filemenu->Append($Object,   "View Xray::BLA attributes\tCtrl+0" );
-  $filemenu->AppendSeparator;
   $filemenu->Append(wxID_EXIT, "E&xit\tCtrl+q" );
+
+  my $helpmenu   = Wx::Menu->new;
+  $helpmenu->Append($Object,   "View Xray::BLA attributes\tCtrl+0" );
+  $helpmenu->AppendSeparator;
+  $helpmenu->Append($About,    "About Metis" );
+
   $bar->Append( $filemenu,     "&Metis" );
+  $bar->Append( $helpmenu,     "&Help" );
   $app->{main}->SetMenuBar( $bar );
   EVT_MENU($app->{main}, -1, sub{my ($frame,  $event) = @_; OnMenuClick($frame, $event, $app)} );
 
@@ -151,6 +161,10 @@ sub OnMenuClick {
       $app->view_attributes;
       return;
     };
+    ($id == $About)   and do {
+      $app->on_about;
+      return;
+    };
     ($id == wxID_EXIT) and do {
       $self->Close;
       return;
@@ -167,22 +181,24 @@ sub mouseover {
 
 sub set_parameters {
   my ($app) = @_;
-  $app->{spectrum} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
-  $app->{spectrum} -> line($app->{Files}->{line}->GetStringSelection);
-  $app->{spectrum} -> scanfolder($app->{Files}->{scan}->GetValue);
-  $app->{spectrum} -> tifffolder($app->{Files}->{image}->GetValue);
 
-  $app->{spectrum} -> imagescale($app->{Config}->{imagescale}->GetValue);
-  $app->{spectrum} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
-  $app->{spectrum} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
-  $app->{spectrum} -> outimage($app->{Config}->{outimage}->GetStringSelection);
+  ## set values for base object
+  $app->{base} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
+  $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
+  $app->{base} -> scanfolder($app->{Files}->{scan}->GetValue);
+  $app->{base} -> tifffolder($app->{Files}->{image}->GetValue);
 
-  $app->{spectrum} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
-  $app->{spectrum} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
-  $app->{spectrum} -> social_pixel_value($app->{Mask}->{socialvalue}->GetValue);
-  $app->{spectrum} -> lonely_pixel_value($app->{Mask}->{lonelyvalue}->GetValue);
-  $app->{spectrum} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
-  $app->{spectrum} -> radius($app->{Mask}->{arealvalue}->GetValue);
+  $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
+  $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
+  $app->{base} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
+  $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
+
+  $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
+  $app->{base} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
+  $app->{base} -> social_pixel_value($app->{Mask}->{socialvalue}->GetValue);
+  $app->{base} -> lonely_pixel_value($app->{Mask}->{lonelyvalue}->GetValue);
+  $app->{base} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
+  $app->{base} -> radius($app->{Mask}->{arealvalue}->GetValue);
 
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
   foreach my $k (qw(scanfolder tifffolder element line
@@ -190,7 +206,13 @@ sub set_parameters {
 		    bad_pixel_value weak_pixel_value social_pixel_value
 		    lonely_pixel_value scalemask radius
 		  )) {
-    $app->{yaml}->[0]->{$k} = $app->{spectrum}->$k;
+    ## push values into yaml
+    $app->{yaml}->[0]->{$k} = $app->{base}->$k;
+
+    ## and push these values onto all of $app->{bla_of}
+    foreach my $key (keys %{$app->{bla_of}}) {
+      $app->{bla_of}->{$key}->$k($app->{base}->$k);
+    };
   };
   $app->{yaml}->write($app->{yamlfile});
 
@@ -199,13 +221,49 @@ sub set_parameters {
 
 sub view_attributes {
   my ($app) = @_;
+  my $which = $app->{book}->GetPageText($app->{book}->GetSelection);
+  my $spectrum = $app->{base};
+  my $id = 'base';
+  if ($which eq 'Mask') {
+    my $en = $app->{Mask}->{energy}->GetStringSelection;
+    if ($app->{Mask}->{rbox}->GetStringSelection =~ m{Single} and $en) {
+      $spectrum = $app->{bla_of}->{$en};
+      $id = $en;
+    } elsif ($app->{Mask}->{rbox}->GetStringSelection =~ m{Aggregate}) {
+      $spectrum = $app->{bla_of}->{aggregate};
+      $id = 'aggregate';
+    };
+  } elsif ($which eq 'Data') {
+    my $en = $app->{Data}->{energy};
+    $spectrum = $app->{bla_of}->{$en} if $en;
+      $id = $en;
+  };
   my $dialog = Demeter::UI::Artemis::ShowText
-    -> new($app->{main}, $app->{spectrum}->attribute_report, 'Structure of Xray::BLA object')
+    -> new($app->{main}, $spectrum->attribute_report, "Structure of \"$id\" object")
       -> Show;
-
 };
 
 
+sub on_about {
+  my ($app) = @_;
+
+  my $info = Wx::AboutDialogInfo->new;
+
+  $info->SetName( 'Metis' );
+  $info->SetVersion( $Xray::BLA::VERSION );
+  $info->SetDescription( "Bent Laue analyzer + Pilatus data processing" );
+  $info->SetCopyright( "copyright 2012-2014, Bruce Ravel, Jeremy Kropf" );
+  $info->SetWebSite( 'https://github.com/bruceravel/BLA-XANES', 'Metis at GitHub' );
+  $info->SetDevelopers( ["Bruce Ravel <bravel AT bnl DOT gov>\n" ] );
+  $info->SetArtists( ["Metis logo cropped from\nhttp://commons.wikimedia.org/wiki/File:Winged_goddess_Louvre_F32.jpg\n",
+		      "Files and Config icons from the gartoon icon theme\nhttp://gnome-look.org/content/show.php/Gartoon+Icon+theme+%28v0.4.5%29?content=13527\n",
+		      "Mask icon cropped from\nhttp://en.wikipedia.org/wiki/File:Ancient_iranian_mask.jpg\n",
+		      "Data icon is the gnuplot icon"
+		     ] );
+  #$info->SetLicense( Demeter->slurp(File::Spec->catfile($athena_base, 'Athena', 'share', "GPL.dem")) );
+
+  Wx::AboutBox( $info );
+}
 
 
 

@@ -5,7 +5,7 @@ use Statistics::Descriptive;
 use Xray::Absorption;
 
 use version;
-our $VERSION = version->new('1');
+our $VERSION = version->new('2');
 
 use Moose;
 with 'Xray::BLA::Tools';
@@ -29,7 +29,7 @@ use File::Copy;
 use File::Path;
 use File::Spec;
 use List::Util qw(sum max);
-use List::MoreUtils qw(pairwise);
+use List::MoreUtils qw(pairwise any);
 use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 use Term::Sk;
@@ -130,18 +130,18 @@ has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
 has 'imagescale'         => (is => 'rw', isa => 'Num', default => 40,
 			     documentation => "A scaling factor for the color scale when plotting images.  A bigger number leads to a smaller range of the plot.");
 
-#enum 'Xray::BLA::Projections' => ['median', 'mean'];
-#coerce 'Xray::BLA::Projections',
-#  from 'Str',
-#  via { lc($_) };
-has 'operation'          => (is => 'rw', isa => 'Str', default => q{median},
+enum 'Xray::BLA::Projections' => ['median', 'mean'];
+coerce 'Xray::BLA::Projections',
+  from 'Str',
+  via { lc($_) };
+has 'operation'          => (is => 'rw', isa => 'Xray::BLA::Projections', default => q{mean},
 			     documentation => "The areal operation, either median or mean.");
 
 enum 'MaskTypes' => [qw(single aggregate)];
 coerce 'MaskTypes',
   from 'Str',
   via { lc($_) };
-has 'masktype'           => (is => 'rw', isa => 'MaskTypes', default => q{median},
+has 'masktype'           => (is => 'rw', isa => 'MaskTypes', default => q{single},
 			     documentation => "The current working mask type, single or aggregate.");
 has 'working_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			     documentation => "This containing the PDL of the image currently being work upon, so it is a copy of either elastic_image or aggregate_image.");
@@ -457,7 +457,6 @@ sub apply_mask {
   my $ret = Xray::BLA::Return->new;
   local $|=1;
 
-  $self->push_working_image;
   my $image;
   if ($#{$self->scan_file_list} > -1) {
     $image = $self->scan_file_list->[$tif-1];
@@ -674,6 +673,23 @@ sub attribute_report {
     $text .= sprintf "%-20s : %s\n", $a, $this;
   };
   return $text;
+};
+
+
+sub clone {
+  my ($self) = @_;
+  my $new = Xray::BLA->new;
+  my @list = $self->meta->get_attribute_list;
+  foreach my $a (sort @list) {
+    next if (any {$a eq $_} qw(elastic_file elastic_image aggregate_image
+			       xdata ydata bad_pixel_mask));
+    if (ref($self->$a) =~ m{PDL}) {
+      $new->$a($self->$a->copy);
+    } else {
+      $new->$a($self->$a);
+    };
+  };
+  return $new;
 };
 
 

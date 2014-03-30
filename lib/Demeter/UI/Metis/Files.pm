@@ -28,9 +28,9 @@ sub new {
   my @elements = map {sprintf "%s: %s", $_, get_symbol($_)} (1 .. 96);
   my @lines = (qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll));
 
-  my $stub    = $app->{spectrum}->stub    || q{};
-  my $element = $app->{spectrum}->element || q{};
-  my $line    = $app->{spectrum}->line    || q{};
+  my $stub    = $app->{base}->stub    || q{};
+  my $element = $app->{base}->element || q{};
+  my $line    = $app->{base}->line    || q{};
   $self->{stub_label}    = Wx::StaticText -> new($self, -1, "File stub");
   $self->{stub}          = Wx::TextCtrl   -> new($self, -1, $stub, wxDefaultPosition, [150,-1]);
   $self->{element_label} = Wx::StaticText -> new($self, -1, "Element");
@@ -57,14 +57,14 @@ sub new {
 	      Wx::GBPosition->new(0,7), Wx::GBSpan->new(4,1));
 
 
-  my $scanfolder = $app->{spectrum}->scanfolder || q{};
+  my $scanfolder = $app->{base}->scanfolder || q{};
   $self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
   $self->{scan} = Wx::TextCtrl->new($self, -1, $scanfolder, wxDefaultPosition, [500,-1],);
   $gbs -> Add($self->{scan_label}, Wx::GBPosition->new(1,0));
   $gbs -> Add($self->{scan},       Wx::GBPosition->new(1,1), Wx::GBSpan->new(1,5));
   $app->mouseover($self->{scan}, "Specify the location of the scan files.");
 
-  my $tifffolder = $app->{spectrum}->tifffolder || q{};
+  my $tifffolder = $app->{base}->tifffolder || q{};
   $self->{image_label} = Wx::StaticText -> new($self, -1, "Image folder");
   $self->{image} = Wx::TextCtrl->new($self, -1, $tifffolder, wxDefaultPosition, [500,-1],);
   $gbs -> Add($self->{image_label}, Wx::GBPosition->new(2,0));
@@ -108,18 +108,25 @@ sub new {
 
 sub fetch {
   my ($self, $event, $app) = @_;
+  my $busy = Wx::BusyCursor->new();
   my $stub           = $self->{stub}->GetValue;
   my $scan_folder    = $self->{scan}->GetValue;
   my $image_folder   = $self->{image}->GetValue;
+  $app->{base}->{stub}       = $stub;
+  $app->{base}->{scanfolder} = $scan_folder;
+  $app->{base}->{tifffolder} = $image_folder;
+  $app->{bla_of}->{aggregate}->{stub}       = $stub;
+  $app->{bla_of}->{aggregate}->{scanfolder} = $scan_folder;
+  $app->{bla_of}->{aggregate}->{tifffolder} = $image_folder;
 
-  if (($stub eq $app->{spectrum}->stub) and ($self->{elastic_list}->GetCount)) {
+  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
     $app->{main}->status("Stub $stub hasn't changed.");
     return;
   };
 
   $app->set_parameters;
-  $app->{spectrum} -> clear_elastic_energies;
-  $app->{spectrum} -> stub($stub);
+  $app->{base} -> clear_elastic_energies;
+  $app->{base} -> stub($stub);
 
   my $us = q{_};
   opendir(my $E, $image_folder);
@@ -137,12 +144,23 @@ sub fetch {
   $self->{image_list}->InsertItems(\@image_list,0);
 
   foreach my $e (@elastic_list) {
+    $app->{base}->push_elastic_file_list($e);
     ($e =~ m{elastic_(\d+)_}) and
-      $app->{spectrum}->push_elastic_energies($1);
+      $app->{base}->push_elastic_energies($1);
+    $app->{bla_of}->{$1} = $app->{base}->clone;
+    $app->{bla_of}->{$1}->elastic_file($e);
+    $app->{bla_of}->{$1}->energy($1);
+    my $ret = $app->{bla_of}->{$1}->check($e);
+    if ($ret->status == 0) {
+      $app->{main}->status($ret->message, 'alert');
+      return;
+    };
   };
+  $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
+  $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
 
   if ((not $self->{element}->GetStringSelection) and (not $self->{line}->GetStringSelection)) {
-    my ($el, $li) = $app->{spectrum}->guess_element_and_line;
+    my ($el, $li) = $app->{base}->guess_element_and_line;
     $self->{element}->SetSelection(get_Z($el)-1);
     $self->{line}->SetStringSelection($li);
     $app->set_parameters;
@@ -155,7 +173,7 @@ sub fetch {
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> SetStringSelection(q{});
-  $app->{Mask}->{energy} -> Append($_) foreach @{$app->{spectrum}->elastic_energies};
+  $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
   foreach my $k (qw(do_social sociallabel socialvalue socialvertical
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
@@ -168,7 +186,7 @@ sub fetch {
 
 
   $app->{main}->status("Found elastic and image files for $stub");
-
+  undef $busy;
 };
 
 sub view {
@@ -179,39 +197,33 @@ sub view {
   my $file   = File::Spec->catfile($folder, $img);
 
   if ($which eq 'image') {
-    $app->{spectrum}->plot_energy_point($file);
+    $app->{base}->plot_energy_point($file);
     $app->{main}->status("Plotted energy point $file");
     return;
   };
 
-  $app->{spectrum} -> tifffolder($folder);
-  $app->{spectrum} -> stub($stub);
+  my $spectrum;
+  ($img =~ m{elastic_(\d+)_}) and
+    $spectrum = $app->{bla_of}->{$1};
+
+  $spectrum -> tifffolder($folder);
+  $spectrum -> stub($stub);
   if ($file =~ m{elastic_(\d+)_}) {
-    $app->{spectrum} -> energy($1);
+    $spectrum -> energy($1);
   } else {
     $app->{main}->status("Can't figure out energy...", 'alert');
     return;
   };
 
-  my $save = $app->{spectrum}->masktype;
-  $app->{spectrum}->masktype('single');
-  $app->{spectrum}->elastic_file($file);
-  my $ret = $app->{spectrum}->check($img);
-  if ($ret->status == 0) {
-     $app->{main}->status($ret->message, 'alert');
-     return;
-  };
-
-  my $cbm = int($app->{spectrum}->elastic_image->max);
+  my $cbm = int($spectrum->elastic_image->max);
   if ($cbm < 1) {
     $cbm = 1;
-  } elsif ($cbm > $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale) {
-    $cbm = $app->{spectrum}->bad_pixel_value/$app->{spectrum}->imagescale;
+  } elsif ($cbm > $spectrum->bad_pixel_value/$spectrum->imagescale) {
+    $cbm = $spectrum->bad_pixel_value/$spectrum->imagescale;
   };
-  $app->{spectrum}->masktype($save);
-  $app->{spectrum}->cbmax($cbm);# if $step =~ m{social};
-  $app->{spectrum}->plot_mask;
-  $app->{main}->status("Plotted ".$app->{spectrum}->elastic_file);
+  $spectrum->cbmax($cbm);# if $step =~ m{social};
+  $spectrum->plot_mask;
+  $app->{main}->status("Plotted ".$spectrum->elastic_file);
 
 };
 

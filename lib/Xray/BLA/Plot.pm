@@ -38,10 +38,10 @@ sub plot_mask {
 
 sub plot_aggregate {
   my ($self) = @_;
-  (my $title = basename($self->stub)) =~ s{_}{\\\\_}g;
+  (my $title = $self->stub) =~ s{_}{\\\\_}g;
   image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title." aggregate",
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
-	$self->aggregate_image);
+	$self->elastic_image);
 };
 
 sub plot_energy_point {

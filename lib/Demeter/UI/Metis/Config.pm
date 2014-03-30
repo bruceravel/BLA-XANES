@@ -26,7 +26,7 @@ sub new {
 
   ++$row;
   $self->{imagescale_label} = Wx::StaticText -> new($self, -1, "Scaling factor for image plots");
-  $self->{imagescale}       = Wx::TextCtrl   -> new($self, -1, $app->{spectrum}->imagescale, wxDefaultPosition, [150,-1]);
+  $self->{imagescale}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->imagescale, wxDefaultPosition, [150,-1]);
   $gbs -> Add($self->{imagescale_label},    Wx::GBPosition->new($row,0));
   $gbs -> Add($self->{imagescale},          Wx::GBPosition->new($row,1));
   $app->mouseover($self->{imagescale}, "This sets the colorbar scale of an image plot.  Bigger number -> smaller dynamic range.");
@@ -36,19 +36,19 @@ sub new {
   $self->{outimage}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(gif tif png)]);
   $gbs -> Add($self->{outimage_label},    Wx::GBPosition->new($row,0));
   $gbs -> Add($self->{outimage},          Wx::GBPosition->new($row,1));
-  $self->{outimage}->SetStringSelection($app->{spectrum}->outimage);
+  $self->{outimage}->SetStringSelection($app->{base}->outimage);
   $app->mouseover($self->{outimage}, "The file format used for static mask images.");
 
   ++$row;
   $self->{tiffcounter_label} = Wx::StaticText -> new($self, -1, "TIFF counter");
-  $self->{tiffcounter}       = Wx::TextCtrl   -> new($self, -1, $app->{spectrum}->tiffcounter, wxDefaultPosition, [150,-1]);
+  $self->{tiffcounter}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->tiffcounter, wxDefaultPosition, [150,-1]);
   $gbs -> Add($self->{tiffcounter_label},    Wx::GBPosition->new($row,0));
   $gbs -> Add($self->{tiffcounter},          Wx::GBPosition->new($row,1));
   $app->mouseover($self->{tiffcounter}, "The counter part of the name of the elastic TIFF file, eg the \"00001\" in \"Aufoil1_elastic_9713_00001.tif\".");
 
   ++$row;
   $self->{energycounterwidth_label} = Wx::StaticText -> new($self, -1, "Energy index width");
-  $self->{energycounterwidth}       = Wx::SpinCtrl   -> new($self, -1, $app->{spectrum}->energycounterwidth, wxDefaultPosition, [150,-1], wxSP_ARROW_KEYS, 1, 6);
+  $self->{energycounterwidth}       = Wx::SpinCtrl   -> new($self, -1, $app->{base}->energycounterwidth, wxDefaultPosition, [150,-1], wxSP_ARROW_KEYS, 1, 6);
   $gbs -> Add($self->{energycounterwidth_label},    Wx::GBPosition->new($row,0));
   $gbs -> Add($self->{energycounterwidth},          Wx::GBPosition->new($row,1));
   $app->mouseover($self->{energycounterwidth}, "The width of the part of the energy point TIFF file name indicating the energy index, eg the 5 digits in \"Aufoil1_00040.tif\".");

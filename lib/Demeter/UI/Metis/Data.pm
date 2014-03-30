@@ -26,8 +26,9 @@ sub new {
 
   $self->{stub} = Wx::StaticText->new($self, -1, 'Stub is <undefined>');
   $vbox -> Add($self->{stub}, 0, wxGROW);
-  $self->{energy} = Wx::StaticText->new($self, -1, 'Current mask energy is <undefined>');
-  $vbox -> Add($self->{energy}, 0, wxGROW);
+  $self->{energylabel} = Wx::StaticText->new($self, -1, 'Current mask energy is <undefined>');
+  $vbox -> Add($self->{energylabel}, 0, wxGROW);
+  $self->{energy} = 0;
 
   $vbox->Add(1,30,0);
 
@@ -86,7 +87,7 @@ sub new {
   $self->{save_rixs} = Wx::Button->new($self, -1, 'Save RIXS data', wxDefaultPosition, [$button_width,-1]);
   $rixsboxsizer -> Add($self->{save_rixs}, 0, wxGROW|wxALL, 5);
 
-  foreach my $k (qw(stub energy herfd replot_herfd save_herfd
+  foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd
 		    xes replot_xes save_xes rixs replot_rixs save_rixs)) {
     $self->{$k}->Enable(0);
   };
@@ -97,20 +98,24 @@ sub new {
   return $self;
 };
 
+######################################################################
+## HERFD
+
 sub plot_herfd {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
   my $start = DateTime->now( time_zone => 'floating' );
   my $np = $app->{Files}->{image_list}->GetCount;
-  $app->{spectrum}->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
-  $app->{spectrum}->npixels($app->{spectrum}->elastic_image->sum);
+  my $spectrum = $app->{bla_of}->{$self->{energy}};
+  $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
 
   ## make sure the AND mask step has been done.  doing it twice has no impact
   my %args = ();
   $args{write}   = q{};
   $args{verbose} = 0;
   $args{unity}   = 0;
-  $app->{spectrum} -> do_step('andmask', %args);
+  $spectrum -> do_step('andmask', %args);
+  $spectrum -> npixels($spectrum->elastic_image->sum);
   my $steplist = $app->{Mask}->{steps_list};
   if ($steplist->GetString($steplist->GetCount-1) ne 'andmask') {
     $steplist->Append("andmask");
@@ -118,34 +123,36 @@ sub plot_herfd {
 
   my $image_list = $app->{Files}->{image_list};
   foreach my $i (0 .. $image_list->GetCount-1) {
-    $app->{spectrum}->push_scan_file_list(File::Spec->catfile($app->{spectrum}->tifffolder, $image_list->GetString($i)));
+    $spectrum->push_scan_file_list(File::Spec->catfile($spectrum->tifffolder, $image_list->GetString($i)));
   };
 
-  my $ret = $app->{spectrum} -> scan(verbose=>0, xdiini=>q{});
-  my $title = $app->{spectrum}->stub . ' at ' . $app->{spectrum}->energy;
-  $app->{spectrum} -> plot_xanes($ret->message, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
-  $app->{spectrum}->sentinal(sub{1});
+  my $ret = $spectrum -> scan(verbose=>0, xdiini=>q{});
+  my $title = $spectrum->stub . ' at ' . $spectrum->energy;
+  $spectrum -> plot_xanes($ret->message, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+  $spectrum->sentinal(sub{1});
   $self->{replot_herfd} -> Enable(1);
   $self->{save_herfd}   -> Enable(1);
-  $self->{herfdbox}->SetLabel(' HERFD ('.$app->{spectrum}->energy.')');
-  $self->{current} = $app->{spectrum}->energy;
+  $self->{herfdbox}->SetLabel(' HERFD ('.$spectrum->energy.')');
+  $self->{current} = $spectrum->energy;
   $app->set_parameters;	    # save config file becasue, presumably, we like the current mask creation values
   $app->{main}->status("Plotted HERFD with emission energy = " .
-		       $app->{spectrum}->energy .
-		       $app->{spectrum}->howlong($start, '.  That'));
+		       $spectrum->energy .
+		       $spectrum->howlong($start, '.  That'));
   undef $busy;
 };
 
 sub replot_herfd {
   my ($self, $event, $app) = @_;
-  my $title = $app->{spectrum}->stub . ' at ' . $self->{current};
-  $app->{spectrum} -> plot_xanes(q{}, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+  my $spectrum = $app->{bla_of}->{$self->{energy}};
+  my $title = $spectrum->stub . ' at ' . $self->{current};
+  $spectrum -> plot_xanes(q{}, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
   $app->{main}->status("Replotted HERFD with emission energy = ".$self->{current});
 };
 
 sub save_herfd {
   my ($self, $event, $app) = @_;
-  my $fname = sprintf("%s_%d.dat", $app->{spectrum}->stub, $self->{current});
+  my $spectrum = $app->{bla_of}->{$self->{energy}};
+  my $fname = sprintf("%s_%d.dat", $spectrum->stub, $self->{current});
   my $fd = Wx::FileDialog->new( $app->{main}, "Save data file", cwd, $fname,
 				"DAT (*.dat)|*.dat|All files (*)|*",
 				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
@@ -155,10 +162,16 @@ sub save_herfd {
     return;
   };
   my $file = $fd->GetPath;
-  copy(File::Spec->catfile($app->{spectrum}->outfolder, $fname), $file);
+  copy(File::Spec->catfile($spectrum->outfolder, $fname), $file);
   $app->{main}->status("Saved HERFD to ".$file);
 };
 
+######################################################################
+## XES
+
+
+######################################################################
+## RIXS
 
 
 1;

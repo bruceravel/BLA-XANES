@@ -90,7 +90,7 @@ MODE: {
     $spectrum -> energy($energy);
     $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate, plot=>$plot);
     my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
-    $spectrum -> plot_xanes($ret->message, type=>'data', title=>$spectrum->stub) if $plot;
+    $spectrum -> plot_xanes(type=>'data', title=>$spectrum->stub) if $plot;
     last MODE;
   };
 

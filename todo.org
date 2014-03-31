@@ -44,7 +44,7 @@
  - [ ] Think about how to use HDF5 to store images, scans, scan
    metadata, and Xray::BLA metadata.
 
-** Issues with Metis [2/11]
+** Issues with Metis [2/13]
 
  - [X] Version 2 will have Xray::BLA objects for each emission energy
    and one for the aggregate object.  That will make XES and RIXS much
@@ -52,6 +52,11 @@
    working_image concept.
 
  - [ ] implement +XES and+ RIXS
+
+ - [ ] flag whether steps have changed, don't recompute masks for XES
+   at a different incident energy
+
+ - [ ] Resetting a mask leads to crashy trouble -- need to investigate
 
  - [ ] implement Map and mapmask
 

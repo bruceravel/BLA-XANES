@@ -335,8 +335,9 @@ sub andmask {
   my $ret = Xray::BLA::Return->new;
 
   $self->elastic_image->inplace->gt(0,0);
+  $self->npixels($self->elastic_image->sum);
   my $str = $self->report("Making AND mask", 'cyan');
-  $ret->status($self->elastic_image->gt(0,0)->sum);
+  $ret->status($self->npixels);
   $ret->message($str);
   return $ret;
 };

@@ -3,14 +3,16 @@ package Demeter::UI::Metis::Data;
 use strict;
 use warnings;
 
+use Compress::Zlib;
 use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Spec;
+use List::Compare;
 use List::Util qw(max);
 
 use PDL::Graphics::Simple;
-use PDL::Graphics::Gnuplot qw(gplot image);
+use PDL::Graphics::Gnuplot qw(gplot image plot3d);
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
@@ -77,11 +79,10 @@ sub new {
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
 
   $self->{incident_label} = Wx::StaticText->new($self, -1, 'Incident energy');
-  $self->{incident} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, wxDefaultSize, [], wxCB_READONLY);
+  $self->{incident} = Wx::TextCtrl->new($self, -1, q{}, wxDefaultPosition, wxDefaultSize);
   $xbox -> Add($self->{incident_label}, 0, wxGROW|wxALL, 5);
   $xbox -> Add($self->{incident}, 0, wxGROW|wxALL, 5);
   $app->mouseover($self->{incident}, "Select the incident energy at which to compute the XES.");
-  EVT_COMBOBOX($self, $self->{incident}, sub{select_incident(@_, $app)});
 
   $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
@@ -92,16 +93,20 @@ sub new {
   $xbox -> Add($self->{replot_xes}, 0, wxGROW|wxALL, 5);
   $self->{save_xes} = Wx::Button->new($self, -1, 'Save XES data', wxDefaultPosition, [$button_width,-1]);
   $xbox -> Add($self->{save_xes}, 0, wxGROW|wxALL, 5);
+  $self->{xes_rixs} = Wx::Button->new($self, -1, 'RIXS map', wxDefaultPosition, [$button_width,-1]);
+  $xbox -> Add($self->{xes_rixs}, 0, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{xes},        sub{plot_xes(@_, $app)});
   EVT_BUTTON($self, $self->{replot_xes}, sub{replot_xes(@_, $app)});
   EVT_BUTTON($self, $self->{save_xes},   sub{save_xes(@_, $app)});
+  EVT_BUTTON($self, $self->{xes_rixs},   sub{xes_rixs(@_, $app)});
   $app->mouseover($self->{xes}, "Process XES data at the selected incident energy.");
   $app->mouseover($self->{replot_xes}, "Replot the last XES spectrum.");
   $app->mouseover($self->{save_xes},   "Save the last XES data to a column data file.");
+  $app->mouseover($self->{xes_rixs},   "Plot a map of the RIXS in the XES direction.");
 
   $self->{showmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
   $xbox -> Add($self->{showmasks}, 0, wxGROW|wxALL, 0);
-  $self->{showmasks}->SetValue(0);
+  $self->{showmasks}->SetValue(1);
 
 
   $vbox->Add(1,30,0);
@@ -116,10 +121,11 @@ sub new {
   $rixsboxsizer -> Add($self->{replot_rixs}, 0, wxGROW|wxALL, 5);
   $self->{save_rixs} = Wx::Button->new($self, -1, 'Save RIXS data', wxDefaultPosition, [$button_width,-1]);
   $rixsboxsizer -> Add($self->{save_rixs}, 0, wxGROW|wxALL, 5);
+  EVT_BUTTON($self, $self->{rixs},        sub{plot_rixs(@_, $app)});
 
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd
 		    incident incident_label
-		    xes replot_xes save_xes rixs replot_rixs save_rixs)) {
+		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs)) {
     $self->{$k}->Enable(0);
   };
 
@@ -163,7 +169,7 @@ sub plot_herfd {
 
   my $ret = $spectrum -> scan(verbose=>0, xdiini=>q{});
   my $title = $spectrum->stub . ' at ' . $spectrum->energy;
-  $spectrum -> plot_xanes($ret->message, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+  $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
   $spectrum->sentinal(sub{1});
   $self->{replot_herfd} -> Enable(1);
   $self->{save_herfd}   -> Enable(1);
@@ -180,7 +186,7 @@ sub replot_herfd {
   my ($self, $event, $app) = @_;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   my $title = $spectrum->stub . ' at ' . $self->{current};
-  $spectrum -> plot_xanes(q{}, title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+  $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
   $app->{main}->status("Replotted HERFD with emission energy = ".$self->{current});
 };
 
@@ -217,11 +223,23 @@ sub plot_xes {
   my $busy = Wx::BusyCursor->new();
   my $start = DateTime->now( time_zone => 'floating' );
 
-  my $incident  = $self->{incident}->GetStringSelection;
-  my $nincident = $self->{incident}->GetSelection;
-  return if (not $incident);
-
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
+  my $incident  = $self->{incident}->GetValue;
+  my $diff = 999999;
+  my $ni = 0;
+  my $nincident = $ni;
+  foreach my $in (@{$spectrum->incident_energies}) {
+    if (abs($incident - $in) < $diff) {
+      $diff = abs($incident - $in);
+      $nincident = $ni;
+    };
+    ++$ni;
+  };
+  $incident = $spectrum->incident_energies->[$nincident];
+  return if (not $incident);
+  $self->{incident}->SetValue($incident);
+
+
   #my $steps     = $spectrum->steps;
   my @steps;
   foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
@@ -234,14 +252,19 @@ sub plot_xes {
   my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
 
   my ($r, $x, $n, @xes);
+  my $max = 0;
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
     $app->{bla_of}->{$key}->incident($incident);
     $app->{bla_of}->{$key}->nincident($nincident);
-    $app->{bla_of}->{$key}->steps(\@steps);
-    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+    my $lca = List::Compare->new('-u', '-a', \@steps, $app->{bla_of}->{$key}->steps);
+    if (not $lca->is_LequivalentR()) {
+      $app->{bla_of}->{$key}->steps(\@steps);
+      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+    };
     $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
     $n = $app->{bla_of}->{$key}->npixels;
+    $max = $n if ($n > $max);
     $x = $r/$n;
     push @xes, [$key, $x, $n, $r];
     if ($self->{showmasks}->GetValue) {
@@ -251,12 +274,17 @@ sub plot_xes {
   };
   #my $max = max(@n);
   #@n = map {$max / $_} @n;
+  foreach my $key (keys %{$app->{bla_of}}) {
+    next if ($key eq 'aggregate');
+    $app->{bla_of}->{$key}->normpixels($max/$app->{bla_of}->{$key}->npixels);
+  };
 
   $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>\@xes);
   $self->{xesdata} = \@xes;
 
   $self->{replot_xes} -> Enable(1);
   $self->{save_xes}   -> Enable(1);
+  $self->{xes_rixs}   -> Enable(1);
   $app->{main}->status("Plotted XES with incident energy = " .
 		       $incident .
 		       Xray::BLA->howlong($start, '.  That'));
@@ -266,10 +294,10 @@ sub plot_xes {
 
 sub replot_xes {
   my ($self, $event, $app) = @_;
-  my $incident  = $self->{incident}->GetStringSelection;
+  my $incident  = $self->{incident}->GetValue;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   $self->{xesout} = $spectrum->plot_xes(pause=>0, incident=>$incident, xes=>$self->{xesdata});
-  $app->{main}->status("Replotted XES with incident energy = ".$self->{incident}->GetStringSelection);
+  $app->{main}->status("Replotted XES with incident energy = ".$self->{incident}->GetValue);
 };
 
 sub save_xes {
@@ -289,9 +317,131 @@ sub save_xes {
   $app->{main}->status("Saved XES to ".$file);
 };
 
+sub xes_rixs {
+  my ($self, $event, $app) = @_;
+  my $busy = Wx::BusyCursor->new();
+  my $start = DateTime->now( time_zone => 'floating' );
+
+  my $spectrum = $app->{bla_of}->{$self->{energy}};
+
+  ## bring all the mask up to date
+  $app->{main}->status("Computing masks for each emission energy ...", 'wait');
+  my @steps;
+  foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
+    push @steps, $app->{Mask}->{steps_list}->GetString($n);
+  };
+  foreach my $key (keys %{$app->{bla_of}}) {
+    next if ($key eq 'aggregate');
+    my $lca = List::Compare->new('-u', '-a', \@steps, $app->{bla_of}->{$key}->steps);
+    if (not $lca->is_LequivalentR()) {
+      $app->{bla_of}->{$key}->steps(\@steps);
+      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+    };
+  };
+
+  open(my $RIXS, '>', File::Spec->catfile($spectrum->outfolder, $spectrum->stub.'.rixs'));
+  my $rixs;
+  my @vals = ();
+
+  $app->{main}->status("Computing XES at each incident energy ...", 'wait');
+  my ($ni, $ne, $file, $point, $r, $n, $x) = (0, 0, q{}, q{}, 0, 0, 0);
+  foreach my $inc (@{$spectrum->incident_energies}) {
+    $file = File::Spec->catfile($spectrum->tifffolder,
+				$app->{Files}->{image_list}->GetString($ni));
+    $point = $spectrum->Read($file);
+
+    $app->{main}->status("Computing XES at each incident energy ... " . $ni . ' of ' . $#{$spectrum->incident_energies}, 'wait') if (not $ni % 15);
+
+    $ne = 0;
+    foreach my $key (sort keys %{$app->{bla_of}}) {
+      next if ($key eq 'aggregate');
+      $app->{bla_of}->{$key}->incident($inc);
+      $app->{bla_of}->{$key}->nincident($ni);
+      $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
+      $n = $app->{bla_of}->{$key}->npixels;
+      $x = $r/$n;
+      $rixs->[$ne]->[$ni] = $x;
+      printf $RIXS "%.3f   %.3f   %.8g\n", $key, $inc, $x;
+      $ne++;
+    };
+    $ni ++;
+
+    print $RIXS $/;
+  };
+
+  close $RIXS;
+
+  #image({cbrange=>[0,3], palette=>$spectrum->palette, title=>'RIXS',
+ # 	 xlabel=>'incident energy (eV)', ylabel=>'emission energy (eV)', cblabel=>'emission'},
+ # 	PDL->new($rixs));
+
+
+  $app->{main}->status("Plotted RIXS map calculated along the XES direction.");
+
+  undef $busy;
+};
+
 
 ######################################################################
 ## RIXS
+
+
+sub plot_rixs {
+  my ($self, $event, $app) = @_;
+  my $busy = Wx::BusyCursor->new();
+  my $start = DateTime->now( time_zone => 'floating' );
+
+  my $spectrum  = $app->{bla_of}->{$self->{energy}};
+
+  my @steps;
+  foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
+    push @steps, $app->{Mask}->{steps_list}->GetString($n);
+  };
+
+  my $image_list = $app->{Files}->{image_list};
+  foreach my $i (0 .. $image_list->GetCount-1) {
+    $spectrum->push_scan_file_list(File::Spec->catfile($spectrum->tifffolder, $image_list->GetString($i)));
+  };
+  my $sfl = $spectrum->scan_file_list;
+
+  my @sorted_list;
+  my $max = 0;
+  foreach my $key (sort keys %{$app->{bla_of}}) {
+    next if ($key eq 'aggregate');
+
+    my $lca = List::Compare->new('-u', '-a', \@steps, $app->{bla_of}->{$key}->steps);
+    if (not $lca->is_LequivalentR()) {
+      $app->{main}->status("Computing mask for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
+      $app->{bla_of}->{$key}->steps(\@steps);
+      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+    };
+    $max = $app->{bla_of}->{$key}->npixels if ($app->{bla_of}->{$key}->npixels > $max);
+    $app->{bla_of}->{$key}->scan_file_list($sfl);
+    $app->{main}->status("Computing HERFD for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
+    my $ret = $app->{bla_of}->{$key} -> scan(verbose=>0, xdiini=>q{});
+    push @sorted_list, $app->{bla_of}->{$key};
+  };
+  foreach my $key (keys %{$app->{bla_of}}) {
+    next if ($key eq 'aggregate');
+    $app->{bla_of}->{$key}->normpixels($max / $app->{bla_of}->{$key}->npixels);
+  };
+
+  $spectrum->plot_rixs(@sorted_list);
+  $app->{main}->status("Plotted RIXS as XAFS-like data" . Xray::BLA->howlong($start, '.  That'));
+};
+
+# sub replot_rixs {
+#   my ($self, $event, $app) = @_;
+# };
+
+# sub save_rixs {
+#   my ($self, $event, $app) = @_;
+#   foreach my $key (sort keys %{$app->{bla_of}}) {
+#     next if ($key eq 'aggregate');
+
+#   };
+
+# };
 
 
 1;

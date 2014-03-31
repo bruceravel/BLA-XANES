@@ -117,6 +117,8 @@ has 'deltae'	         => (is => 'rw', isa => 'Num', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
+has 'normpixels'         => (is => 'rw', isa => 'Num', default => 0,
+			     documentation => "A normalized scaling factor representing the number of illuminated pixels in the final mask.");
 has 'nbad'               => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of bad pixels found in the elastic image.");
 
@@ -685,6 +687,23 @@ sub compute_xes {
 
 ######################################################################
 #### debuging tools
+
+sub get_e0 {
+  my ($self) = @_;
+  my $el = $self->element;
+  my $li = $self->line;
+  my $ed;
+  if ($li =~ m{\Ak}i) {
+    $ed = 'K';
+  } elsif ($li =~ m{[la1|la2|lb2|lb5|lb6|ll]}i) {
+    $ed = 'L3';
+  } elsif ($li =~ m{[lb1|lg1|lg6|ln]}i) {
+    $ed = 'L2';
+  } elsif ($li =~ m{[lb3|lb4|lg2|lg3]}i) {
+    $ed = 'L1';
+  };
+  return Xray::Absorption->get_energy($el, $ed);
+};
 
 sub attribute_report {
   my ($self) = @_;

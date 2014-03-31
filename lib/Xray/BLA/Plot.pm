@@ -78,7 +78,7 @@ sub plot_energy_point {
 };
 
 sub plot_xanes {
-  my ($self, $fname, @args) = @_;
+  my ($self, @args) = @_;
   my %args = @args;
   $args{title} ||= q{};
   $args{mue}   ||= 0;
@@ -87,7 +87,7 @@ sub plot_xanes {
   (my $legend = $args{title}) =~ s{_}{\\\\_}g;
   if ($args{mue}) {
     gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
-	  with=>'lines', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata),
+	  with=>'lines ls', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata),
 	  with=>'lines', legend=>'conventional {/Symbol m}(E)', PDL->new($self->xdata), PDL->new($self->mudata)
 	 );
   } else {
@@ -98,8 +98,14 @@ sub plot_xanes {
 }
 
 sub plot_rixs {
-  my ($self) = @_;
-  warn "no rixs plot yet\n";
+  my ($self, @spectra) = @_;
+  my $e0 = $self->get_e0;
+  my @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top'});
+  foreach my $s (@spectra) {
+    my $legend = sprintf("%s", $s->energy); # 
+    push @args, with=>'lines', legend=>[$legend], PDL->new($s->xdata), PDL->new($s->ydata)/$s->normpixels;
+  };
+  gplot(@args);
 }
 sub plot_map {
   my ($self) = @_;

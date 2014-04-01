@@ -299,6 +299,10 @@ has 'mudata' => (
 			     },
 		documentation => "An array reference containing the conventional mu(E) for plotting."
 	       );
+has 'herfd_demeter' => (is => 'rw', isa => 'Any',
+			documentation => "A Demeter::Data object containing the HERFD data.  This is used to provide normalized data in a plot and to save RIXS data to an Athena project file.",);
+has 'mue_demeter'   => (is => 'rw', isa => 'Any',
+			documentation => "A Demeter::Data object containing the HERFD data.  This is used to provide normalized data in a plot.",);
 
 has 'sentinal'  => (traits  => ['Code'],
 		    is => 'rw', isa => 'CodeRef', default => sub{sub{1}},
@@ -524,6 +528,7 @@ sub scan {
   local $|=1;
   $self->clear_xdata;
   $self->clear_ydata;
+  $self->clear_mudata;
 
   my (@data, @point);
 
@@ -744,7 +749,7 @@ Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
 
 =head1 VERSION
 
-1
+2
 
 =head1 SYNOPSIS
 

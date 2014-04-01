@@ -241,8 +241,19 @@ sub view_attributes {
     $spectrum = $app->{bla_of}->{$en} if $en;
       $id = $en;
   };
+
+  my $text = $spectrum->attribute_report;
+  if (ref($spectrum->herfd_demeter) =~ m{Demeter}) {
+    $text .= "\n\nHERFD Demeter object:\n\n";
+    $text .= $spectrum->herfd_demeter->serialization;
+  };
+  if (ref($spectrum->mue_demeter) =~ m{Demeter}) {
+    $text .= "\n\nConventional mu(E) Demeter object:\n\n";
+    $text .= $spectrum->mue_demeter->serialization;
+  };
+
   my $dialog = Demeter::UI::Artemis::ShowText
-    -> new($app->{main}, $spectrum->attribute_report, "Structure of \"$id\" object")
+    -> new($app->{main}, $text, "Structure of \"$id\" object")
       -> Show;
 };
 
@@ -307,7 +318,7 @@ Demeter::UI::Metis - BLA data processing
 
 =head1 VERSION
 
-This documentation refers to Xray::BLA version 1.
+This documentation refers to Xray::BLA version 2.
 
 =head1 DESCRIPTION
 

@@ -60,14 +60,11 @@ sub new {
   $app->mouseover($self->{replot_herfd}, "Replot the last HERFD spectrum.");
   $app->mouseover($self->{save_herfd},   "Save the last HERFD data to a column data file.");
 
-  ## this is a dandy idea, except that it requires normalization and I
-  ## don't want to import Demeter.  normalization can be implemented in PDL
   my $hfbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $herfdboxsizer -> Add($hfbox, 0, wxGROW|wxALL, 0);
   $self->{mue} = Wx::CheckBox->new($self, -1, "Include conventional $MU(E) in plot");
   $hfbox -> Add($self->{mue}, 0, wxGROW|wxALL, 0);
   $self->{mue}->SetValue(0);
-  $self->{mue}->Show(0);
 
   $vbox->Add(1,30,0);
 
@@ -122,10 +119,20 @@ sub new {
   $self->{save_rixs} = Wx::Button->new($self, -1, 'Save RIXS data', wxDefaultPosition, [$button_width,-1]);
   $rixsboxsizer -> Add($self->{save_rixs}, 0, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{rixs},        sub{plot_rixs(@_, $app)});
+  EVT_BUTTON($self, $self->{replot_rixs}, sub{replot_rixs(@_, $app)});
+  EVT_BUTTON($self, $self->{save_rixs},   sub{save_rixs(@_, $app)});
+  $app->mouseover($self->{rixs}, "Process RIXS data,i.e. HERFD at all emission energies.");
+  $app->mouseover($self->{replot_rixs}, "Replot the last RIXS data.");
+  $app->mouseover($self->{save_rixs},   "Save the last DATA data to an Athena project file.");
 
-  foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd
+  $self->{rshowmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
+  $rixsboxsizer -> Add($self->{rshowmasks}, 0, wxGROW|wxALL, 0);
+  $self->{rshowmasks}->SetValue(1);
+
+
+  foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks
 		    incident incident_label
-		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs)) {
+		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs rshowmasks)) {
     $self->{$k}->Enable(0);
   };
 
@@ -141,7 +148,12 @@ sub new {
 sub plot_herfd {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
+
   my $start = DateTime->now( time_zone => 'floating' );
+
+  $app->{main}->status("Importing Demeter", 'wait');
+  eval "use Demeter qw(:heph)" if not $INC{"Demeter.pm"};
+
   my $np = $app->{Files}->{image_list}->GetCount;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
@@ -169,10 +181,19 @@ sub plot_herfd {
 
   my $ret = $spectrum -> scan(verbose=>0, xdiini=>q{});
   my $title = $spectrum->stub . ' at ' . $spectrum->energy;
+
+  my $toss = Demeter::Data->new();
+  $spectrum->herfd_demeter($toss->put($spectrum->xdata, $spectrum->ydata, datatype=>'xanes'));
+  $spectrum->herfd_demeter->put_data;
+  $spectrum->herfd_demeter->_update('background');
+  $spectrum->mue_demeter($toss->put($spectrum->xdata, $spectrum->mudata, datatype=>'xanes'));
+  $spectrum->mue_demeter->put_data;
+  $spectrum->mue_demeter->_update('background');
+  undef $toss;
+
   $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
   $spectrum->sentinal(sub{1});
-  $self->{replot_herfd} -> Enable(1);
-  $self->{save_herfd}   -> Enable(1);
+  $self->{$_} -> Enable(1) foreach (qw(replot_herfd save_herfd));
   $self->{herfdbox}->SetLabel(' HERFD ('.$spectrum->energy.')');
   $self->{current} = $spectrum->energy;
   $app->set_parameters;	    # save config file becasue, presumably, we like the current mask creation values
@@ -376,7 +397,7 @@ sub xes_rixs {
  # 	PDL->new($rixs));
 
 
-  $app->{main}->status("Plotted RIXS map calculated along the XES direction.");
+  $app->{main}->status("Plotted RIXS map calculated along the XES direction" . Xray::BLA->howlong($start, '.  That'));
 
   undef $busy;
 };
@@ -390,6 +411,9 @@ sub plot_rixs {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
   my $start = DateTime->now( time_zone => 'floating' );
+
+  $app->{main}->status("Importing Demeter", 'wait');
+  eval "use Demeter qw(:heph)" if not $INC{"Demeter.pm"};
 
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
 
@@ -414,12 +438,28 @@ sub plot_rixs {
       $app->{main}->status("Computing mask for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
       $app->{bla_of}->{$key}->steps(\@steps);
       $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+      if ($self->{rshowmasks}->GetValue) {
+	$app->{bla_of}->{$key}->cbmax(1);
+	$app->{bla_of}->{$key}->plot_mask;
+      };
     };
     $max = $app->{bla_of}->{$key}->npixels if ($app->{bla_of}->{$key}->npixels > $max);
     $app->{bla_of}->{$key}->scan_file_list($sfl);
     $app->{main}->status("Computing HERFD for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
     my $ret = $app->{bla_of}->{$key} -> scan(verbose=>0, xdiini=>q{});
     push @sorted_list, $app->{bla_of}->{$key};
+
+    my $toss = Demeter::Data->new();
+    $app->{bla_of}->{$key}->herfd_demeter($toss->put($app->{bla_of}->{$key}->xdata,
+						     $app->{bla_of}->{$key}->ydata, datatype=>'xanes'));
+    $app->{bla_of}->{$key}->herfd_demeter->put_data;
+    $app->{bla_of}->{$key}->herfd_demeter->_update('background');
+    $app->{bla_of}->{$key}->mue_demeter($toss->put($app->{bla_of}->{$key}->xdata,
+						   $app->{bla_of}->{$key}->mudata, datatype=>'xanes'));
+    $app->{bla_of}->{$key}->mue_demeter->put_data;
+    $app->{bla_of}->{$key}->mue_demeter->_update('background');
+    undef $toss;
+
   };
   foreach my $key (keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
@@ -427,21 +467,27 @@ sub plot_rixs {
   };
 
   $spectrum->plot_rixs(@sorted_list);
+
+  $self->{replot_rixs} -> Enable(1);
+  $self->{save_rixs}   -> Enable(1);
   $app->{main}->status("Plotted RIXS as XAFS-like data" . Xray::BLA->howlong($start, '.  That'));
 };
 
-# sub replot_rixs {
-#   my ($self, $event, $app) = @_;
-# };
+sub replot_rixs {
+  my ($self, $event, $app) = @_;
 
-# sub save_rixs {
-#   my ($self, $event, $app) = @_;
-#   foreach my $key (sort keys %{$app->{bla_of}}) {
-#     next if ($key eq 'aggregate');
+  $app->{main}->status("Replotted RIXS as XAFS-like data.");
+};
 
-#   };
+sub save_rixs {
+  my ($self, $event, $app) = @_;
+  foreach my $key (sort keys %{$app->{bla_of}}) {
+    next if ($key eq 'aggregate');
 
-# };
+  };
+
+  $app->{main}->status("Safe XAFS-like RIXS to an Athena project file.");
+};
 
 
 1;
@@ -453,7 +499,7 @@ Demeter::UI::Metis::Data - Metis' data processing tool
 
 =head1 VERSION
 
-This documentation refers to Xray::BLA version 1.
+This documentation refers to Xray::BLA version 2.
 
 =head1 DESCRIPTION
 
@@ -462,16 +508,14 @@ data from an energy dispersive bent Laue analyzer spectrometer in
 which the signal is dispersed onto the face of a Pilatus camera.
 
 The Data tool is used to process a sequence of images into a HERFD,
-XES, or RIXS spectra.  The result can be plotted or saved to a variety
-of output files.
+XES, or RIXS spectra.  The result can be plotted or saved to
+appropriate output files.
 
 =head1 DEPENDENCIES
 
 Xray::BLA and Metis's dependencies are in the F<Build.PL> file.
 
 =head1 BUGS AND LIMITATIONS
-
-XES and RIXS tools not yet working.
 
 Please report problems as issues at the github site
 L<https://github.com/bruceravel/BLA-XANES>

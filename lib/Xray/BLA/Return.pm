@@ -17,12 +17,6 @@ sub is_ok {
 
 Xray::BLA::Return - A simple return object for use with Xray::BLA
 
-=head1 AUTHOR
-
-Bruce Ravel (bravel AT bnl DOT gov)
-
-L<http://cars9.uchicago.edu/~ravel/software/>
-
 =head1 ATTRIBUTES
 
 =over 4

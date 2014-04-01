@@ -285,7 +285,7 @@ sub Reset {
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
   $app->{Data}->{energylabel}->SetLabel("Current mask energy is <undefined>");
   $app->{Data}->{energy} = 0;
-  foreach my $k (qw(stub energylabel herfd save_herfd)) {
+  foreach my $k (qw(stub energylabel herfd save_herfd mue)) {
     $app->{Data}->{$k}->Enable(0);
   };
   $self->{replot}->Enable(0);
@@ -334,7 +334,7 @@ sub do_step {
     $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
     $app->{Data}->{energy} = $spectrum->energy;
-    foreach my $k (qw(stub energylabel herfd xes incident incident_label rixs)) {
+    foreach my $k (qw(stub energylabel herfd mue xes showmasks incident incident_label rixs rshowmasks)) {
       $app->{Data}->{$k}->Enable(1);
     };
     $spectrum->get_incident_energies;
@@ -567,7 +567,7 @@ Demeter::UI::Metis::Mask - Metis' mask creation tool
 
 =head1 VERSION
 
-This documentation refers to Xray::BLA version 1.
+This documentation refers to Xray::BLA version 2.
 
 =head1 DESCRIPTION
 

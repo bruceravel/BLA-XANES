@@ -18,13 +18,18 @@
    templating scheme, I suspect
 
  - [ ] Parse columns of scan file and patern match to find the useful
-   columns.  Too much assumption goes into the scan method.
+   columns.  Too much assumption goes into the scan method.  Also will
+   need a flag to say whether conventional data was gathered from the
+   scan file.  Also need a way to choose between transmission and
+   conventional fluorescence, which may be done with an SDD.
 
  - [ ] Drop current crop of gnuplot+Text::Template methods in favor of
    PDL::Graphics::Gnuplot.  or not -- it's handy to write out the .gp
    file.
 
- - [ ] gnuplot file for rixs map (much easier with above...)
+ - [ ] gnuplot file for rixs map -- how is this done in PDL?  PDL has
+   linear axis transforms, but can it do non-linear transforms
+   specified point-by-point?
 
  - [ ] Other energy map output formats.  A gif would be useful.  (Much
    easier using PDL)
@@ -44,21 +49,23 @@
  - [ ] Think about how to use HDF5 to store images, scans, scan
    metadata, and Xray::BLA metadata.
 
-** Issues with Metis [2/13]
+** Issues with Metis [4/14]
 
  - [X] Version 2 will have Xray::BLA objects for each emission energy
    and one for the aggregate object.  That will make XES and RIXS much
    simpler to implement sensibly.  Will also allow me to dump the
    working_image concept.
 
- - [ ] implement +XES and+ RIXS
+ - [X] implement XES and RIXS
 
- - [ ] flag whether steps have changed, don't recompute masks for XES
+ - [ ] replot RIXS & export Athena project file from RIXS
+
+ - [X] flag whether steps have changed, don't recompute masks for XES
    at a different incident energy
 
  - [ ] Resetting a mask leads to crashy trouble -- need to investigate
 
- - [ ] implement Map and mapmask
+ - [ ] implement map and mapmask
 
  - [X] implement aggregate mask from set of elastic images
 
@@ -81,8 +88,7 @@
    still ambiguous, a file selection dialog can be used to select
    content for the lists.
 
- - [ ] Persistance?  Is anything more than the preferences yaml
-   necessary? *Yes!* Need to save group of masks.  Need to save
+ - [ ] Persistance. Need to save group of masks.  Need to save
    aggregate mask.  Need to reimport them.
 
  - [ ] how are element and line used?  (answer: they are used to set

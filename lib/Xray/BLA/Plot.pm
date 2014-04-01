@@ -20,13 +20,10 @@ use PDL::Graphics::Simple;
 use PDL::Graphics::Gnuplot qw(gplot image);
 use File::Basename;
 
-has 'cbmax' => (is => 'rw', isa => 'Int', default => 20);
-
+has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20);
 has 'color'   => (is => 'rw', isa => 'Str', default => 'grey');
-has 'palette' => (is => 'rw', isa => 'Str',
-		  ## greys
-		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
-		  );
+has 'palette' => (is => 'rw', isa => 'Str', ## greys
+		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )" );
 
 ## These are the single hue, sequential palettes from Color Brewer
 ##   http://colorbrewer2.org/
@@ -86,13 +83,19 @@ sub plot_xanes {
 
   (my $legend = $args{title}) =~ s{_}{\\\\_}g;
   if ($args{mue}) {
-    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
-	  with=>'lines ls', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata),
-	  with=>'lines', legend=>'conventional {/Symbol m}(E)', PDL->new($self->xdata), PDL->new($self->mudata)
+    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box'},
+
+	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
+	  PDL->new($self->herfd_demeter->ref_array('energy')),
+	  PDL->new($self->herfd_demeter->ref_array('flat')),
+
+	  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>'conventional {/Symbol m}(E)',
+	  PDL->new($self->mue_demeter->ref_array('energy')),
+	  PDL->new($self->mue_demeter->ref_array('flat'))
 	 );
   } else {
     gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
-	  with=>'lines', legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata));
+	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata));
   };
   $self->pause($args{pause}) if $args{pause};
 }
@@ -100,10 +103,15 @@ sub plot_xanes {
 sub plot_rixs {
   my ($self, @spectra) = @_;
   my $e0 = $self->get_e0;
-  my @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top'});
+  my @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box'});
+  ## see lib/Demeter/configuration/gnuplot.demeter_conf from Demeter for color list
+  my @thiscolor = qw(blue red dark-green dark-violet yellow4 brown dark-pink gold dark-cyan spring-green);
+  my $count = 0;
   foreach my $s (@spectra) {
     my $legend = sprintf("%s", $s->energy); # 
-    push @args, with=>'lines', legend=>[$legend], PDL->new($s->xdata), PDL->new($s->ydata)/$s->normpixels;
+    push @args, with=>'lines', lc=>"rgb ".$thiscolor[$count%10], lt=>1, lw=>1, legend=>[$legend],
+      PDL->new($s->xdata), PDL->new($s->ydata)/$s->normpixels;
+    ++$count;
   };
   gplot(@args);
 }
@@ -122,7 +130,7 @@ sub plot_xes {
     push @xes, $p->[1];
   };
   gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
-	with=>'lines', legend=>'incident energy = '.$args{incident},
+	with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
 	PDL->new(\@e), PDL->new(\@xes));
   my $xesout = $self->dat_xes($args{xes});
   return $xesout;

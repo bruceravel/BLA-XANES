@@ -716,6 +716,7 @@ sub attribute_report {
   my $text = q{};
   foreach my $a (sort @list) {
     my $this = $self->$a;
+    $this = q{} if not defined $this;
     $this = join(", ", @{$this}) if ($a eq 'steps');
     $text .= sprintf "%-20s : %s\n", $a, $this;
   };

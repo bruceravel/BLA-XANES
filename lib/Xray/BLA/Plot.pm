@@ -19,6 +19,7 @@ use Moose::Role;
 use PDL::Graphics::Simple;
 use PDL::Graphics::Gnuplot qw(gplot image);
 use File::Basename;
+use Math::Random;
 
 has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20);
 has 'color'   => (is => 'rw', isa => 'Str', default => 'grey');
@@ -41,6 +42,10 @@ my %color_choices = (
 
 sub set_palette {
   my ($self, $color) = @_;
+  if ($color =~ m{surprise}i) {
+    my $i = int(random_uniform(1,0,6));
+    $color = (keys %color_choices)[$i];
+  };
   if (exists($color_choices{$color})) {
     $self->palette($color_choices{$color});
   };

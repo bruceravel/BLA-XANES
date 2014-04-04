@@ -451,11 +451,11 @@ sub plot_rixs {
 
     my $toss = Demeter::Data->new();
     $app->{bla_of}->{$key}->herfd_demeter($toss->put($app->{bla_of}->{$key}->xdata,
-						     $app->{bla_of}->{$key}->ydata, datatype=>'xanes'));
+						     $app->{bla_of}->{$key}->ydata, datatype=>'xanes', name=>$key));
     $app->{bla_of}->{$key}->herfd_demeter->put_data;
     $app->{bla_of}->{$key}->herfd_demeter->_update('background');
     $app->{bla_of}->{$key}->mue_demeter($toss->put($app->{bla_of}->{$key}->xdata,
-						   $app->{bla_of}->{$key}->mudata, datatype=>'xanes'));
+						   $app->{bla_of}->{$key}->mudata, datatype=>'xanes', name=>'conventional'));
     $app->{bla_of}->{$key}->mue_demeter->put_data;
     $app->{bla_of}->{$key}->mue_demeter->_update('background');
     undef $toss;
@@ -475,17 +475,34 @@ sub plot_rixs {
 
 sub replot_rixs {
   my ($self, $event, $app) = @_;
-
+  my $spectrum  = $app->{bla_of}->{$self->{energy}};
+  my @list;
+  foreach my $key (sort keys %{$app->{bla_of}}) {
+    next if ($key eq 'aggregate');
+    push @list, $app->{bla_of}->{$key};
+  };
+  $spectrum->plot_rixs(@list);
   $app->{main}->status("Replotted RIXS as XAFS-like data.");
 };
 
 sub save_rixs {
   my ($self, $event, $app) = @_;
+  my @list = ();
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
-
+    push @list, $app->{bla_of}->{$key}->herfd_demeter;
   };
-
+  my $fname = sprintf("%s_rixs.prj", $app->{base}->stub);
+  my $fd = Wx::FileDialog->new( $app->{main}, "Save RIXS data to Athena project file", cwd, $fname,
+				"Athena project file (*.prj)|*.prj|All files (*)|*",
+				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Saving Athena project file canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  $list[0]->write_athena($file, @list);
   $app->{main}->status("Safe XAFS-like RIXS to an Athena project file.");
 };
 

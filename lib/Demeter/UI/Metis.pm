@@ -184,6 +184,7 @@ sub set_parameters {
   my ($app) = @_;
 
   ## set values for base object
+  $app->{base} -> stub(get_symbol($app->{Files}->{stub}->GetValue));
   $app->{base} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
   $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
   $app->{base} -> scanfolder($app->{Files}->{scan}->GetValue);

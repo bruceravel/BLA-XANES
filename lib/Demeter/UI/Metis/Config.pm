@@ -33,7 +33,7 @@ sub new {
 
   ++$row;
   $self->{color_label} = Wx::StaticText -> new($self, -1, "Image color");
-  $self->{color}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(grey green blue orange purple red)]);
+  $self->{color}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(grey green blue orange purple red), 'Surprise me!']);
   $gbs -> Add($self->{color_label},    Wx::GBPosition->new($row,0));
   $gbs -> Add($self->{color},          Wx::GBPosition->new($row,1));
   $self->{color}->SetStringSelection($app->{base}->color);

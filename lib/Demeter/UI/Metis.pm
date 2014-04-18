@@ -187,8 +187,8 @@ sub set_parameters {
   $app->{base} -> stub(get_symbol($app->{Files}->{stub}->GetValue));
   $app->{base} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
   $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
-  $app->{base} -> scanfolder($app->{Files}->{scan}->GetValue);
-  $app->{base} -> tifffolder($app->{Files}->{image}->GetValue);
+  $app->{base} -> scanfolder($app->{Files}->{scan}->GetPath);
+  $app->{base} -> tifffolder($app->{Files}->{image}->GetPath);
 
   $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
   $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);

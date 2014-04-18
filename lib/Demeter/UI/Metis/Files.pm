@@ -9,7 +9,7 @@ use File::Basename;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
-use Wx::Event qw(EVT_LISTBOX_DCLICK EVT_BUTTON  EVT_KEY_DOWN);
+use Wx::Event qw(EVT_LISTBOX_DCLICK EVT_BUTTON  EVT_KEY_DOWN EVT_DIRPICKER_CHANGED);
 
 sub new {
   my ($class, $page, $app) = @_;
@@ -23,7 +23,12 @@ sub new {
 
   $vbox ->  Add($self->{title}, 0, wxGROW|wxALL, 5);
 
-  my $gbs = Wx::GridBagSizer->new( 5,5 );
+
+
+
+  ## ------ stub, element, line ----------------------------------------
+  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
 
   my @elements = map {sprintf "%s: %s", $_, get_symbol($_)} (1 .. 96);
   my @lines = (qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll));
@@ -37,49 +42,60 @@ sub new {
   $self->{element}       = Wx::ComboBox   -> new($self, -1, q{}, wxDefaultPosition, [100,-1], \@elements, wxCB_READONLY);
   $self->{line_label}    = Wx::StaticText -> new($self, -1, "Line");
   $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], \@lines, wxCB_READONLY);
-  $gbs -> Add($self->{stub_label},    Wx::GBPosition->new(0,0));
-  $gbs -> Add($self->{stub},          Wx::GBPosition->new(0,1));
-  $gbs -> Add($self->{element_label}, Wx::GBPosition->new(0,2));
-  $gbs -> Add($self->{element},       Wx::GBPosition->new(0,3));
-  $gbs -> Add($self->{line_label},    Wx::GBPosition->new(0,4));
-  $gbs -> Add($self->{line},          Wx::GBPosition->new(0,5));
+  $hbox -> Add($self->{stub_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
+  $hbox -> Add($self->{stub},          0, wxLEFT|wxRIGHT, 5);
+  $hbox -> Add($self->{element_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
+  $hbox -> Add($self->{element},       0, wxLEFT|wxRIGHT, 5);
+  $hbox -> Add($self->{line_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
+  $hbox -> Add($self->{line},          0, wxLEFT|wxRIGHT, 5);
   $self->{element}->SetSelection(get_Z($element)-1) if $element;
   $self->{line}->SetStringSelection($line);
   $app->mouseover($self->{stub}, "Specify the base of the scan and image filenames.");
   $app->mouseover($self->{element}, "Specify the absorber element.");
   $app->mouseover($self->{stub}, "Specify the measured emission line.");
 
-  my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "metis_logo.png");
-  my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
-  $gbs -> Add(Wx::StaticText->new($self, -1, q{ }, wxDefaultPosition, [50,-1]),
-	      Wx::GBPosition->new(0,6));
-  $gbs -> Add(Wx::StaticBitmap->new($self, -1, $logo, wxDefaultPosition, [100,100]),
-	      Wx::GBPosition->new(0,7), Wx::GBSpan->new(4,1));
+  # my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "metis_logo.png");
+  # my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
+  # $gbs -> Add(Wx::StaticText->new($self, -1, q{ }, wxDefaultPosition, [50,-1]),
+  # 	      Wx::GBPosition->new(0,6));
+  # $gbs -> Add(Wx::StaticBitmap->new($self, -1, $logo, wxDefaultPosition, [100,100]),
+  # 	      Wx::GBPosition->new(0,7), Wx::GBSpan->new(4,1));
 
 
-  my $scanfolder = $app->{base}->scanfolder || q{};
+  ## ------ scan folder ----------------------------------------
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
+  my $scanfolder = $app->{base}->scanfolder || cwd;
   $self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
-  $self->{scan} = Wx::TextCtrl->new($self, -1, $scanfolder, wxDefaultPosition, [500,-1],);
-  $gbs -> Add($self->{scan_label}, Wx::GBPosition->new(1,0));
-  $gbs -> Add($self->{scan},       Wx::GBPosition->new(1,1), Wx::GBSpan->new(1,5));
+  $self->{scan} = Wx::DirPickerCtrl->new($self, -1, $scanfolder, "Scan folder", wxDefaultPosition, [500,-1], wxDIRP_DIR_MUST_EXIST|wxDIRP_CHANGE_DIR|wxDIRP_USE_TEXTCTRL);
   $app->mouseover($self->{scan}, "Specify the location of the scan files.");
+  $self->{scan}->SetPath($scanfolder);
+  $hbox->Add($self->{scan_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
+  $hbox->Add($self->{scan}, 1, wxLEFT|wxRIGHT, 5);
+  EVT_DIRPICKER_CHANGED($self,$self->{scan},sub{OnDirChanging(@_, $app)});
 
-  my $tifffolder = $app->{base}->tifffolder || q{};
+  ## ------ images folder ----------------------------------------
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
+  my $tifffolder = $app->{base}->tifffolder || cwd;
   $self->{image_label} = Wx::StaticText -> new($self, -1, "Image folder");
-  $self->{image} = Wx::TextCtrl->new($self, -1, $tifffolder, wxDefaultPosition, [500,-1],);
-  $gbs -> Add($self->{image_label}, Wx::GBPosition->new(2,0));
-  $gbs -> Add($self->{image},       Wx::GBPosition->new(2,1), Wx::GBSpan->new(1,5));
+  $self->{image} = Wx::DirPickerCtrl->new($self, -1, q{}, "Image folder", wxDefaultPosition, [500,-1], wxDIRP_DIR_MUST_EXIST|wxDIRP_CHANGE_DIR|wxDIRP_USE_TEXTCTRL);
+  $hbox -> Add($self->{image_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
+  $hbox -> Add($self->{image},       1, wxLEFT|wxRIGHT, 5);
   $app->mouseover($self->{image}, "Specify the location of the image files.");
+  $self->{image}->SetPath($tifffolder);
 
+  ## ------ fetch button ----------------------------------------
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
   $self->{fetch} = Wx::Button->new($self, -1, "&Fetch file lists");
-  $gbs -> Add($self->{fetch},       Wx::GBPosition->new(3,1));
+  $hbox -> Add($self->{fetch}, 1, wxALL, 5);
   $app->mouseover($self->{image}, "Fetch all image files and populate the file lists below.");
 
-  $vbox -> Add($gbs, 0, wxGROW|wxALL, 5);
 
   EVT_BUTTON($self, $self->{fetch}, sub{fetch(@_, $app)});
 
-  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
 
   my $elasticbox       = Wx::StaticBox->new($self, -1, 'Elastic files', wxDefaultPosition, wxDefaultSize);
   my $elasticboxsizer  = Wx::StaticBoxSizer->new( $elasticbox, wxVERTICAL );
@@ -110,8 +126,8 @@ sub fetch {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
   my $stub           = $self->{stub}->GetValue;
-  my $scan_folder    = $self->{scan}->GetValue;
-  my $image_folder   = $self->{image}->GetValue;
+  my $scan_folder    = $self->{scan}->GetPath;
+  my $image_folder   = $self->{image}->GetPath;
   $app->{base}->{stub}       = $stub;
   $app->{base}->{scanfolder} = $scan_folder;
   $app->{base}->{tifffolder} = $image_folder;
@@ -119,10 +135,10 @@ sub fetch {
   $app->{bla_of}->{aggregate}->{scanfolder} = $scan_folder;
   $app->{bla_of}->{aggregate}->{tifffolder} = $image_folder;
 
-  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
-    $app->{main}->status("Stub $stub hasn't changed.");
-    return;
-  };
+#  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
+#    $app->{main}->status("Stub $stub hasn't changed.");
+#    return;
+#  };
 
   $app->set_parameters;
   $app->{base} -> clear_elastic_energies;
@@ -159,12 +175,12 @@ sub fetch {
   $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
   $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
 
-  if ((not $self->{element}->GetStringSelection) and (not $self->{line}->GetStringSelection)) {
+  #if ((not $self->{element}->GetStringSelection) and (not $self->{line}->GetStringSelection)) {
     my ($el, $li) = $app->{base}->guess_element_and_line;
     $self->{element}->SetSelection(get_Z($el)-1);
     $self->{line}->SetStringSelection($li);
     $app->set_parameters;
-  };
+  #};
 
   foreach my $k (qw(stub energylabel energy rbox)) {
     $app->{Mask}->{$k} -> Enable(1);
@@ -192,7 +208,7 @@ sub fetch {
 sub view {
   my ($self, $event, $app, $which) = @_;
   my $stub   = $self->{stub}->GetValue;
-  my $folder = $self->{image}->GetValue;
+  my $folder = $self->{image}->GetPath;
   my $img    = $self->{$which."_list"} -> GetStringSelection;
   my $file   = File::Spec->catfile($folder, $img);
 
@@ -224,6 +240,20 @@ sub view {
   $spectrum->cbmax($cbm);# if $step =~ m{social};
   $spectrum->plot_mask;
   $app->{main}->status("Plotted ".$spectrum->elastic_file);
+
+};
+
+
+sub OnDirChanging {
+  print join("|", @_);
+  # my $tc;
+  # foreach my $c ($self->{scan}->GetChildren) {
+  #   $tc = $c if ref($c) =~ m{TextCtrl};
+  # };
+  # $tc->SetSize(400,-1);
+  # print join("|", $tc -> GetMinSize->GetWidth, $tc -> GetMaxSize->GetWidth, $tc->GetSizeWH);
+  # $self->{scan}->Update;
+
 
 };
 

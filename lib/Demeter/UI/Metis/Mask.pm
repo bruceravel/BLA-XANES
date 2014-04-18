@@ -36,6 +36,9 @@ sub new {
   $hbox -> Add($sbox, 1, wxGROW|wxALL, 5);
   $sbox -> Add($stepsboxsizer, 1, wxGROW|wxALL, 5);
 
+  $self->{undostep} = Wx::Button->new($self, -1, 'Undo last step');
+  $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+  EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
   $self->{savesteps} = Wx::Button->new($self, -1, 'Save steps');
   $sbox -> Add($self->{savesteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
   EVT_BUTTON($self, $self->{savesteps}, sub{save_steps(@_, $app)});
@@ -143,11 +146,11 @@ sub new {
   my $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
   $self->{do_andmask} = Wx::Button->new($self, -1, "Finish mask", wxDefaultPosition, wxDefaultSize);
-  $svbox->Add($self->{do_andmask}, 1, wxGROW|wxALL, 5);
+  $svbox->Add($self->{do_andmask}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
   $self->{savemask} = Wx::Button -> new($self, -1, 'Save mask');
-  $svbox->Add($self->{savemask}, 1, wxGROW|wxALL, 5);
+  $svbox->Add($self->{savemask}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
   $self->{animation} = Wx::Button -> new($self, -1, 'Save animation');
-  $svbox->Add($self->{animation}, 1, wxGROW|wxALL, 5);
+  $svbox->Add($self->{animation}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
   EVT_BUTTON($self, $self->{savemask}, sub{savemask(@_, $app)});
   EVT_BUTTON($self, $self->{animation}, sub{animation(@_, $app)});
   $app->mouseover($self->{do_andmask}, "Explicitly convert current mask to an AND mask (i.e. with only 0 and 1 values).");
@@ -155,10 +158,12 @@ sub new {
   $app->mouseover($self->{animation}, "Save the mask processing steps as an animated gif.");
 
 
+  $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
   $self->{replot} = Wx::Button -> new($self, -1, '&Replot');
-  $vbox->Add($self->{replot}, 0, wxGROW|wxALL, 5);
+  $svbox->Add($self->{replot}, 1, wxGROW|wxALL, 5);
   $self->{reset} = Wx::Button -> new($self, -1, 'Rese&t');
-  $vbox->Add($self->{reset}, 0, wxGROW|wxALL, 5);
+  $svbox->Add($self->{reset}, 1, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{replot}, sub{replot(@_, $app, 0)});
   EVT_BUTTON($self, $self->{reset}, sub{Reset(@_, $app)});
   $self->{replot}->Enable(0);
@@ -166,7 +171,7 @@ sub new {
   $app->mouseover($self->{replot}, "Replot the mask after rerunning the processing steps.");
   $app->mouseover($self->{reset},  "Return to the measured elastic image and restart the mask.");
 
-  $vbox ->  Add(1, 1, 2);
+  #$vbox ->  Add(1, 1, 2);
 
   foreach my $k (qw(bad social lonely multiply areal entire aggregate andmask)) {
     EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
@@ -181,7 +186,7 @@ sub new {
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
 		    do_entire do_aggregate do_andmask savemask animation
-		    stub reset energylabel energy savesteps rbox)) {
+		    stub reset energylabel energy undostep savesteps rbox)) {
     $self->{$k} -> Enable(0);
   };
 
@@ -216,7 +221,7 @@ sub MaskType {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask do_aggregate savemask animation)) {
+		    do_entire do_andmask do_aggregate undostep savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $self->{steps_list}->Clear;
@@ -250,7 +255,7 @@ sub SelectEnergy {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask do_aggregate savemask animation)) {
+		    do_entire do_andmask do_aggregate undostep savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $self->{steps_list}->Clear;
@@ -279,7 +284,7 @@ sub Reset {
 		    do_lonely lonelylabel lonelyvalue
 		    do_multiply multiplyvalue
 		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask do_aggregate savesteps savemask animation)) {
+		    do_entire do_andmask do_aggregate undostep savesteps savemask animation)) {
     $self->{$k}->Enable(0);
   };
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
@@ -324,7 +329,7 @@ sub do_step {
 		      do_multiply multiplyvalue
 		      do_areal arealtype areallabel arealvalue
 		      do_entire do_andmask savemask
-		      savesteps)) { # animation
+		      undostep savesteps)) { # animation
       $self->{$k}->Enable(1);
     };
     $self->{do_aggregate}->Enable(1) if ($spectrum->masktype eq 'single');
@@ -520,6 +525,18 @@ sub animation {
   };
   my $file = $fd->GetPath;
   $self->replot($event, $app, 1);
+};
+
+sub undo_last_step {
+  my ($self, $event, $app) = @_;
+  my $last = $self->{steps_list}->GetCount;
+  $self->{steps_list}->Delete($last-1);
+  if ($last == 1) {
+    $self->Reset($event, $app);
+  } else {
+    $self->replot($event, $app);
+  };
+
 };
 
 sub save_steps {

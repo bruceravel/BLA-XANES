@@ -65,25 +65,31 @@ sub new {
   ## ------ scan folder ----------------------------------------
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
-  my $scanfolder = $app->{base}->scanfolder || cwd;
-  $self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
-  $self->{scan} = Wx::DirPickerCtrl->new($self, -1, $scanfolder, "Scan folder", wxDefaultPosition, [500,-1], wxDIRP_DIR_MUST_EXIST|wxDIRP_CHANGE_DIR|wxDIRP_USE_TEXTCTRL);
-  $app->mouseover($self->{scan}, "Specify the location of the scan files.");
-  $self->{scan}->SetPath($scanfolder);
-  $hbox->Add($self->{scan_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
-  $hbox->Add($self->{scan}, 1, wxLEFT|wxRIGHT, 5);
-  EVT_DIRPICKER_CHANGED($self,$self->{scan},sub{OnDirChanging(@_, $app)});
+  my $scanfolder = $app->{base}->scanfolder || q{};
+  #$self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
+  $self->{scan} = Wx::Button->new($self, -1, "Pick scan folder");
+  $self->{scan_dir} = Wx::StaticText -> new($self, -1, $scanfolder);
+  $app->mouseover($self->{scan}, "Select the location of the scan files.");
+  #$hbox->Add($self->{scan_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
+  $hbox->Add($self->{scan}, 0, wxLEFT|wxRIGHT, 5);
+  $hbox->Add($self->{scan_dir}, 1, wxLEFT|wxRIGHT|wxTOP, 3);
+  EVT_BUTTON($self, $self->{scan}, sub{SelectFolder(@_, $app, 'scan')});
+
+  #$self->{scan} = Wx::DirPickerCtrl->new($self, -1, q{}, "Image folder", wxDefaultPosition, [500,-1],
+  #					 wxDIRP_DIR_MUST_EXIST|wxDIRP_CHANGE_DIR|wxDIRP_USE_TEXTCTRL);
+  #$self->{scan}->SetPath($scanfolder);
+  #EVT_DIRPICKER_CHANGED($self,$self->{scan},sub{OnDirChanging(@_, $app)});
 
   ## ------ images folder ----------------------------------------
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
   my $tifffolder = $app->{base}->tifffolder || cwd;
-  $self->{image_label} = Wx::StaticText -> new($self, -1, "Image folder");
-  $self->{image} = Wx::DirPickerCtrl->new($self, -1, q{}, "Image folder", wxDefaultPosition, [500,-1], wxDIRP_DIR_MUST_EXIST|wxDIRP_CHANGE_DIR|wxDIRP_USE_TEXTCTRL);
-  $hbox -> Add($self->{image_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
-  $hbox -> Add($self->{image},       1, wxLEFT|wxRIGHT, 5);
-  $app->mouseover($self->{image}, "Specify the location of the image files.");
-  $self->{image}->SetPath($tifffolder);
+  $self->{image} = Wx::Button->new($self, -1, "Pick scan folder");
+  $self->{image_dir} = Wx::StaticText -> new($self, -1, $tifffolder);
+  $hbox -> Add($self->{image},   0, wxLEFT|wxRIGHT, 5);
+  $hbox->Add($self->{image_dir}, 1, wxLEFT|wxRIGHT|wxTOP, 3);
+  $app->mouseover($self->{image}, "Select the location of the image files.");
+  EVT_BUTTON($self, $self->{image}, sub{SelectFolder(@_, $app, 'image')});
 
   ## ------ fetch button ----------------------------------------
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
@@ -126,14 +132,14 @@ sub fetch {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
   my $stub           = $self->{stub}->GetValue;
-  my $scan_folder    = $self->{scan}->GetPath;
-  my $image_folder   = $self->{image}->GetPath;
-  $app->{base}->{stub}       = $stub;
-  $app->{base}->{scanfolder} = $scan_folder;
-  $app->{base}->{tifffolder} = $image_folder;
-  $app->{bla_of}->{aggregate}->{stub}       = $stub;
-  $app->{bla_of}->{aggregate}->{scanfolder} = $scan_folder;
-  $app->{bla_of}->{aggregate}->{tifffolder} = $image_folder;
+  my $scan_folder    = $self->{scan_dir}->GetLabel;
+  my $image_folder   = $self->{image_dir}->GetLabel;
+  $app->{base}->stub($stub);
+  $app->{base}->scanfolder($scan_folder);
+  $app->{base}->tifffolder($image_folder);
+  $app->{bla_of}->{aggregate}->stub($stub);
+  $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
+  $app->{bla_of}->{aggregate}->tifffolder($image_folder);
 
 #  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
 #    $app->{main}->status("Stub $stub hasn't changed.");
@@ -142,7 +148,6 @@ sub fetch {
 
   $app->set_parameters;
   $app->{base} -> clear_elastic_energies;
-  $app->{base} -> stub($stub);
 
   my $us = q{_};
   opendir(my $E, $image_folder);
@@ -208,7 +213,7 @@ sub fetch {
 sub view {
   my ($self, $event, $app, $which) = @_;
   my $stub   = $self->{stub}->GetValue;
-  my $folder = $self->{image}->GetPath;
+  my $folder = $self->{image_dir}->GetLabel;
   my $img    = $self->{$which."_list"} -> GetStringSelection;
   my $file   = File::Spec->catfile($folder, $img);
 
@@ -244,8 +249,27 @@ sub view {
 };
 
 
+sub SelectFolder {
+  my ($self, $event, $app, $which) = @_;
+  my $current = ($which eq 'scan') ? $self->{scan_dir}->GetLabel : $self->{image_dir}->GetLabel;
+  my $dd = Wx::DirDialog->new( $app->{main}, "Location of $which folder",
+                               $current||cwd, wxDD_DEFAULT_STYLE|wxDD_CHANGE_DIR);
+  if ($dd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Setting $which folder canceled.");
+    return;
+  };
+  my $dir  = $dd->GetPath;
+  if ($which eq 'scan') {
+    $self->{scan_dir}->SetLabel($dir);
+    $app->{base}->scanfolder($dir);
+  } else {
+    $self->{image_dir}->SetLabel($dir);
+    $app->{base}->tifffolder($dir);
+  };
+};
+
 sub OnDirChanging {
-  print join("|", @_);
+  #print join("|", @_);
   # my $tc;
   # foreach my $c ($self->{scan}->GetChildren) {
   #   $tc = $c if ref($c) =~ m{TextCtrl};
@@ -253,8 +277,7 @@ sub OnDirChanging {
   # $tc->SetSize(400,-1);
   # print join("|", $tc -> GetMinSize->GetWidth, $tc -> GetMaxSize->GetWidth, $tc->GetSizeWH);
   # $self->{scan}->Update;
-
-
+  1;
 };
 
 1;

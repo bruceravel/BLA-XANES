@@ -1,15 +1,11 @@
 bin/bla
 Build.PL
 lib/Xray/BLA.pm
-lib/Xray/BLA/Backend/ImageMagick.pm
-lib/Xray/BLA/Backend/Imager.pm
 lib/Xray/BLA/Return.pm
 MANIFEST			This list of files
 README.org
 share/bla.xdi.ini
 share/config.ini
 t/01_base.t
-t/02_imager.t
-t/03_image_magick.t
 t/example.001
 t/example_elastic_9713_00001.tif

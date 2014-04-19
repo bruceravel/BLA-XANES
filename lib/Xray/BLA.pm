@@ -1,8 +1,6 @@
 package Xray::BLA;
 use Xray::BLA::Return;
 
-use Statistics::Descriptive;
-use Xray::Absorption;
 
 use version;
 our $VERSION = version->new('2');
@@ -32,6 +30,7 @@ use List::Util qw(sum max);
 use List::MoreUtils qw(pairwise any);
 use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
+use Statistics::Descriptive;
 use Term::Sk;
 use Text::Template;
 use Xray::Absorption;

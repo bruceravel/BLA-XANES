@@ -62,7 +62,7 @@ sub plot_mask {
   } else {
     $title = basename($self->elastic_file);
   };
-  $title =~ s{_}{\\\\_}g;
+  $title = $self->escape_us($title);
   image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
 	$self->elastic_image);
@@ -72,7 +72,7 @@ sub plot_energy_point {
   my ($self, $file) = @_;
   my $point = $self->Read($file);
   my $cbm = $self->bad_pixel_value/$self->imagescale;
-  (my $title = basename($file)) =~ s{_}{\\\\_}g;
+  my $title = $self->escape_us(basename($file));
   image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title,
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
 	$point);
@@ -86,7 +86,8 @@ sub plot_xanes {
   $args{mue}   ||= 0;
   $args{pause} = q{-1} if not defined $args{pause};
 
-  (my $legend = $args{title}) =~ s{_}{\\\\_}g;
+  my $legend = $self->escape_us($args{title});
+  my $mu = ($self->is_windows) ? 'mu' : '{/Symbol m}';
   if ($args{mue}) {
     gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box'},
 
@@ -94,13 +95,15 @@ sub plot_xanes {
 	  PDL->new($self->herfd_demeter->ref_array('energy')),
 	  PDL->new($self->herfd_demeter->ref_array('flat')),
 
-	  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>'conventional {/Symbol m}(E)',
+	  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>"conventional $mu(E)",
 	  PDL->new($self->mue_demeter->ref_array('energy')),
 	  PDL->new($self->mue_demeter->ref_array('flat'))
 	 );
   } else {
     gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
-	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend, PDL->new($self->xdata), PDL->new($self->ydata));
+	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
+	  PDL->new($self->xdata),
+	  PDL->new($self->ydata));
   };
   $self->pause($args{pause}) if $args{pause};
 }
@@ -141,6 +144,16 @@ sub plot_xes {
   return $xesout;
 };
 
+
+sub escape_us {
+  my ($self, $string) = @_;
+  if ($self->is_windows) {
+    $string =~ s{_}{\\_}g;
+  } else {
+    $string =~ s{_}{\\\\_}g;
+  };
+  return $string;
+};
 
 1;
 

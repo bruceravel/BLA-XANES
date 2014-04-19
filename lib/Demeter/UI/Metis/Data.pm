@@ -151,9 +151,6 @@ sub plot_herfd {
 
   my $start = DateTime->now( time_zone => 'floating' );
 
-  $app->{main}->status("Importing Demeter", 'wait');
-  eval "use Demeter qw(:heph)" if not $INC{"Demeter.pm"};
-
   my $np = $app->{Files}->{image_list}->GetCount;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
@@ -411,9 +408,6 @@ sub plot_rixs {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
   my $start = DateTime->now( time_zone => 'floating' );
-
-  $app->{main}->status("Importing Demeter", 'wait');
-  eval "use Demeter qw(:heph)" if not $INC{"Demeter.pm"};
 
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
 

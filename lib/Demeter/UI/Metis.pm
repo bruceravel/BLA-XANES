@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Xray::BLA;
+use Demeter qw(:hephaestus);
 use Demeter::UI::Artemis::ShowText;
 
 use Chemistry::Elements qw(get_Z get_symbol);
@@ -187,8 +188,8 @@ sub set_parameters {
   $app->{base} -> stub(get_symbol($app->{Files}->{stub}->GetValue));
   $app->{base} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
   $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
-  $app->{base} -> scanfolder($app->{Files}->{scan}->GetPath);
-  $app->{base} -> tifffolder($app->{Files}->{image}->GetPath);
+  $app->{base} -> scanfolder($app->{Files}->{scan_dir}->GetLabel);
+  $app->{base} -> tifffolder($app->{Files}->{image_dir}->GetLabel);
 
   $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
   $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);

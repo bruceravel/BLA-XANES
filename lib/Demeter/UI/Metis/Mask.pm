@@ -302,10 +302,12 @@ sub Reset {
 
 sub do_step {
   my ($self, $event, $app, $which) = @_;
+  my $busy = Wx::BusyCursor->new();
   my $energy = $self->{energy}->GetStringSelection;
   my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   if ($self->{rbox}->GetStringSelection =~ m{Single} and ($energy eq q{})) {
     $app->{main}->status("You haven't selected an emission energy.", 'alert');
+    undef $busy;
     return;
   };
   my $spectrum = $app->{bla_of}->{$key};
@@ -374,6 +376,7 @@ sub do_step {
     $spectrum -> radius($self->{arealvalue}->GetValue);
     if ($spectrum -> operation eq 'median') {
       $app->{main}->status("Areal median is not available yet.", 'alert');
+      undef $busy;
       return;
     };
     $success = $spectrum -> do_step('areal', %args);
@@ -387,6 +390,7 @@ sub do_step {
   } elsif ($which eq 'aggregate') {
     if ($app->{bla_of}->{aggregate}->elastic_image->isnull) {
       $app->{main}->status("You haven't made an aggregate mask yet.", 'alert');
+      undef $busy;
       return;
     };
     $app->{bla_of}->{aggregate} -> do_step('andmask', %args); # gotta be sure!
@@ -410,6 +414,7 @@ sub do_step {
   } else {
     $app->{main}->status("That action resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
   };
+  undef $busy;
 
 };
 

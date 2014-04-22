@@ -142,6 +142,31 @@ sub new {
   return $self;
 };
 
+sub restore {
+  my ($self) = @_;
+  foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks
+		    incident incident_label
+		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs rshowmasks)) {
+    $self->{$k}->Enable(0);
+  };
+  $self->{herfdbox}->SetLabel(' HERFD');
+  $self->{incident}->SetValue('');
+};
+
+sub fetch_steps {
+  my ($self, $spectrum, $app) = @_;
+  ## read step list, add andmask if needed
+  my $steplist = $app->{Mask}->{steps_list};
+  if ($steplist->GetString($steplist->GetCount-1) ne 'andmask') {
+    $steplist->Append("andmask");
+  };
+  $spectrum->clear_steps;
+  foreach my $n (0 .. $steplist->GetCount-1) {
+    $spectrum->push_steps($steplist->GetString($n));
+  };
+  return $spectrum->steps;
+};
+
 ######################################################################
 ## HERFD
 
@@ -162,6 +187,9 @@ sub plot_herfd {
   $args{unity}   = 0;
   $spectrum -> do_step('andmask', %args);
   $spectrum -> npixels($spectrum->elastic_image->sum);
+  my $rsteps = $self->fetch_steps($spectrum, $app);
+
+
   my $steplist = $app->{Mask}->{steps_list};
   if ($steplist->GetString($steplist->GetCount-1) ne 'andmask') {
     $steplist->Append("andmask");
@@ -242,6 +270,9 @@ sub plot_xes {
   my $start = DateTime->now( time_zone => 'floating' );
 
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
+
+  my $rsteps = $self->fetch_steps($spectrum, $app);
+
   my $incident  = $self->{incident}->GetValue;
   my $diff = 999999;
   my $ni = 0;
@@ -257,14 +288,6 @@ sub plot_xes {
   return if (not $incident);
   $self->{incident}->SetValue($incident);
 
-
-  #my $steps     = $spectrum->steps;
-  my @steps;
-  foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
-    push @steps, $app->{Mask}->{steps_list}->GetString($n);
-  };
-
-
   my $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder,
 				 $app->{Files}->{image_list}->GetString($nincident));
   my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
@@ -275,11 +298,12 @@ sub plot_xes {
     next if ($key eq 'aggregate');
     $app->{bla_of}->{$key}->incident($incident);
     $app->{bla_of}->{$key}->nincident($nincident);
-    my $lca = List::Compare->new('-u', '-a', \@steps, $app->{bla_of}->{$key}->steps);
-    if (not $lca->is_LequivalentR()) {
-      $app->{bla_of}->{$key}->steps(\@steps);
-      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
-    };
+    #my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
+    #if (not $lca->is_LequivalentR()) {
+
+    ## push step list to rest of project
+    $app->{bla_of}->{$key}->steps($rsteps);
+    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
     $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
     $n = $app->{bla_of}->{$key}->npixels;
     $max = $n if ($n > $max);
@@ -342,18 +366,20 @@ sub xes_rixs {
 
   my $spectrum = $app->{bla_of}->{$self->{energy}};
 
-  ## bring all the mask up to date
+  ## bring all the masks up to date
   $app->{main}->status("Computing masks for each emission energy ...", 'wait');
-  my @steps;
-  foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
-    push @steps, $app->{Mask}->{steps_list}->GetString($n);
-  };
-  foreach my $key (keys %{$app->{bla_of}}) {
+  my $rsteps = $self->fetch_steps($spectrum, $app);
+
+  foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
-    my $lca = List::Compare->new('-u', '-a', \@steps, $app->{bla_of}->{$key}->steps);
+    my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
     if (not $lca->is_LequivalentR()) {
-      $app->{bla_of}->{$key}->steps(\@steps);
+      $app->{bla_of}->{$key}->steps($rsteps);
       $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+      if ($self->{showmasks}->GetValue) {
+	$app->{bla_of}->{$key}->cbmax(1);
+	$app->{bla_of}->{$key}->plot_mask;
+      };
     };
   };
 
@@ -411,10 +437,8 @@ sub plot_rixs {
 
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
 
-  my @steps;
-  foreach my $n (0 .. $app->{Mask}->{steps_list}->GetCount-1) {
-    push @steps, $app->{Mask}->{steps_list}->GetString($n);
-  };
+  ## bring this mask up to date
+  my $rsteps = $self->fetch_steps($spectrum, $app);
 
   my $image_list = $app->{Files}->{image_list};
   foreach my $i (0 .. $image_list->GetCount-1) {
@@ -427,16 +451,16 @@ sub plot_rixs {
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
 
-    my $lca = List::Compare->new('-u', '-a', \@steps, $app->{bla_of}->{$key}->steps);
-    if (not $lca->is_LequivalentR()) {
+    #my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
+    #if (not $lca->is_LequivalentR()) {
       $app->{main}->status("Computing mask for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
-      $app->{bla_of}->{$key}->steps(\@steps);
+      $app->{bla_of}->{$key}->steps($rsteps); # bring all the masks up to date
       $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
       if ($self->{rshowmasks}->GetValue) {
 	$app->{bla_of}->{$key}->cbmax(1);
 	$app->{bla_of}->{$key}->plot_mask;
       };
-    };
+    #};
     $max = $app->{bla_of}->{$key}->npixels if ($app->{bla_of}->{$key}->npixels > $max);
     $app->{bla_of}->{$key}->scan_file_list($sfl);
     $app->{main}->status("Computing HERFD for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');

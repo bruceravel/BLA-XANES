@@ -501,6 +501,7 @@ sub apply_mask {
 
 sub get_incident_energies {
   my ($self) = @_;
+  $self->clear_incident_energies;
   open(my $SCAN, "<", $self->scanfile);
   my @list;
   while (<$SCAN>) {
@@ -738,6 +739,19 @@ sub clone {
   return $new;
 };
 
+sub Reset {
+  my ($self) = @_;
+  foreach my $a ($self->meta->get_attribute_list) {
+    if (any {$a eq $_}  qw(cleanup outfolder ui)) {
+      1;			# do not reset this one
+    } elsif (ref($self->meta->get_attribute($a)->default) =~ m{CODE}) {
+      $self->$a(&{$self->meta->get_attribute($a)->default});
+    } else {
+      $self->$a($self->meta->get_attribute($a)->default);
+    };
+  };
+  return $self;
+};
 
 
 __PACKAGE__->meta->make_immutable;

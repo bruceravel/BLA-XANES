@@ -67,7 +67,7 @@ sub new {
   $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
   my $scanfolder = $app->{base}->scanfolder || q{};
   #$self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
-  $self->{scan} = Wx::Button->new($self, -1, "Pick scan folder");
+  $self->{scan} = Wx::Button->new($self, -1, "Pick scan folder", wxDefaultPosition, [140,-1]);
   $self->{scan_dir} = Wx::StaticText -> new($self, -1, $scanfolder);
   $app->mouseover($self->{scan}, "Select the location of the scan files.");
   #$hbox->Add($self->{scan_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
@@ -84,7 +84,7 @@ sub new {
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
   my $tifffolder = $app->{base}->tifffolder || cwd;
-  $self->{image} = Wx::Button->new($self, -1, "Pick scan folder");
+  $self->{image} = Wx::Button->new($self, -1, "Pick image folder", wxDefaultPosition, [140,-1]);
   $self->{image_dir} = Wx::StaticText -> new($self, -1, $tifffolder);
   $hbox -> Add($self->{image},   0, wxLEFT|wxRIGHT, 5);
   $hbox->Add($self->{image_dir}, 1, wxLEFT|wxRIGHT|wxTOP, 3);
@@ -131,6 +131,15 @@ sub new {
 sub fetch {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
+
+  $app->{base}->Reset;
+  $app->{bla_of}->{aggregate}->Reset;
+  ## clear out previous batch of Xray::BLA objects
+  foreach my $b (keys %{$app->{bla_of}}) {
+    next if $b eq 'aggregate';
+    delete $app->{bla_of}->{$b};
+  };
+
   my $stub           = $self->{stub}->GetValue;
   my $scan_folder    = $self->{scan_dir}->GetLabel;
   my $image_folder   = $self->{image_dir}->GetLabel;
@@ -141,6 +150,12 @@ sub fetch {
   $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
   $app->{bla_of}->{aggregate}->tifffolder($image_folder);
 
+
+  if (not -e File::Spec->catfile($scan_folder, $stub.'.001')) {
+    $app->{main}->status("Scan file for $stub not found in $scan_folder.", 'alert');
+    return;
+  };
+
 #  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
 #    $app->{main}->status("Stub $stub hasn't changed.");
 #    return;
@@ -148,20 +163,28 @@ sub fetch {
 
   $app->set_parameters;
   $app->{base} -> clear_elastic_energies;
+  $self->{elastic_list}->Clear;
+  $self->{image_list}->Clear;
 
   my $us = q{_};
   opendir(my $E, $image_folder);
   my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
   closedir $E;
   #print join($/, @elastic_list), $/;
-  $self->{elastic_list}->Clear;
+  if ($#elastic_list == -1) {
+    $app->{main}->status("No elastic files for $stub found in $image_folder.", 'alert');
+    return;
+  };
   $self->{elastic_list}->InsertItems(\@elastic_list,0);
 
   opendir(my $I, $image_folder);
   my @image_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ !~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $I));
   closedir $I;
   #print join($/, @image_list), $/;
-  $self->{image_list}->Clear;
+  if ($#image_list == -1) {
+    $app->{main}->status("No image files for $stub found in $image_folder.", 'alert');
+    return;
+  };
   $self->{image_list}->InsertItems(\@image_list,0);
 
   foreach my $e (@elastic_list) {
@@ -180,31 +203,17 @@ sub fetch {
   $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
   $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
 
-  #if ((not $self->{element}->GetStringSelection) and (not $self->{line}->GetStringSelection)) {
-    my ($el, $li) = $app->{base}->guess_element_and_line;
-    $self->{element}->SetSelection(get_Z($el)-1);
-    $self->{line}->SetStringSelection($li);
-    $app->set_parameters;
-  #};
-
-  foreach my $k (qw(stub energylabel energy rbox)) {
-    $app->{Mask}->{$k} -> Enable(1);
-  };
+  my ($el, $li) = $app->{base}->guess_element_and_line;
+  $self->{element}->SetSelection(get_Z($el)-1);
+  $self->{line}->SetStringSelection($li);
+  $app->set_parameters;
 
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
   $app->{Mask}->{energy} -> Clear;
-  $app->{Mask}->{energy} -> SetStringSelection(q{});
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
-  foreach my $k (qw(do_social sociallabel socialvalue socialvertical
-		    do_lonely lonelylabel lonelyvalue
-		    do_multiply multiplyvalue
-		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask savesteps savemask animation
-		    replot reset)) {
-    $app->{Mask}->{$k}->Enable(0);
-  };
-  $app->{Mask}->{steps_list}->Clear;
-
+  $app->{Mask}->{energy} -> SetSelection(int(($#{$app->{base}->elastic_energies}+1)/2));
+  $app->{Mask}->restore($app);
+  $app->{Data}->restore;
 
   $app->{main}->status("Found elastic and image files for $stub");
   undef $busy;

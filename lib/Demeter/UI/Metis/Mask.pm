@@ -193,6 +193,17 @@ sub new {
   return $self;
 };
 
+sub restore {
+  my ($self, $app) = @_;
+  $self->{steps_list}->Clear;
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue rbox energylabel energy stub)) {
+    $self->{$k}->Enable(1);
+  };
+  $self->SelectEnergy(q{}, $app, 1);
+  $self->{rbox}->SetSelection(0);
+};
+
+
 sub MaskType {
   my ($self, $event, $app) = @_;
   my $type = $self->{rbox}->GetStringSelection;
@@ -229,7 +240,7 @@ sub MaskType {
 
 
 sub SelectEnergy {
-  my ($self, $event, $app) = @_;
+  my ($self, $event, $app, $noplot) = @_;
   my $energy = $self->{energy}->GetStringSelection;
   my $spectrum = $app->{bla_of}->{$energy};
 
@@ -260,7 +271,7 @@ sub SelectEnergy {
   };
   $self->{steps_list}->Clear;
 
-  $self->plot($app, $spectrum);
+  $self->plot($app, $spectrum) if not $noplot;
 };
 
 sub Reset {
@@ -346,6 +357,7 @@ sub do_step {
     };
     $spectrum->get_incident_energies;
     my $rlist = $spectrum->incident_energies;
+    $app->{base}->incident_energies($rlist);
     foreach my $key (keys %{$app->{bla_of}}) {
       $app->{bla_of}->{$key}->incident_energies($rlist);
     };

@@ -754,6 +754,39 @@ sub Reset {
 };
 
 
+
+
+
+use subs qw(BOLD RED RESET YELLOW GREEN);
+my $ANSIColor_exists = (eval "require Term::ANSIColor");
+if ($ANSIColor_exists) {
+  import Term::ANSIColor qw(:constants);
+} else {
+  foreach my $s (qw(BOLD RED RESET YELLOW GREEN)) {
+    eval "sub $s {q{}}";
+  };
+};
+
+## see http://www.perlmonks.org/?node_id=640324
+sub trace {
+  my ($self) = @_;
+  my $max_depth = 30;
+  my $i = 0;
+  my $base = substr($INC{'Demeter.pm'}, 0, -10);
+  my ($green, $red, $yellow, $end) = (BOLD.GREEN, BOLD.RED, BOLD.YELLOW, RESET);
+  local $|=1;
+  print($/.BOLD."--- Begin stack trace ---$end\n");
+  while ( (my @call_details = (caller($i++))) && ($i<$max_depth) ) {
+    (my $from = $call_details[1]) =~ s{$base}{};
+    my $line  = $call_details[2];
+    my $color = RESET.YELLOW;
+    (my $func = $call_details[3]) =~ s{(?<=::)(\w+)\z}{$color$1};
+    print("$green$from$end line $red$line$end in function $yellow$func$end\n");
+  }
+  print(BOLD."--- End stack trace ---$end\n");
+  return $self;
+};
+
 __PACKAGE__->meta->make_immutable;
 1;
 

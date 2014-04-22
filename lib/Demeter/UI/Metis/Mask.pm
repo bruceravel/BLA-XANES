@@ -352,8 +352,10 @@ sub do_step {
     $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
     $app->{Data}->{energy} = $spectrum->energy;
-    foreach my $k (qw(stub energylabel herfd mue xes showmasks incident incident_label rixs rshowmasks)) {
-      $app->{Data}->{$k}->Enable(1);
+    if ($self->{rbox}->GetSelection == 0) {
+      foreach my $k (qw(stub energylabel herfd mue xes showmasks incident incident_label rixs rshowmasks)) {
+	$app->{Data}->{$k}->Enable(1);
+      };
     };
     $spectrum->get_incident_energies;
     my $rlist = $spectrum->incident_energies;

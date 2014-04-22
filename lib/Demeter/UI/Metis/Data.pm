@@ -180,11 +180,11 @@ sub plot_herfd {
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
 
-  ## make sure the AND mask step has been done.  doing it twice has no impact
   my %args = ();
   $args{write}   = q{};
   $args{verbose} = 0;
   $args{unity}   = 0;
+  ## make sure the AND mask step has been done.  doing it twice has no impact
   $spectrum -> do_step('andmask', %args);
   $spectrum -> npixels($spectrum->elastic_image->sum);
   my $rsteps = $self->fetch_steps($spectrum, $app);
@@ -303,7 +303,8 @@ sub plot_xes {
 
     ## push step list to rest of project
     $app->{bla_of}->{$key}->steps($rsteps);
-    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
+				 aggregate=>$app->{bla_of}->{aggregate});
     $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
     $n = $app->{bla_of}->{$key}->npixels;
     $max = $n if ($n > $max);
@@ -375,7 +376,8 @@ sub xes_rixs {
     my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
     if (not $lca->is_LequivalentR()) {
       $app->{bla_of}->{$key}->steps($rsteps);
-      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
+				   aggregate=>$app->{bla_of}->{aggregate});
       if ($self->{showmasks}->GetValue) {
 	$app->{bla_of}->{$key}->cbmax(1);
 	$app->{bla_of}->{$key}->plot_mask;
@@ -455,7 +457,8 @@ sub plot_rixs {
     #if (not $lca->is_LequivalentR()) {
       $app->{main}->status("Computing mask for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
       $app->{bla_of}->{$key}->steps($rsteps); # bring all the masks up to date
-      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file));
+      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
+				   aggregate=>$app->{bla_of}->{aggregate});
       if ($self->{rshowmasks}->GetValue) {
 	$app->{bla_of}->{$key}->cbmax(1);
 	$app->{bla_of}->{$key}->plot_mask;

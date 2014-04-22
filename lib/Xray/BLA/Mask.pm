@@ -309,7 +309,7 @@ sub andaggregate {
   }
 
   ##$self->elastic_image->wim('foo.tif');
-
+  #Xray::BLA->trace;
   $self->elastic_image -> inplace -> mult($args{aggregate}->elastic_image, 0);
   my $str = $self->report("Multiply by aggregate mask", 'cyan');
   $ret->status($self->elastic_image->gt(0,0)->sum);

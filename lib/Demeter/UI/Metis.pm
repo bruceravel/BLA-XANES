@@ -1,10 +1,7 @@
 package Demeter::UI::Metis;
 
-use strict;
-use warnings;
-
-use Xray::BLA;
 use Demeter qw(:hephaestus);
+use Xray::BLA;
 use Demeter::UI::Artemis::ShowText;
 
 use Chemistry::Elements qw(get_Z get_symbol);

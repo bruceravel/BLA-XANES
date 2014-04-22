@@ -56,7 +56,7 @@ sub new {
   EVT_RADIOBOX($self, $self->{rbox}, sub{MaskType(@_, $app)});
 
   $self->{energylabel} = Wx::StaticText->new($self, -1, "Emission energy");
-  $self->{energy} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, wxDefaultSize, [150,-1], wxCB_READONLY);
+  $self->{energy} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, [150,-1], [], wxCB_READONLY);
   $ebox->Add($self->{energylabel}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
   $ebox->Add($self->{energy}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
   EVT_COMBOBOX($self, $self->{energy}, sub{SelectEnergy(@_, $app)});

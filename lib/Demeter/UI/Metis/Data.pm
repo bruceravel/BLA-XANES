@@ -523,8 +523,20 @@ sub save_rixs {
     return;
   };
   my $file = $fd->GetPath;
-  $list[0]->write_athena($file, @list);
-  $app->{main}->status("Safe XAFS-like RIXS to an Athena project file.");
+  if ($#list >= 35) {
+    my ($count, $end, $this) = (0, 0, q{});
+    my ($name, $path, $suffix) = fileparse($file, ".prj");
+    while ($count < $#list) {
+      $end = ($count+29 > $#list) ? $#list : $count+29;
+      $this = File::Spec->catfile($path, sprintf("%s_%3.3d-%3.3d%s", $name, $count+1, $end+1, $suffix));
+      $list[$count]->write_athena($this, @list[$count .. $end]);
+      $count += 30;
+    };
+    $app->{main}->status("Saved XAFS-like RIXS to multiple Athena project files.");
+  } else {
+    $list[0]->write_athena($file, @list);
+    $app->{main}->status("Saved XAFS-like RIXS to an Athena project file.");
+  };
 };
 
 

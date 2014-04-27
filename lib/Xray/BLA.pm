@@ -95,6 +95,8 @@ has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak
 			     documentation => "The specific emission energy at which to perform the calculation.");
 has 'incident'	         => (is => 'rw', isa => 'Num', default => 0,,
 			     documentation => "The specific incident energy at which to compute the emission spectrum.");
+has 'div10'              => (is => 'rw', isa => 'Bool', default => 0,
+			     documentation => "Divide emission energy by 10 when plotting.");
 has 'nincident'	         => (is => 'rw', isa => 'Int', default => 0,,
 			     documentation => "The data point index at which to compute the emission spectrum.");
 has 'columns'            => (is => 'rw', isa => 'Int', default => 0, alias => 'width',
@@ -429,7 +431,11 @@ sub guess_element_and_line {
   my ($self) = @_;
   my $stat = Statistics::Descriptive::Full->new();
   foreach my $e (@{$self->elastic_energies}) {
-    $stat->add_data($e);
+    if ($self->div10) {
+      $stat->add_data($e/10);
+    } else {
+      $stat->add_data($e);
+    };
   };
 
   my ($med, $diff, $el, $li) = ($stat->median, 999999, q{}, q{});

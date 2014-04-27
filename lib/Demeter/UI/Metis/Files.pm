@@ -9,7 +9,7 @@ use File::Basename;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
-use Wx::Event qw(EVT_LISTBOX_DCLICK EVT_BUTTON  EVT_KEY_DOWN EVT_DIRPICKER_CHANGED);
+use Wx::Event qw(EVT_LISTBOX_DCLICK EVT_BUTTON  EVT_KEY_DOWN EVT_CHECKBOX);
 
 sub new {
   my ($class, $page, $app) = @_;
@@ -42,17 +42,21 @@ sub new {
   $self->{element}       = Wx::ComboBox   -> new($self, -1, q{}, wxDefaultPosition, [100,-1], \@elements, wxCB_READONLY);
   $self->{line_label}    = Wx::StaticText -> new($self, -1, "Line");
   $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], \@lines, wxCB_READONLY);
+  $self->{div10}         = Wx::CheckBox   -> new($self, -1, "Divide by 10");
+  $self->{div10}        -> SetValue($app->{base}->div10);
   $hbox -> Add($self->{stub_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{stub},          0, wxLEFT|wxRIGHT, 5);
   $hbox -> Add($self->{element_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{element},       0, wxLEFT|wxRIGHT, 5);
   $hbox -> Add($self->{line_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{line},          0, wxLEFT|wxRIGHT, 5);
+  $hbox -> Add($self->{div10},         0, wxLEFT|wxRIGHT, 5);
   $self->{element}->SetSelection(get_Z($element)-1) if $element;
   $self->{line}->SetStringSelection($line);
   $app->mouseover($self->{stub}, "Specify the base of the scan and image filenames.");
   $app->mouseover($self->{element}, "Specify the absorber element.");
   $app->mouseover($self->{stub}, "Specify the measured emission line.");
+  $app->mouseover($self->{div10}, "Divide emission energies by 10.");
 
   # my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "metis_logo.png");
   # my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
@@ -146,9 +150,11 @@ sub fetch {
   $app->{base}->stub($stub);
   $app->{base}->scanfolder($scan_folder);
   $app->{base}->tifffolder($image_folder);
+  $app->{base}->div10($self->{div10}->GetValue);
   $app->{bla_of}->{aggregate}->stub($stub);
   $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
   $app->{bla_of}->{aggregate}->tifffolder($image_folder);
+  $app->{bla_of}->{aggregate}->div10($self->{div10}->GetValue);
 
 
   if (not -e File::Spec->catfile($scan_folder, $stub.'.001')) {

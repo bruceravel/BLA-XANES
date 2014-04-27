@@ -19,6 +19,7 @@ use Moose::Role;
 use PDL::Graphics::Simple;
 use PDL::Graphics::Gnuplot qw(gplot image);
 use File::Basename;
+use List::MoreUtils qw(all none any);
 use Math::Random;
 
 has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20);
@@ -111,7 +112,12 @@ sub plot_xanes {
 sub plot_rixs {
   my ($self, @spectra) = @_;
   my $e0 = $self->get_e0;
-  my @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box'});
+  my @args;
+  if ($#spectra > 40) {
+    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off'});
+  } else {
+    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box'});
+  };
   ## see lib/Demeter/configuration/gnuplot.demeter_conf from Demeter for color list
   my @thiscolor = qw(blue red dark-green dark-violet yellow4 brown dark-pink gold dark-cyan spring-green);
   my $count = 0;
@@ -133,8 +139,9 @@ sub plot_xes {
   $args{incident} ||= 0;
   $args{pause}      = q{-1} if not defined $args{pause};
   my (@e, @xes);
+  my $denom = ($self->div10) ? 10 : 1;
   foreach my $p (@{$args{xes}}) {
-    push @e, $p->[0];
+    push @e, $p->[0]/$denom;
     push @xes, $p->[1];
   };
   gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},

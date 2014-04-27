@@ -51,7 +51,7 @@ sub OnInit {
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, 'metis.yaml');
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});
-    foreach my $k (qw(stub scanfolder tifffolder element line color)) {
+    foreach my $k (qw(stub scanfolder tifffolder element line color div10)) {
       $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
     foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage)) {
@@ -187,6 +187,7 @@ sub set_parameters {
   $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
   $app->{base} -> scanfolder($app->{Files}->{scan_dir}->GetLabel);
   $app->{base} -> tifffolder($app->{Files}->{image_dir}->GetLabel);
+  $app->{base} -> div10($app->{Files}->{div10}->GetValue);
 
   $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
   $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
@@ -206,7 +207,7 @@ sub set_parameters {
   foreach my $k (qw(scanfolder tifffolder element line color palette
 		    imagescale outimage energycounterwidth tiffcounter
 		    bad_pixel_value weak_pixel_value social_pixel_value
-		    lonely_pixel_value scalemask radius
+		    lonely_pixel_value scalemask radius div10
 		  )) {
     ## push values into yaml
     $app->{yaml}->[0]->{$k} = $app->{base}->$k;

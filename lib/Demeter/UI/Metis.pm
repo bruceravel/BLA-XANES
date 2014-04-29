@@ -67,7 +67,7 @@ sub OnInit {
   };
   $app->{base}->set_palette($app->{base}->color);
 
-  $app->{bla_of}    = {};
+  $app->{bla_of}= {};
   $app->{bla_of}->{aggregate}  = $app->{base}->clone();
   $app->{bla_of}->{aggregate} -> cleanup(1);
   $app->{bla_of}->{aggregate} -> masktype('aggregate');

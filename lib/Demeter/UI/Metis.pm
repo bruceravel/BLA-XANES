@@ -20,6 +20,7 @@ use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 		 EVT_RIGHT_DOWN EVT_LEFT_DOWN EVT_CHECKLISTBOX
 		 EVT_MENU EVT_CLOSE);
 use base 'Wx::App';
+use Wx::Perl::Carp;
 
 my $icon_dimension = 30;
 my @utilities = qw(Files Mask Data Config);

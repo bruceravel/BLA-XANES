@@ -17,6 +17,7 @@ use PDL::Graphics::Gnuplot qw(gplot image plot3d);
 use Wx qw( :everything );
 use base 'Wx::Panel';
 use Wx::Event qw( EVT_BUTTON EVT_COMBOBOX );
+use Wx::Perl::Carp;
 
 use Demeter::UI::Wx::SpecialCharacters qw($MU);
 
@@ -294,8 +295,15 @@ sub plot_xes {
 
   my ($r, $x, $n, @xes);
   my $max = 0;
+  my $nemission = $#{[keys %{$app->{bla_of}}]};
+  my $count = 0;
+  my $denom = ($spectrum->div10) ? 10 : 1;
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
+    ++$count;
+    $app->{main}->status(sprintf("Emission energy = %.1f (%d of %d)",
+				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
+			 'wait') if not $count%5;;
     $app->{bla_of}->{$key}->incident($incident);
     $app->{bla_of}->{$key}->nincident($nincident);
     #my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
@@ -450,12 +458,18 @@ sub plot_rixs {
 
   my @sorted_list;
   my $max = 0;
+  my $nemission = $#{[keys %{$app->{bla_of}}]};
+  my $count = 0;
+  my $denom = ($spectrum->div10) ? 10 : 1;
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
 
+    ++$count;
     #my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
     #if (not $lca->is_LequivalentR()) {
-      $app->{main}->status("Computing mask for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
+      $app->{main}->status(sprintf("Computing mask for emission energy %.1f (%d of %d)",
+				   $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
+			   'wait');
       $app->{bla_of}->{$key}->steps($rsteps); # bring all the masks up to date
       $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
 				   aggregate=>$app->{bla_of}->{aggregate});
@@ -466,7 +480,9 @@ sub plot_rixs {
     #};
     $max = $app->{bla_of}->{$key}->npixels if ($app->{bla_of}->{$key}->npixels > $max);
     $app->{bla_of}->{$key}->scan_file_list($sfl);
-    $app->{main}->status("Computing HERFD for emission energy ".$app->{bla_of}->{$key}->energy, 'wait');
+    $app->{main}->status(sprintf("Computing HERFD for emission energy %.1f (%d of %d)",
+				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
+			 'wait');
     my $ret = $app->{bla_of}->{$key} -> scan(verbose=>0, xdiini=>q{});
     push @sorted_list, $app->{bla_of}->{$key};
 
@@ -539,6 +555,11 @@ sub save_rixs {
   };
 };
 
+
+# package PDL::Core;
+# sub barf {
+#   Wx::Perl::Carp::confess(@_);
+# };
 
 1;
 

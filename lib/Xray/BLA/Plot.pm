@@ -126,7 +126,7 @@ sub plot_rixs {
     push @args, with=>'lines', lc=>"rgb ".$thiscolor[$count%10], lt=>1, lw=>1, legend=>[$legend],
       PDL->new($s->xdata), PDL->new($s->ydata)/$s->normpixels;
     ++$count;
-    last if (($self->is_windows) and ($count > 33));
+    last if (($self->is_windows) and ($count > 25));
   };
   gplot(@args);
 }

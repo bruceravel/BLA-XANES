@@ -403,3 +403,21 @@ equally represented on the face of the detector.
 The version of Athena based on Demeter will be able to use these
 values as importance or plot multiplier values if the ~Xray::XDI~
 module is available.
+
+*** PDL and Gnuplot
+
+At line 3116 of ~PDL::Graphics::Gnuplot~, add the following line:
+
+    #+BEGIN_SRC perl
+    $optionsWarnings =~ s/^Reading ras files from sequential devices not supported.*$//mg;
+    $optionsWarnings = '' if($optionsWarnings =~ m/^\s+$/s);
+    #+END_SRC
+
+Similar at lines 3757, 3301.
+
+This suppresses the ~Reading ras files from sequential devices not
+supported~ warning when using the qt terminal.  This is a qt bug and
+appears to be of no consequence.
+
+(It's ~/usr/local/share/perl/5.20.2/PDL/Graphics/Gnuplot.pm~ on my
+laptop.)

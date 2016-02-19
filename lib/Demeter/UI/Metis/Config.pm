@@ -40,6 +40,14 @@ sub new {
   $app->mouseover($self->{color}, "The color palette used to plot mask images.");
 
   ++$row;
+  $self->{terminal_label} = Wx::StaticText -> new($self, -1, "Plotting terminal");
+  $self->{terminal}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(wxt qt x11 aqua windows)]);
+  $gbs -> Add($self->{terminal_label},    Wx::GBPosition->new($row,0));
+  $gbs -> Add($self->{terminal},          Wx::GBPosition->new($row,1));
+  $self->{terminal}->SetStringSelection($app->{base}->terminal);
+  $app->mouseover($self->{terminal}, "The Gnuplot terminal type.");
+
+  ++$row;
   $self->{outimage_label} = Wx::StaticText -> new($self, -1, "Output image format");
   $self->{outimage}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(gif tif png)]);
   $gbs -> Add($self->{outimage_label},    Wx::GBPosition->new($row,0));

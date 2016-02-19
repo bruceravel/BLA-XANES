@@ -64,7 +64,8 @@ sub plot_mask {
     $title = basename($self->elastic_file);
   };
   $title = $self->escape_us($title);
-  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
+  no warnings;
+  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title, terminal=>$self->terminal,
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
 	$self->elastic_image);
 };
@@ -74,7 +75,7 @@ sub plot_energy_point {
   my $point = $self->Read($file);
   my $cbm = $self->bad_pixel_value/$self->imagescale;
   my $title = $self->escape_us(basename($file));
-  image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title,
+  image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title, terminal=>$self->terminal,
 	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
 	$point);
   undef $point;
@@ -101,7 +102,7 @@ sub plot_xanes {
 	  PDL->new($self->mue_demeter->ref_array('flat'))
 	 );
   } else {
-    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD'},
+    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', terminal=>$self->terminal},
 	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
 	  PDL->new($self->xdata),
 	  PDL->new($self->ydata));
@@ -114,9 +115,9 @@ sub plot_rixs {
   my $e0 = $self->get_e0;
   my @args;
   if ($#spectra > 40) {
-    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off'});
+    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off', terminal=>$self->terminal});
   } else {
-    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box'});
+    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box', terminal=>$self->terminal});
   };
   ## see lib/Demeter/configuration/gnuplot.demeter_conf from Demeter for color list
   my @thiscolor = qw(blue red dark-green dark-violet yellow4 brown dark-pink gold dark-cyan spring-green);
@@ -145,7 +146,7 @@ sub plot_xes {
     push @e, $p->[0]/$denom;
     push @xes, $p->[1];
   };
-  gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
+  gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES', terminal=>$self->terminal},
 	with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
 	PDL->new(\@e), PDL->new(\@xes));
   my $xesout = $self->dat_xes($args{xes});

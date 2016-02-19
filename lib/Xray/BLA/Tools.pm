@@ -5,6 +5,27 @@ use Moose::Role;
 use DateTime;
 use Math::Random;
 
+sub file_template {
+  my ($self, $tem, $integer) = @_;
+  $integer ||= 0;
+
+  my $pattern = '%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd';
+  my $counter = sprintf($pattern, $integer);
+
+  my %table = (s   => $self->stub,
+	       e   => $self->energy,
+	       i   => $self->incident,
+	       t   => $self->tiffcounter,
+	       c   => $counter,
+	       '%' => '%'
+	      );
+
+  my $regex = '[' . join('', keys(%table)) . ']';
+  $tem =~ s{\%($regex)}{$table{$1}}g;
+  return $tem;
+};
+
+
 sub howlong {
   my ($self, $start, $id) = @_;
   my $finish = DateTime->now( time_zone => 'floating' );
@@ -55,6 +76,30 @@ Xray::BLA::Tools - Tools and conveniences for BLA
 =head1 VERSION
 
 See L<Xray::BLA>
+
+=head1 METHODS
+
+=over 4
+
+=item C<file_template>
+
+Construct a file name from BLA object attributes using a simple
+%-sign substitution scheme:
+
+   %s : stub
+   %e : emission energy
+   %i : incident energy
+   %t : tiffcounter
+   %c : energy index counter
+   %% : literal %
+
+As an example:
+
+   $bla->file_template('%s_elastic_%e_%t.tif')
+
+might evaluate to F<Aufoil1_elastic_9711_00001.tif>.
+
+=back
 
 =head1 AUTHOR
 

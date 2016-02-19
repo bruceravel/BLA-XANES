@@ -129,7 +129,7 @@ sub mask {
   $self->remove_bad_pixels;
 
   ## construct an animated gif of the mask building process
-  if ($args{animate}) {
+  if ($args{animate}) {		# currently disabled
     my $fname = $self->animate('anim', @out);
     print $self->report("Wrote $fname", 'yellow'), "\n" if $args{verbose};
   };
@@ -154,7 +154,8 @@ sub check {
   my $ret = Xray::BLA::Return->new;
 
   ## does elastic file exist?
-  $elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
+  $elastic ||= $self->file_template($self->elastic_file_template);
+  ##$elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
   $self->elastic_file(File::Spec->catfile($self->tiffolder, $elastic));
   if (not -e $self->elastic_file) {
     $ret->message("Elastic image file \"".$self->elastic_file."\" does not exist");
@@ -168,7 +169,7 @@ sub check {
   };
 
   ## does scan file exist?
-  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
+  my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self->scan_file_template));
   $self->scanfile($scanfile);
   if (not -e $scanfile) {
     $ret->message("Scan file \"$elastic\" does not exist");
@@ -185,6 +186,7 @@ sub check {
 
   return $ret;
 };
+
 
 sub remove_bad_pixels {
   my ($self) = @_;

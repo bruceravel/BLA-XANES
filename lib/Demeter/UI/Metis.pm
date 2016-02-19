@@ -55,7 +55,7 @@ sub OnInit {
     foreach my $k (qw(stub scanfolder tifffolder element line color div10)) {
       $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
-    foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage)) {
+    foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage terminal)) {
       $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
     foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
@@ -193,6 +193,7 @@ sub set_parameters {
   $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
   $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
   $app->{base} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
+  $app->{base} -> terminal($app->{Config}->{terminal}->GetStringSelection);
   $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
   $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
   $app->{base} -> set_palette($app->{base}->color);
@@ -206,7 +207,7 @@ sub set_parameters {
 
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
   foreach my $k (qw(scanfolder tifffolder element line color palette
-		    imagescale outimage energycounterwidth tiffcounter
+		    imagescale outimage terminal energycounterwidth tiffcounter
 		    bad_pixel_value weak_pixel_value social_pixel_value
 		    lonely_pixel_value scalemask radius div10
 		  )) {
@@ -267,7 +268,7 @@ sub on_about {
   $info->SetName( 'Metis' );
   $info->SetVersion( $Xray::BLA::VERSION );
   $info->SetDescription( "Bent Laue analyzer + Pilatus data processing" );
-  $info->SetCopyright( "copyright 2012-2014, Bruce Ravel, Jeremy Kropf" );
+  $info->SetCopyright( "copyright © 2012-2014, 2016, Bruce Ravel, Jeremy Kropf" );
   $info->SetWebSite( 'https://github.com/bruceravel/BLA-XANES', 'Metis at GitHub' );
   $info->SetDevelopers( ["Bruce Ravel <bravel AT bnl DOT gov>\n" ] );
   $info->SetArtists( ["Metis logo cropped from\nhttp://commons.wikimedia.org/wiki/File:Winged_goddess_Louvre_F32.jpg\n",

@@ -17,6 +17,7 @@ with 'Demeter::Project';
 
 use MooseX::Aliases;
 use Moose::Util::TypeConstraints;
+use MooseX::Types::LaxNum;
 
 use PDL::Lite;
 use PDL::NiceSlice;
@@ -90,10 +91,12 @@ has 'cleanup'		 => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "A flag for removing outfolder when the process finishes -- should be 0 for CLI and 1 for GUI.");
 has 'outimage'           => (is => 'rw', isa => 'Str', default => q{gif},
 			     documentation => "The default output image type, typically either gif or tif.");
+has 'terminal'           => (is => 'rw', isa => 'Str', default => q{qt},
+			     documentation => "The Gnuplot terminal type.");
 
 has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy',
 			     documentation => "The specific emission energy at which to perform the calculation.");
-has 'incident'	         => (is => 'rw', isa => 'Num', default => 0,,
+has 'incident'	         => (is => 'rw', isa => 'LaxNum', default => 0,,
 			     documentation => "The specific incident energy at which to compute the emission spectrum.");
 has 'div10'              => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "Divide emission energy by 10 when plotting.");
@@ -114,23 +117,23 @@ has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The number of illuminated neighbors above which a pixel is considered as part of the mask.");
 has 'vertical'           => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "A flag indicating the the social pixel step of mask creation should only consider pixels in the vertical direction.");
-has 'deltae'	         => (is => 'rw', isa => 'Num', default => 1,
+has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
-has 'normpixels'         => (is => 'rw', isa => 'Num', default => 0,
+has 'normpixels'         => (is => 'rw', isa => 'LaxNum', default => 0,
 			     documentation => "A normalized scaling factor representing the number of illuminated pixels in the final mask.");
 has 'nbad'               => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of bad pixels found in the elastic image.");
 
 has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The radius used for the areal mean/median step of mask creation.");
-has 'scalemask'          => (is => 'rw', isa => 'Num', default => 1,
+has 'scalemask'          => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The value by which to multiply the mask during the multiplication step of mask creation.");
 has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
 			     documentation => "The number of repotition of the three-point smoothing used in energy map creation.");
 
-has 'imagescale'         => (is => 'rw', isa => 'Num', default => 40,
+has 'imagescale'         => (is => 'rw', isa => 'LaxNum', default => 40,
 			     documentation => "A scaling factor for the color scale when plotting images.  A bigger number leads to a smaller range of the plot.");
 
 enum 'Xray::BLA::Projections' => ['median', 'mean'];
@@ -148,12 +151,19 @@ has 'masktype'           => (is => 'rw', isa => 'MaskTypes', default => q{single
 			     documentation => "The current working mask type, single or aggregate.");
 
 
+has 'scan_file_template' => (is => 'rw', isa => 'Str', default => q{%s.001},
+			     documentation => "Template for constructing the scan file name.");
+has 'elastic_file_template' => (is => 'rw', isa => 'Str', default => q{%s_elastic_%e_%t.tif},
+				documentation => "Template for constructing the elastic file name.");
+has 'image_file_template' => (is => 'rw', isa => 'Str', default => q{%s_%c.tif},
+			      documentation => "Template for constructing the image file name.");
+
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The fully resolved file name containing the measured elastic image.");
 has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			     documentation => "The PDL object containing the elastic image.",
-			     trigger => sub{my ($self, $new) = @_; my $max = $new->flat->max; $self->eimax($max)} );
-has 'eimax'              => (is => 'rw', isa => 'Num', default => 0,
+			     trigger => sub{my ($self, $new) = @_; my $max = 1; if (not $new->badflag) {$new->flat->max}; $self->eimax($max)} );
+has 'eimax'              => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "unit pixel size in mask");
 
 
@@ -349,6 +359,10 @@ sub read_ini {
   $self -> element    ($ini{measure}{element})         if exists($ini{measure}{element});
   $self -> line	      ($ini{measure}{line})            if exists($ini{measure}{line});
 
+  $self -> scan_file_template   ($ini{files}{scan})    if exists($ini{files}{scan});
+  $self -> elastic_file_template($ini{files}{elastic}) if exists($ini{files}{elastic});
+  $self -> image_file_template  ($ini{files}{image})   if exists($ini{files}{image});
+
   $self -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
   $self -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};
   $self -> lonely_pixel_value($ini{pixel}{lonely})    if exists $ini{pixel}{lonely};
@@ -480,9 +494,7 @@ sub apply_mask {
   if ($#{$self->scan_file_list} > -1) {
     $image = $self->scan_file_list->[$tif-1];
   } else {
-    my $pattern = '%s_%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd.tif';
-    my $fname = sprintf($pattern, $self->stub, $tif);
-    $image = File::Spec->catfile($self->tiffolder, $fname);
+    $image = File::Spec->catfile($self->tiffolder, $self->file_template($self->image_file_template, $tif));
   };
   if (not -e $image) {
     warn "\tskipping $image, file not found\n" if not $args{silence};
@@ -747,6 +759,7 @@ sub clone {
 
 sub Reset {
   my ($self) = @_;
+  local $|=1;
   foreach my $a ($self->meta->get_attribute_list) {
     if (any {$a eq $_}  qw(cleanup outfolder ui)) {
       1;			# do not reset this one

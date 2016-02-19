@@ -577,12 +577,12 @@ sub save_steps {
 
   my $text = "[measure]\n";
   $text .= 'emission           = ' . join(" ", @{$spectrum->elastic_energies}) . "\n";
-  foreach my $k (qw(scanfolder tifffolder element line tiffcounter energycounterwidth
+  foreach my $k (qw(scanfolder tiffolder element line tiffcounter energycounterwidth
 		    imagescale outimage)) {
     $text .= sprintf("%-18s = %s\n", $k, $spectrum->$k);
   };
   $text .= "outfolder          = " . $fd->GetDirectory . "\n";
-  $text .= "\n[steps]\nsteps <<END\n";
+  $text .= "\n[steps]\nsteps = <<END\n";
   foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
     $text .= $self->{steps_list}->GetString($n) . "\n";
   };

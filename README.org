@@ -63,10 +63,9 @@ bent Laue tasks:
 : 
 :     --config   | -c    [string]  configuration file (required)
 :     --energy   | -e    [integer] emission energy (required for herfd/point tasks)
-:     --incident | -i    [integer] data point at which compute HERFD (required for point task)
+:     --incident | -i    [integer] data point at which compute HERFD (required for point/xes task)
 :     --xdiini   | -x    [string]  XDI configuration file
 :     --reuse    | -r    [flag]    reuse mask files for energy map if in outfolder
-:     --animate  | -a    [flag]    save gif animation of mask creation
 :     --save     | -s    [flag]    save gif with mask
 :     --plot     | -p    [flag]    plot data (herfd/rixs/map/xes tasks)
 :     --verbose  | -v    [flag]    write progress messages
@@ -83,32 +82,31 @@ of the columns of the scan file.  If your data do not follow these
 patterns, this script will fail.  File locations are specified in the
 configuration file.
 
-:  examples:  bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
-:             bla rixs  -c=/path/to/config.ini -a Aufoil1
+:  examples:  bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
+:             bla rixs  -c=/path/to/config.ini Aufoil1
 :             bla map   -c=/path/to/config.ini Aufoil1
-:             bla xes   -c=/path/to/config.ini -p=11970 Aufoil1
+:             bla xes   -c=/path/to/config.ini -i=11970 Aufoil1
 :             bla mask  -c=/path/to/config.ini -e=9713 Aufoil1
 :             bla point -c=/path/to/config.ini -e=9713 -p=10 Aufoil1
 
 
 Here, "Aufoil1" is the stub, i.e. the basename of the scan and image
-files, and the ~-c~, ~-e~, and ~-a~ command line options are
-demonstrated.
+files, and the ~-c~ and ~-e~ command line options are demonstrated.
 
 The ~-i~ flag, used by ~point~ and ~xes~ can take either an integer,
 indicating the index of the data point, or a number, indicating the
 incident energy of the datapoint.  So the following may be equivalent:
 
-:      bla point -c=/path/to/config.ini -e=9713 -p=69 Aufoil1
-:      bla point -c=/path/to/config.ini -e=9713 -p=12000 Aufoil1
+:      bla point -c=/path/to/config.ini -e=9713 -i=69 Aufoil1
+:      bla point -c=/path/to/config.ini -e=9713 -i=12000 Aufoil1
 
 For the ~point~ task, the ~-i~ flag *must* be specified.  For the
 ~xes~ task, if the ~-i~ flag is omited, the midpoint of the scan (in
 index, not in energy) will be used.
 
 Options that are not used by a function (for example ~-e~ for ~rixs~
-or ~map~, ~-a~ for ~map~, or ~-i~ for any task other than ~point~ or
-~xes~) will be silently ignored.
+or ~map~, or ~-i~ for any task other than ~point~ or ~xes~) will be
+silently ignored.
 
 ~-c~ is required for all functions unless the ~BLACONFIG~ environment
 variable is set.
@@ -137,18 +135,18 @@ ornaments.
 Use of the ~-c~ flag can be avoided by setting the ~BLACONFIG~
 environment variable.  The following are equivalent:
 
-:   bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
+:   bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
 : 
 :   export BLACONFIG=/path/to/config.ini
-:   bla herfd -e=9713 -a Aufoil1
+:   bla herfd -e=9713 Aufoil1
 
 Use of the ~-e~ flag can be avoided by setting the ~BLAENERGY~
 environment variable.  The following are equivalent:
 
-:   bla herfd -c=/path/to/config.ini -e=9713 -a Aufoil1
+:   bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
 : 
 :   export BLAENERGY=9713
-:   bla herfd -c=/path/to/config.ini -a Aufoil1
+:   bla herfd -c=/path/to/config.ini Aufoil1
 
 You can also avoid using the ~-e~ flag by setting a single energy in
 the ~emission~ line of the configuration file.  (Of course, having
@@ -162,7 +160,7 @@ switch.
 
  + The output of the ~herfd~ task is a data file containing the
    HERFD spectrum at the specified emission energy and, if requested,
-   gif images with the mask and the mask creation animation.
+   gif images with the mask.
 
    At each energy point, the HERFD signal is computed from the Pilatus
    image using the mask created as described above.  The counts on
@@ -216,25 +214,33 @@ less than 1 second.
 The configuration file is in the Windows-style ini format.  Here is an
 example:
 
-:   [measure]
-:   emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
-:   scanfolder = /home/bruce/Data/NIST/10ID/2011.12/scans
-:   tiffolder  = /home/bruce/Data/NIST/10ID/2011.12/tiffs
-:   outfolder  = /home/bruce/Data/NIST/10ID/2011.12/processed
-:   element    = Au
-:   line       = La1
-: 
-:   [steps]
-:   steps = <<END
-:   bad 400 weak 0
-:   multiply by 5
-:   areal mean radius 2
-:   bad 400 weak 2
-:   lonely 3
-:   social 2
-:   END
+   #+BEGIN_SRC conf
+   [measure]
+   emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
+   scanfolder = /home/bruce/Data/NIST/10ID/2011.12/scans
+   tiffolder  = /home/bruce/Data/NIST/10ID/2011.12/tiffs
+   outfolder  = /home/bruce/Data/NIST/10ID/2011.12/processed
+   element    = Au
+   line       = La1
+ 
+   [files]
+   scan       = %s.001
+   elastic    = %s_elastic_%e_%t.tif
+   image      = %s_%c.tif
 
-[[https://github.com/bruceravel/BLA-XANES/blob/master/share/config.ini][Here is an example configuration file.]]  (It is important not to
+   [steps]
+   steps = <<END
+   bad 400 weak 0
+   multiply by 5
+   areal mean radius 2
+   bad 400 weak 2
+   lonely 3
+   social 2
+   END
+   #+END_SRC
+
+[[https://github.com/bruceravel/BLA-XANES/blob/master/share/config.ini][Here is an example configuration file.]]
+(It is important not to
 cut-and-paste the example above in a way that preserves the org-mode
 mark-up.)
 
@@ -264,6 +270,23 @@ to generate HERFD spectra.  The next three items are the locations of
 the scan files, the image files, and the output files.  The last two
 items are used to properly scale the color palette of the energy map
 by positively identifying the emission line measured.
+
+The ~[files]~ section defines several mini-templates for specifying
+file names.  In this example, the elastic images are stored on disk
+with names like ~Aufoil1_elastic_9711_00001.tif~.  The "elastic"
+template is ~%s_elastic_%e_%t.tif~.  The ~%s~ is replaced by the stub,
+~%e~ and ~%t~ are replaced by the elastic energy and the tiff counter
+(used to construct file names on the camera).  The tags used in the
+template system are:
+
+   #+BEGIN_SRC
+   %s : stub
+   %e : emission energy
+   %i : incident energy
+   %t : tiffcounter
+   %% : literal %
+   #+END_SRC
+
 
 The ~[steps]~ section is used to define the sequence of operations
 used to make the mask at any emission energy.  The syntax of this
@@ -333,12 +356,12 @@ message.
 
 *** Saving masks as image files
 
-In order to save mask images or animations, you may need to install
-some additional software on your computer.  PDL uses the NetPBM
-package for image format manipulation.  On Ubuntu, the package is
-called ~netpbm~ and is likely already installed.  This is not
-installed by the Demeter installer for Windows, so you have to install
-it separately.  Download and install [[http://gnuwin32.sourceforge.net/packages/netpbm.htm][the NetPBM Windows installer]].
+In order to save mask images, you may need to install some additional
+software on your computer.  PDL uses the NetPBM package for image
+format manipulation.  On Ubuntu, the package is called ~netpbm~ and is
+likely already installed.  This is not installed by the Demeter
+installer for Windows, so you have to install it separately.  Download
+and install [[http://gnuwin32.sourceforge.net/packages/netpbm.htm][the NetPBM Windows installer]].
 
 Note where the binaries get installed.  You must add that location to
 the execution path.  This can be done at the Windows command prompt by
@@ -347,10 +370,18 @@ the execution path.  This can be done at the Windows command prompt by
 
 substituting ~C:\GnuWin32\bin~ with the location on your computer.
 
-Without NetPBM, an invocation of the bla script with the ~-s~ or ~-a~
-flags will not run to completion. 
+Without NetPBM, an invocation of the bla script with the ~-s~ flags
+will not run to completion.
 
 This does not yet work on Windows.
+
+*** Animations
+
+Using ImageMagick:
+
+   #+BEGIN_SRC sh
+   convert -layers OptimizePlus -delay 25x100 <stub>_*_mask.gif -loop 0 anim.gif
+   #+END_SRC
 
 *** XDI Output
 

@@ -54,11 +54,11 @@ bent Laue tasks:
 
 *** The bla script
 
-:  bla herfd [cxeaspvnfqh] <stub>
-:  bla rixs  [cxaspvnfqh]  <stub>
+:  bla herfd [cxespvnfqh]  <stub>
+:  bla rixs  [cxspvnfqh]   <stub>
 :  bla xes   [cipvnqh]     <stub>
 :  bla map   [crpvnqh]     <stub>
-:  bla mask  [casvnfqh]    <stub>
+:  bla mask  [csvnfqh]     <stub>
 :  bla point [ceih]        <stub>
 : 
 :     --config   | -c    [string]  configuration file (required)
@@ -66,7 +66,7 @@ bent Laue tasks:
 :     --incident | -i    [integer] data point at which compute HERFD (required for point/xes task)
 :     --xdiini   | -x    [string]  XDI configuration file
 :     --reuse    | -r    [flag]    reuse mask files for energy map if in outfolder
-:     --save     | -s    [flag]    save gif with mask
+:     --save     | -s    [flag]    save mask as gif
 :     --plot     | -p    [flag]    plot data (herfd/rixs/map/xes tasks)
 :     --verbose  | -v    [flag]    write progress messages
 :     --nocolor  | -n    [flag]    turn off color coding of screen output
@@ -248,9 +248,11 @@ The ~emission~ can use a more concise syntax if the sequence of
 elastic energies was measured on a uniform grid.  The following are
 equivalent:
 
-:   emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
-:
-:   emission   = 9703 to 9719 by 2
+    #+BEGIN_SRC
+    emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
+
+    emission   = 9703 to 9719 by 2
+   #+END_SRC
 
 White space does not matter, but the words ~to~ and ~by~ are required.
 
@@ -284,6 +286,7 @@ template system are:
    %e : emission energy
    %i : incident energy
    %t : tiffcounter
+   %c : energy index counter
    %% : literal %
    #+END_SRC
 
@@ -306,7 +309,7 @@ The possible steps to mask creation are:
     ~multiply by #~ where the number is the constant scaling factor.
 
  3. Apply an areal median or mean to each pixel.  The syntax is 
-    ~areal <median|mean> radius #~.  The number defines the size of
+    ~areal (median|mean) radius #~.  The number defines the size of
     the square considered around each pixel.  A value of 1 means a 3x3
     square, a value of 2 means a 5x5 square.  The value of each pixel
     is set to either the mean or the median value of the pixels in the
@@ -346,13 +349,14 @@ restored by the areal or social pixel steps.
 
 *** Error checking
 
-The script is not particularly robust in terms of flagging problems.
+The library is not particularly robust in terms of flagging problems.
 You should not expect particularly useful error messages if the
 folders in the configuration file are not correct or if you give an
 emission energy value that was not measured as an elastic image.  In
 those cases, the program will almost certainly fail with some kind of
 stack trace, but probably not with an immediately useful error
-message.
+message.  To say this another way, it's up to you to do file
+management sensibly.
 
 *** Saving masks as image files
 
@@ -373,11 +377,9 @@ substituting ~C:\GnuWin32\bin~ with the location on your computer.
 Without NetPBM, an invocation of the bla script with the ~-s~ flags
 will not run to completion.
 
-This does not yet work on Windows.
-
 *** Animations
 
-Using ImageMagick:
+Using ImageMagick on the output masks:
 
    #+BEGIN_SRC sh
    convert -layers OptimizePlus -delay 25x100 <stub>_*_mask.gif -loop 0 anim.gif
@@ -406,18 +408,18 @@ module is available.
 
 *** PDL and Gnuplot
 
-At line 3116 of ~PDL::Graphics::Gnuplot~, add the following line:
+Apply ~share/PGG/PGG.patch~ to
+~/usr/local/share/perl/5.20.2/PDL/Graphics/Gnuplot.pm~ to suppress the
+~Reading ras files from sequential devices not supported~ warning when
+using the qt terminal.  This is a qt issue and appears to be of no
+consequence.
+
+Around line 3116 of ~PDL::Graphics::Gnuplot~, add the following line:
 
     #+BEGIN_SRC perl
     $optionsWarnings =~ s/^Reading ras files from sequential devices not supported.*$//mg;
     $optionsWarnings = '' if($optionsWarnings =~ m/^\s+$/s);
     #+END_SRC
 
-Similar at lines 3757, 3301.
+Similar near lines 3256, 3301.
 
-This suppresses the ~Reading ras files from sequential devices not
-supported~ warning when using the qt terminal.  This is a qt bug and
-appears to be of no consequence.
-
-(It's ~/usr/local/share/perl/5.20.2/PDL/Graphics/Gnuplot.pm~ on my
-laptop.)

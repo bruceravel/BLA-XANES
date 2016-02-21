@@ -1,0 +1,34 @@
+*** Gnuplot.pm	2016-02-19 21:46:06.175168106 -0500
+--- Gnuplot.pm.orig	2016-02-20 09:48:07.347065433 -0500
+***************
+*** 3114,3120 ****
+      # Mask out some common useless chatter
+      $optionsWarnings =~ s/^Terminal type set to .*$//m;
+      $optionsWarnings =~ s/^Options are \'.*$//m;
+-     $optionsWarnings =~ s/^Reading ras files from sequential devices not supported.*$//mg;
+      $optionsWarnings = '' if($optionsWarnings =~ m/^\s+$/s);
+  
+      if($optionsWarnings) {
+--- 3114,3119 ----
+***************
+*** 3254,3261 ****
+      }
+  	
+      my $plotWarnings = _checkpoint($this, "main", {printwarnings=>1});
+-     $plotWarnings =~ s/^Reading ras files from sequential devices not supported.*$//mg;
+-     $plotWarnings = '' if($plotWarnings =~ m/^\s+$/s);
+      if($plotWarnings) {
+  	if($MS_io_braindamage) {
+  	    # MS Windows can yield some chatter on the line, and it's not necessarily an
+--- 3253,3258 ----
+***************
+*** 3300,3307 ****
+      $this->{last_plotcmd} .= $cleanup_cmd;
+      _printGnuplotPipe($this, "main", $cleanup_cmd);
+      $checkpointMessage= _checkpoint($this, "main", {printwarnings=>1});
+-     $checkpointMessage =~ s/^Reading ras files from sequential devices not supported.*$//mg;
+-     $checkpointMessage = '' if($checkpointMessage =~ m/^\s+$/s);
+      if($checkpointMessage) {
+  	if($MS_io_braindamage) {
+  	    # MS Windows can yield some chatter on the line, and it's not necessarily an
+--- 3297,3302 ----

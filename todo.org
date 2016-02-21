@@ -1,7 +1,7 @@
 #+STARTUP: showall
 * Bugs and limitations in Xray::BLA and Metis
 
-** Issues with Xray::BLA [3/14]
+** Issues with Xray::BLA [4/14]
 
  - [ ] More robust error handling.
 
@@ -13,7 +13,7 @@
 
  - [ ] Use the energy map to create a mask with a specified energy width.
 
- - [ ] In the future, will need a more sophisticated mechanism for
+ - [X] In the future, will need a more sophisticated mechanism for
    relating C<stub> to scan file and to image files -- some kind of
    templating scheme, I suspect
 
@@ -48,7 +48,7 @@
  - [ ] Think about how to use HDF5 to store images, scans, scan
    metadata, and Xray::BLA metadata.
 
-** Issues with Metis [8/14]
+** Issues with Metis [9/15]
 
  - [X] Version 2 will have Xray::BLA objects for each emission energy
    and one for the aggregate object.  That will make XES and RIXS much
@@ -68,7 +68,8 @@
 
  - [X] implement aggregate mask from set of elastic images
 
- - [ ] separate stubs for elastic and data images
+ - [ ] separate stubs for elastic and data images (partially addressed
+   by file name templates)
 
  - [X] widgets for selecting folders.  Wx::FileDialog was causing
    crashes on my home computer.
@@ -81,7 +82,7 @@
    gif, assuming ffmpeg is installed on the computer.  this needs
    testing outside of metis.
 
- - [ ] some kind of system for specifying file naming patterns -- this
+ - [X] some kind of system for specifying file naming patterns -- this
    is somewhat less important now that the contents of the elastic and
    image lists on the Files tool are used explicitly.  if this is
    still ambiguous, a file selection dialog can be used to select
@@ -92,6 +93,9 @@
 
  - [ ] how are element and line used?  (answer: they are used to set
    the white color band in a map)
+
+ - [ ] Click on image list, show incident energy of that image in the
+   status bar
 
 ** Mask algorithm possibilities
 

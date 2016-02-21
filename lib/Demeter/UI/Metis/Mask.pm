@@ -36,7 +36,7 @@ sub new {
   $hbox -> Add($sbox, 1, wxGROW|wxALL, 5);
   $sbox -> Add($stepsboxsizer, 1, wxGROW|wxALL, 5);
 
-  $self->{undostep} = Wx::Button->new($self, -1, 'Undo last step');
+  $self->{undostep} = Wx::Button->new($self, -1, '&Undo last step');
   $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
   $self->{savesteps} = Wx::Button->new($self, -1, 'Save steps');
@@ -124,7 +124,7 @@ sub new {
   $app->mouseover($self->{socialvalue}, "Perform the social pixel step, but only considering pixels directly above and below.");
 
   ++$row;
-  $self->{do_multiply} = Wx::Button->new($self, -1, "M&ultiply by", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $self->{do_multiply} = Wx::Button->new($self, -1, "Multipl&y by", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 2, 1000);
   $gbs ->Add($self->{do_multiply},   Wx::GBPosition->new($row,0));
   $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
@@ -145,7 +145,7 @@ sub new {
 
   my $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
-  $self->{do_andmask} = Wx::Button->new($self, -1, "Finish mask", wxDefaultPosition, wxDefaultSize);
+  $self->{do_andmask} = Wx::Button->new($self, -1, "&Finish mask", wxDefaultPosition, wxDefaultSize);
   $svbox->Add($self->{do_andmask}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
   $self->{savemask} = Wx::Button -> new($self, -1, 'Save mask');
   $svbox->Add($self->{savemask}, 1, wxGROW|wxLEFT|wxRIGHT, 5);

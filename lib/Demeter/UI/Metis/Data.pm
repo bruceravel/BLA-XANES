@@ -48,7 +48,7 @@ sub new {
   $vbox -> Add($herfdboxsizer, 0, wxGROW|wxALL, 5);
   $self->{herfdbox} = $herfdbox;
 
-  $self->{herfd} = Wx::Button->new($self, -1, 'Process &HERFD', wxDefaultPosition, [$button_width,-1]);
+  $self->{herfd} = Wx::Button->new($self, -1, '&Process HERFD', wxDefaultPosition, [$button_width,-1]);
   $herfdboxsizer -> Add($self->{herfd}, 0, wxGROW|wxALL, 5);
   $self->{replot_herfd} = Wx::Button->new($self, -1, '&Replot HERFD', wxDefaultPosition, [$button_width,-1]);
   $herfdboxsizer -> Add($self->{replot_herfd}, 0, wxGROW|wxALL, 5);
@@ -63,7 +63,7 @@ sub new {
 
   my $hfbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $herfdboxsizer -> Add($hfbox, 0, wxGROW|wxALL, 0);
-  $self->{mue} = Wx::CheckBox->new($self, -1, "Include conventional $MU(E) in plot");
+  $self->{mue} = Wx::CheckBox->new($self, -1, "Include &conventional $MU(E) in plot");
   $hfbox -> Add($self->{mue}, 0, wxGROW|wxALL, 0);
   $self->{mue}->SetValue(0);
 
@@ -102,7 +102,7 @@ sub new {
   $app->mouseover($self->{save_xes},   "Save the last XES data to a column data file.");
   $app->mouseover($self->{xes_rixs},   "Plot a map of the RIXS in the XES direction.");
 
-  $self->{showmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
+  $self->{showmasks} = Wx::CheckBox->new($self, -1, "Sh&ow masks as they are created");
   $xbox -> Add($self->{showmasks}, 0, wxGROW|wxALL, 0);
   $self->{showmasks}->SetValue(1);
 
@@ -126,7 +126,7 @@ sub new {
   $app->mouseover($self->{replot_rixs}, "Replot the last RIXS data.");
   $app->mouseover($self->{save_rixs},   "Save the last DATA data to an Athena project file.");
 
-  $self->{rshowmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
+  $self->{rshowmasks} = Wx::CheckBox->new($self, -1, "Show m&asks as they are created");
   $rixsboxsizer -> Add($self->{rshowmasks}, 0, wxGROW|wxALL, 0);
   $self->{rshowmasks}->SetValue(1);
 

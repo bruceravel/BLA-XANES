@@ -42,7 +42,7 @@ sub new {
   $self->{element}       = Wx::ComboBox   -> new($self, -1, q{}, wxDefaultPosition, [100,-1], \@elements, wxCB_READONLY);
   $self->{line_label}    = Wx::StaticText -> new($self, -1, "Line");
   $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], \@lines, wxCB_READONLY);
-  $self->{div10}         = Wx::CheckBox   -> new($self, -1, "Divide by 10");
+  $self->{div10}         = Wx::CheckBox   -> new($self, -1, "&Divide by 10");
   $self->{div10}        -> SetValue($app->{base}->div10);
   $hbox -> Add($self->{stub_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{stub},          0, wxLEFT|wxRIGHT, 5);
@@ -71,7 +71,7 @@ sub new {
   $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
   my $scanfolder = $app->{base}->scanfolder || q{};
   #$self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
-  $self->{scan} = Wx::Button->new($self, -1, "Pick scan folder", wxDefaultPosition, [140,-1]);
+  $self->{scan} = Wx::Button->new($self, -1, "Pick &scan folder", wxDefaultPosition, [140,-1]);
   $self->{scan_dir} = Wx::StaticText -> new($self, -1, $scanfolder);
   $app->mouseover($self->{scan}, "Select the location of the scan files.");
   #$hbox->Add($self->{scan_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
@@ -88,7 +88,7 @@ sub new {
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
   my $tifffolder = $app->{base}->tifffolder || cwd;
-  $self->{image} = Wx::Button->new($self, -1, "Pick image folder", wxDefaultPosition, [140,-1]);
+  $self->{image} = Wx::Button->new($self, -1, "Pick &image folder", wxDefaultPosition, [140,-1]);
   $self->{image_dir} = Wx::StaticText -> new($self, -1, $tifffolder);
   $hbox -> Add($self->{image},   0, wxLEFT|wxRIGHT, 5);
   $hbox->Add($self->{image_dir}, 1, wxLEFT|wxRIGHT|wxTOP, 3);

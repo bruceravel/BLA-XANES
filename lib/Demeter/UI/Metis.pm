@@ -55,7 +55,9 @@ sub OnInit {
     foreach my $k (qw(stub scanfolder tifffolder element line color div10)) {
       $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
-    foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage terminal)) {
+    foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage terminal
+		      scan_file_template elastic_file_template image_file_template
+		      xdi_metadata_file)) {
       $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
     foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
@@ -126,9 +128,12 @@ sub OnInit {
   $app->{main} -> Show( 1 );
   $app->{main} -> Refresh;
   $app->{main} -> Update;
-  $app->{main} -> status("Welcome to Metis version $Xray::BLA::VERSION, copyright 2012-2014 Bruce Ravel, Jeremy Kropf");
+  $app->{main} -> status("Welcome to Metis version $Xray::BLA::VERSION, copyright 2012-2014,2016 Bruce Ravel, Jeremy Kropf");
 
   $app->{main} -> SetSizer($vbox);
+
+  $app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
+
   return 1;
 };
 
@@ -197,6 +202,10 @@ sub set_parameters {
   $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
   $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
   $app->{base} -> set_palette($app->{base}->color);
+  $app->{base} -> scan_file_template($app->{Config}->{scan_file_template}->GetValue);
+  $app->{base} -> elastic_file_template($app->{Config}->{elastic_file_template}->GetValue);
+  $app->{base} -> image_file_template($app->{Config}->{image_file_template}->GetValue);
+  $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetLabel);
 
   $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
   $app->{base} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
@@ -208,6 +217,7 @@ sub set_parameters {
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
   foreach my $k (qw(scanfolder tifffolder element line color palette
 		    imagescale outimage terminal energycounterwidth tiffcounter
+		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
 		    bad_pixel_value weak_pixel_value social_pixel_value
 		    lonely_pixel_value scalemask radius div10
 		  )) {
@@ -349,7 +359,7 @@ L<http://bruceravel.github.io/BLA-XANES/>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2014 Bruce Ravel and Jeremy Kropf.  All rights
+Copyright (c) 2006-2014,2016 Bruce Ravel and Jeremy Kropf.  All rights
 reserved.
 
 This module is free software; you can redistribute it and/or modify it

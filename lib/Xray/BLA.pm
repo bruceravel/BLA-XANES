@@ -157,6 +157,8 @@ has 'elastic_file_template' => (is => 'rw', isa => 'Str', default => q{%s_elasti
 				documentation => "Template for constructing the elastic file name.");
 has 'image_file_template' => (is => 'rw', isa => 'Str', default => q{%s_%c.tif},
 			      documentation => "Template for constructing the image file name.");
+has 'xdi_metadata_file'   =>  (is => 'rw', isa => 'Str', default => q{},
+			       documentation => "Path to .ini file with beamline specific XDI metadata.");
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The fully resolved file name containing the measured elastic image.");
@@ -362,6 +364,7 @@ sub read_ini {
   $self -> scan_file_template   ($ini{files}{scan})    if exists($ini{files}{scan});
   $self -> elastic_file_template($ini{files}{elastic}) if exists($ini{files}{elastic});
   $self -> image_file_template  ($ini{files}{image})   if exists($ini{files}{image});
+  $self -> xdi_metadata_file    ($ini{files}{xdi})     if exists($ini{files}{xdi});
 
   $self -> bad_pixel_value   ($ini{pixel}{bad})       if exists $ini{pixel}{bad};
   $self -> weak_pixel_value  ($ini{pixel}{weak})      if exists $ini{pixel}{weak};

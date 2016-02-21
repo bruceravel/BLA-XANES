@@ -70,7 +70,8 @@ $spectrum -> task($mode);
 $spectrum -> stub($ARGV[1]||q{});
 $spectrum -> colored(0) if $nocolor;
 $spectrum -> read_ini($configfile);
-warn("BLA error: no processing steps specified in the configuration file\n") && exit 1 if $#{$spectrum->steps} == 0;
+warn("BLA error: no processing steps specified in the configuration file\n") && exit 1
+  if (($#{$spectrum->steps} == 0) and ($mode ne 'list'));
 
 my @elastic =  @{$spectrum -> elastic_energies};
 
@@ -262,7 +263,6 @@ bla - wrapper script for bent Laue analyzer + Pilatus data processing
    --incident | -i   [number]   data point for HERFD or XES (req. for point/xes tasks)
    --xdiini   | -x   [string]   XDI configuration file
    --reuse    | -r   [flag]     reuse mask files for map if found in outfolder
-   --animate  | -a   [flag]     save gif animation of mask or energy map creation
    --save     | -s   [flag]     save gif with mask
    --plot     | -p   [flag]     plot computed data (herfd/rixs/map/xes tasks)
    --verbose  | -v   [flag]     write progress messages
@@ -271,7 +271,7 @@ bla - wrapper script for bent Laue analyzer + Pilatus data processing
    --quiet    | -q   [flag]     suppress progress messages
    --help     | -h   [flag]     write this message and exit
 
-=head1 Options
+=head1 SWITCHES
 
 =over 8
 
@@ -294,11 +294,6 @@ Write HERFD as XDI files using the specified XDI config file.
 =item B<--reuse>, B<-r>
 
 Reuse mask files for making energy map if possible.
-
-=item B<--animate>, B<-a>
-
-Write an animated gif showing the steps of mask creation (herfd and
-rixs) or the sequence of emission energy masks (map).
 
 =item B<--save>, B<-s>
 

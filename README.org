@@ -153,6 +153,14 @@ the ~emission~ line of the configuration file.  (Of course, having
 only a single energy in that list will hamper the ~rixs~, ~map~, and
 ~xes~ tasks....)
 
+Use of the ~-x~ flag can be avoided by setting the ~BLAXDIINI~
+environment variable.  The following are equivalent:
+
+:   bla herfd -c=/path/to/config.ini -x /path/to/xdi.ini -e=9713 Aufoil1
+: 
+:   export BLAXDIINI=9713
+:   bla herfd -c=/path/to/config.ini -e 9713 Aufoil1
+
 Each environment variable is overridden by its respective command line
 switch.
 

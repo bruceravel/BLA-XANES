@@ -23,15 +23,12 @@ sub new {
 
   $vbox ->  Add($self->{title}, 0, wxGROW|wxALL, 5);
 
-
-
-
   ## ------ stub, element, line ----------------------------------------
   my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
 
   my @elements = map {sprintf "%s: %s", $_, get_symbol($_)} (1 .. 96);
-  my @lines = (qw(Ka1 Ka2 Kb2 Kb2 Kb3 La1 La2 Lb1 Lb2 Lb3 Lb4 Lg1 Lg2 Lg3 Ll));
+  my @lines = (qw(Ka1 Ka2 Kb2 Kb3 Kb4 Kb5 La1 La2 Lb1 Lb2 Lb3 Lb4 Lb5 Lb6 Lg1 Lg2 Lg3 Ll Ln));
 
   my $stub    = $app->{base}->stub    || q{};
   my $element = $app->{base}->element || q{};

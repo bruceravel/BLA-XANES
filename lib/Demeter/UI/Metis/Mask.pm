@@ -607,6 +607,11 @@ sub save_steps {
     $text .= sprintf("%-18s = %s\n", $k, $spectrum->$k);
   };
   $text .= "outfolder          = " . $fd->GetDirectory . "\n";
+  $text .= "\n[files]\n";
+  $text .= "scan               = " . $spectrum -> scan_file_template    . "\n";
+  $text .= "elastic            = " . $spectrum -> elastic_file_template . "\n";
+  $text .= "image              = " . $spectrum -> image_file_template   . "\n";
+  $text .= "xdi                = " . $spectrum -> xdi_metadata_file     . "\n";
   $text .= "\n[steps]\nsteps = <<END\n";
   foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
     $text .= $self->{steps_list}->GetString($n) . "\n";

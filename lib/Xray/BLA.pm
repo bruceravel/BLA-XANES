@@ -36,8 +36,8 @@ use Term::Sk;
 use Text::Template;
 use Xray::Absorption;
 
-use vars qw($XDI_exists);
-$XDI_exists = eval "require Xray::XDI" || 0;
+#use vars qw($XDI_exists);
+#$XDI_exists = eval "require Xray::XDI" || 0;
 
 $ENV{TERM} = 'dumb' if not defined $ENV{TERM};
 $ENV{TERM} = 'dumb' if ($ENV{TERM} =~ m{\A\s*\z});

@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Cwd;
+use Config::IniFiles;
 use File::Basename;
 use File::Spec;
 
@@ -39,6 +40,9 @@ sub new {
   $self->{undostep} = Wx::Button->new($self, -1, '&Undo last step');
   $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
+  $self->{restoresteps} = Wx::Button->new($self, -1, 'Restore steps');
+  $sbox -> Add($self->{restoresteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
+  EVT_BUTTON($self, $self->{restoresteps}, sub{restore_steps(@_, $app)});
   $self->{savesteps} = Wx::Button->new($self, -1, 'Save steps');
   $sbox -> Add($self->{savesteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
   EVT_BUTTON($self, $self->{savesteps}, sub{save_steps(@_, $app)});
@@ -594,6 +598,37 @@ sub save_steps {
   $app->{main}->status("Saved ini file to $file.");
 };
 
+sub restore_steps {
+  my ($self, $event, $app) = @_;
+  my $fd = Wx::FileDialog->new( $app->{main}, "Restore ini file", cwd, q{},
+				"INI (*.ini)|*.ini|All files (*)|*",
+				wxFD_OPEN|wxFD_CHANGE_DIR|wxFD_FILE_MUST_EXIST,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Restoring ini file canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  tie my %ini, 'Config::IniFiles', ( -file => $file );
+  my $steps = $ini{steps}{steps};
+  foreach my $st (@$steps) {
+    my @words = split(" ", $st);
+    if ($st =~ m{\Abad}) {
+      $self->{badvalue}->SetValue($words[1]);
+      $self->{weakvalue}->SetValue($words[3]);
+    } elsif ($st =~ m{\Asocial}) {
+      $self->{socialvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Alonely}) {
+      $self->{lonelyvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Amultiply}) {
+      $self->{multiplyvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Aareal}) {
+      $self->{arealtype}->SetStringSelection($words[1]);
+      $self->{arealvalue}->SetValue($words[1]);
+    };
+    $self->do_step($event, $app, $words[0]);
+  };
+};
 1;
 
 

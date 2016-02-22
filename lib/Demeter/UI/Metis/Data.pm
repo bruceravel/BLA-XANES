@@ -7,6 +7,7 @@ use Compress::Zlib;
 use Cwd;
 use File::Basename;
 use File::Copy;
+use File::Slurper qw(read_text);
 use File::Spec;
 use List::Compare;
 use List::Util qw(max);
@@ -205,7 +206,8 @@ sub plot_herfd {
     $spectrum->push_scan_file_list(File::Spec->catfile($spectrum->tifffolder, $image_list->GetString($i)));
   };
 
-  my $ret = $spectrum -> scan(verbose=>0, xdiini=>q{});
+  my $ret = $spectrum -> scan(verbose=>0, xdiini=>$spectrum->xdi_metadata_file);
+  $self->{herfd_file} = $ret->message;
   my $title = $spectrum->stub . ' at ' . $spectrum->energy;
 
   my $toss = Demeter::Data->new();
@@ -218,7 +220,7 @@ sub plot_herfd {
   undef $toss;
 
   $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
-  $spectrum->sentinal(sub{1});
+  $spectrum -> sentinal(sub{1});
   $self->{$_} -> Enable(1) foreach (qw(replot_herfd save_herfd));
   $self->{herfdbox}->SetLabel(' HERFD ('.$spectrum->energy.')');
   $self->{current} = $spectrum->energy;
@@ -240,9 +242,9 @@ sub replot_herfd {
 sub save_herfd {
   my ($self, $event, $app) = @_;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
-  my $fname = sprintf("%s_%d.dat", $spectrum->stub, $self->{current});
+  my $fname = sprintf("%s_%d.xdi", $spectrum->stub, $self->{current});
   my $fd = Wx::FileDialog->new( $app->{main}, "Save data file", cwd, $fname,
-				"DAT (*.dat)|*.dat|All files (*)|*",
+				"XDI (*.xdi)|*.xdi|DAT (*.dat)|*.dat|All files (*)|*",
 				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
 				wxDefaultPosition);
   if ($fd->ShowModal == wxID_CANCEL) {
@@ -250,7 +252,8 @@ sub save_herfd {
     return;
   };
   my $file = $fd->GetPath;
-  copy(File::Spec->catfile($spectrum->outfolder, $fname), $file);
+  unlink $file if (-e $file);
+  copy($self->{herfd_file}, $file);
   $app->{main}->status("Saved HERFD to ".$file);
 };
 
@@ -365,6 +368,10 @@ sub save_xes {
   };
   my $file = $fd->GetPath;
   copy($self->{xesout}, $file);
+  #open(my $O, '>', $file);
+  #print $O $spectrum->xdi_xes_head($spectrum->xdi_metadata_file);
+  #print $O read_text($self->{xesout});
+  #close $0;
   $app->{main}->status("Saved XES to ".$file);
 };
 

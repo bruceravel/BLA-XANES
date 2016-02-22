@@ -544,7 +544,7 @@ sub scan {
   my ($self, @args) = @_;
   my %args = @args;
   $args{verbose} ||= 0;
-  $args{xdiini}  ||= q{};
+  $args{xdiini}  ||= $self->xdi_metadata_file || q{};
   my $ret = Xray::BLA::Return->new;
   local $|=1;
   $self->clear_xdata;
@@ -579,11 +579,11 @@ sub scan {
   close $SCAN;
 
   my $outfile;
-  if (($XDI_exists) and (-e $args{xdiini})) {
+  #if (($XDI_exists) and (-e $args{xdiini})) {
     $outfile = $self->xdi_out($args{xdiini}, \@data);
-  } else {
-    $outfile = $self->dat_out(\@data);
-  };
+  #} else {
+  #  $outfile = $self->dat_out(\@data);
+  #};
 
   $ret->message($outfile);
   print $self->report("Wrote $outfile", 'bold green') if $args{verbose};
@@ -667,8 +667,9 @@ sub rixs_map {
 sub compute_xes {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{verbose} ||= 0;
-  $args{inident} ||= 0;
+  $args{verbose}  ||= 0;
+  $args{incident} ||= 0;
+  $args{xdiini}   ||= $self->xdi_metadata_file || q{};
   my $ret = Xray::BLA::Return->new;
 
   $self->get_incident($args{incident});
@@ -700,11 +701,11 @@ sub compute_xes {
     push @xes, [$self->elastic_energies->[$i], $npixels[$i]*$values[$i], $npixels[$i], $values[$i], ];
   };
   my $outfile;
-  if (($XDI_exists) and (-e $args{xdiini})) {
-    $outfile = $self->xdi_xes($args{xdiini}, \@xes);
-  } else {
-    $outfile = $self->dat_xes(\@xes);
-  };
+  #if (($XDI_exists) and (-e $args{xdiini})) {
+  $outfile = $self->xdi_xes($args{xdiini}, \@xes);
+  #} else {
+  #  $outfile = $self->dat_xes(\@xes);
+  #};
   $ret->message($outfile);
   print $self->report("Wrote $outfile", 'bold green') if $args{verbose};
   return $ret;

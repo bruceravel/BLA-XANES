@@ -133,14 +133,14 @@ sub OnInit {
   $app->{main} -> SetSizer($vbox);
 
   $app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
-
+  EVT_CLOSE( $app->{main},  \&on_close);
   return 1;
 };
 
-#sub on_close {
-#  my ($app) = @_;
-#  $app->Destroy;
-#};
+sub on_close {
+  my ($app) = @_;
+  $app->Destroy;
+};
 
 sub OnMenuClick {
   my ($self, $event, $app) = @_;

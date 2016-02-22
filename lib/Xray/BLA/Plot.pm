@@ -17,7 +17,7 @@ package Xray::BLA::Plot;
 
 use Moose::Role;
 use PDL::Graphics::Simple;
-use PDL::Graphics::Gnuplot qw(gplot image);
+use PDL::Graphics::Gnuplot qw(gplot image gpwin);
 use File::Basename;
 use List::MoreUtils qw(all none any);
 use Math::Random;
@@ -148,7 +148,7 @@ sub plot_xes {
   gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES', terminal=>$self->terminal},
 	with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
 	PDL->new(\@e), PDL->new(\@xes));
-  my $xesout = $self->dat_xes($args{xes});
+  my $xesout = $self->xdi_xes($self->xdi_metadata_file, $args{xes});
   return $xesout;
 };
 
@@ -161,6 +161,12 @@ sub escape_us {
     $string =~ s{_}{\\\\_}g;
   };
   return $string;
+};
+
+sub plot_close {
+  my ($self) = @_;
+  my $w = gpwin();
+  $w->close;
 };
 
 1;

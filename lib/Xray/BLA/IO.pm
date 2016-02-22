@@ -16,6 +16,7 @@ package Xray::BLA::IO;
 
 =cut
 
+use Config::INI;
 use Moose::Role;
 use PDL::Lite;
 use PDL::NiceSlice;
@@ -54,19 +55,43 @@ sub xdi_out {
   my ($self, $xdiini, $rdata) = @_;
   my $fname = join("_", $self->stub, $self->energy) . '.xdi';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+  open(my $O, '>', $outfile);
+  print $O "# XDI/1.0 BLA/" . $Xray::BLA::VERSION, $/;
 
-  my $xdi = Xray::XDI->new();
-  $xdi   -> ini($xdiini);
-  $xdi   -> push_extension(sprintf("BLA.illuminated_pixels: %d", $self->npixels));
-  $xdi   -> push_extension(sprintf("BLA.total_pixels: %d", $self->columns*$self->rows));
-  $xdi   -> push_extension("BLA.pixel_ratio: \%pixel_ratio\%") if ($self->task eq 'rixs');
-  $xdi   -> push_comment("HERFD scan on " . $self->stub);
-  $xdi   -> push_comment("Mask building steps:");
-  foreach my $st (@{$self->steps}) {
-    $xdi -> push_comment("  $st");
+  my $beamline = Config::INI::Reader->read_file($self->xdi_metadata_file);
+  foreach my $fam (sort keys %$beamline) {
+    foreach my $item (sort keys %{$beamline->{$fam}}) {
+      printf $O "# %s.%s: %s\n", ucfirst($fam), $item, $beamline->{$fam}->{$item};
+    };
   };
-  $xdi   -> data($rdata);
-  $xdi   -> export($outfile);
+  my @labels = ();
+  my @units  = ();
+  foreach my $lab (sort keys %{$beamline->{column}}) {
+    my @this = split(" ", $beamline->{column}->{$lab});
+    push @labels, $this[0];
+    push @units,  $this[1] || q{};
+  }
+
+  printf $O "# %s.%s: %s\n", "BLA", "illuminated_pixels", $self->npixels;
+  printf $O "# %s.%s: %s\n", "BLA", "total_pixels", $self->columns*$self->rows;
+  if ($self->task eq 'rixs') {
+    printf $O "# %s.%s: %s\n", "BLA", "pixel_ratio", "\%pixel_ratio\%";
+  };
+  print $O "# /////////////////////////\n";
+  print $O "# HERFD scan on " . $self->stub . $/;
+  print $O "# Mask building steps:\n";
+  foreach my $st (@{$self->steps}) {
+    print $O "#   $st\n";
+  };
+  print $O "# -------------------------\n";
+  print $O "#  ", join("       ", @labels), $/;
+  foreach my $p (@$rdata) {
+    foreach my $datum (@$p) {
+      printf $O "  %.7f", $datum;
+    };
+    print $O $/;
+  };
+  close $O;
   return $outfile;
 };
 
@@ -92,17 +117,38 @@ sub dat_out {
 };
 
 
+sub xdi_xes_head {
+  my ($self, $xdiini) = @_;
+  my $text = "# XDI/1.0 BLA/" . $Xray::BLA::VERSION . $/;
+  my $beamline = Config::INI::Reader->read_file($self->xdi_metadata_file);
+  foreach my $fam (sort keys %$beamline) {
+    next if $fam eq 'column';
+    foreach my $item (sort keys %{$beamline->{$fam}}) {
+      $text .= sprintf "# %s.%s: %s\n", ucfirst($fam), $item, $beamline->{$fam}->{$item};
+    };
+  };
+  $text .= "# /////////////////////////\n";
+  return $text;
+};
 
 sub xdi_xes {
   my ($self, $xdiini, $rdata) = @_;
   my $fname = join("_", $self->stub, 'xes', $self->incident) . '.xdi';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+  open(my $O, '>', $outfile);
 
-  my $xdi = Xray::XDI->new();
-  $xdi   -> ini($xdiini);
-  $xdi   -> push_comment("XES from " . $self->stub . " at " . $self->incident . ' eV');
-  $xdi   -> data($rdata);
-  $xdi   -> export($outfile);
+  print $O $self->xdi_xes_head($xdiini);
+  print $O "# Mask building steps:\n";
+  foreach my $st (@{$self->steps}) {
+    print $O "#   $st\n";
+  };
+  print $O "# -------------------------\n";
+  print $O join("   ", qw(energy xes npixels raw)), $/;
+  foreach my $p (@$rdata) {
+    printf $O "  %.3f  %.7f  %.7f  %.7f\n", @$p;
+  };
+
+  close $O;
   return $outfile;
 };
 sub dat_xes {

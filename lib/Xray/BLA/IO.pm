@@ -16,7 +16,7 @@ package Xray::BLA::IO;
 
 =cut
 
-use Config::INI;
+use Config::IniFiles;
 use Moose::Role;
 use PDL::Lite;
 use PDL::NiceSlice;
@@ -58,19 +58,22 @@ sub xdi_out {
   open(my $O, '>', $outfile);
   print $O "# XDI/1.0 BLA/" . $Xray::BLA::VERSION, $/;
 
-  my $beamline = Config::INI::Reader->read_file($self->xdi_metadata_file);
-  foreach my $fam (sort keys %$beamline) {
-    foreach my $item (sort keys %{$beamline->{$fam}}) {
-      printf $O "# %s.%s: %s\n", ucfirst($fam), $item, $beamline->{$fam}->{$item};
-    };
-  };
   my @labels = ();
   my @units  = ();
-  foreach my $lab (sort keys %{$beamline->{column}}) {
-    my @this = split(" ", $beamline->{column}->{$lab});
-    push @labels, $this[0];
-    push @units,  $this[1] || q{};
-  }
+  if ($self->xdi_metadata_file and -e $self->xdi_metadata_file) {
+    tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
+    foreach my $fam (sort keys %beamline) {
+      next if $fam eq 'xescolumn';
+      foreach my $item (sort keys %{$beamline{$fam}}) {
+	printf $O "# %s.%s: %s\n", ucfirst($fam), $item, $beamline{$fam}->{$item};
+      };
+    };
+    foreach my $lab (sort keys %{$beamline{column}}) {
+      my @this = split(" ", $beamline{column}->{$lab});
+      push @labels, $this[0];
+      push @units,  $this[1] || q{};
+    };
+  };
 
   printf $O "# %s.%s: %s\n", "BLA", "illuminated_pixels", $self->npixels;
   printf $O "# %s.%s: %s\n", "BLA", "total_pixels", $self->columns*$self->rows;
@@ -120,11 +123,12 @@ sub dat_out {
 sub xdi_xes_head {
   my ($self, $xdiini) = @_;
   my $text = "# XDI/1.0 BLA/" . $Xray::BLA::VERSION . $/;
-  my $beamline = Config::INI::Reader->read_file($self->xdi_metadata_file);
-  foreach my $fam (sort keys %$beamline) {
+  tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
+  foreach my $fam (sort keys %beamline) {
     next if $fam eq 'column';
-    foreach my $item (sort keys %{$beamline->{$fam}}) {
-      $text .= sprintf "# %s.%s: %s\n", ucfirst($fam), $item, $beamline->{$fam}->{$item};
+    my $this = ($fam eq 'xescolumn') ? 'column' : $fam;
+    foreach my $item (sort keys %{$beamline{$fam}}) {
+      $text .= sprintf "# %s.%s: %s\n", ucfirst($this), $item, $beamline{$fam}->{$item};
     };
   };
   $text .= "# /////////////////////////\n";
@@ -143,7 +147,7 @@ sub xdi_xes {
     print $O "#   $st\n";
   };
   print $O "# -------------------------\n";
-  print $O join("   ", qw(energy xes npixels raw)), $/;
+  print $O '#  ' . join("      ", qw(energy xes npixels raw)), $/;
   foreach my $p (@$rdata) {
     printf $O "  %.3f  %.7f  %.7f  %.7f\n", @$p;
   };

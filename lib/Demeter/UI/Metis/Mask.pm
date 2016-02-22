@@ -41,7 +41,7 @@ sub new {
   $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
   $self->{restoresteps} = Wx::Button->new($self, -1, 'Restore steps');
-  $sbox -> Add($self->{restoresteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
+  $sbox -> Add($self->{restoresteps}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{restoresteps}, sub{restore_steps(@_, $app)});
   $self->{savesteps} = Wx::Button->new($self, -1, 'Save steps');
   $sbox -> Add($self->{savesteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
@@ -178,7 +178,7 @@ sub new {
   #$vbox ->  Add(1, 1, 2);
 
   foreach my $k (qw(bad social lonely multiply areal entire aggregate andmask)) {
-    EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k)});
+    EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k, 1)});
   };
   EVT_CHECKBOX($self, $self->{socialvertical}, sub{$app->{base}->vertical($self->{socialvertical}->GetValue)});
 
@@ -273,13 +273,34 @@ sub SelectEnergy {
 		    do_entire do_andmask do_aggregate undostep savemask animation)) {
     $self->{$k}->Enable(0);
   };
-  $self->{steps_list}->Clear;
+  #$self->{steps_list}->Clear;
 
+  foreach my $i (0 .. $self->{steps_list}->GetCount-1) {
+    my $st = $self->{steps_list}->GetString($i);
+    my @words = split(" ", $st);
+    if ($st =~ m{\Abad}) {
+      $self->{badvalue}->SetValue($words[1]);
+      $self->{weakvalue}->SetValue($words[3]);
+    } elsif ($st =~ m{\Asocial}) {
+      $self->{socialvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Alonely}) {
+      $self->{lonelyvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Amultiply}) {
+      $self->{multiplyvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Aareal}) {
+      $self->{arealtype}->SetStringSelection($words[1]);
+      $self->{arealvalue}->SetValue($words[1]);
+    };
+    $self->do_step($event, $app, $words[0], 0);
+  };
+
+  
   $self->plot($app, $spectrum) if not $noplot;
 };
 
 sub Reset {
   my ($self, $event, $app) = @_;
+  return if (not $self->{reset}->IsEnabled);
   my $energy = $self->{energy}->GetStringSelection;
   my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
@@ -316,7 +337,7 @@ sub Reset {
 };
 
 sub do_step {
-  my ($self, $event, $app, $which) = @_;
+  my ($self, $event, $app, $which, $append) = @_;
   my $busy = Wx::BusyCursor->new();
   my $energy = $self->{energy}->GetStringSelection;
   my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
@@ -340,7 +361,7 @@ sub do_step {
     $success = $spectrum -> do_step('bad_pixels', %args);
     $self->{steps_list}->Append(sprintf("bad %d weak %d",
 					$spectrum -> bad_pixel_value,
-					$spectrum -> weak_pixel_value)) if $success;
+					$spectrum -> weak_pixel_value)) if ($success and $append);
     foreach my $k (qw(do_social sociallabel socialvalue socialvertical
 		      do_lonely lonelylabel lonelyvalue
 		      do_multiply multiplyvalue
@@ -375,19 +396,19 @@ sub do_step {
     $success = $spectrum -> do_step('social_pixels', %args);
     my $vert_text = ($spectrum->vertical) ? q{ vertical} : q{};
     $self->{steps_list}->Append(sprintf("social %d%s",
-					$spectrum -> social_pixel_value, $vert_text)) if $success;
+					$spectrum -> social_pixel_value, $vert_text)) if ($success and $append);
 
   } elsif ($which eq 'lonely') {
     $spectrum -> lonely_pixel_value($self->{lonelyvalue}->GetValue);
     $success = $spectrum -> do_step('lonely_pixels', %args);
     $self->{steps_list}->Append(sprintf("lonely %d",
-					$spectrum -> lonely_pixel_value)) if $success;
+					$spectrum -> lonely_pixel_value)) if ($success and $append);
 
   } elsif ($which eq 'multiply') {
     $spectrum -> scalemask($self->{multiplyvalue}->GetValue);
     $success = $spectrum -> do_step('multiply', %args);
     $self->{steps_list}->Append(sprintf("multiply by %d",
-					$spectrum -> scalemask)) if $success;
+					$spectrum -> scalemask)) if ($success and $append);
 
   } elsif ($which eq 'areal') {
     $spectrum -> operation($self->{arealtype}->GetStringSelection);
@@ -400,10 +421,10 @@ sub do_step {
     $success = $spectrum -> do_step('areal', %args);
     $self->{steps_list}->Append(sprintf("areal %s radius %d",
 					$spectrum -> operation,
-					$spectrum -> radius)) if $success;
+					$spectrum -> radius)) if ($success and $append);
   } elsif ($which eq 'entire') {
     $success = $spectrum -> do_step('entire_image', %args);
-    $self->{steps_list}->Append("entire image") if $success;
+    $self->{steps_list}->Append("entire image") if ($success and $append);
 
   } elsif ($which eq 'aggregate') {
     if ($app->{bla_of}->{aggregate}->elastic_image->isnull) {
@@ -414,11 +435,11 @@ sub do_step {
     $app->{bla_of}->{aggregate} -> do_step('andmask', %args); # gotta be sure!
     $args{aggregate} = $app->{bla_of}->{aggregate};
     $success = $spectrum -> do_step('andaggregate', %args);
-    $self->{steps_list}->Append("aggregate") if $success;
+    $self->{steps_list}->Append("aggregate") if ($success and $append);
 
   } elsif ($which eq 'andmask') {
     $success = $spectrum -> do_step('andmask', %args);
-    $self->{steps_list}->Append("andmask") if $success;
+    $self->{steps_list}->Append("andmask") if ($success and $append);
     $spectrum->clear_steps;
     foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
       $spectrum->push_steps($self->{steps_list}->GetString($n));
@@ -611,6 +632,9 @@ sub restore_steps {
   my $file = $fd->GetPath;
   tie my %ini, 'Config::IniFiles', ( -file => $file );
   my $steps = $ini{steps}{steps};
+
+  $self->Reset($event, $app);
+
   foreach my $st (@$steps) {
     my @words = split(" ", $st);
     if ($st =~ m{\Abad}) {
@@ -626,7 +650,7 @@ sub restore_steps {
       $self->{arealtype}->SetStringSelection($words[1]);
       $self->{arealvalue}->SetValue($words[1]);
     };
-    $self->do_step($event, $app, $words[0]);
+    $self->do_step($event, $app, $words[0], 1);
   };
 };
 1;

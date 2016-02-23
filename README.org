@@ -158,7 +158,7 @@ environment variable.  The following are equivalent:
 
 :   bla herfd -c=/path/to/config.ini -x /path/to/xdi.ini -e=9713 Aufoil1
 : 
-:   export BLAXDIINI=9713
+:   export BLAXDIINI=/path/to/xdi.ini
 :   bla herfd -c=/path/to/config.ini -e 9713 Aufoil1
 
 Each environment variable is overridden by its respective command line

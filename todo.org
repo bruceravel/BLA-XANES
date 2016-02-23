@@ -1,7 +1,7 @@
 #+STARTUP: showall
 * Bugs and limitations in Xray::BLA and Metis
 
-** Issues with Xray::BLA [4/15]
+** Issues with Xray::BLA [4/16]
 
  - [ ] More robust error handling.
 
@@ -50,8 +50,10 @@
 
  - [ ] Configurable data columns -- need to be more flexible about
    content of scan file.  Also need to be able to configure column
-   with conventional XAFS for mu(E) plot.  See Xray/BLA.pm line 576,
-   loop in scan method.
+   with conventional XAFS for mu(E) plot.  See Xray/BLA.pm line 568,
+   loop over energy points in ~scan~ method.
+
+ - [ ] Maybe use object oriented plotting interface ....
 
 ** Issues with Metis [9/17]
 

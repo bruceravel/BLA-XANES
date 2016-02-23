@@ -332,7 +332,7 @@ L<http://github.com/bruceravel/BLA-XANES>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2014 Bruce Ravel and Jeremy Kropf.  All rights
+Copyright (c) 2006-2014,2016 Bruce Ravel and Jeremy Kropf.  All rights
 reserved.
 
 This module is free software; you can redistribute it and/or modify it

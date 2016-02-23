@@ -540,6 +540,15 @@ sub get_incident_energies {
 # # ----------------------------------
 # # energy time ring_current i0 it ifl ir roi1 roi2 roi3 roi4 tif
 #     11850.000   20  95.3544291727  1400844   830935   653600   956465      38      18      15      46      1
+
+## to generalize: config params for columns containing
+##    energy
+##    integration time
+##    ring current
+##    i0
+##    it
+##    ifl
+##    ir
 sub scan {
   my ($self, @args) = @_;
   my %args = @args;
@@ -1440,7 +1449,7 @@ L<http://cars9.uchicago.edu/~ravel/software/>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf. All rights reserved.
+Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

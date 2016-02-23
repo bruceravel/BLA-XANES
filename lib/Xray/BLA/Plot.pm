@@ -2,7 +2,7 @@ package Xray::BLA::Plot;
 
 =for Copyright
  .
- Copyright (c) 2011-2014 Bruce Ravel, Jeremy Kropf.
+ Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf.
  All rights reserved.
  .
  This file is free software; you can redistribute it and/or
@@ -90,13 +90,13 @@ sub plot_xanes {
   my $legend = $self->escape_us($args{title});
   my $mu = ($self->is_windows) ? 'mu' : '{/Symbol m}';
   if ($args{mue}) {
-    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box'},
+    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box', terminal=>$self->terminal,},
 
 	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
 	  PDL->new($self->herfd_demeter->ref_array('energy')),
 	  PDL->new($self->herfd_demeter->ref_array('flat')),
 
-	  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>"conventional $mu(E)",
+	  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>"conventional mu(E)",
 	  PDL->new($self->mue_demeter->ref_array('energy')),
 	  PDL->new($self->mue_demeter->ref_array('flat'))
 	 );
@@ -228,7 +228,7 @@ Harrower, and The Pennsylvania State University.
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2006-2014 Bruce Ravel, Jeremy Kropf. All rights reserved.
+Copyright (c) 2006-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlgpl>.

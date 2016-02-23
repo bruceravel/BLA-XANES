@@ -282,7 +282,7 @@ sub on_about {
   $info->SetWebSite( 'https://github.com/bruceravel/BLA-XANES', 'Metis at GitHub' );
   $info->SetDevelopers( ["Bruce Ravel <bravel AT bnl DOT gov>\n" ] );
   $info->SetArtists( ["Metis logo cropped from\nhttp://commons.wikimedia.org/wiki/File:Winged_goddess_Louvre_F32.jpg\n",
-		      "Files and Config icons from the gartoon icon theme\nhttp://gnome-look.org/content/show.php/Gartoon+Icon+theme+%28v0.4.5%29?content=13527\n",
+		      "Files and Config icons from the Gartoon Redux icon theme\nhttp://gnome-look.org/content/show.php/Gartoon+Redux?content=74841\n",
 		      "Mask icon cropped from\nhttp://en.wikipedia.org/wiki/File:Ancient_iranian_mask.jpg\n",
 		      "Data icon is the gnuplot icon"
 		     ] );

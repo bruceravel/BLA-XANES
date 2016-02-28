@@ -38,6 +38,8 @@ sub mask_file {
   } elsif ($which eq 'maskmap') {
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "mapmask").'.');
     $type = 'dump';
+  } elsif ($which eq 'shield') {
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "shield").'.');
   } else {
     my $id = ($which eq 'mask') ? q{} :"_$which";
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');

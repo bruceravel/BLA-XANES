@@ -111,18 +111,19 @@ sub plot_xanes {
 
 sub plot_rixs {
   my ($self, @spectra) = @_;
-  my $e0 = $self->get_e0;
+  my ($emin, $emax) = ($spectra[0]->xdata->[0], $spectra[0]->xdata->[-1]);
   my @args;
   if ($#spectra > 40) {
-    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off', terminal=>$self->terminal});
+    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off', terminal=>$self->terminal});
   } else {
-    @args = ({xrange=>[$e0-50, $e0+150], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box', terminal=>$self->terminal});
+    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box', terminal=>$self->terminal});
   };
   ## see lib/Demeter/configuration/gnuplot.demeter_conf from Demeter for color list
   my @thiscolor = qw(blue red dark-green dark-violet yellow4 brown dark-pink gold dark-cyan spring-green);
   my $count = 0;
   foreach my $s (@spectra) {
-    my $legend = sprintf("%s", $s->energy); # 
+    my $en = ($self->div10) ? $s->energy/10 : $s->energy;
+    my $legend = sprintf("%s", $en);
     push @args, with=>'lines', lc=>"rgb ".$thiscolor[$count%10], lt=>1, lw=>1, legend=>[$legend],
       PDL->new($s->xdata), PDL->new($s->ydata)/$s->normpixels;
     ++$count;

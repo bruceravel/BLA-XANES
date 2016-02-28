@@ -494,8 +494,9 @@ sub plot_rixs {
     push @sorted_list, $app->{bla_of}->{$key};
 
     my $toss = Demeter::Data->new();
+    my $name = ($app->{bla_of}->{$key}->div10) ? $app->{bla_of}->{$key}->energy/10 : $app->{bla_of}->{$key}->energy;
     $app->{bla_of}->{$key}->herfd_demeter($toss->put($app->{bla_of}->{$key}->xdata,
-						     $app->{bla_of}->{$key}->ydata, datatype=>'xanes', name=>$key));
+						     $app->{bla_of}->{$key}->ydata, datatype=>'xanes', name=>"$name eV"));
     $app->{bla_of}->{$key}->herfd_demeter->put_data;
     $app->{bla_of}->{$key}->herfd_demeter->_update('background');
     $app->{bla_of}->{$key}->mue_demeter($toss->put($app->{bla_of}->{$key}->xdata,

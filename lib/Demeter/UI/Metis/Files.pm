@@ -41,6 +41,8 @@ sub new {
   $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], \@lines, wxCB_READONLY);
   $self->{div10}         = Wx::CheckBox   -> new($self, -1, "&Divide by 10");
   $self->{div10}        -> SetValue($app->{base}->div10);
+  $self->{scale24}       = Wx::CheckBox   -> new($self, -1, "&Scale by 2^-24");
+  $self->{scale24}      -> SetValue(0);
   $hbox -> Add($self->{stub_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{stub},          0, wxLEFT|wxRIGHT, 5);
   $hbox -> Add($self->{element_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
@@ -48,12 +50,14 @@ sub new {
   $hbox -> Add($self->{line_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{line},          0, wxLEFT|wxRIGHT, 5);
   $hbox -> Add($self->{div10},         0, wxLEFT|wxRIGHT, 5);
+  $hbox -> Add($self->{scale24},       0, wxLEFT|wxRIGHT, 5);
   $self->{element}->SetSelection(get_Z($element)-1) if $element;
   $self->{line}->SetStringSelection($line);
   $app->mouseover($self->{stub}, "Specify the base of the scan and image filenames.");
   $app->mouseover($self->{element}, "Specify the absorber element.");
   $app->mouseover($self->{stub}, "Specify the measured emission line.");
   $app->mouseover($self->{div10}, "Divide emission energies by 10.");
+  $app->mouseover($self->{scale24}, "Scale oversized images by 1/2^24.");
 
   # my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "metis_logo.png");
   # my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
@@ -148,13 +152,16 @@ sub fetch {
   $app->{base}->scanfolder($scan_folder);
   $app->{base}->tifffolder($image_folder);
   $app->{base}->div10($self->{div10}->GetValue);
+  $app->{base}->tifscale(2**24) if $self->{scale24}->GetValue;
   $app->{bla_of}->{aggregate}->stub($stub);
   $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
   $app->{bla_of}->{aggregate}->tifffolder($image_folder);
   $app->{bla_of}->{aggregate}->div10($self->{div10}->GetValue);
 
 
-  if (not -e File::Spec->catfile($scan_folder, $stub.'.001')) {
+  #print '>>>>', $app->{base}->scan_file_template, $/;
+  #print '>>>>', File::Spec->catfile($scan_folder, $app->{base}->file_template($app->{base}->scan_file_template)), $/;
+  if (not -e File::Spec->catfile($scan_folder, $app->{base}->file_template($app->{base}->scan_file_template))) {
     $app->{main}->status("Scan file for $stub not found in $scan_folder.", 'alert');
     return;
   };

@@ -121,6 +121,11 @@ sub mask {
 	last STEPS;
       };
 
+      ($args[0] eq 'useshield') and do {
+	$self->do_step('useshield', %args);
+	last STEPS;
+      };
+
       print report("I don't know what to do with \"$st\"", 'bold red');
     };
   };
@@ -169,17 +174,19 @@ sub check {
   };
 
   ## does scan file exist?
-  my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self->scan_file_template));
-  $self->scanfile($scanfile);
-  if (not -e $scanfile) {
-    $ret->message("Scan file \"$elastic\" does not exist");
-    $ret->status(0);
-    return $ret;
-  };
-  if (not -r $scanfile) {
-    $ret->message("Scan file \"$elastic\" cannot be read");
-    $ret->status(0);
-    return $ret;
+  if (not $self->noscan) {
+    my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self->scan_file_template));
+    $self->scanfile($scanfile);
+    if (not -e $scanfile) {
+      $ret->message("Scan file \"$elastic\" does not exist");
+      $ret->status(0);
+      return $ret;
+    };
+    if (not -r $scanfile) {
+      $ret->message("Scan file \"$elastic\" cannot be read");
+      $ret->status(0);
+      return $ret;
+    };
   };
 
   $self->elastic_image($self->Read($self->elastic_file));
@@ -339,6 +346,20 @@ sub andmask {
   $self->elastic_image->inplace->gt(0,0);
   $self->npixels($self->elastic_image->sum);
   my $str = $self->report("Making AND mask", 'cyan');
+  $ret->status($self->npixels);
+  $ret->message($str);
+  return $ret;
+};
+
+sub useshield {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+  my $shield = rim($self->mask_file('shield', 'gif'));
+  $shield -> inplace -> eq(0,0);
+  $self->elastic_image->inplace->mult($shield,0);
+  $self->npixels($self->elastic_image->sum);
+  my $str = $self->report("Applying shield", 'cyan');
   $ret->status($self->npixels);
   $ret->message($str);
   return $ret;

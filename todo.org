@@ -1,6 +1,13 @@
 #+STARTUP: showall
 * Bugs and limitations in Xray::BLA and Metis
 
+** From Feb 2016 experiment
+
+ - [ ] Need to generalize how XES spectrum is made in terms of how the
+   XES measurement image is selected.  This experiment has a couple
+   different examples of needing to specify a measurement image with
+   having a scan file.
+
 ** Issues with Xray::BLA [4/16]
 
  - [ ] More robust error handling.

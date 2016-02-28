@@ -74,6 +74,7 @@ has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1,
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The base of filenames from a measurement.");
+has 'noscan'		 => (is => 'rw', isa => 'Bool', default => 0,);
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The name of the text file containing the scan data.");
 has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{},
@@ -87,6 +88,8 @@ has 'energycounterwidth' => (is => 'rw', isa => 'Str', default => 5,
 has 'outfolder'		 => (is => 'rw', isa => 'Str', default => q{},
 			     trigger => sub{my ($self, $new) = @_; mkpath($new) if not -d $new;},
 			     documentation => "The location on disk to which processed data and images are written.");
+has 'tifscale'           => (is => 'rw', isa => 'Int', default => 1,
+			     documentation => "Scaling factor when reading tif images -- 1 or 2**24.");
 has 'cleanup'		 => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "A flag for removing outfolder when the process finishes -- should be 0 for CLI and 1 for GUI.");
 has 'outimage'           => (is => 'rw', isa => 'Str', default => q{gif},
@@ -494,7 +497,9 @@ sub apply_mask {
   local $|=1;
 
   my $image;
-  if ($#{$self->scan_file_list} > -1) {
+  if ($args{xesimage}) {
+    $image = $args{xesimage};
+  } elsif ($#{$self->scan_file_list} > -1) {
     $image = $self->scan_file_list->[$tif-1];
   } else {
     $image = File::Spec->catfile($self->tiffolder, $self->file_template($self->image_file_template, $tif));
@@ -582,7 +587,9 @@ sub scan {
     push @data, [@point];
     $self->push_xdata($point[0]);
     $self->push_ydata($point[1]);
-    $self->push_mudata(log($point[2]/$point[3]));
+    my $ratio = $point[2]/$point[3];
+    my $trans = ($ratio > 0) ? log($ratio) : 0;
+    $self->push_mudata($trans);
     ++$i;
   };
   close $SCAN;
@@ -679,10 +686,22 @@ sub compute_xes {
   $args{verbose}  ||= 0;
   $args{incident} ||= 0;
   $args{xdiini}   ||= $self->xdi_metadata_file || q{};
+  $args{xesimage} ||= 0;
+  if ($args{xesimage} =~ m{\A\d\z}) { # this is from a sequence of repetitions above the edge
+    $self->incident($args{xesimage});
+    my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
+    $args{xesimage} = File::Spec->catfile($self->tiffolder, $file);
+  } else {
+    $self->incident(0);
+    $args{xesimage} = File::Spec->catfile($self->tiffolder, $args{xesimage});
+  };
   my $ret = Xray::BLA::Return->new;
-
-  $self->get_incident($args{incident});
-  print $self->report("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
+  if ($self->noscan) {
+    print $self->report("Making XES for ".$self->stub, 'yellow') if $args{verbose};
+  } else {
+    $self->get_incident($args{incident});
+    print $self->report("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
+  };
 
   my @values  = ();
   my @npixels = ();
@@ -694,7 +713,7 @@ sub compute_xes {
     $self -> energy($e);
     my $ret = $self -> read_mask(verbose=>0);
     print(0) && exit(1) if not $ret->status;
-    my $value = $self->apply_mask($self->nincident, verbose=>0, silence=>1)->status;
+    my $value = $self->apply_mask($self->nincident, verbose=>0, silence=>0, xesimage=>$args{xesimage})->status;
     #my $max = $self->elastic_image->flat->max;
     my $np = int($self->elastic_image->flat->sumover->sclr);
     push @values, $value;

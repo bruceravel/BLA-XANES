@@ -17,6 +17,7 @@ sub Read {
   my $longs = $bytes / 4;
 
   my $img  = readflex($file, [ { Type=>'long', NDims=>1, Dims=>[$longs] } ]);
+  $img /= $self->tifscale;
   my $im2d = $img(1024:-1)->splitdim(0,$IMAGE_WIDTH);
   $im2d->badflag(1);
   #$im2d->inplace->setvaltobad(0);

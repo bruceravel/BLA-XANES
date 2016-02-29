@@ -6,9 +6,21 @@
  - [ ] Need to generalize how XES spectrum is made in terms of how the
    XES measurement image is selected.  This experiment has a couple
    different examples of needing to specify a measurement image with
-   having a scan file.
+   having a scan file.  See --xesimage in bla.
 
-** Issues with Xray::BLA [4/16]
+ - [ ] Jeremy's Lv thing, like the _v Bi measurements. make the shield
+   start, say, 3 back.  Do it in regions, changing parameters as
+   needed.  See [[file:~/Data/NIST/10ID/pt/Lv.ini][Lv.ini]].
+
+ - [ ] Need to integrate shield into workflow much more tightly,
+   switch in GUI to turn it on.  The under-the-hood workflow will
+   necessarily be the same:
+   1. Run through mask creation
+   2. Run through shield creation
+   3. Re-run mask creation with shields
+   4. Make XES with shielded masks
+
+** Issues with Xray::BLA [5/16]
 
  - [ ] More robust error handling.
 
@@ -49,7 +61,7 @@
  - [X] Figure out element and emission line by comparing the midpoint
    of the range of elastic energies to a table of line energies.
 
- - [ ] Use of XDI is undocumented.  And incomplete.  And, frankly,
+ - [X] Use of XDI is undocumented.  And incomplete.  And, frankly,
    Xray::XDI needs attention.
 
  - [ ] Think about how to use HDF5 to store images, scans, scan
@@ -123,7 +135,7 @@
 ** Rough milestones
 
  - [X] *Version 2* : XES and RIXS working in Metis
- - [ ] *Version 3* : Whatever is required of Feb 2016 beamtime
+ - [ ] *Version 3* : Whatever is required of Feb 2016 beamtime, write a document for use at BL
  - [ ] *Version 4* : proper test suite, test for and handle edge cases (what did I mean by this?)
  - [ ] *Version 5* : map and mapmask working in Metis
  - [ ] *Version 6* : persistance in Metis, save and recover to current position

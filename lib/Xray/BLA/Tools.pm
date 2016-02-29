@@ -16,6 +16,7 @@ sub file_template {
 	       e   => $self->energy,
 	       i   => $self->incident,
 	       t   => $self->tiffcounter,
+	       T   => sprintf("%3.3d", $self->energy),
 	       c   => $counter,
 	       '%' => '%'
 	      );

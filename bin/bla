@@ -216,7 +216,8 @@ MODE: {
 
   ($mode eq 'test') and do {
     #die "tests for the BLA code (none currently)...\n";
-    my $buffer = 18;
+    #my $buffer = 18;
+    my $buffer = 3;
     opendir(my $PROC, $spectrum->outfolder);
     my $regex = $spectrum->stub . '_\d+_mask';
     my @all_elastic = sort grep {$_ =~ m{$regex}} readdir $PROC;

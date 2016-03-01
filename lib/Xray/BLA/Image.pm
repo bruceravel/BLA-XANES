@@ -1,5 +1,6 @@
 package Xray::BLA::Image;
 
+use Image::Info qw(image_info);
 use Moose::Role;
 use PDL::Lite;
 use PDL::IO::FlexRaw;
@@ -7,6 +8,15 @@ use PDL::NiceSlice;
 
 use Const::Fast;
 const my $IMAGE_WIDTH => 487;
+
+# has 'pilatus_metadata' => (
+# 			   traits    => ['Hash'],
+# 			   is        => 'rw',
+# 			   isa       => 'HashRef',
+# 			   default   => sub { {} },
+# 			   documentation => "A hash reference containing metadata from the tif image produced by the Pilatus."
+# 			  );
+
 
 ## A million thanks to Chris Marshall for his help on the problem
 ## of reading signed 32 bit tiff files!
@@ -24,7 +34,39 @@ sub Read {
   my ($c, $r) = $im2d->dims;
   $self->columns($c);
   $self->rows($r);
+  #$self->fetch_metadata;
   return $im2d;
+};
+
+sub fetch_metadata {
+  my ($self, $file) = @_;
+  my $info = image_info($file);
+  #dd $info;
+  my $text = $info->{ImageDescription};
+  $text =~ s{\# }{}g;
+  $text =~ s{\r}{}g;
+  my @lines = split($/, $text);
+
+  my $pilatus = {};
+  foreach my $key (qw(Model DateTime BitsPerSample width height)) {
+    $info->{$key} =~ s{\0}{}g;
+    $pilatus->{$key} = $info->{$key};
+  };
+
+  foreach my $l (@lines) {
+    if ($l =~ m{:}) {
+      my @this = split(/\s*:\s*/, $l);
+      $pilatus->{$this[0]} = $this[1];
+    } elsif ($l =~ m{=}) {
+      my @this = split(/\s*=\s*/, $l);
+      $pilatus->{$this[0]} = $this[1];
+    } else { 			# there are 21 poorly formatted lines
+      my @this = split(/\s+(?=[0-9(])/, $l, 2);
+      $pilatus->{$this[0]} = $this[1];
+    };
+  };
+  #$self->pilatus_metadata($pilatus);
+  return $pilatus;
 };
 
 ## The following is from Tim Haines:

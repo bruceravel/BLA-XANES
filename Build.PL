@@ -15,6 +15,7 @@ my $build = Module::Build
 				'Moose'			    => '1.21',
 				'MooseX::Aliases'           => '0',
 				'Config::IniFiles'          =>  0,
+				'Image::Info'               =>  1.38,
 				'List::Compare'             =>  0,
 				'Math::Random'              =>  0,
 				'Math::Round'               =>  0,

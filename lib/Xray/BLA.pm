@@ -726,7 +726,7 @@ sub compute_xes {
 
   my @xes = ();
   foreach my $i (0 .. $#npixels) {
-    push @xes, [$self->elastic_energies->[$i], $npixels[$i]*$values[$i], $npixels[$i], $values[$i], ];
+    push @xes, [$self->elastic_energies->[$i], $values[$i]/$npixels[$i], $npixels[$i], $values[$i], ];
   };
   my $outfile;
   #if (($XDI_exists) and (-e $args{xdiini})) {

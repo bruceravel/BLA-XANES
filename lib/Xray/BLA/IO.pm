@@ -42,7 +42,9 @@ sub mask_file {
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "shield").'.');
   } else {
     my $id = ($which eq 'mask') ? q{} :"_$which";
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "mask$id").'.');
+    my $energy = $self->energy;
+    $energy = sprintf("%3.3d", $self->energy) if $energy < 1000;
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $energy, "mask$id").'.');
   };
   $fname .= $type;
   return $fname;

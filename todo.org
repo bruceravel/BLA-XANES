@@ -24,6 +24,9 @@
 
  - [ ] More robust error handling.
 
+ - [ ] energy in mask file name is awkwardly handled at Xray::BLA::IO
+   lines 45-46
+
  - [X] When a mask processing step results in 0 illuminated pixels,
    Metis crashes.  Should reset working_image to prior state if 0
    pixels illuminated.

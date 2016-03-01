@@ -217,6 +217,11 @@ MODE: {
   ($mode eq 'test') and do {
     #die "tests for the BLA code (none currently)...\n";
     #my $buffer = 18;
+
+    # my $hash = $spectrum->fetch_metadata(File::Spec->catfile($spectrum->tiffolder, $xesimage));
+    # use Data::Dump::Color;
+    # dd $hash;
+
     my $buffer = 3;
     opendir(my $PROC, $spectrum->outfolder);
     my $regex = $spectrum->stub . '_\d+_mask';
@@ -235,16 +240,17 @@ MODE: {
       my $pdl;
       $pdl = PDL::Core::zeros($toss->dims);
       if ($count > $buffer) {
-	$pdl = $last + rim(File::Spec->catfile($spectrum->outfolder, $all_elastic[$count-$buffer+1]));
-	my $kernel = PDL::Core::ones(2,2);
-	my $smoothed = $last->gt(0,0)->or2( $pdl->conv2d($kernel, {Boundary => 'Truncate'})->ge(2,0), 0 );
-	$pdl = $smoothed;
+    	$pdl = $last + rim(File::Spec->catfile($spectrum->outfolder, $all_elastic[$count-$buffer+1]));
+    	my $kernel = PDL::Core::ones(2,2);
+    	my $smoothed = $last->gt(0,0)->or2( $pdl->conv2d($kernel, {Boundary => 'Truncate'})->ge(2,0), 0 );
+    	$pdl = $smoothed;
       };
       $pdl -> wim($out);
       $last = $pdl;
       ++$count;
     };
     print $/;
+
     last MODE;
   };
 

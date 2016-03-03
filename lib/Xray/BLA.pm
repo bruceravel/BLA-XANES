@@ -687,13 +687,15 @@ sub compute_xes {
   $args{incident} ||= 0;
   $args{xdiini}   ||= $self->xdi_metadata_file || q{};
   $args{xesimage} ||= 0;
-  if ($args{xesimage} =~ m{\A\d\z}) { # this is from a sequence of repetitions above the edge
-    $self->incident($args{xesimage});
-    my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
-    $args{xesimage} = File::Spec->catfile($self->tiffolder, $file);
-  } else {
-    $self->incident(0);
-    $args{xesimage} = File::Spec->catfile($self->tiffolder, $args{xesimage});
+  if ($args{xesimage}) {
+    if ($args{xesimage} =~ m{\A\d+\z}) { # this is from a sequence of repetitions above the edge
+      $self->incident($args{xesimage});
+      my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
+      $args{xesimage} = File::Spec->catfile($self->tiffolder, $file);
+    } else {
+      $self->incident(0);
+      $args{xesimage} = File::Spec->catfile($self->tiffolder, $args{xesimage});
+    };
   };
   my $ret = Xray::BLA::Return->new;
   if ($self->noscan) {
@@ -722,15 +724,15 @@ sub compute_xes {
   };
   $counter->close if ($self->screen and ($self->ui eq 'cli'));
   my $max = max(@npixels);
-  @npixels = map {$max / $_} @npixels;
+  my @scalepixels = map {$max / $_} @npixels;
 
   my @xes = ();
   foreach my $i (0 .. $#npixels) {
-    push @xes, [$self->elastic_energies->[$i], $values[$i]/$npixels[$i], $npixels[$i], $values[$i], ];
+    push @xes, [$self->elastic_energies->[$i], $values[$i]*$scalepixels[$i], $npixels[$i], $values[$i], ];
   };
   my $outfile;
   #if (($XDI_exists) and (-e $args{xdiini})) {
-  $outfile = $self->xdi_xes($args{xdiini}, \@xes);
+  $outfile = $self->xdi_xes($args{xdiini}, $args{xesimage}, \@xes);
   #} else {
   #  $outfile = $self->dat_xes(\@xes);
   #};

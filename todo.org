@@ -12,6 +12,11 @@
    start, say, 3 back.  Do it in regions, changing parameters as
    needed.  See [[file:~/Data/NIST/10ID/pt/Lv.ini][Lv.ini]].
 
+ - [ ] Capture exposure time from pilatus metadata
+
+ - [ ] Track metadata about sample through bla ini file (with TextCtrl
+   in metis)
+
  - [ ] Need to integrate shield into workflow much more tightly,
    switch in GUI to turn it on.  The under-the-hood workflow will
    necessarily be the same:

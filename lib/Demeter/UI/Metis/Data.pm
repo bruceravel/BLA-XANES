@@ -369,7 +369,7 @@ sub save_xes {
   my $file = $fd->GetPath;
   copy($self->{xesout}, $file);
   #open(my $O, '>', $file);
-  #print $O $spectrum->xdi_xes_head($spectrum->xdi_metadata_file);
+  #print $O $spectrum->xdi_xes_head($spectrum->xdi_metadata_file, <xesimage file name>);
   #print $O read_text($self->{xesout});
   #close $0;
   $app->{main}->status("Saved XES to ".$file);

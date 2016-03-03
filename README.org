@@ -390,7 +390,7 @@ will not run to completion.
 Using ImageMagick on the output masks:
 
    #+BEGIN_SRC sh
-   convert -layers OptimizePlus -delay 25x100 <stub>_*_mask.gif -loop 0 anim.gif
+   convert -layers OptimizePlus -delay 5x100 *mask.gif -loop 0 mask_animation.gif
    #+END_SRC
 
 *** XDI Output

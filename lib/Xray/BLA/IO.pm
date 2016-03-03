@@ -60,7 +60,8 @@ sub xdi_out {
   my $fname = join("_", $self->stub, $self->energy) . '.xdi';
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
   open(my $O, '>', $outfile);
-  print $O "# XDI/1.0 BLA/" . $Xray::BLA::VERSION, $/;
+  my $pilatus = $self->fetch_metadata($self->elastic_image);
+  print $O "# XDI/1.0 PILATUS/100K BLA/" . $Xray::BLA::VERSION, $/;
 
   my @labels = ();
   my @units  = ();
@@ -79,6 +80,10 @@ sub xdi_out {
     };
   };
 
+  printf $O "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
+  printf $O "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_energy};
+  printf $O "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
+  printf $O "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
   printf $O "# %s.%s: %s\n", "BLA", "illuminated_pixels", $self->npixels;
   printf $O "# %s.%s: %s\n", "BLA", "total_pixels", $self->columns*$self->rows;
   if ($self->task eq 'rixs') {
@@ -125,8 +130,8 @@ sub dat_out {
 
 
 sub xdi_xes_head {
-  my ($self, $xdiini) = @_;
-  my $text = "# XDI/1.0 BLA/" . $Xray::BLA::VERSION . $/;
+  my ($self, $xdiini, $xesimage) = @_;
+  my $text = "# XDI/1.0 PILATUS/100K BLA/" . $Xray::BLA::VERSION . $/;
   tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
   foreach my $fam (sort keys %beamline) {
     next if $fam eq 'column';
@@ -135,17 +140,30 @@ sub xdi_xes_head {
       $text .= sprintf "# %s.%s: %s\n", ucfirst($this), $item, $beamline{$fam}->{$item};
     };
   };
+  my $pilatus = $self->fetch_metadata($xesimage);
+  $text .= sprintf "# %s.%s: %s\n", "Element", "element", $self->element;
+  $text .= sprintf "# %s.%s: %s\n", "Element", "line", $self->line;
+  $text .= sprintf "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
+  $text .= sprintf "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_setting};
+  $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
+  $text .= sprintf "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
+  $text .= sprintf "# %s.%s: %s\n", "BLA", "xesimage", $xesimage;
   $text .= "# /////////////////////////\n";
   return $text;
 };
 
 sub xdi_xes {
-  my ($self, $xdiini, $rdata) = @_;
-  my $fname = join("_", $self->stub, 'xes', $self->incident) . '.xdi';
+  my ($self, $xdiini, $xesimage, $rdata) = @_;
+  my $fname;
+  if ($self->incident < 1000) {
+    $fname = join("_", $self->stub, 'xes', sprintf('%2.2d', $self->incident)) . '.xdi';
+  } else {
+    $fname = join("_", $self->stub, 'xes', $self->incident) . '.xdi';
+  };
   my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
   open(my $O, '>', $outfile);
 
-  print $O $self->xdi_xes_head($xdiini);
+  print $O $self->xdi_xes_head($xdiini, $xesimage);
   print $O "# Mask building steps:\n";
   foreach my $st (@{$self->steps}) {
     print $O "#   $st\n";

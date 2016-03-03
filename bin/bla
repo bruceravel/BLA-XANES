@@ -196,7 +196,6 @@ MODE: {
     };
     my $ret;
     if ($xesimage) {
-      print $xesimage, $/;
       $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point, xesimage=>$xesimage);
     } else {
       $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point);
@@ -222,7 +221,7 @@ MODE: {
     # use Data::Dump::Color;
     # dd $hash;
 
-    my $buffer = 3;
+    my $buffer = 15;
     opendir(my $PROC, $spectrum->outfolder);
     my $regex = $spectrum->stub . '_\d+_mask';
     my @all_elastic = sort grep {$_ =~ m{$regex}} readdir $PROC;

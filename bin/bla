@@ -152,6 +152,48 @@ MODE: {
     last MODE;
   };
 
+  ($mode eq 'plane') and do {
+    warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
+    foreach my $e (@elastic) {
+      $spectrum -> energy($e);
+      my $file = $spectrum->mask_file("mask", $spectrum->outimage);
+      if (not -e $file) {
+      	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
+      } elsif (not $reuse) {
+      	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
+      } else {
+      	1;			# do nothing
+      };
+    };
+    my $holol;
+    my $count = 0;
+    my $save = $spectrum->ui;
+    $spectrum->ui('none');
+    foreach my $e (@elastic) {
+      ++$count;
+      $spectrum -> energy($e);
+      my $ret;
+      my $file = $spectrum->file_template($spectrum->elastic_file_template);
+      print " $e";
+      printf(" (this is #%d of %d)\n", $count, $#elastic+1) if (not $count%5);
+      $ret = $spectrum -> compute_xes(verbose=>0, xdiini=>$xdiini, incident=>$e, xesimage=>$file, nofile=>1);
+      ## $ret is a list-of-lists
+      $holol->{$e} = $ret;
+    };
+    #use Data::Dump::Color;
+    #dd $holol;
+    foreach my $incident (sort keys %$holol) {
+      foreach my $line (@{$holol->{$incident}}) {
+	##                  incident energy  emission en.     energy loss              intensity
+	print $OUT join("\t", $incident/10, $line->[0]/10, ($incident-$line->[0])/10, $line->[1]), $/;
+      };
+      print $OUT $/;
+    };
+    $spectrum->ui($save);
+    ## write accumulated data to a gnuplot-friendly file
+    last MODE;
+  };
+
   ($mode eq 'map') and do {
     my $need_to_check = 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;

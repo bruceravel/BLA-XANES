@@ -50,7 +50,7 @@ my @line_list = @{$$Xray::Absorption::Elam::r_elam{sorted}};
 ##with 'MooseX::MutatorAttributes';
 ##with 'MooseX::SetGet';		# this is mine....
 
-enum 'BlaModes' => [qw(cli wx)];
+enum 'BlaModes' => [qw(cli wx none)];
 coerce 'BlaModes',
   from 'Str',
   via { lc($_) };
@@ -61,7 +61,7 @@ has 'element'            => (is => 'rw', isa => 'Str', default => q{},
 has 'line'               => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The Siegbahn or IUPAC symbol of the measured emission line.");
 
-enum 'BlaTasks' => [qw(herfd rixs point map mask xes test list none)];
+enum 'BlaTasks' => [qw(herfd rixs point map mask xes plane test list none)];
 coerce 'BlaTasks',
   from 'Str',
   via { lc($_) };
@@ -687,11 +687,14 @@ sub compute_xes {
   $args{incident} ||= 0;
   $args{xdiini}   ||= $self->xdi_metadata_file || q{};
   $args{xesimage} ||= 0;
+  $args{nofile}   ||= 0;
   if ($args{xesimage}) {
     if ($args{xesimage} =~ m{\A\d+\z}) { # this is from a sequence of repetitions above the edge
       $self->incident($args{xesimage});
       my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
       $args{xesimage} = File::Spec->catfile($self->tiffolder, $file);
+    } elsif (-e $args{xesimage}) {
+      1; # do nothing
     } else {
       $self->incident(0);
       $args{xesimage} = File::Spec->catfile($self->tiffolder, $args{xesimage});
@@ -699,7 +702,7 @@ sub compute_xes {
   };
   my $ret = Xray::BLA::Return->new;
   if ($self->noscan) {
-    print $self->report("Making XES for ".$self->stub, 'yellow') if $args{verbose};
+    print $self->report("Making XES from ".$args{xesimage}, 'yellow') if $args{verbose};
   } else {
     $self->get_incident($args{incident});
     print $self->report("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
@@ -730,6 +733,12 @@ sub compute_xes {
   foreach my $i (0 .. $#npixels) {
     push @xes, [$self->elastic_energies->[$i], $values[$i]*$scalepixels[$i], $npixels[$i], $values[$i], ];
   };
+
+  if ($args{nofile}) {
+    # for plane calculation, return \@xes here for accumulation
+    return \@xes;
+  };
+  
   my $outfile;
   #if (($XDI_exists) and (-e $args{xdiini})) {
   $outfile = $self->xdi_xes($args{xdiini}, $args{xesimage}, \@xes);

@@ -12,6 +12,7 @@ use Config::IniFiles;
 use Getopt::Long;
 use Pod::Usage;
 use Scalar::Util qw(looks_like_number);
+use Term::Sk;
 
 my $energy      = 0;
 my $point       = -1;
@@ -165,32 +166,29 @@ MODE: {
       	1;			# do nothing
       };
     };
-    my $holol;
+    my $holol;			# compute_xes returns a list-of-lists, so this is a hash-of-lol
     my $count = 0;
     my $save = $spectrum->ui;
     $spectrum->ui('none');
+
+    my $counter;
+    $counter = Term::Sk->new('Computing RIXS plane, time elapsed: %8t %15b (emission energy %c of %m)',
+			     {freq => 's', base => 1, target=>$#elastic+1}) if ($verbose);
     foreach my $e (@elastic) {
+      $counter->up if $verbose;
       ++$count;
       $spectrum -> energy($e);
       my $ret;
       my $file = $spectrum->file_template($spectrum->elastic_file_template);
-      print " $e";
-      printf(" (this is #%d of %d)\n", $count, $#elastic+1) if (not $count%5);
       $ret = $spectrum -> compute_xes(verbose=>0, xdiini=>$xdiini, incident=>$e, xesimage=>$file, nofile=>1);
-      ## $ret is a list-of-lists
-      $holol->{$e} = $ret;
+      $holol->{$e} = $ret;	# $ret is a list-of-lists
     };
+    $counter->close if $verbose;
     #use Data::Dump::Color;
     #dd $holol;
-    foreach my $incident (sort keys %$holol) {
-      foreach my $line (@{$holol->{$incident}}) {
-	##                  incident energy  emission en.     energy loss              intensity
-	print $OUT join("\t", $incident/10, $line->[0]/10, ($incident-$line->[0])/10, $line->[1]), $/;
-      };
-      print $OUT $/;
-    };
+    my $planefile = $spectrum->rixs_plane($holol, xdiini=>$xdiini);
+    $spectrum->report("Wrote $planefile", 'bold green');
     $spectrum->ui($save);
-    ## write accumulated data to a gnuplot-friendly file
     last MODE;
   };
 
@@ -236,6 +234,7 @@ MODE: {
 	1;			# do nothing
       };
     };
+    $Xray::BLA::stack = undef;
     my $ret;
     if ($xesimage) {
       $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point, xesimage=>$xesimage);

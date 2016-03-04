@@ -23,6 +23,7 @@ use PDL::Lite;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
 use PDL::IO::Dumper;
+use PDL::Ufunc qw(sumover);
 
 use File::Copy;
 use File::Path;
@@ -673,12 +674,52 @@ sub rixs_map {
   return $ret;
 };
 
+# compute_xes returns a list-of-lists, so $holol is a hash-of-lol
+sub rixs_plane {
+  my ($self, $holol, @args) = @_;
+  my %args = @args;
+  $args{xdiini} ||= $self->xdi_metadata_file || q{};
+  my $planefile = $self->mask_file("rixsplane", $self->outimage);
+  open(my $OUT, '>', $planefile);
+
+  my $text = $self->xdi_xes_head($args{xdiini}, 0);
+  foreach my $l (split(/\n/, $text)) {
+    next if ($l =~ m{\A\# Column});
+    if ($l =~ m{////}) {
+      print $OUT "# Column.1: incident energy eV\n";
+      print $OUT "# Column.2: emission energy eV\n";
+      print $OUT "# Column.3: energy loss eV\n";
+      print $OUT "# Column.4: emission intensity\n";
+    };
+    print $OUT $l, $/;
+  };
+  print $OUT "# Mask building steps:\n";
+  foreach my $st (@{$self->steps}) {
+    print $OUT "#   $st\n";
+  };
+  print $OUT "# -------------------------\n";
+  print $OUT '# ' . join("  ", qw(incident emission loss intensity)), $/;
+  foreach my $incident (sort keys %$holol) {
+    foreach my $line (@{$holol->{$incident}}) {
+      ##                  incident energy  emission en.     energy loss              intensity
+      print $OUT join("\t", $incident/10, $line->[0]/10, ($incident-$line->[0])/10, $line->[1]), $/;
+    };
+    print $OUT $/;
+  };
+  close $OUT;
+  return $planefile;
+};
+
 
 
 ##################################################################################
 ## XES functionality
 ##################################################################################
 
+## need to undef this when doing the xes task, but use it as defined
+## when doing the plane task
+## TODO: implement correctly in metis
+our $stack;
 
 sub compute_xes {
   my ($self, @args) = @_;
@@ -708,24 +749,40 @@ sub compute_xes {
     print $self->report("Making XES at incident energy ".$self->incident, 'yellow') if $args{verbose};
   };
 
-  my @values  = ();
-  my @npixels = ();
-  my $counter;
-  $counter = Term::Sk->new('Computing XES, time elapsed: %8t %15b (emission energy %c of %m)',
-			   {freq => 's', base => 0, target=>$#{$self->elastic_energies}}) if ($self->ui eq 'cli');
-  foreach my $e (@{$self->elastic_energies}) {
-    $counter->up if ($self->screen and ($self->ui eq 'cli'));
-    $self -> energy($e);
-    my $ret = $self -> read_mask(verbose=>0);
-    print(0) && exit(1) if not $ret->status;
-    my $value = $self->apply_mask($self->nincident, verbose=>0, silence=>0, xesimage=>$args{xesimage})->status;
-    #my $max = $self->elastic_image->flat->max;
-    my $np = int($self->elastic_image->flat->sumover->sclr);
-    push @values, $value;
-    push @npixels, $np/$self->eimax;
-    #print "$e  $value  $np\n";
+  ## new, vector, faster way
+  if (not defined($stack)) {
+    my @stack;
+    foreach my $e (@{$self->elastic_energies}) {
+      $self->energy($e);
+      my $ret = $self -> read_mask(verbose=>0);
+      my $fname = $self->mask_file("mask", $self->outimage);
+      push @stack, rim($fname);	# can this be made faster and fully PDL-y?
+    };
+    $stack = PDL::Core::pdl(@stack);
   };
-  $counter->close if ($self->screen and ($self->ui eq 'cli'));
+  my $image = $self->Read($args{xesimage});
+  my @npixels = sumover(sumover($stack))->list;
+  my @values  = sumover(sumover($stack*$image))->list;
+
+  ## old, scalar, slower way
+  # my @values  = ();
+  # my @npixels = ();
+  # my $counter;
+  # $counter = Term::Sk->new('Computing XES, time elapsed: %8t %15b (emission energy %c of %m)',
+  # 			   {freq => 's', base => 0, target=>$#{$self->elastic_energies}}) if ($self->ui eq 'cli');
+  # foreach my $e (@{$self->elastic_energies}) {
+  #   $counter->up if ($self->screen and ($self->ui eq 'cli'));
+  #   $self -> energy($e);
+  #   my $ret = $self -> read_mask(verbose=>0);
+  #   print(0) && exit(1) if not $ret->status;
+  #   my $value = $self->apply_mask($self->nincident, verbose=>0, silence=>0, xesimage=>$args{xesimage})->status;
+  #   #my $max = $self->elastic_image->flat->max;
+  #   my $np = int($self->elastic_image->flat->sumover->sclr);
+  #   push @values, $value;
+  #   push @npixels, $np/$self->eimax;
+  #   #print "$e  $value  $np\n";
+  # };
+  # $counter->close if ($self->screen and ($self->ui eq 'cli'));
   my $max = max(@npixels);
   my @scalepixels = map {$max / $_} @npixels;
 
@@ -738,7 +795,7 @@ sub compute_xes {
     # for plane calculation, return \@xes here for accumulation
     return \@xes;
   };
-  
+
   my $outfile;
   #if (($XDI_exists) and (-e $args{xdiini})) {
   $outfile = $self->xdi_xes($args{xdiini}, $args{xesimage}, \@xes);

@@ -32,7 +32,8 @@ if ($ANSIColor_exists) {
 };
 
 
-has 'prompt'    => (is => 'rw', isa => 'Str', default => "Hit return to continue> ");
+has 'prompt'    => (is => 'rw', isa => 'Str', default => "Hit return to continue> ",
+		    documentation => 'String for a command line prompt.');
 has 'highlight' => (is => 'rw', isa => 'Str', default => 'underline',
 		    trigger => sub{my ($self, $new) = @_;
 				   if (lc($new) eq 'underline') {
@@ -43,8 +44,10 @@ has 'highlight' => (is => 'rw', isa => 'Str', default => 'underline',
 				     $self->hl(q{});
 				   };
 				 },
+		    documentation => 'English text describing the highlighting of the command line prompt.'
 		   );
-has 'hl'        => (is => 'rw', isa => 'Str', default => sub{UNDERLINE});
+has 'hl'        => (is => 'rw', isa => 'Str', default => sub{UNDERLINE},
+		    documentation => 'ANSI escape sequence for the highlighting of the command line prompt.');
 
 sub pause {
   my ($self, $length) = @_;

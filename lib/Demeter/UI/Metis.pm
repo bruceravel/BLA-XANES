@@ -61,7 +61,7 @@ sub OnInit {
       $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
     foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
-		      lonely_pixel_value scalemask radius)) {
+		      lonely_pixel_value scalemask radius shield)) {
       $app->{base}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
     };
   } else {
@@ -214,12 +214,14 @@ sub set_parameters {
   $app->{base} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
   $app->{base} -> radius($app->{Mask}->{arealvalue}->GetValue);
 
+  ## shield
+
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
   foreach my $k (qw(scanfolder tifffolder element line color palette
 		    imagescale outimage terminal energycounterwidth tiffcounter
 		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
 		    bad_pixel_value weak_pixel_value social_pixel_value
-		    lonely_pixel_value scalemask radius div10
+		    lonely_pixel_value scalemask radius div10 shield
 		  )) {
     ## push values into yaml
     $app->{yaml}->[0]->{$k} = $app->{base}->$k;

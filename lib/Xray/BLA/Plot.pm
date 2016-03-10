@@ -22,10 +22,13 @@ use File::Basename;
 use List::MoreUtils qw(all none any);
 use Math::Random;
 
-has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20);
-has 'color'   => (is => 'rw', isa => 'Str', default => 'grey');
+has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20,
+		  documentation => "Forced upper bound to the color range of the surface plot.");
+has 'color'   => (is => 'rw', isa => 'Str', default => 'grey',
+		  documentation => 'Color scheme for the palette used in mask surface plots.');
 has 'palette' => (is => 'rw', isa => 'Str', ## greys
-		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )" );
+		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
+		  documentation => 'The Gnuplot definition of the surface plot palette.');
 
 ## These are the single hue, sequential palettes from Color Brewer
 ##   http://colorbrewer2.org/

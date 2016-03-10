@@ -22,6 +22,7 @@ use PDL::Lite;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
 use PDL::IO::Dumper;
+use List::MoreUtils qw(onlyidx);
 use List::Util qw(sum max);
 use Math::Round qw(round);
 
@@ -43,6 +44,11 @@ sub mask_file {
     $type = 'dat';
   } elsif ($which eq 'shield') {
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "shield").'.');
+  } elsif ($which eq 'previousshield') {
+    my $i = onlyidx {$_ == $self->energy} @{$self->elastic_energies};
+    return q{} if not $i;
+    my $prev = $self->elastic_energies->[$i-1];
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $prev, "shield").'.');
   } else {
     my $id = ($which eq 'mask') ? q{} :"_$which";
     my $energy = $self->energy;

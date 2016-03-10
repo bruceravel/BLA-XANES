@@ -22,6 +22,8 @@ use PDL::IO::Pic qw(wim rim);
 use PDL::IO::Dumper;
 use PDL::Image2D;
 
+use File::Basename;
+use List::MoreUtils qw(onlyidx);
 
 sub mask {
   my ($self, @args) = @_;
@@ -275,6 +277,14 @@ sub bad_pixels {
 
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
   my $bad  = $ei->gt($bpv,0);	# mask of bad pixels
+
+  #my $splotch = [[363,111,6], [340,158,6], [427,44,2], [433,78,4], [313,58,6]];
+  foreach my $spot (@{$self->spots}) {
+    my $toss = PDL::Basic::rvals($ei->dims, {Centre=>[$spot->[0],$spot->[1]]})->inplace->lt($spot->[2],0);
+    $bad += $toss;
+  };
+  $bad->inplace->gt(0,0);	# in case of overlapping circles....
+
   my $weak = $ei->lt($wpv,0);	# mask of weak pixels
   $self->nbad($bad->sum);
   $ei  = $ei * (1-$bad) * (1-$weak); # remove bad and weak pixels
@@ -355,11 +365,41 @@ sub useshield {
   my ($self, $rargs) = @_;
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
-  my $shield = rim($self->mask_file('shield', 'gif'));
-  $shield -> inplace -> eq(0,0);
+  my $shield = PDL::Core::zeros($self->elastic_image->dims);
+  my $prevfile = $self->mask_file('previousshield', 'gif');
+  my ($mask, $maskfile);
+  my $pdl;
+  if ($prevfile) {
+    my $prev = rim($prevfile);
+    my $i = onlyidx {$_ == $self->energy} @{$self->elastic_energies};
+    $pdl = PDL::Core::zeros($self->elastic_image->dims);
+    if ($i > $self->shield) {
+      my ($thise, $olde) = ($self->energy, $self->elastic_energies->[$i-$self->shield+1]);
+      $maskfile = $self->mask_file('mask', 'gif');
+      $maskfile =~ s{$thise}{$olde};
+      $mask = rim($maskfile);
+      $pdl = $prev + $mask;
+      my $kernel = PDL::Core::ones(2,2);
+      my $smoothed = $pdl->gt(0,0)->or2( $pdl->conv2d($kernel, {Boundary => 'Truncate'})->ge(2,0), 0 );
+      $pdl = $smoothed;
+    };
+    $shield = $pdl;
+  };
+
+  my $fname = $self->mask_file("shield", $self->outimage);
+  $shield->wim($fname);
+  $shield -> inplace -> eq(0,0); # invert the shield; 0-->1 and 1-->0
   $self->elastic_image->inplace->mult($shield,0);
   $self->npixels($self->elastic_image->sum);
-  my $str = $self->report("Applying shield", 'cyan');
+  my $str;
+  if (ref($mask) =~ m{PDL}) {
+    $str = $self->report("Applying shield (".basename($prevfile)." + ".basename($maskfile).")", 'cyan');
+  } else {
+    $str = $self->report("Emission energy low, no shield", 'cyan');
+  };
+  my $on = $self->elastic_image->sum;
+  $str .= "\t$on illuminated pixels\n";
+  $str .= "\tWrote shield file, $fname\n";
   $ret->status($self->npixels);
   $ret->message($str);
   return $ret;

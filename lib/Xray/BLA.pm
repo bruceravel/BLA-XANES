@@ -75,7 +75,8 @@ has 'screen'		 => (is => 'rw', isa => 'Bool', default => 1,
 
 has 'stub'		 => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The base of filenames from a measurement.");
-has 'noscan'		 => (is => 'rw', isa => 'Bool', default => 0,);
+has 'noscan'		 => (is => 'rw', isa => 'Bool', default => 0,
+			     documentation => 'Flag indicating that no scan file exists.');
 has 'scanfile'		 => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The name of the text file containing the scan data.");
 has 'scanfolder'	 => (is => 'rw', isa => 'Str', default => q{},
@@ -123,6 +124,8 @@ has 'vertical'           => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "A flag indicating the the social pixel step of mask creation should only consider pixels in the vertical direction.");
 has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
+has 'shield'             => (is => 'rw', isa => 'Int', default => 0,
+			     documentation => "Number of steps used to create a shield from lower-energy emission images for removing a fluorescence signal from the mask.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
 has 'normpixels'         => (is => 'rw', isa => 'LaxNum', default => 0,
@@ -175,6 +178,18 @@ has 'eimax'              => (is => 'rw', isa => 'LaxNum', default => 1,
 
 has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			   documentation => "The PDL object containing the bad pixel mask.");
+has 'spots' => (
+		traits    => ['Array'],
+		is        => 'rw',
+		isa       => 'ArrayRef',
+		default   => sub { [] },
+		handles   => {
+			      'push_spots'  => 'push',
+			      'pop_spots'   => 'pop',
+			      'clear_spots' => 'clear',
+			     },
+		documentation => "A list of (x,y,radius) values of spots to remove from masks."
+	       );
 
 has 'elastic_energies' => (
 			   traits    => ['Array'],
@@ -323,7 +338,8 @@ has 'mue_demeter'   => (is => 'rw', isa => 'Any',
 
 has 'sentinal'  => (traits  => ['Code'],
 		    is => 'rw', isa => 'CodeRef', default => sub{sub{1}},
-		    handles => {call_sentinal => 'execute',});
+		    handles => {call_sentinal => 'execute',},
+		    documentation => "A code reference for providing feedback during long operations.");
 
 
 sub import {
@@ -380,8 +396,19 @@ sub read_ini {
 
   $self -> elastic_energies($self->parse_emission_line($ini{measure}{emission}));
 
+  $self -> shield($ini{steps}{shield}) if exists $ini{steps}{shield};
   my $value = (ref($ini{steps}{steps}) eq q{ARRAY}) ? $ini{steps}{steps} : [$ini{steps}{steps}];
   $self->steps($value);
+
+  if (defined($ini{spots}{spots}) and (ref($ini{spots}{spots}) eq q{ARRAY})) {
+    my @list;
+    foreach my $s (@{$ini{spots}{spots}}) {
+      push @list, [split(" ", $s)];
+    };
+    ##use Data::Dump::Color;
+    ##dd \@list;
+    $self->spots(\@list);
+  };
 
   return $self;
 };

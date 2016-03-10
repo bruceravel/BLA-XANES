@@ -13,6 +13,7 @@ use Getopt::Long;
 use Pod::Usage;
 use Scalar::Util qw(looks_like_number);
 use Term::Sk;
+use Text::Wrap;
 
 my $energy      = 0;
 my $point       = -1;
@@ -44,13 +45,12 @@ my $result      = GetOptions ("energy|e=i"   => \$energy,
 			      'help|h'	     => sub { pod2usage(1); exit 0},
 			    );
 
+my $nonpublic = 'list|none|test';
 my $mode = $ARGV[0] || q{none};
 $configfile ||= $ENV{BLACONFIG};
 $energy     ||= $ENV{BLAENERGY};
 $xdiini     ||= $ENV{BLAXDIINI};
 $outimage = 'gif' if ($outimage !~ m{png|tif});
-
-my $nonpublic = 'list|none|test';
 
 my $spectrum = Xray::BLA->new(outimage=>$outimage, masktype=>'single', noscan=>$noscan);
 if (($^O =~ /MSWin32/) and (not $ENV{FONTCONFIG_FILE})) {
@@ -92,6 +92,9 @@ if ($mode !~ m{$nonpublic}) {
 
 
 MODE: {
+
+  ## --------------------------------------------------------------------------------
+  ## ----- compute HERFD at a specified emission energy
   ($mode eq 'herfd') and do {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
@@ -102,6 +105,8 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- compute a single mask at a specified emission energy
   ($mode eq 'mask') and do {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
@@ -111,6 +116,8 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- using a mask, compute a HERFD energy point from the image for that energy
   ($mode eq 'point') and do {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit(1) if not $energy;
@@ -118,12 +125,14 @@ MODE: {
     $spectrum -> energy($energy);
     my $ret = $spectrum -> read_mask(verbose=>0);
     print(0) && exit(1) if not $ret->status;
-    $spectrum->get_incident($point);
+    $spectrum -> get_incident($point);
     my $value = $spectrum->apply_mask($spectrum->nincident, verbose=>0, silence=>1)->status;
     print $value.$/;
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- compute HERFD for a sequence of emission energies (XAS-like RIXS plane)
   ($mode eq 'rixs') and do {
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
     foreach my $e (@elastic) {
@@ -153,19 +162,11 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- compute XES for a sequence of incident energies (XES-like RIXS plane)
   ($mode eq 'plane') and do {
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
-    foreach my $e (@elastic) {
-      $spectrum -> energy($e);
-      my $file = $spectrum->mask_file("mask", $spectrum->outimage);
-      if (not -e $file) {
-      	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
-      } elsif (not $reuse) {
-      	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
-      } else {
-      	1;			# do nothing
-      };
-    };
+    fetch_elastic_sequence($spectrum, $verbose, $animate);
     my $holol;			# compute_xes returns a list-of-lists, so this is a hash-of-lol
     my $count = 0;
     my $save = $spectrum->ui;
@@ -192,23 +193,14 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- turn a sequence of masks into a pixel-to-energy map, with smoothing and interpolation
   ($mode eq 'map') and do {
     my $need_to_check = 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
     warn("BLA error: no absorber element specified in the configuration file\n")          && exit(1) if (not $spectrum->element);
     warn("BLA error: no emission line specified in the configuration file\n")             && exit(1) if (not $spectrum->line);
-    foreach my $e (@elastic) {
-      $spectrum -> energy($e);
-      my $file = $spectrum->mask_file("mask", $spectrum->outimage);
-      if (not -e $file) {
-	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
-      } elsif (not $reuse) {
-	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>0)
-      } else {
-	$need_to_check = 1;
-      };
-      $spectrum -> push_elastic_file_list($file);
-    };
+    $need_to_check = fetch_elastic_sequence($spectrum, $verbose, 0);
     if ($need_to_check) {
       my $ret = $spectrum -> check;
       die $spectrum->report($ret->message, 'bold red') if $ret->status == 0;
@@ -219,21 +211,13 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- compute XES from an image at a given incident energy
   ($mode eq 'xes') and do {
     $point ||= 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
     warn("BLA error: incident energy (-p switch) is not a number\n")                      && exit(1) if (not looks_like_number($point));
-    foreach my $e (@elastic) {
-      $spectrum -> energy($e);
-      my $file = $spectrum->mask_file("mask", $spectrum->outimage);
-      if (not -e $file) {
-	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
-      } elsif (not $reuse) {
-	$spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate);
-      } else {
-	1;			# do nothing
-      };
-    };
+    fetch_elastic_sequence($spectrum, $verbose, $animate);
     $Xray::BLA::stack = undef;
     my $ret;
     if ($xesimage) {
@@ -245,15 +229,24 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- echo Xray::BLA attribute documentation to the screen
   ($mode eq 'list') and do {
-    my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
+    ##my @list = ($spectrum->stub) ? ($spectrum->stub) : sort {$a cmp $b} $spectrum->meta->get_attribute_list;
+    my @list = sort {$a cmp $b} $spectrum->meta->get_attribute_list;
+    local $Text::Wrap::columns = 120;
+    my $count = 0;
     foreach my $a (@list) {
-      my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, 'bold green') : $a;
-      printf "%s: %s\n", $string, $spectrum->meta->get_attribute($a)->documentation||q{};
+      my $color = ($count%2) ? 'bold green' : 'bold cyan';
+      my $string = ($spectrum->colored) ? Term::ANSIColor::colored($a, $color) : $a;
+      printf wrap($string.": ", " " x (length($a)+2), $spectrum->meta->get_attribute($a)->documentation) . $/;
+      $count++;
     };
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- testing space, do whatever is written below
   ($mode eq 'test') and do {
     #die "tests for the BLA code (none currently)...\n";
     #my $buffer = 18;
@@ -294,8 +287,29 @@ MODE: {
     last MODE;
   };
 
+  ## --------------------------------------------------------------------------------
+  ## ----- fall back is to display usage text
   pod2usage(1);
   exit 1;
+};
+
+
+sub fetch_elastic_sequence {
+  my ($spectrum, $verbose, $animate) = @_;
+  my $need_to_check = 0;
+  foreach my $e (@elastic) {
+    $spectrum -> energy($e);
+    my $file = $spectrum->mask_file("mask", $spectrum->outimage);
+    if (not -e $file) {
+      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate, useshield=>$spectrum->shield);
+    } elsif (not $reuse) {
+      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate, useshield=>$spectrum->shield);
+    } else {
+      $need_to_check = 1;
+    };
+    $spectrum -> push_elastic_file_list($file);
+  };
+  return $need_to_check;
 };
 
 
@@ -307,7 +321,7 @@ bla - wrapper script for bent Laue analyzer + Pilatus data processing
 
 =head1 SYNOPSIS
 
- bla (herfd|rixs|map|xes|mask|point) [options] <stub>
+ bla (herfd|rixs|map|xes|mask|plane|point) [options] <stub>
 
  Options:
    --config   | -c   [string]   configuration file (*required*)
@@ -409,6 +423,18 @@ Convert a sequence of BLA elastic images to an energy map.
 
 Compute a mask for a given emission energy.
 
+=item xes
+
+Compute the XES spectrum at a given incident energy or using a
+specified image.
+
+=item plane
+
+Compute the rixs plane as XES as a function of incident energy.  This
+is similar to the rixs task except that this is intended for making a
+surface plot while the rixs task is intended to be displayed as XAS
+spectra.
+
 =item point
 
 Convert a specified BLA image to the HERFD value at that incidient
@@ -428,7 +454,11 @@ measurement.
 =item *
 
 One Pilatus image for each energy point containing the HERFD signal at
-that point.
+that point OR...
+
+=item *
+
+One or more images used to compute XES at a specific incident energy.
 
 =item *
 

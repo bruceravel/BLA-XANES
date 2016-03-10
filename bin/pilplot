@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use PDL::Lite;
+use PDL::IO::FlexRaw;
+use PDL::NiceSlice;
+use PDL::IO::Pic qw(wim);
+
+my $IMAGE_WIDTH = 487;
+my $tossfile = '.__toss.gif';
+
+my $bytes =  -s $ARGV[0];
+my $longs = $bytes / 4;
+
+my $img  = readflex($ARGV[0], [ { Type=>'long', NDims=>1, Dims=>[$longs] } ]);
+my $im2d = $img(1024:-1)->splitdim(0,$IMAGE_WIDTH);
+$im2d->badflag(1);
+
+$im2d->wim($tossfile);
+
+system "display $tossfile";
+unlink $tossfile;

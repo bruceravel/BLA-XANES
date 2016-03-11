@@ -102,6 +102,17 @@ sub mask {
 	last STEPS;
       };
 
+      ($args[0] eq 'gaussian') and do  {
+	$self->gaussian_blur_value($args[1]);
+	$self->do_step('gaussian_blur', %args);
+	last STEPS;
+      };
+
+      ($args[0] eq 'polyfill') and do  {
+	$self->do_step('poly_fill', %args);
+	last STEPS;
+      };
+
       ($args[0] eq 'entire') and do {
 	$self->do_step('entire_image', %args);
 	last STEPS;
@@ -375,8 +386,15 @@ sub useshield {
     $pdl = PDL::Core::zeros($self->elastic_image->dims);
     if ($i > $self->shield) {
       my ($thise, $olde) = ($self->energy, $self->elastic_energies->[$i-$self->shield+1]);
+      $thise = sprintf("%3.3d", $thise) if $thise < 1000;
+      $olde  = sprintf("%3.3d", $olde)  if $olde  < 1000;
+
       $maskfile = $self->mask_file('mask', 'gif');
-      $maskfile =~ s{$thise}{$olde};
+      #print '>>>', join("|", $thise,$olde,$maskfile), $/;
+      my ($base, $path) = fileparse($maskfile);
+      $base =~ s{$thise}{$olde};
+      $maskfile = File::Spec->catfile($path, $base);
+      #print '>>>', join("|", $thise,$olde,$maskfile), $/;
       $mask = rim($maskfile);
       $pdl = $prev + $mask;
       my $kernel = PDL::Core::ones(2,2);
@@ -467,6 +485,81 @@ sub social_pixels {
     $onval, $offval, $onval+$offval;
   $ret->status($onval);
   $ret->message($str);
+  return $ret;
+};
+
+
+## https://en.wikipedia.org/wiki/Kernel_%28image_processing%29
+sub gaussian_blur {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+
+  my $gbv   = $self->gaussian_blur_value;
+  
+  my $onoff = $self->elastic_image->gt(0,0);
+  my $before = $onoff->sum;
+  my $kernel = PDL::Core::pdl( [ [1./16, 2./16, 1./16], [2./16, 4./16, 2./16], [1./16, 2./16, 1./16] ] );
+  my $blurred = $self->elastic_image->conv2d($kernel, {Boundary => 'Truncate'});
+
+  my ($h,$w) = $self->elastic_image->dims;
+  my $on  = $blurred->ge($gbv,0);
+  my $onval  = $on->sum;
+  my $offval = $h*$w-$onval;
+  $self->elastic_image($on);
+
+  my $text = $args{pass} ? " (pass ".$args{pass}.")" : q{};
+  my $str = $self->report("Gaussian blur step$text", 'cyan');
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $onval, $offval, $onval+$offval;
+  $ret->status($onval);
+  $ret->message($str);
+  return $ret;
+};
+
+use PDL::Fit::Polynomial qw(fitpoly1d);
+sub poly_fill {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+  my $ei  = $self->elastic_image;
+
+  my @x = ();
+  my @y = ();
+  my $count = 0;
+  foreach my $col (0 .. 486) {
+    my $this = $ei->($col,:)->which;
+    next if not $this->dim(0);
+    next if $this->dim(0) == 1;
+    next if $this->at(0) == $this->at(-1);
+    push @y, $this->(PDL::Core::pdl(0,$this->dim(0)-1));
+    push @x, $col;
+    ++$count;
+  };
+  my $xdata = PDL::Core::pdl(\@x);
+  my $ydata = PDL::Core::pdl(\@y)->xchg(0,1);
+
+  #print $xdata->shape, $/;
+  #print $ydata->shape, $/;
+
+  my ($yfit1, $coeffs1) = fitpoly1d($xdata, $ydata(:,0), 5);
+  my ($yfit2, $coeffs2) = fitpoly1d($xdata, $ydata(:,1), 5);
+
+  my $on = PDL::Core::zeros($ei->dims);
+
+  foreach my $i ($x[0]..$x[-1]) {
+    my $y1 = $coeffs1 * PDL::Core::pdl(1, $i, $i**2, $i**3, $i**4);
+    my $y2 = $coeffs2 * PDL::Core::pdl(1, $i, $i**2, $i**3, $i**4);
+    foreach my $y (int($y1->sum+0.5) .. int($y2->sum+0.5)) {
+      $on->set($i, $y, 1) if ($y<195 and $y>0);
+    };
+  };
+
+
+  $self->elastic_image($on);
+
+  $ret->status(1);
+  $ret->message($self->report("polyfill step", 'cyan'));
   return $ret;
 };
 

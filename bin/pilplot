@@ -7,6 +7,11 @@ use PDL::Lite;
 use PDL::IO::FlexRaw;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim);
+use File::Copy;
+use Getopt::Std;
+
+our $opt_s;
+getopts('s');
 
 my $IMAGE_WIDTH = 487;
 my $tossfile = '.__toss.gif';
@@ -21,4 +26,8 @@ $im2d->badflag(1);
 $im2d->wim($tossfile);
 
 system "display $tossfile";
+if ($opt_s) {
+  (my $outfile = $ARGV[0]) =~ s{tif\z}{gif};
+  copy($tossfile, $outfile);
+};
 unlink $tossfile;

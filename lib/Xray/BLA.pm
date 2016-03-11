@@ -122,6 +122,8 @@ has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2,
 			     documentation => "The number of illuminated neighbors above which a pixel is considered as part of the mask.");
 has 'vertical'           => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "A flag indicating the the social pixel step of mask creation should only consider pixels in the vertical direction.");
+has 'gaussian_blur_value'=> (is => 'rw', isa => 'LaxNum', default => 2,
+			     documentation => "The threshold value for leaving pixels in a mask after applying the Gaussian blur filter.");
 has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'shield'             => (is => 'rw', isa => 'Int', default => 0,
@@ -445,7 +447,7 @@ sub parse_emission_line {	# return an array reference containing the elastic ene
 
 sub get_incident {
   my ($self, $in) = @_;
-  my $scanfile = File::Spec->catfile($self->scanfolder, $self->stub.'.001');
+  my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self -> scan_file_template));
   $self->scanfile($scanfile);
   open(my $S, '<', $self->scanfile);
   my @energy = ();
@@ -459,7 +461,7 @@ sub get_incident {
     $self->incident($energy[$n]);
     $self->nincident($n);
   } elsif (($in =~ m{\A\d+\z}) and ($in < 1000)) {
-    $self->incident($energy[$in]);
+    $self->incident($energy[$in-1]);
     $self->nincident($in);
   } elsif (not looks_like_number($in)) {
     die "BLA error: incident energy (-i switch) is not a number\n";
@@ -726,10 +728,15 @@ sub rixs_plane {
   };
   print $OUT "# -------------------------\n";
   print $OUT '# ' . join("  ", qw(incident emission loss intensity)), $/;
-  foreach my $incident (sort keys %$holol) {
+  my $scale = ($self->div10) ? 10 : 1;
+  foreach my $incident (sort {$a <=> $b} keys %$holol) {
+    $self->get_incident($incident);
+    my $inc = $self->incident;
     foreach my $line (@{$holol->{$incident}}) {
+      $self->get_incident($line->[0]);
+      my $exc = $self->incident;
       ##                  incident energy  emission en.     energy loss              intensity
-      print $OUT join("\t", $incident/10, $line->[0]/10, ($incident-$line->[0])/10, $line->[1]), $/;
+      print $OUT join("\t", $inc/$scale, $exc/$scale, ($inc-$exc)/$scale, $line->[1]), $/;
     };
     print $OUT $/;
   };
@@ -759,7 +766,8 @@ sub compute_xes {
   if ($args{xesimage}) {
     if ($args{xesimage} =~ m{\A\d+\z}) { # this is from a sequence of repetitions above the edge
       $self->incident($args{xesimage});
-      my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
+      #my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
+      my $file = $self->file_template('%s_Lv_%c.tif', $args{xesimage});
       $args{xesimage} = File::Spec->catfile($self->tiffolder, $file);
     } elsif (-e $args{xesimage}) {
       1; # do nothing

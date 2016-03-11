@@ -43,11 +43,14 @@ sub mask_file {
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, "rixsplane").'.');
     $type = 'dat';
   } elsif ($which eq 'shield') {
-    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $self->energy, "shield").'.');
+    my $energy = $self->energy;
+    $energy = sprintf("%3.3d", $self->energy) if $energy < 1000;
+    $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $energy, "shield").'.');
   } elsif ($which eq 'previousshield') {
     my $i = onlyidx {$_ == $self->energy} @{$self->elastic_energies};
     return q{} if not $i;
     my $prev = $self->elastic_energies->[$i-1];
+    $prev = sprintf("%3.3d", $prev) if $prev < 1000;
     $fname = File::Spec->catfile($self->outfolder, join("_", $self->stub, $prev, "shield").'.');
   } else {
     my $id = ($which eq 'mask') ? q{} :"_$which";

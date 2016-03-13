@@ -16,6 +16,7 @@ package Xray::BLA::Mask;
 =cut
 
 use Moose::Role;
+use PDL::Core qw(pdl ones zeros);
 use PDL::Lite;
 use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
@@ -135,11 +136,12 @@ sub mask {
       };
 
       ($args[0] eq 'useshield') and do {
+	$self->shield($args[1]);
 	$self->do_step('useshield', %args);
 	last STEPS;
       };
 
-      print report("I don't know what to do with \"$st\"", 'bold red');
+      print $self->report("I don't know what to do with \"$st\"", 'bold red');
     };
   };
 
@@ -352,7 +354,7 @@ sub entire_image {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
-  $self->elastic_image(PDL::Core::ones($self->elastic_image->dims));
+  $self->elastic_image(ones($self->elastic_image->dims));
   my $str = $self->report("Using entire image", 'cyan');
   $ret->status($self->elastic_image->gt(0,0)->sum);
   $ret->message($str);
@@ -376,14 +378,14 @@ sub useshield {
   my ($self, $rargs) = @_;
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
-  my $shield = PDL::Core::zeros($self->elastic_image->dims);
+  my $shield = zeros($self->elastic_image->dims);
   my $prevfile = $self->mask_file('previousshield', 'gif');
   my ($mask, $maskfile);
   my $pdl;
   if ($prevfile) {
     my $prev = rim($prevfile);
     my $i = onlyidx {$_ == $self->energy} @{$self->elastic_energies};
-    $pdl = PDL::Core::zeros($self->elastic_image->dims);
+    $pdl = zeros($self->elastic_image->dims);
     if ($i > $self->shield) {
       my ($thise, $olde) = ($self->energy, $self->elastic_energies->[$i-$self->shield+1]);
       $thise = sprintf("%3.3d", $thise) if $thise < 1000;
@@ -397,7 +399,7 @@ sub useshield {
       #print '>>>', join("|", $thise,$olde,$maskfile), $/;
       $mask = rim($maskfile);
       $pdl = $prev + $mask;
-      my $kernel = PDL::Core::ones(2,2);
+      my $kernel = ones(2,2);
       my $smoothed = $pdl->gt(0,0)->or2( $pdl->conv2d($kernel, {Boundary => 'Truncate'})->ge(2,0), 0 );
       $pdl = $smoothed;
     };
@@ -437,7 +439,7 @@ sub lonely_pixels {
   my $onoff = $ei->gt(0,0);
   my $before = $onoff->sum;
   ## this simple convolution will measure the number of neighbors
-  my $smoothed = $onoff->conv2d(PDL::Core::ones(3,3), {Boundary => 'Truncate'});
+  my $smoothed = $onoff->conv2d(ones(3,3), {Boundary => 'Truncate'});
 
   ## set pixels smaller than $lpv to 0
   $ei->inplace->mult(1-$smoothed->le($lpv,0),0);
@@ -464,7 +466,7 @@ sub social_pixels {
 
   my $onoff = $self->elastic_image->gt(0,0);
   my $before = $onoff->sum;
-  my $kernel = PDL::Core::ones(3,3);
+  my $kernel = ones(3,3);
   if ($args{vertical}) {
     $kernel->(0,:) .= 0.00001;
     $kernel->(2,:) .= 0.00001;
@@ -499,7 +501,7 @@ sub gaussian_blur {
   
   my $onoff = $self->elastic_image->gt(0,0);
   my $before = $onoff->sum;
-  my $kernel = PDL::Core::pdl( [ [1./16, 2./16, 1./16], [2./16, 4./16, 2./16], [1./16, 2./16, 1./16] ] );
+  my $kernel = pdl( [ [1./16, 2./16, 1./16], [2./16, 4./16, 2./16], [1./16, 2./16, 1./16] ] );
   my $blurred = $self->elastic_image->conv2d($kernel, {Boundary => 'Truncate'});
 
   my ($h,$w) = $self->elastic_image->dims;
@@ -523,33 +525,52 @@ sub poly_fill {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
   my $ei  = $self->elastic_image;
+  my ($w,$h) = $self->elastic_image->dims;
 
   my @x = ();
   my @y = ();
   my $count = 0;
-  foreach my $col (0 .. 486) {
+  #my $ydata;
+  foreach my $col (0 .. $w-1) {
     my $this = $ei->($col,:)->which;
     next if not $this->dim(0);
     next if $this->dim(0) == 1;
     next if $this->at(0) == $this->at(-1);
-    push @y, $this->(PDL::Core::pdl(0,$this->dim(0)-1));
+
+    ## looking for gaps left to right makes sense in that energy disperses left to right.
+    last if (($count > 2) and ($col - $x[$count-2] > 30));
+    ## 30 is bigger than any of the Soller slit gaps
+    ## this simple test will fail if the spot is within the curvature of the mask
+
     push @x, $col;
+    push @y, $this->(pdl(0,$this->dim(0)-1));
+    #if (defined($ydata)) {
+    #  $ydata = $ydata->glue(1, $this->(pdl(0,$this->dim(0)-1))); # append the pdl with the first and last from $this
+    #} else {
+    #  $ydata = $this->(pdl(0,$this->dim(0)-1));
+    #};
     ++$count;
   };
-  my $xdata = PDL::Core::pdl(\@x);
-  my $ydata = PDL::Core::pdl(\@y)->xchg(0,1);
+  my $xdata = pdl(\@x);
+  my $ydata = pdl(\@y)->xchg(0,1);
+  #$ydata=$ydata->xchg(0,1);
 
-  #print $xdata->shape, $/;
-  #print $ydata->shape, $/;
+  my $order = 5;
+  my ($yfit1, $coeffs1) = fitpoly1d($xdata, $ydata(:,0), $order);
+  my ($yfit2, $coeffs2) = fitpoly1d($xdata, $ydata(:,1), $order);
 
-  my ($yfit1, $coeffs1) = fitpoly1d($xdata, $ydata(:,0), 5);
-  my ($yfit2, $coeffs2) = fitpoly1d($xdata, $ydata(:,1), 5);
+  my $on = zeros($ei->dims);
 
-  my $on = PDL::Core::zeros($ei->dims);
-
-  foreach my $i ($x[0]..$x[-1]) {
-    my $y1 = $coeffs1 * PDL::Core::pdl(1, $i, $i**2, $i**3, $i**4);
-    my $y2 = $coeffs2 * PDL::Core::pdl(1, $i, $i**2, $i**3, $i**4);
+  foreach my $i (reverse(1 .. $#x-1)) {
+    if ($x[$i] - $x[$i-1] == 2) {      # remove gaps which are 1 pixel wide
+      splice(@x, $i-1, 1, $x[$i-1]+1); # by splicing in the missing number
+    };
+  };
+  #foreach my $i ($x[0]..$x[-1]) {  # remove Soller slit gaps
+  foreach my $i (@x) {		    # leave  Soller slit gaps
+    my $xpow = pdl( map {$i ** $_} (0 .. $order-1) ); # powers of X for polynomial
+    my $y1 = $coeffs1 * $xpow;
+    my $y2 = $coeffs2 * $xpow;
     foreach my $y (int($y1->sum+0.5) .. int($y2->sum+0.5)) {
       $on->set($i, $y, 1) if ($y<195 and $y>0);
     };
@@ -559,7 +580,13 @@ sub poly_fill {
   $self->elastic_image($on);
 
   $ret->status(1);
-  $ret->message($self->report("polyfill step", 'cyan'));
+  my $str = $self->report("polyfill step", 'cyan');
+  my $onval = $on->sum;
+  my $offval = $h*$w-$onval;
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $onval, $offval, $onval+$offval;
+  $ret->message($str);
+
   return $ret;
 };
 
@@ -615,7 +642,7 @@ sub areal {
 
   my $before = $ei->gt(0,0)->sum;
   my $radius = $self->radius;
-  my $kernel = PDL::Core::ones(2*$radius+1,2*$radius+1) / (2*$radius+1)**2;
+  my $kernel = ones(2*$radius+1,2*$radius+1) / (2*$radius+1)**2;
   my $smoothed = $ei->conv2d($kernel, {Boundary => 'Truncate'});
   #$smoothed = $smoothed->gt(1,0);
   my $on = $smoothed->gt(0,0)->sum;

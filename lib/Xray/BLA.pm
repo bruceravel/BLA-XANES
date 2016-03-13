@@ -402,13 +402,14 @@ sub read_ini {
   my $value = (ref($ini{steps}{steps}) eq q{ARRAY}) ? $ini{steps}{steps} : [$ini{steps}{steps}];
   $self->steps($value);
 
-  if (defined($ini{spots}{spots}) and (ref($ini{spots}{spots}) eq q{ARRAY})) {
+  #  use Data::Dump::Color;
+  #  dd $ini{spots}{spots};
+  if (defined($ini{spots}{spots})) {
+    my $all = (ref($ini{spots}{spots}) eq q{ARRAY}) ? $ini{spots}{spots} : [$ini{spots}{spots}];
     my @list;
-    foreach my $s (@{$ini{spots}{spots}}) {
+    foreach my $s (@$all) {
       push @list, [split(" ", $s)];
     };
-    ##use Data::Dump::Color;
-    ##dd \@list;
     $self->spots(\@list);
   };
 
@@ -766,8 +767,8 @@ sub compute_xes {
   if ($args{xesimage}) {
     if ($args{xesimage} =~ m{\A\d+\z}) { # this is from a sequence of repetitions above the edge
       $self->incident($args{xesimage});
-      #my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
-      my $file = $self->file_template('%s_Lv_%c.tif', $args{xesimage});
+      my $file = sprintf('%s_%4.4d.tif', $self->stub, $args{xesimage});
+      #my $file = $self->file_template('%s_Lv_%c.tif', $args{xesimage});
       $args{xesimage} = File::Spec->catfile($self->tiffolder, $file);
     } elsif (-e $args{xesimage}) {
       1; # do nothing
@@ -819,7 +820,7 @@ sub compute_xes {
   # };
   # $counter->close if ($self->screen and ($self->ui eq 'cli'));
   my $max = max(@npixels);
-  my @scalepixels = map {$max / $_} @npixels;
+  my @scalepixels = map {($_) ? $max / $_ : 0} @npixels;
 
   my @xes = ();
   foreach my $i (0 .. $#npixels) {

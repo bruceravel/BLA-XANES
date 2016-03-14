@@ -67,8 +67,8 @@ sub plot_mask {
     $title = basename($self->elastic_file);
   };
   $title = $self->escape_us($title);
-  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title, terminal=>$self->terminal,
-	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
+  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title, terminal=>$self->terminal.' size 675,408',
+	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', size=>'ratio 0.4'},
 	$self->elastic_image);
 };
 

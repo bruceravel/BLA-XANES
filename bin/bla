@@ -216,7 +216,7 @@ MODE: {
   ($mode eq 'xes') and do {
     $point ||= 0;
     warn("BLA error: no list of emission energies specified in the configuration file\n") && exit(1) if not @elastic;
-    warn("BLA error: incident energy (-p switch) is not a number\n")                      && exit(1) if (not looks_like_number($point));
+    warn("BLA error: incident energy (-i switch) is not a number\n")                      && exit(1) if (not looks_like_number($point));
     fetch_elastic_sequence($spectrum, $verbose, $animate);
     $Xray::BLA::stack = undef;
     my $ret;

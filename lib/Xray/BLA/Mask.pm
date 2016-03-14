@@ -70,8 +70,8 @@ sub mask {
 
   STEPS: {
       ($args[0] eq 'bad') and do {
-	$self -> bad_pixel_value($args[1]);
-	$self -> weak_pixel_value($args[3]);
+	$self->bad_pixel_value($args[1]);
+	$self->weak_pixel_value($args[3]);
 	$self->do_step('bad_pixels', %args);
 	last STEPS;
       };
@@ -284,19 +284,33 @@ sub bad_pixels {
   my $ret = Xray::BLA::Return->new;
 
   ## a bit of optimization -- avoid repititious calls to fetch $self's attributes
-  my $ei    = $self->elastic_image;
-  my $bpv   = $self->bad_pixel_value;
-  my $wpv   = $self->weak_pixel_value;
+  my $ei     = $self->elastic_image;
+  my ($w,$h) = $self->elastic_image->dims;
+  my $bpv    = $self->bad_pixel_value;
+  my $wpv    = $self->weak_pixel_value;
 
   my ($removed, $toosmall, $on, $off) = (0,0,0,0);
   my $bad  = $ei->gt($bpv,0);	# mask of bad pixels
 
-  #my $splotch = [[363,111,6], [340,158,6], [427,44,2], [433,78,4], [313,58,6]];
   foreach my $spot (@{$self->spots}) {
-    my $toss = PDL::Basic::rvals($ei->dims, {Centre=>[$spot->[0],$spot->[1]]})->inplace->lt($spot->[2],0);
-    $bad += $toss;
+    my $e = $spot->[0];
+    next if $e =~ m{\A\#};
+    my $doit = 0;
+    if ($e =~ m{\+}) {
+      $doit = 1 if ($self->energy >= substr($e, 0, -1));
+    } else {
+      $doit = 1 if ($self->energy >= $e);
+    };
+    $doit = 1 if (($e !~ m{\+}) and ($self->energy == $spot->[0]));
+    if ($doit) {
+      my $toss = PDL::Basic::rvals($ei->dims, {Centre=>[$spot->[1],$spot->[2]]})->inplace->lt($spot->[3],0);
+      $bad += $toss;
+    };
   };
   $bad->inplace->gt(0,0);	# in case of overlapping circles....
+  if ($self->widmax < $w-1) {
+    $bad->($self->widmax:$w-1) .= 1;
+  };
 
   my $weak = $ei->lt($wpv,0);	# mask of weak pixels
   $self->nbad($bad->sum);
@@ -528,17 +542,19 @@ sub poly_fill {
   my ($w,$h) = $self->elastic_image->dims;
 
   my @x = ();
+  my @allx = ();
   my @y = ();
   my $count = 0;
   #my $ydata;
   foreach my $col (0 .. $w-1) {
     my $this = $ei->($col,:)->which;
     next if not $this->dim(0);
+    push @allx, $col;
     next if $this->dim(0) == 1;
     next if $this->at(0) == $this->at(-1);
 
     ## looking for gaps left to right makes sense in that energy disperses left to right.
-    last if (($count > 2) and ($col - $x[$count-2] > 30));
+    #last if (($count > 2) and ($col - $x[$count-2] > 30));
     ## 30 is bigger than any of the Soller slit gaps
     ## this simple test will fail if the spot is within the curvature of the mask
 
@@ -555,11 +571,47 @@ sub poly_fill {
   my $ydata = pdl(\@y)->xchg(0,1);
   #$ydata=$ydata->xchg(0,1);
 
-  my $order = 5;
+  #use Data::Dump::Color;
+  #dd \@x, \@y;
+  #print $xdata, $/;
+  #print $ydata, $/;
+
+  my $on = zeros($ei->dims);
+  if ($args{plot}) {
+    foreach my $i (0..$#x-1) {
+      $on->set($x[$i], $y[$i]->(0)->sclr, 1);
+      $on->set($x[$i], $y[$i]->(1)->sclr, 1);
+    };
+    $self->elastic_image($on);
+    my $save = $self->prompt;
+    $self->prompt('        Boundaries: Hit return to plot the next step>');
+    $self->plot_mask;
+    $self->pause(-1);
+    $self->prompt($save);
+  };
+
+  my $order = 6;
   my ($yfit1, $coeffs1) = fitpoly1d($xdata, $ydata(:,0), $order);
   my ($yfit2, $coeffs2) = fitpoly1d($xdata, $ydata(:,1), $order);
 
-  my $on = zeros($ei->dims);
+  if ($args{plot}) {
+    $on = zeros($ei->dims);
+    foreach my $i (@x) {		    # leave  Soller slit gaps
+      my $xpow = pdl( map {$i ** $_} (0 .. $order-1) ); # powers of X for polynomial
+      my $y1 = $coeffs1 * $xpow;
+      my $y2 = $coeffs2 * $xpow;
+      my $yy1 = int($y1->sum+0.5);
+      my $yy2 = int($y2->sum+0.5);
+      $on->set($i, $yy1, 1) if ($yy1<195 and $yy1>0);
+      $on->set($i, $yy2, 1) if ($yy2<195 and $yy2>0);
+    };
+    $self->elastic_image($on);
+    my $save = $self->prompt;
+    $self->prompt('        Polynomial fits: Hit return to plot the next step>');
+    $self->plot_mask;
+    $self->pause(-1);
+    $self->prompt($save);
+  };
 
   foreach my $i (reverse(1 .. $#x-1)) {
     if ($x[$i] - $x[$i-1] == 2) {      # remove gaps which are 1 pixel wide

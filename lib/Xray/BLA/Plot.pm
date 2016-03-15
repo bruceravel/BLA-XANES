@@ -152,8 +152,8 @@ sub plot_xes {
   gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES', terminal=>$self->terminal},
 	with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
 	PDL->new(\@e), PDL->new(\@xes));
-  my $xesout = $self->xdi_xes($self->xdi_metadata_file, $args{xes});
-  return $xesout;
+  #my $xesout = $self->xdi_xes($self->xdi_metadata_file, q{}, $args{xes});
+  return; # $xesout;
 };
 
 

@@ -144,12 +144,14 @@ sub dat_out {
 sub xdi_xes_head {
   my ($self, $xdiini, $xesimage) = @_;
   my $text = "# XDI/1.0 PILATUS/100K BLA/" . $Xray::BLA::VERSION . $/;
-  tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
-  foreach my $fam (sort keys %beamline) {
-    next if $fam eq 'column';
-    my $this = ($fam eq 'xescolumn') ? 'column' : $fam;
-    foreach my $item (sort keys %{$beamline{$fam}}) {
-      $text .= sprintf "# %s.%s: %s\n", ucfirst($this), $item, $beamline{$fam}->{$item};
+  if (-e $self->xdi_metadata_file) {
+    tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
+    foreach my $fam (sort keys %beamline) {
+      next if $fam eq 'column';
+      my $this = ($fam eq 'xescolumn') ? 'column' : $fam;
+      foreach my $item (sort keys %{$beamline{$fam}}) {
+	$text .= sprintf "# %s.%s: %s\n", ucfirst($this), $item, $beamline{$fam}->{$item};
+      };
     };
   };
   $text .= sprintf "# %s.%s: %s\n", "Element", "element", $self->element;

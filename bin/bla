@@ -225,7 +225,16 @@ MODE: {
     } else {
       $ret = $spectrum -> compute_xes(verbose=>$verbose, xdiini=>$xdiini, incident=>$point);
     };
-    $spectrum->plot_xes($ret->message, type=>'data', title=>'Ein = '.$spectrum->incident) if $plot;
+    if ($plot) {
+      my @xes;
+      open(my $X, '<', $ret->message);
+      while (<$X>) {
+	next if $_ =~ m{\A\#};
+	push @xes, [split(" ", $_)];
+      };
+      close $X;
+      $spectrum->plot_xes(xes=>\@xes, type=>'data', title=>'Ein = '.$spectrum->incident);
+    };
     last MODE;
   };
 

@@ -184,6 +184,13 @@ sub xdi_xes {
   foreach my $st (@{$self->steps}) {
     print $O "#   $st\n";
   };
+  printf $O "# Excluded region: xrange = %d %d\n", $self->width_min, $self->width_max;
+  if (@{$self->spots}) {
+    print $O "# Spots:\n";
+    foreach my $sp (@{$self->spots}) {
+      print $O "#   " . join(" ", @$sp) . "\n";
+    };
+  };
   print $O "# -------------------------\n";
   print $O '#  ' . join("      ", qw(energy xes npixels raw)), $/;
   foreach my $p (@$rdata) {

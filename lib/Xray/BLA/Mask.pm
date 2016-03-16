@@ -57,6 +57,22 @@ sub mask {
   $args{unity}   = 0;
   #$self->do_step('import_elastic_image', %args);
 
+  if ($args{plot}) {
+    print $self->report("Plotting measured image", 'cyan');
+    my $save = $self->prompt;
+    $self->prompt('        Hit return to plot the first step>');
+    my $cbm = int($self->elastic_image->max);
+    if ($cbm < 1) {
+      $cbm = 1;
+    } elsif ($cbm > $self->bad_pixel_value/$self->imagescale) {
+      $cbm = $self->bad_pixel_value/$self->imagescale;
+    };
+    $self->cbmax($cbm);
+    $self->plot_mask;
+    $self->pause(-1);
+    $self->prompt($save);
+  };
+
   my $i=0;
   foreach my $st (@{$self->steps}) {
     my $set_npixels = ($st eq $self->steps->[-1]) ? 1 : 0;
@@ -299,17 +315,19 @@ sub bad_pixels {
     if ($e =~ m{\+}) {
       $doit = 1 if ($self->energy >= substr($e, 0, -1));
     } else {
-      $doit = 1 if ($self->energy >= $e);
+      $doit = 1 if ($self->energy == $e);
     };
-    $doit = 1 if (($e !~ m{\+}) and ($self->energy == $spot->[0]));
     if ($doit) {
       my $toss = PDL::Basic::rvals($ei->dims, {Centre=>[$spot->[1],$spot->[2]]})->inplace->lt($spot->[3],0);
       $bad += $toss;
     };
   };
   $bad->inplace->gt(0,0);	# in case of overlapping circles....
-  if ($self->widmax < $w-1) {
-    $bad->($self->widmax:$w-1) .= 1;
+  if ($self->width_min > 0) {
+    $bad->(0:$self->width_min) .= 1;
+  };
+  if ($self->width_max < $w-1) {
+    $bad->($self->width_max:$w-1) .= 1;
   };
 
   my $weak = $ei->lt($wpv,0);	# mask of weak pixels

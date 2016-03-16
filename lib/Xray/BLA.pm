@@ -192,8 +192,10 @@ has 'spots' => (
 			     },
 		documentation => "A list of (x,y,radius) values of spots to remove from masks."
 	       );
-has 'widmax' => (is => 'rw', isa => 'LaxNum', default => 10000,
-		 documentation => "The largest coordinate in width to be considered as signal.");
+has 'width_min' => (is => 'rw', isa => 'LaxNum', default => 0,
+		    documentation => "The smallest coordinate in width to be considered as signal.");
+has 'width_max' => (is => 'rw', isa => 'LaxNum', default => 10000,
+		    documentation => "The largest coordinate in width to be considered as signal.");
 
 
 has 'elastic_energies' => (
@@ -405,9 +407,14 @@ sub read_ini {
   my $value = (ref($ini{steps}{steps}) eq q{ARRAY}) ? $ini{steps}{steps} : [$ini{steps}{steps}];
   $self->steps($value);
 
-  #  use Data::Dump::Color;
-  #  dd $ini{spots}{spots};
-  $self -> widmax($ini{spots}{xmax}) if exists $ini{spots}{xmax};
+  if (exists $ini{spots}{xrange}) {
+    my @list = split(" ", $ini{spots}{xrange});
+    $self->width_min($list[0]);
+    $self->width_max($list[1]);
+  };
+  #use Data::Dump::Color;
+  #dd \@list;
+  
   if (defined($ini{spots}{spots})) {
     my $all = (ref($ini{spots}{spots}) eq q{ARRAY}) ? $ini{spots}{spots} : [$ini{spots}{spots}];
     my @list;

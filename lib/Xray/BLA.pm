@@ -460,18 +460,22 @@ sub parse_emission_line {	# return an array reference containing the elastic ene
 sub get_incident {
   my ($self, $in) = @_;
   my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self -> scan_file_template));
-  $self->scanfile($scanfile);
-  open(my $S, '<', $self->scanfile);
   my @energy = ();
-  while (<$S>) {
-    next if ($_ =~ m{\A\#});
-    my @list = split(" ", $_);
-    push @energy, $list[0];
+  if (-e $scanfile) {
+    $self->scanfile($scanfile);
+    open(my $S, '<', $self->scanfile);
+    while (<$S>) {
+      next if ($_ =~ m{\A\#});
+      my @list = split(" ", $_);
+      push @energy, $list[0];
+    };
   };
   if ($in == 0) {
     my $n = int($#energy/2);
     $self->incident($energy[$n]);
     $self->nincident($n);
+  } elsif (($in =~ m{\A\d+\z}) and ($in > 1000)) {
+    $self->incident($in);
   } elsif (($in =~ m{\A\d+\z}) and ($in < 1000)) {
     $self->incident($energy[$in-1]);
     $self->nincident($in);
@@ -718,6 +722,8 @@ sub rixs_map {
 # compute_xes returns a list-of-lists, so $holol is a hash-of-lol
 sub rixs_plane {
   my ($self, $holol, @args) = @_;
+  #use Data::Dump::Color;
+  #dd $holol;
   my %args = @args;
   $args{xdiini} ||= $self->xdi_metadata_file || q{};
   my $planefile = $self->mask_file("rixsplane", $self->outimage);

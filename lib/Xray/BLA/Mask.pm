@@ -314,6 +314,9 @@ sub bad_pixels {
     my $doit = 0;
     if ($e =~ m{\+}) {
       $doit = 1 if ($self->energy >= substr($e, 0, -1));
+    } elsif ($e =~ m{\-}) {
+      my ($emin, $emax) = split(/\-/, $e);
+      $doit = 1 if (($self->energy >= $emin) and ($self->energy <= $emax));
     } else {
       $doit = 1 if ($self->energy == $e);
     };
@@ -564,6 +567,11 @@ sub poly_fill {
   my @y = ();
   my $count = 0;
   #my $ydata;
+
+  #$ei=$ei->xchg(0,1);
+  #$self->elastic_image($ei);
+  #($w,$h) = ($h,$w);
+
   foreach my $col (0 .. $w-1) {
     my $this = $ei->($col,:)->which;
     next if not $this->dim(0);
@@ -646,7 +654,7 @@ sub poly_fill {
     };
   };
 
-
+  #$on=$on->xchg(0,1);
   $self->elastic_image($on);
 
   $ret->status(1);
@@ -660,6 +668,10 @@ sub poly_fill {
   return $ret;
 };
 
+## spot removal
+# $k = pdl([1,1,1],[1,1,1],[1,1,1]);
+# $sm = $a->convolveND($k);
+# $sm->inplace->gt(7,0)
 
 sub mapmask {
   my ($self, $rargs) = @_;

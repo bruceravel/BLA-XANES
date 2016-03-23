@@ -77,8 +77,8 @@ sub plot_energy_point {
   my $point = $self->Read($file);
   my $cbm = $self->bad_pixel_value/$self->imagescale;
   my $title = $self->escape_us(basename($file));
-  image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title, terminal=>$self->terminal,
-	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts'},
+  image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title, terminal=>$self->terminal.' size 675,408',
+	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
 	$point);
   undef $point;
 };

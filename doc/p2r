@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+pod2rst --infile=../lib/Xray/BLA.pm --outfile lib/Xray/BLA.rst
+
+XB='IO Image Mask Pause Plot Return Tools'
+for f in $XB; do
+    pod2rst --infile=../lib/Xray/BLA/$f.pm --outfile lib/Xray/BLA/$f.rst
+done
+
+pod2rst --infile=../lib/Demeter/UI/Metis.pm --outfile lib/Demeter/UI/Metis.rst
+
+DUM='Config Data Files Mask'
+for f in $DUM; do
+    pod2rst --infile=../lib/Demeter/UI/Metis/$f.pm --outfile lib/Demeter/UI/Metis/$f.rst
+done

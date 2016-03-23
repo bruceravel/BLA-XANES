@@ -10,8 +10,8 @@ use PDL::IO::Pic qw(wim);
 use File::Copy;
 use Getopt::Std;
 
-our $opt_s;
-getopts('s');
+our ($opt_s, $opt_n);
+getopts('sn');
 
 my $IMAGE_WIDTH = 487;
 my $tossfile = '.__toss.gif';
@@ -25,7 +25,7 @@ $im2d->badflag(1);
 
 $im2d->wim($tossfile);
 
-system "display $tossfile";
+system "display $tossfile" if not $opt_n;
 if ($opt_s) {
   (my $outfile = $ARGV[0]) =~ s{tif\z}{gif};
   copy($tossfile, $outfile);

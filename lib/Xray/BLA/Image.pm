@@ -40,14 +40,14 @@ sub Read {
 
 sub fetch_metadata {
   my ($self, $file) = @_;
+  my $pilatus = {};
+  return $pilatus if not -e $file;
   my $info = image_info($file);
-  #dd $info;
   my $text = $info->{ImageDescription};
   $text =~ s{\# }{}g;
   $text =~ s{\r}{}g;
   my @lines = split($/, $text);
 
-  my $pilatus = {};
   foreach my $key (qw(Model DateTime BitsPerSample width height)) {
     $info->{$key} =~ s{\0}{}g;
     $pilatus->{$key} = $info->{$key};

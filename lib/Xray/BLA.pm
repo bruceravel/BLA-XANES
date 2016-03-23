@@ -726,6 +726,8 @@ sub rixs_plane {
   #dd $holol;
   my %args = @args;
   $args{xdiini} ||= $self->xdi_metadata_file || q{};
+  my $ret = Xray::BLA::Return->new;
+
   my $planefile = $self->mask_file("rixsplane", $self->outimage);
   open(my $OUT, '>', $planefile);
 
@@ -746,6 +748,8 @@ sub rixs_plane {
   };
   print $OUT "# -------------------------\n";
   print $OUT '# ' . join("  ", qw(incident emission loss intensity)), $/;
+
+  my $max = 0;
   my $scale = ($self->div10) ? 10 : 1;
   foreach my $incident (sort {$a <=> $b} keys %$holol) {
     $self->get_incident($incident);
@@ -755,11 +759,14 @@ sub rixs_plane {
       my $exc = $self->incident;
       ##                  incident energy  emission en.     energy loss              intensity
       print $OUT join("\t", $inc/$scale, $exc/$scale, ($inc-$exc)/$scale, $line->[1]), $/;
+      $max = $line->[1] if ($line->[1] > $max);
     };
     print $OUT $/;
   };
   close $OUT;
-  return $planefile;
+  $ret->status(int($max+0.5));
+  $ret->message($planefile);
+  return $ret;
 };
 
 

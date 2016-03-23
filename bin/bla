@@ -185,11 +185,11 @@ MODE: {
       $holol->{$e} = $ret;	# $ret is a list-of-lists
     };
     $counter->close if $verbose;
+    $spectrum->ui($save);
     #use Data::Dump::Color;
     #dd $holol;
-    my $planefile = $spectrum->rixs_plane($holol, xdiini=>$xdiini);
-    $spectrum->report("Wrote $planefile", 'bold green');
-    $spectrum->ui($save);
+    my $ret = $spectrum->rixs_plane($holol, xdiini=>$xdiini); # returns BLA::Return object with output file name and max intensity
+    print $spectrum->report(sprintf("Wrote %s (max value = %d)", $ret->message, $ret->status), 'bold green');
     last MODE;
   };
 

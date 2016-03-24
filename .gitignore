@@ -10,3 +10,5 @@ foo*
 *_flymake.pm
 
 *_mask_*.tif
+
+doc/_build/*

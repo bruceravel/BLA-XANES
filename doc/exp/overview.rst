@@ -58,9 +58,9 @@ The sample is mounted on an XY stage with an optical camera observing
 the sample.
 
 The analyzer is the shiny object just below and to the left of the
-center of the center of the photo.  The shiny part is the Si (22)
-crystal.  The aluminum frame around the Si is in the log-spiral
-shape. 
+center of the center of the photo.  The shiny part is the Si (220)
+crystal.  The aluminum frame around the Si is made in the log-spiral
+shape.
 
 The sheets of metal between the sample and the analyzer are for
 shielding light that might scatter from the region of the sample in
@@ -82,6 +82,6 @@ the analyzer into focus with the sample at a given energy.
 The Pilatus is rotated to twice the angle of the analyzer crystal so
 that the diffracted light enters its window.
 
-In the following sections, examples of HERF, XES, and RIXS
+In the following sections, examples of HERFD, XES, and RIXS
 measurements using the instrument are shown.
 

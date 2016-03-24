@@ -33,7 +33,7 @@ Installation
 
 To install, do the following:
 
-.. code:: bash
+.. code-block:: bash
 
          perl Build.PL
          sudo ./Build installdeps  ## (if any dependencies are not met)
@@ -69,7 +69,7 @@ bent Laue processing tasks:
 The bla script
 ~~~~~~~~~~~~~~
 
-.. code:: text
+.. code-block:: text
 
      bla herfd [cxespvnfqh]  <stub>
      bla rixs  [cxspvnfqh]   <stub>
@@ -100,7 +100,7 @@ the data point and is reflected in one of the columns of the scan
 file. If your data do not follow these patterns, this script will
 fail. File locations are specified in the configuration file.
 
-.. code:: text
+.. code-block:: text
 
      examples:  bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
                 bla rixs  -c=/path/to/config.ini Aufoil1
@@ -118,7 +118,7 @@ integer, indicating the index of the data point, or a number, indicating
 the incident energy of the datapoint. So the following may be
 equivalent:
 
-.. code:: text
+.. code-block:: text
 
          bla point -c=/path/to/config.ini -e=9713 -i=69 Aufoil1
          bla point -c=/path/to/config.ini -e=9713 -i=12000 Aufoil1
@@ -159,7 +159,7 @@ Environment variables
 Use of the ``-c`` flag can be avoided by setting the ``BLACONFIG``
 environment variable. The following are equivalent:
 
-.. code:: bash
+.. code-block:: bash
 
       bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
 
@@ -169,7 +169,7 @@ environment variable. The following are equivalent:
 Use of the ``-e`` flag can be avoided by setting the ``BLAENERGY``
 environment variable. The following are equivalent:
 
-.. code:: bash
+.. code-block:: bash
 
       bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
 
@@ -184,7 +184,7 @@ a single energy in that list will hamper the ``rixs``, ``map``, and
 Use of the ``-x`` flag can be avoided by setting the ``BLAXDIINI``
 environment variable. The following are equivalent:
 
-.. code:: bash
+.. code-block:: bash
 
       bla herfd -c=/path/to/config.ini -x /path/to/xdi.ini -e=9713 Aufoil1
 
@@ -254,7 +254,7 @@ The configuration file
 The configuration file is in the Windows-style ini format. Here is an
 example:
 
-.. code:: ini
+.. code-block:: ini
 
     [measure]
     emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
@@ -286,7 +286,7 @@ The ``emission`` can use a more concise syntax if the sequence of
 elastic energies was measured on a uniform grid. The following are
 equivalent:
 
-.. code:: ini
+.. code-block:: text
 
    emission = 9703 9705 9707 9709 9711 9713 9715 9717 9719
 
@@ -408,7 +408,7 @@ installer <http://gnuwin32.sourceforge.net/packages/netpbm.htm>`__.
 Note where the binaries get installed. You must add that location to the
 execution path. This can be done at the Windows command prompt by
 
-.. code:: bash
+.. code-block:: bash
 
      set PATH=%PATH%;C:\GnuWin32\bin
 
@@ -422,7 +422,7 @@ Animations
 
 Using ImageMagick on the output masks:
 
-.. code:: bash
+.. code-block:: bash
 
     convert -layers OptimizePlus -delay 5x100 *mask.gif -loop 0 mask_animation.gif
 
@@ -458,7 +458,7 @@ consequence.
 
 Around line 3116 of ``PDL::Graphics::Gnuplot``, add the following line:
 
-.. code:: perl
+.. code-block:: perl
 
     $optionsWarnings =~ s/^Reading ras files from sequential devices not supported.*$//mg;
     $optionsWarnings = '' if($optionsWarnings =~ m/^\s+$/s);

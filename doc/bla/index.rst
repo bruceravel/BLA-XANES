@@ -12,7 +12,11 @@ This chapter gives several examples of measurements using the BLA spectrometer.
 .. toctree::
    :maxdepth: 2
 
-   overview.rst
-   herfd.rst
-   xes.rst
-   rixs.rst
+   install.rst
+   script.rst
+   env.rst
+   output.rst
+   config.rst
+   mask.rst
+   tasks.rst
+   troubleshoot.rst

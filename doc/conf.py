@@ -130,7 +130,7 @@ rst_prolog = open(os.path.join(CURDIR, 'prolog.rst'),'r').read().decode('utf8')
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'tango'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -289,6 +289,30 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_domain_indices = True
+
+latex_domain_indices = False
+
+latex_additional_files = [
+    #    'sphinx/tex/puthesis.cls',
+    '../sphinx/tex/preamble._tex',
+    '../sphinx/tex/refstyle.bst',
+    '../sphinx/tex/biblio.tex',
+    '../sphinx/tex/sphinx.sty',
+    'bla.bib',
+]
+
+## \setcounter{secnumdepth}{2}
+## \setcounter{tocdepth}{2}
+
+latex_elements = {'pointsizee': '11pt',
+                  'preamble': """
+\input{preamble._tex}
+\usepackage{sphinx}
+""",
+                 'footer':"""
+input{biblio.tex}
+"""
+}
 
 
 # -- Options for manual page output ---------------------------------------

@@ -4,12 +4,12 @@
    http://creativecommons.org/licenses/by-sa/3.0/
 
 
-A HERFD measurement
-===================
+High energy resolution fluorescence detection (HERFD)
+=====================================================
 
 Here is an example of a high energy resolution fluorescence detection
 (HERFD) measurement of the Pt L\ :sub:`III` edge using the L\ |alpha|\
-:sub:`1` emission line.  This animationmontage shows a sequence of 112
+:sub:`1` emission line.  This montage shows a sequence of 112
 exposures of the Pilatus through the energy range of the Pt L\
 :sub:`III` XANES measurement.
 
@@ -44,7 +44,6 @@ energy 9442 eV.
 
 .. figure:: ../_images/elastic_9442.png
    :target: ../_images/elastic_9442.png
-   :width: 40%
    :align: center
 
    The measurement of the elastic scattering at 9442 eV, the peak of
@@ -65,7 +64,6 @@ while setting all other pixels to 0.
 
 .. figure:: ../_images/mask_9442.png
    :target: ../_images/mask_9442.png
-   :width: 40%
    :align: center
 
    The mask for 9442 eV, the peak of the L\ |alpha|\ :sub:`1` emission
@@ -84,7 +82,56 @@ yielding the HERFD spectrum.
 
 .. figure:: ../_images/herfd_9442.png
    :target: ../_images/herfd_9442.png
-   :width: 40%
    :align: center
 
    The HERFD using the 9442 eV mask.
+
+
+The command for making that HERFD spectrum from the collection of images is
+
+.. code-block:: console
+
+   bla herfd -e 9442 -c PtLa1.ini Pt_La1
+
+
+Here ``Pt_La1`` is the :quoted:`stub`, i.e. the word which begins the
+names of all files in the measurement.  The emission energy at which
+to compute the HERFD is 9442 eV, specified by the ``-e`` command line
+switch.  The ini file defining the parameters of the calculation is
+specified with the ``-c`` switch.
+
+Here is the ini file:
+
+.. code-block:: bash
+
+   [measure]
+   emission           = 9429 to 9454 by 1
+   scanfolder         = /home/bruce/Data/herfd_data
+   tiffolder          = /home/bruce/Data/herfd_data
+   outfolder          = /home/bruce/Data/NIST/herfd_data/process
+   element            = Pt
+   line               = La1
+   tiffcounter        = 001
+   energycounterwidth = 3
+   imagescale         = 40
+   outimage           = gif
+
+   [files]
+   scan               = %s.001
+   elastic            = %s_elastic_%T_001.tif
+   image              = %s_%c.tif
+   xdi                = /home/bruce/git/BLA-XANES/share/bla.xdi.ini
+
+   [steps]
+   steps = <<END
+   bad 400 weak 0
+   gaussian 2
+   andmask
+   END
+
+The ``[measure]`` block defines the measured elastic energys, the
+locations on input and output files, and various other parameters.
+The ``[files]`` block defines mini-templates used by Xray::BLA to
+construct input and output file names.  The ``[steps]`` block gives
+the recipe for creating the mask from the elastic energy image.
+

@@ -3,21 +3,21 @@
 
 ** From Feb 2016 experiment
 
- - [ ] Need to generalize how XES spectrum is made in terms of how the
+ - [X] Need to generalize how XES spectrum is made in terms of how the
    XES measurement image is selected.  This experiment has a couple
    different examples of needing to specify a measurement image with
    having a scan file.  See --xesimage in bla.
 
- - [ ] Jeremy's Lv thing, like the _v Bi measurements. make the shield
+ - [X] Jeremy's Lv thing, like the _v Bi measurements. make the shield
    start, say, 3 back.  Do it in regions, changing parameters as
    needed.  See [[file:~/Data/NIST/10ID/pt/Lv.ini][Lv.ini]].
 
- - [ ] Capture exposure time from pilatus metadata
+ - [X] Capture exposure time from pilatus metadata
 
- - [ ] Track metadata about sample through bla ini file (with TextCtrl
+ - [X] Track metadata about sample through bla ini file (with TextCtrl
    in metis)
 
- - [ ] Need to integrate shield into workflow much more tightly,
+ - [X] Need to integrate shield into workflow much more tightly,
    switch in GUI to turn it on.  The under-the-hood workflow will
    necessarily be the same:
    1. Run through mask creation
@@ -25,7 +25,7 @@
    3. Re-run mask creation with shields
    4. Make XES with shielded masks
 
-** Issues with Xray::BLA [5/16]
+** Issues with Xray::BLA [5/18]
 
  - [ ] More robust error handling.
 
@@ -81,6 +81,8 @@
    loop over energy points in ~scan~ method.
 
  - [ ] Maybe use object oriented plotting interface ....
+
+ - [ ] Athena project output from rixs task
 
 ** Issues with Metis [9/17]
 

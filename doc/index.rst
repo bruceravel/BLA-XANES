@@ -32,7 +32,7 @@ Contents:
    :maxdepth: 1
 
    exp/index.rst
-   bla.rst
+   bla/index.rst
    metis/index.rst
    lib/index.rst
 

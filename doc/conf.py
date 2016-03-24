@@ -95,7 +95,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'prolog.rst', 'epilog.rst']
+exclude_patterns = ['_build', 'prolog.rst', 'epilog.rst', 'bla.rst']
 
 #sphinxtr
 # Ideally, we wouldn't have to do this, but sphinx seems to have trouble with
@@ -130,7 +130,7 @@ rst_prolog = open(os.path.join(CURDIR, 'prolog.rst'),'r').read().decode('utf8')
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'tango'
+pygments_style = 'perldoc'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []

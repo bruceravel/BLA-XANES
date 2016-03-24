@@ -92,10 +92,10 @@ sub xdi_out {
     };
   };
 
-  printf $O "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
-  printf $O "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_energy};
-  printf $O "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
-  printf $O "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
+  printf $O "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model}                       if $pilatus->{Model};
+  printf $O "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_energy} if $pilatus->{Threshold_energy};
+  printf $O "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height}                     if $pilatus->{height};
+  printf $O "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width}                       if $pilatus->{width};
   printf $O "# %s.%s: %s\n", "BLA", "illuminated_pixels", $self->npixels;
   printf $O "# %s.%s: %s\n", "BLA", "total_pixels", $self->columns*$self->rows;
   if ($self->task eq 'rixs') {

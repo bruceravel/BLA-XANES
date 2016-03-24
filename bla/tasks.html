@@ -1,0 +1,334 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tasks of the bla program &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bla program" href="index.html" />
+    <link rel="next" title="Troubleshooting" href="troubleshoot.html" />
+    <link rel="prev" title="Mask creation recipes" href="mask.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="troubleshoot.html" title="Troubleshooting"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mask.html" title="Mask creation recipes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tasks-of-the-bla-program">
+<h1>Tasks of the bla program<a class="headerlink" href="#tasks-of-the-bla-program" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="main-tasks">
+<h2>Main tasks<a class="headerlink" href="#main-tasks" title="Permalink to this headline">¶</a></h2>
+<p>The <strong class="program">bla</strong> program is a simple multiplexer which parses the
+command line arguments and performs the steps necessary to accomplish
+the task.  The basic syntax is</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla &lt;task&gt; [switches] &lt;stub&gt;</span>
+</pre></div>
+</div>
+<p>where the first argument is one of the tasks below and the second
+argument is the bit of text used to make file names for the
+measurement.</p>
+<p><strong>herfd</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">herfd</span></code> task makes a high energy resolution fluorescence
+spectrum at a specified emission energy.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla herfd -c=/path/to/config.ini -e=9713 Aufoil1</span>
+</pre></div>
+</div>
+<p>Allowed switches are</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">-e</span></code></dt>
+<dd>(<em>required</em>) specify the emission energy for the HERFD
+calculation</dd>
+<dt><code class="docutils literal"><span class="pre">-r</span></code></dt>
+<dd>Flag to reuse already computed masks which have been saved to disk</dd>
+<dt><code class="docutils literal"><span class="pre">-v</span></code></dt>
+<dd>Control whether screen messages are written</dd>
+<dt><code class="docutils literal"><span class="pre">-s</span></code></dt>
+<dd>Flag for saving mask images</dd>
+<dt><code class="docutils literal"><span class="pre">-a</span></code></dt>
+<dd>Flag for saving animations (<em>not currently working</em>)</dd>
+<dt><code class="docutils literal"><span class="pre">-p</span></code></dt>
+<dd>Flag to plot the HERFD upon completion</dd>
+<dt><code class="docutils literal"><span class="pre">-x</span></code></dt>
+<dd>Specify the file containing XDI metadata</dd>
+</dl>
+</div></blockquote>
+<p><strong>rixs</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">rixs</span></code> task computes the HERFD at each elastic energy,
+writing an output file for each one.  This uses the list of
+emission energies specified in the configuration file.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla rixs -c=/path/to/config.ini Aufoil1</span>
+</pre></div>
+</div>
+<p>Allowed switches are</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">-r</span></code></dt>
+<dd>Flag to reuse already computed masks which have been saved to disk</dd>
+<dt><code class="docutils literal"><span class="pre">-v</span></code></dt>
+<dd>Control whether screen messages are written</dd>
+<dt><code class="docutils literal"><span class="pre">-s</span></code></dt>
+<dd>Flag for saving mask images</dd>
+<dt><code class="docutils literal"><span class="pre">-a</span></code></dt>
+<dd>Flag for saving animations (<em>not currently working</em>)</dd>
+<dt><code class="docutils literal"><span class="pre">-p</span></code></dt>
+<dd>Flag to plot each HERFD as it is computed</dd>
+<dt><code class="docutils literal"><span class="pre">-x</span></code></dt>
+<dd>Specify the file containing XDI metadata</dd>
+</dl>
+</div></blockquote>
+<p><strong>xes</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">xes</span></code> task computes the XES spectrum from an image at a
+specified incident energy.  The incidence energy is specified
+either with the <code class="docutils literal"><span class="pre">-i</span></code> or <code class="docutils literal"><span class="pre">--xesimage</span></code> switch.  This will compute
+all the masks as needed.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla xes -c=/path/to/config.ini -i 11970 Aufoil1</span>
+<span class="go">bla xes -c=/path/to/config.ini --noscan --xesimage=1  Nb2O3_Kb2_2</span>
+</pre></div>
+</div>
+<p>Allowed switches are</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">-i</span></code></dt>
+<dd>(<em>required</em>) The incidence energy at which to compute the XES</dd>
+<dt><code class="docutils literal"><span class="pre">--xesimage</span></code></dt>
+<dd>(<em>required</em>) The index or file name of the XES image</dd>
+<dt><code class="docutils literal"><span class="pre">--noscan</span></code></dt>
+<dd>Flag indicating the no scan file was used</dd>
+<dt><code class="docutils literal"><span class="pre">-r</span></code></dt>
+<dd>Flag to reuse already computed masks which have been saved to disk</dd>
+<dt><code class="docutils literal"><span class="pre">-v</span></code></dt>
+<dd>Control whether screen messages are written</dd>
+<dt><code class="docutils literal"><span class="pre">-s</span></code></dt>
+<dd>Flag for saving mask images</dd>
+<dt><code class="docutils literal"><span class="pre">-a</span></code></dt>
+<dd>Flag for saving animations (<em>not currently working</em>)</dd>
+<dt><code class="docutils literal"><span class="pre">-p</span></code></dt>
+<dd>Flag to plot the XES upon completion</dd>
+<dt><code class="docutils literal"><span class="pre">-x</span></code></dt>
+<dd>Specify the file containing XDI metadata</dd>
+</dl>
+</div></blockquote>
+<p><strong>plane</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">plane</span></code> task computes an entire RIXS plane, packaging the
+result for plotting as a surface plot.  This</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla plane -c=/path/to/config.ini Nb2O3_Kb2_2</span>
+</pre></div>
+</div>
+<p>Allowed switches are</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">--noscan</span></code></dt>
+<dd>Flag indicating the no scan file was used</dd>
+<dt><code class="docutils literal"><span class="pre">-r</span></code></dt>
+<dd>Flag to reuse already computed masks which have been saved to disk</dd>
+<dt><code class="docutils literal"><span class="pre">-v</span></code></dt>
+<dd>Control whether screen messages are written</dd>
+<dt><code class="docutils literal"><span class="pre">-s</span></code></dt>
+<dd>Flag for saving mask images</dd>
+<dt><code class="docutils literal"><span class="pre">-a</span></code></dt>
+<dd>Flag for saving animations (<em>not currently working</em>)</dd>
+<dt><code class="docutils literal"><span class="pre">-p</span></code></dt>
+<dd>Flag to plot the XES upon completion</dd>
+<dt><code class="docutils literal"><span class="pre">-x</span></code></dt>
+<dd>Specify the file containing XDI metadata</dd>
+</dl>
+</div></blockquote>
+<p><strong>map</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">map</span></code> task takes a sequence of masks and interpolates them
+into a smooth map that can be used to make a surface plot of the
+energy distribution over the face of the detector.  The map can also
+be used to create a new mask of a specified energy width.</p>
+<p><em>This is not currently working</em></p>
+</div></blockquote>
+<p><strong>mask</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">mask</span></code> task is used to create a mask at a specified emission
+energy.  This could be incorporated into a scan program.  A mask can
+be computed for a given emission energy as the subsequent emission
+energy is measured.  This calculation is typically faster than an
+elastic image exposure, thus mask creation can be incorporated into
+a measurement in almost-real-time.</p>
+<blockquote>
+<div><div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla mask -c=/path/to/config.ini -e=9713 Aufoil1</span>
+</pre></div>
+</div>
+<p>Allowed switches are</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">-e</span></code></dt>
+<dd>(<em>required</em>) specify the emission energy for the HERFD
+calculation</dd>
+<dt><code class="docutils literal"><span class="pre">-v</span></code></dt>
+<dd>Control whether screen messages are written</dd>
+<dt><code class="docutils literal"><span class="pre">-s</span></code></dt>
+<dd>Flag for saving mask images</dd>
+<dt><code class="docutils literal"><span class="pre">-a</span></code></dt>
+<dd>Flag for saving animations (<em>not currently working</em>)</dd>
+<dt><code class="docutils literal"><span class="pre">-p</span></code></dt>
+<dd>Flag to plot the HERFD upon completion</dd>
+</dl>
+</div></blockquote>
+</div></blockquote>
+<p><strong>point</strong></p>
+<blockquote>
+<div><p>The <code class="docutils literal"><span class="pre">point</span></code> task applies a specified mask to an image.  This could
+be incorporated into a scan program.  While a data point is being
+measured in a HERFD scan, the HERFD from the previous energy point
+can be computed.  In this way, an almost-real-time plot can be
+presented to the user of the HERFD being measured.</p>
+<blockquote>
+<div><div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla mask -c=/path/to/config.ini -e=9713 Aufoil1</span>
+</pre></div>
+</div>
+<p>Allowed switches are</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">-e</span></code></dt>
+<dd>(<em>required</em>) specify the emission energy for the HERFD
+calculation</dd>
+<dt><code class="docutils literal"><span class="pre">-i</span></code></dt>
+<dd>(<em>required</em>) the incident energy or incident data point index to compute</dd>
+</dl>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="developer-tasks">
+<h2>Developer tasks<a class="headerlink" href="#developer-tasks" title="Permalink to this headline">¶</a></h2>
+<p><strong>list</strong></p>
+<blockquote>
+<div>This task lists all the attributes of the <a class="reference external" href="../lib/Xray/BLA.html">Xray::BLA object</a> along with a short documentation string.</div></blockquote>
+<p><strong>test</strong></p>
+<blockquote>
+<div>This task is used for testing new algorithms.</div></blockquote>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/bla/tasks.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="troubleshoot.html" title="Troubleshooting"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mask.html" title="Mask creation recipes"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

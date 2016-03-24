@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Output &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bla program" href="index.html" />
+    <link rel="next" title="The configuration file" href="config.html" />
+    <link rel="prev" title="Environment variables" href="env.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="config.html" title="The configuration file"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="env.html" title="Environment variables"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="output">
+<h1>Output<a class="headerlink" href="#output" title="Permalink to this headline">¶</a></h1>
+<ul>
+<li><p class="first">The output of the <code class="docutils literal"><span class="pre">herfd</span></code> task is a data file containing the HERFD
+spectrum at the specified emission energy and, if requested, gif
+images with the mask.</p>
+<p>At each energy point, the HERFD signal is computed from the Pilatus
+image using the mask created as described above. The counts on each
+pixel lying within the illuminated portion of the mask are summed.
+This sum is the HERFD signal at that incident energy.</p>
+<p>A column data file is written containing the energy and several
+scalars from the original measurement and a column containing the
+HERFD signal. This file can be imported directly into Athena.</p>
+</li>
+<li><p class="first">The output of the <code class="docutils literal"><span class="pre">rixs</span></code> task is the same as for the <code class="docutils literal"><span class="pre">herfd</span></code>
+script at each emission energy.</p>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Athena .prj output from <strong class="program">bla</strong> program</p>
+</div>
+</li>
+<li><p class="first">The output of the <code class="docutils literal"><span class="pre">xes</span></code> task is a data file containing the XES
+spectrum from that incident energy with the signal from each emission
+energy weighted by the number of illuminated pixels in that mask.</p>
+</li>
+<li><p class="first">The output of the <code class="docutils literal"><span class="pre">map</span></code> task is a data file in a <a class="reference external" href="http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2">simple
+format</a>
+which can be read by gnuplot and a gnuplot script for displaying the
+data. The resulting image will plot a map of detector column vs
+detector row with the color axis showing energy. Gif files for the
+masks at each emission energy are also written.</p>
+</li>
+<li><p class="first">The output of the <code class="docutils literal"><span class="pre">mask</span></code> task is a single gif file containing the
+mask for the specified emission energy.</p>
+</li>
+<li><p class="first">The output of the <code class="docutils literal"><span class="pre">point</span></code> task is the HERFD value extracted from a
+specified BLA image for a specified emission energy. The value is
+printed to STDOUT. If files containing the BLA image or the emission
+mask do not exist or if any other problem is encountered, 0 is
+printed to STDOUT.</p>
+</li>
+</ul>
+<p>On Windows, tiff files are written rather than gif files.</p>
+<p>The <code class="docutils literal"><span class="pre">herfd</span></code>, <code class="docutils literal"><span class="pre">rixs</span></code>, <code class="docutils literal"><span class="pre">xes</span></code>, and <code class="docutils literal"><span class="pre">map</span></code> tasks are intended for
+post-processing of a full data set.</p>
+<p>The <code class="docutils literal"><span class="pre">mask</span></code> and <code class="docutils literal"><span class="pre">point</span></code> tasks are intended for inlining in the data
+acquisition process. The <code class="docutils literal"><span class="pre">mask</span></code> task should be run after measuring the
+elastic images at the emission energy and before measuring the HERFD
+data. The <code class="docutils literal"><span class="pre">mask</span></code> task takes about 10 seconds.</p>
+<p>The <code class="docutils literal"><span class="pre">point</span></code> task is intended for generating the HERFD value at a
+specific emission energy during the scan. This value can be used for
+plotting or storing to the output data file. The <code class="docutils literal"><span class="pre">point</span></code> task takes
+less than 1 second.</p>
+<div class="section" id="saving-masks-as-image-files">
+<h2>Saving masks as image files<a class="headerlink" href="#saving-masks-as-image-files" title="Permalink to this headline">¶</a></h2>
+<p>In order to save mask images, you may need to install some additional
+software on your computer.  PDL uses the NetPBM package for image
+format manipulation.  On Ubuntu, the package is called <code class="docutils literal"><span class="pre">netpbm</span></code> and
+is likely already installed.  This is not installed by the Demeter
+installer for Windows, so you have to install it separately.  Download
+and install <a class="reference external" href="http://gnuwin32.sourceforge.net/packages/netpbm.htm">the NetPBM Windows installer</a>.</p>
+<p>Note where the binaries get installed.  You must add that location to
+the execution path.  This can be done at the Windows command prompt by</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">set</span> <span class="nv">PATH</span><span class="o">=</span>%PATH%<span class="p">;</span>C:<span class="se">\G</span>nuWin32<span class="se">\b</span>in
+</pre></div>
+</div>
+<p>substituting <code class="docutils literal"><span class="pre">C:\GnuWin32\bin</span></code> with the location on your computer.</p>
+<p>Without NetPBM, an invocation of the <strong class="program">bla</strong> program with the
+<code class="docutils literal"><span class="pre">-s</span></code> flag will not run to completion.</p>
+</div>
+<div class="section" id="animations">
+<h2>Animations<a class="headerlink" href="#animations" title="Permalink to this headline">¶</a></h2>
+<p>Using ImageMagick on the output masks:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>convert -layers OptimizePlus -delay 5x100 *mask.gif -loop <span class="m">0</span> mask_animation.gif
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">Write animations using PDL</p>
+</div>
+</div>
+<div class="section" id="xdi-output">
+<h2>XDI Output<a class="headerlink" href="#xdi-output" title="Permalink to this headline">¶</a></h2>
+<p>All ASCII column data is written in the XDI format.  This is
+particularly handy for the RIXS function.  If XDI metadata is provided,
+then the <code class="docutils literal"><span class="pre">BLA.pixel_ratio</span></code> metadatum will be written to the output
+file.  This number is computed from the number of pixels illuminated in
+the mask at each emission energy.  The pixel ratio for an emission
+energy is the number of pixels from the emission energy with the
+largest number of illuminated pixels divided by the number of
+illuminated pixels at that energy.</p>
+<p>The pixel ratio can be used to normalize the mu(E) data from each
+emission energy. The concept is that the normalized mu(E) data are an
+approximation of what they would be if each emission energy was equally
+represented on the face of the detector.</p>
+<p>The version of Athena based on Demeter will be able to use these values
+as importance or plot multiplier values if the <code class="docutils literal"><span class="pre">Xray::XDI</span></code> module is
+available.</p>
+<p>XDI metadata about the beamline and sample can be supplied using the
+<code class="docutils literal"><span class="pre">-x</span></code> switch for the <strong class="program">bla</strong> program, the <code class="docutils literal"><span class="pre">BLAXDIINI</span></code>
+environment variable, or in the <code class="docutils literal"><span class="pre">[files]</span></code> block of the
+configuration file.  Here is an example</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>column<span class="o">]</span>
+<span class="nv">1</span> <span class="o">=</span> energy eV
+<span class="nv">2</span> <span class="o">=</span> mu
+<span class="nv">3</span> <span class="o">=</span> i0
+<span class="nv">4</span> <span class="o">=</span> it
+<span class="nv">5</span> <span class="o">=</span> ifl
+<span class="nv">6</span> <span class="o">=</span> ir
+<span class="nv">7</span> <span class="o">=</span> herfd
+<span class="nv">8</span> <span class="o">=</span> integration seconds
+<span class="nv">9</span> <span class="o">=</span> ring mA
+
+<span class="o">[</span>xescolumn<span class="o">]</span>
+<span class="nv">1</span> <span class="o">=</span> energy eV
+<span class="nv">2</span> <span class="o">=</span> xes
+<span class="nv">3</span> <span class="o">=</span> npixels
+<span class="nv">4</span> <span class="o">=</span> raw
+
+<span class="o">[</span>beamline<span class="o">]</span>
+<span class="nv">name</span> <span class="o">=</span> APS 10ID <span class="o">(</span>MRCAT<span class="o">)</span>
+<span class="nv">collimation</span> <span class="o">=</span> none
+<span class="nv">focusing</span> <span class="o">=</span> HR mirror in the vertical, KB mirror in the horizontal
+<span class="nv">harmonic_rejection</span> <span class="o">=</span> Pt coated mirror
+
+<span class="o">[</span>facility<span class="o">]</span>
+<span class="nv">energy</span> <span class="o">=</span> 7.00 GeV
+<span class="nb">source</span> <span class="o">=</span> APS Undulator A
+
+<span class="o">[</span>mono<span class="o">]</span>
+<span class="nv">name</span> <span class="o">=</span> Si <span class="o">(</span>111<span class="o">)</span>
+<span class="nv">d_spacing</span> <span class="o">=</span> 3.13553
+
+<span class="o">[</span>detector<span class="o">]</span>
+<span class="nv">i0</span> <span class="o">=</span> 1cm N2
+<span class="nv">herfd</span> <span class="o">=</span> bent Laue analyzer, Si<span class="o">(</span>660<span class="o">)</span>, Pilatus 100K
+</pre></div>
+</div>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/bla/output.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="config.html" title="The configuration file"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="env.html" title="Environment variables"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

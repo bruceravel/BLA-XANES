@@ -1,0 +1,255 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Non-resonant X-ray Emission Spectroscopy (XES) &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bent Laue experiment" href="index.html" />
+    <link rel="next" title="Resonant Inelastic X-ray Scattering (RIXS)" href="rixs.html" />
+    <link rel="prev" title="High energy resolution fluorescence detection (HERFD)" href="herfd.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="rixs.html" title="Resonant Inelastic X-ray Scattering (RIXS)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="herfd.html" title="High energy resolution fluorescence detection (HERFD)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="non-resonant-x-ray-emission-spectroscopy-xes">
+<h1>Non-resonant X-ray Emission Spectroscopy (XES)<a class="headerlink" href="#non-resonant-x-ray-emission-spectroscopy-xes" title="Permalink to this headline">¶</a></h1>
+<p>In this example, the non-resonant X-ray emission spectroscopy of the
+Kβ<sub>2,4</sub> emission line of Nb<sub>2</sub>O<sub>5</sub> is
+measured.  The monochromator is moved to 19100 eV, an energy above the
+Nb K edge, thus exciting all the Nb Kα and Kβ emission
+lines.</p>
+<p>Here is the image dispersed by the spectrometer onto the detector:</p>
+<div class="figure align-center" id="id1">
+<a class="reference external image-reference" href="../_images/nb2o5.png"><img alt="../_images/nb2o5.png" src="../_images/nb2o5.png" /></a>
+<p class="caption"><span class="caption-text">Non-resonant XES measurement of Nb<sub>2</sub>O<sub>5</sub>, measured
+at 19100 eV.  The brightness of the image has been enhanced so that
+the dim features are visible.</span></p>
+</div>
+<p>The Kβ<sub>2</sub> is the over-saturated stripe in this
+image.  To the right, which is the high energy side of the image,
+there are two additional features associated with the
+Kβ'' and Kβ<sub>4</sub> emission lines.  These smaller
+features can be seen clearly in the processed data:</p>
+<div class="figure align-center" id="id2">
+<a class="reference external image-reference" href="../_images/xes_nb2o5.png"><img alt="../_images/xes_nb2o5.png" src="../_images/xes_nb2o5.png" /></a>
+<p class="caption"><span class="caption-text">The XES spectrum of Nb<sub>2</sub>O<sub>5</sub> extracted from the image.</span></p>
+</div>
+<p>To convert the image above into this spectrum, we need to translate
+the pixels in the image into energy.  As in the HERFD measurement,
+this is done by measuring a sequence of images with the monochromator
+set to energies spanning the energy range of the emission line.  In
+the case of the Nb Kβ<sub>2,4</sub> emission line, elastic images
+are measured from 18928 eV to 18994.5 eV,</p>
+<p>From each elastic image, a mask is made.  Each mask, then, defines the
+pixels which are illuminated by photons of that energy being dispersed
+through the spectrometer crystal.</p>
+<p>At each energy in the range from 18928 eV to 18994.5 eV, the mask is
+multiplied by the non-resonant XES image above.  The illuminate pixels
+are summed and that sum is the emission intensity at that energy.  In
+this way, the XES spectrum is constructed.</p>
+<p>Here are the masks at each energy through the emission peak.</p>
+<div class="figure align-center" id="id3">
+<a class="reference external image-reference" href="../_images/xes_mask_montage.png"><img alt="../_images/xes_mask_montage.png" src="../_images/xes_mask_montage.png" style="width: 40%;" /></a>
+<p class="caption"><span class="caption-text">The sequence of masks made from elastic images measured from 18928
+eV to 18994.5 eV,</span></p>
+</div>
+<p>Here, in full size, are the masks from the peaks of the Nb Kβ<sub>2</sub> and Nb Kβ<sub>2</sub> emission lines at 18952.5 eV and
+18981.5 eV</p>
+<div class="figure compound align-center" id="_fig-xesmasks">
+<div style="width: 40%" class="subfigure" id="id4">
+<a class="reference external image-reference" href="../_images/xes_189525.png"><img alt="../_images/xes_189525.png" src="../_images/xes_189525.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-text">The mask for the peak of the Nb Kβ<sub>2</sub> emission line</span></p>
+</div>
+<div style="width: 40%" class="subfigure" id="id5">
+<a class="reference external image-reference" href="../_images/xes_189815.png"><img alt="../_images/xes_189815.png" src="../_images/xes_189815.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-text">The mask for the peak of the Nb Kβ<sub>4</sub> emission line</span></p>
+</div>
+</div><p id="_fig-xesmasks">This command is used to create the masks and compute the XES
+spectrum.  In this case, <code class="docutils literal"><span class="pre">Nb2O3_Kb2_2</span></code> is the file name stub.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla xes -c ini/Nb2O3.ini --noscan --xesimage=1 -p Nb2O3_Kb2_2</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">--noscan</span></code> command line switch tells the <strong class="program">bla</strong> program
+that no scan file was written.  In a HERFD measurement, the scan file
+is used to map incident energy values to each image in the HERFD
+measurement.  It is also used to record I<sub>0</sub> and other
+detectors.  For a non-resonant XES measurement, this file is not
+written.  Emission energy values are encoded in the file names of the
+elastic images.  File names are determined from the parameters in the
+<code class="docutils literal"><span class="pre">[files]</span></code> block of the ini file.</p>
+<p>The <code class="docutils literal"><span class="pre">--xesimage</span></code> switch tells the <strong class="program">bla</strong> program which
+non-resonant XES image to process.  In this experiment, the XES
+spectrum was measured 8 times and this command processes the first
+measurement.</p>
+<p>Here is the ini file specified by the <code class="docutils literal"><span class="pre">-c</span></code> switch.  The <code class="docutils literal"><span class="pre">[spots]</span></code>
+block is used to manually remove regions of the image from processing.
+The polyfill step of the mask creation recipe is sensitive spurious
+signal, such as from diffraction peaks.  The <code class="docutils literal"><span class="pre">xrange</span></code> parameter sets
+the range in width of the image which contains all the signal from the
+sequence of elastic images.  Pixels outside that range in width are
+set to 0 in the mask, which helps to normalize the polyfill step.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>measure<span class="o">]</span>
+<span class="nv">emission</span>           <span class="o">=</span> <span class="m">189280</span> to <span class="m">189945</span> by 5
+<span class="nv">scanfolder</span>         <span class="o">=</span> /home/bruce/Data/NIST/10ID/2016.02/Nb2O3_2
+<span class="nv">tiffolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/10ID/2016.02/Nb2O3_2
+<span class="nv">outfolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/10ID/2016.02/Nb2O3_2/processed
+<span class="nv">element</span>            <span class="o">=</span> Nb
+<span class="nv">line</span>               <span class="o">=</span> Lb2
+<span class="nv">tiffcounter</span>        <span class="o">=</span> 0001
+<span class="nv">energycounterwidth</span> <span class="o">=</span> 4
+<span class="nv">imagescale</span>         <span class="o">=</span> 40
+<span class="nv">outimage</span>           <span class="o">=</span> gif
+
+<span class="o">[</span>files<span class="o">]</span>
+<span class="nv">scan</span>               <span class="o">=</span> %s.001
+<span class="nv">elastic</span>            <span class="o">=</span> %s_elastic_%e_%t.tif
+<span class="nv">image</span>              <span class="o">=</span> %s_%c.tif
+<span class="nv">xdi</span>                <span class="o">=</span> ini/nb.xdi.ini
+
+<span class="c1">## Nb2O3_2</span>
+<span class="o">[</span>spots<span class="o">]</span>
+<span class="nv">xrange</span> <span class="o">=</span> <span class="m">60</span> 336
+
+<span class="o">[</span>steps<span class="o">]</span>
+<span class="nv">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
+<span class="s">bad 400 weak 0</span>
+<span class="s">gaussian 1.7</span>
+<span class="s">useshield 12</span>
+<span class="s">polyfill</span>
+<span class="s">END</span>
+</pre></div>
+</div>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/exp/xes.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="rixs.html" title="Resonant Inelastic X-ray Scattering (RIXS)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="herfd.html" title="High energy resolution fluorescence detection (HERFD)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

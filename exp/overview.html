@@ -1,0 +1,206 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview of the BLA measurement &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bent Laue experiment" href="index.html" />
+    <link rel="next" title="High energy resolution fluorescence detection (HERFD)" href="herfd.html" />
+    <link rel="prev" title="The bent Laue experiment" href="index.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="herfd.html" title="High energy resolution fluorescence detection (HERFD)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="The bent Laue experiment"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="overview-of-the-bla-measurement">
+<h1>Overview of the BLA measurement<a class="headerlink" href="#overview-of-the-bla-measurement" title="Permalink to this headline">¶</a></h1>
+<p>The spectrometer for which this software was developed uses a bent
+Laue analyzer of the sort first described by Zhong et al.  The
+analyzer is in the form of a log-spiral.  A sheet of silicon crystal
+(most of the examples in this document use a Si (220) crystal) is
+pressed against this log-spiral surface.</p>
+<p>The log-spiral is the shape that preserves the divergence of the
+signal fluorescing from a sample as the light is diffracted from
+the planes of the crystal.  This, then, serves to spatially separate
+the light diffracted by the crystal from the light transmitted through
+the crystal, as seen in this schematic:</p>
+<div class="figure align-center" id="id1">
+<a class="reference external image-reference" href="../_images/bla-schematic.png"><img alt="../_images/bla-schematic.png" src="../_images/bla-schematic.png" /></a>
+<p class="caption"><span class="caption-text">Schematic of the log-spiral bent Laue analyzer, taken from figure 1
+in Wu et al.</span></p>
+</div>
+<p>If an area detector is placed far enough away from the analyzer, only
+the light diffracted by the crystal will be incident upon the face of
+the detector.</p>
+<blockquote>
+<div><ul class="simple" id="bibtex-bibliography-exp/overview-0">
+<li>Yufen Wu, Shali Xiao, Jian Lu, Lifeng Liu, Qingguo Yang, and Xianbin Huang. Research on a logarithmically bent laue crystal analyzer for x-ray monochromatic backlight imaging. <em>Review of Scientific Instruments</em>, 2013. <a class="reference external" href="http://dx.doi.org/10.1063/1.4815549">doi:10.1063/1.4815549</a>.</li>
+<li>Z.&nbsp;Zhong, L.&nbsp;D. Chapman, B.&nbsp;A. Bunker, G.&nbsp;B. Bunker, R.&nbsp;Fischetti, and C.&nbsp;U. Segre. A bent Laue analyzer for fluorescence EXAFS detection. <em>Journal of Synchrotron Radiation</em>, 6(3):212–214, May 1999. <a class="reference external" href="http://dx.doi.org/10.1107/S0909049599002022">doi:10.1107/S0909049599002022</a>.</li>
+</ul>
+</div></blockquote>
+<p>In practice, it is useful to use some kind of collimator, such as
+Soller slits, to suppress background on the detector from light
+scattering from other parts of the experiment.</p>
+<p>Here is a photograph of the spectrometer as it was used in February 2016.</p>
+<div class="figure align-center">
+<a class="reference external image-reference" href="../_images/experiment.jpg"><img alt="../_images/experiment.jpg" src="../_images/experiment.jpg" style="width: 40%;" /></a>
+</div>
+<p>The shrouded box at the far right of the photo contains the
+Kirkpatrick-Baez focusing mirrors used to deliver a 10s-of-microns
+sized small spot to the sample.  The shielding is in place to keep
+light from scattering off the mirror and into the detector.</p>
+<p>The sample is mounted on an XY stage with an optical camera observing
+the sample.</p>
+<p>The analyzer is the shiny object just below and to the left of the
+center of the center of the photo.  The shiny part is the Si (22)
+crystal.  The aluminum frame around the Si is in the log-spiral
+shape.</p>
+<p>The sheets of metal between the sample and the analyzer are for
+shielding light that might scatter from the region of the sample in
+the direction of the detector.</p>
+<p>Suspended at the appropriate angle to intercept the light diffracting
+from the analyzer is a <a class="reference external" href="https://www.dectris.com/pilatus3-r-s-and-x.html">Pilatus area detector</a>.  Between the
+analyzer and the Pilatus are a set of Soller slits.</p>
+<p>Several parts of the spectrometer are actuated.  The sample can be
+moved in the incident beam.  The optical camera is used to bring the
+surface of the sample to the same spot after a sample change.</p>
+<p>The analyzer can rotate about it's diffraction axis and can move
+closer to or farther from the sample.  Together, these motions bring
+the analyzer into focus with the sample at a given energy.</p>
+<p>The Pilatus is rotated to twice the angle of the analyzer crystal so
+that the diffracted light enters its window.</p>
+<p>In the following sections, examples of HERF, XES, and RIXS
+measurements using the instrument are shown.</p>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/exp/overview.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="herfd.html" title="High energy resolution fluorescence detection (HERFD)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="The bent Laue experiment"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

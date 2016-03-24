@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The bla program &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="next" title="Installation" href="install.html" />
+    <link rel="prev" title="Resonant Inelastic X-ray Scattering (RIXS)" href="../exp/rixs.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../exp/rixs.html" title="Resonant Inelastic X-ray Scattering (RIXS)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-bla-program">
+<h1>The bla program<a class="headerlink" href="#the-bla-program" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p>A measurement set consists of</p>
+<ul class="simple">
+<li>A column data file with columns of energy and scalars from the
+measurement.</li>
+<li>One Pilatus image for each energy point in the XANES scan containing
+the HERFD signal at that point.</li>
+<li>A set of Pilatus images taken at energies around the fluorescence
+energy. These are used to make a mask which identifies which pixels
+contain signal related to specific emission energies.</li>
+</ul>
+<p>This software uses perl, <a class="reference external" href="https://metacpan.org/release/Moose">Moose</a>, and <a class="reference external" href="http://pdl.perl.org">PDL</a> to process the images into a high resolution
+XANES spectrum. The GUI, called <font size=-1 color="#8C4112">METIS</font>, uses WxWidgets and
+its perl bindings. See <a class="reference external" href="lib/Xray/BLA/Image.html">Xray::BLA::Image</a>
+for how to import the signed 32 bit tiff images directly into PDL.</p>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">bla</span></code>, found in the <code class="docutils literal"><span class="pre">bin/</span></code> folder, is a wrapper script around the
+bent Laue processing tasks:</p>
+<ol class="arabic simple">
+<li><code class="docutils literal"><span class="pre">herfd</span></code>: make a single HERFD spectrum at a specific emission energy</li>
+<li><code class="docutils literal"><span class="pre">xes</span></code>: compute the emission spectrum for a specific incident energy</li>
+<li><code class="docutils literal"><span class="pre">rixs</span></code>: generate a sequence of HERFD spectra at a sequence of
+emission energies, i.e. make an XAS-like RIXS plane</li>
+<li><code class="docutils literal"><span class="pre">plane</span></code>: generate a sequence of XES spectra at a sequence of
+incidence energies and concatenate them into a single output file,
+i.e. make an XES-like RIXS plane</li>
+<li><code class="docutils literal"><span class="pre">map</span></code>: convert a series of elastic images to an energy vs. pixel
+map</li>
+<li><code class="docutils literal"><span class="pre">mask</span></code>: compute the mask file for a specific emission energy</li>
+<li><code class="docutils literal"><span class="pre">point</span></code>: convert a specified BLA image to its HERFD value for a
+specified emission energy</li>
+</ol>
+</div>
+<div class="section" id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="script.html">The bla script</a></li>
+<li class="toctree-l1"><a class="reference internal" href="env.html">Environment variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="env.html#specifying-the-configuration-file">Specifying the configuration file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="env.html#specifying-the-emission-energy">Specifying the emission energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="env.html#specifying-metadata">Specifying metadata</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="output.html">Output</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="output.html#saving-masks-as-image-files">Saving masks as image files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#animations">Animations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#xdi-output">XDI Output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">The configuration file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask creation recipes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#recommended-steps">Recommended steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#other-steps">Other steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mask.html#development-tools">Development tools</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tasks.html">Tasks of the bla program</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#main-tasks">Main tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks.html#developer-tasks">Developer tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshoot.html">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshoot.html#error-checking">Error checking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshoot.html#pdl-and-gnuplot">PDL and Gnuplot</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/bla/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../exp/rixs.html" title="Resonant Inelastic X-ray Scattering (RIXS)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

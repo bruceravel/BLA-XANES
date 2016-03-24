@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Resonant Inelastic X-ray Scattering (RIXS) &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bent Laue experiment" href="index.html" />
+    <link rel="next" title="The bla program" href="../bla/index.html" />
+    <link rel="prev" title="Non-resonant X-ray Emission Spectroscopy (XES)" href="xes.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../bla/index.html" title="The bla program"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="xes.html" title="Non-resonant X-ray Emission Spectroscopy (XES)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="resonant-inelastic-x-ray-scattering-rixs">
+<h1>Resonant Inelastic X-ray Scattering (RIXS)<a class="headerlink" href="#resonant-inelastic-x-ray-scattering-rixs" title="Permalink to this headline">¶</a></h1>
+<p>A resonant inelastic scattering measurement is viewed in two ways, in
+the context of the BLA spectrometer.  In either case, the RIXS
+measurement measures over an entire plane of emission and incident
+energies.  That is, the emission intensity is measured over a range of
+emission energies <em>and</em> over a range of incident energies.</p>
+<p>In the context of HERFD experiment, the RIXS measurement measures the
+XAS-like spectra at various emission energies.  Typically in HERFD, we
+present the XANES spectrum measured at the peak of the emission line.
+This produces a spectrum with E<sub>0</sub> at the same location in the
+conventional and HERFD spectra.  Another way of saying that is that
+the conventional spectrum looks like a convolution of the HERFD
+spectrum.</p>
+<p>In the context of an XES measurement, the XES spectrum is measured
+over a range of energies, usually in the vicinity of the absorption
+edge.  In this way, various subtle phenomena such as crystal field
+splitting can be measured.  The output in this case is the sequence of
+XES spectra in a form that can be used to make a surface plot.</p>
+<div class="section" id="rixs-in-the-xas-direction">
+<h2>RIXS in the XAS direction<a class="headerlink" href="#rixs-in-the-xas-direction" title="Permalink to this headline">¶</a></h2>
+<p>To make the XAS-like RIXS measurement, we generate the full sequence
+of masks from the full sequence of elastic energies.  Each mask is
+made in exactly the same way as for the HERFD measurement already
+discussed.</p>
+<p>The off-peak HERFD spectra are smaller than the on-peak HERFD.  At the
+fringes of the energy range, these HERFD spectra are quite tiny.</p>
+<p>The E<sub>0</sub> of each HERFD spectrum depends upon the emission
+energy measured.  This, along with increased spectral resolution of
+the HERFD is the result of the narrow bandwidth of the analyzer
+crystal.</p>
+<div class="figure align-center" id="id1">
+<a class="reference external image-reference" href="../_images/rixs_pt_l3.png"><img alt="../_images/rixs_pt_l3.png" src="../_images/rixs_pt_l3.png" /></a>
+<p class="caption"><span class="caption-text">The sequence of Pt L<sub>III</sub> edge HERFD spectra made at
+energies from 9429 eV to 9454 eV, an energy range spanning the Pt
+Lα<sub>1</sub> emission line.  The tallest spectrum is the
+HERFD from the peak of the emission line at 9442 eV.</span></p>
+</div>
+<p>This also serves to explain the relationship between the HERFD
+spectrum and the conventional XAS.  The conventional XAS is measured
+without energy resolution.  (In the case of solid state detection of
+the fluorescence spectrum, the energy resolution of the detector is
+substantially larger than the core-hole lifetime.)  Thus the
+conventional XAS can be viewed as the superposition of the XAS-like
+RIXS spectra.</p>
+<p>The command using the <strong class="program">bla</strong> program is very similar to the
+the command for making a single HERFD spectrum.  In fact, all this
+does is iterate the HERFD command over all elastic energies.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla rixs -c PtLa1.ini Pt_La1</span>
+</pre></div>
+</div>
+<p>The same ini file is used for the RIXS calculation as for the HERFD
+calculation.</p>
+</div>
+<div class="section" id="rixs-in-the-xes-direction">
+<h2>RIXS in the XES direction<a class="headerlink" href="#rixs-in-the-xes-direction" title="Permalink to this headline">¶</a></h2>
+<p>In this example, we consider the resonant Bi Lβ<sub>5</sub>
+emission in Bi<sub>2</sub>NbO<sub>5</sub>F.  This is exactly like the
+XES measurement already discussed, except that instead of considering
+the image measured at a non-resonant energy well above the absorption
+edge, we extract the XES spectrum from a sequence of energies around
+the absorption edge.  If the emission line is close enough to the
+absorption energy, as it is in the case of the Bi Lβ<sub>5</sub>,
+the elastic images themselves are the images that are processed to
+compute each resonant XES spectrum.</p>
+<p>Here is an example of an image measured in the range of the Bi Lβ<sub>5</sub> line for Bi<sub>2</sub>NbO<sub>5</sub>F.  The stripe
+at the right represents the elastic scattering.  This is the part of
+the image that is used to make the mask for this energy.  The more
+diffuse stripe at the left is the signal from the Lβ<sub>5</sub>
+line, which is beginning to appear as the incident energy approaches
+the edge energy.  The sequence of masks made from the elastic portions
+of these images are passed over each entire image.</p>
+<div class="figure align-center" id="id2">
+<a class="reference external image-reference" href="../_images/BNOF_13427.png"><img alt="../_images/BNOF_134271.png" src="../_images/BNOF_134271.png" /></a>
+<p class="caption"><span class="caption-text">The image measured for Bi<sub>2</sub>NbO<sub>5</sub>F  at 13427 eV,
+within the range of the RIXS measurement.  The elastic scattering is the thin
+stripe to the right, the RIXS signal is the more diffuse area to
+the left.</span></p>
+</div>
+<p>Here is the result, the sequence of XES spectra presented as a surface
+plot of incident energy versus energy loss.  Energy loss is emission
+energy minus incident energy.</p>
+<div class="figure align-center" id="id3">
+<a class="reference external image-reference" href="../_images/BNOF_Lb5.png"><img alt="../_images/BNOF_Lb5.png" src="../_images/BNOF_Lb5.png" /></a>
+<p class="caption"><span class="caption-text">The RIXS plane for the Bi Lβ<sub>5</sub> emission line in
+Bi<sub>2</sub>NbO<sub>5</sub>F.</span></p>
+</div>
+<p>The bright stripe at 0 energy loss is the elastic portion of each
+image.  That is, the 0 energy loss stripe is from passing the masks
+over the elastically scattered portion of each image in the sequence.</p>
+<p>The signal above 20 eV energy loss results from passing the elastic
+masks over the more diffuse Lβ<sub>5</sub> signal on the right
+side of each successive image.</p>
+<p>In this case, we see the beginning of the XAS in the bright yellow
+spot in the upper right corner of the RIXS plane.  The more diffuse
+signal in the upper half of the plane is some kind of crystal field
+splitting (or some such thing!  I don't really understand it at the
+time I am writing this).</p>
+<p>The command using the <strong class="program">bla</strong> program is very similar to the
+the command for computing a singole XES spectrum.  Instead of
+specifying the image to process, all images in the sequence are
+iterated over.</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla plane -c ini/BNOF.ini --noscan Bi2NbO5F_Lb5_v</span>
+</pre></div>
+</div>
+<p>Note that the same ini file is typically used for the XES and plane
+measurements.  Here is the one used for this Bi Lβ<sub>5</sub>
+measurement.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>measure<span class="o">]</span>
+<span class="nv">emission</span>           <span class="o">=</span> <span class="m">133660</span> to <span class="m">134345</span> by 5
+<span class="nv">line</span>               <span class="o">=</span> Lb5
+<span class="nv">scanfolder</span>         <span class="o">=</span> /home/bruce/Data/NIST/10ID/2016.02/Bi2NbO5F_v
+<span class="nv">tiffolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/10ID/2016.02/Bi2NbO5F_v
+<span class="nv">outfolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/10ID/2016.02/Bi2NbO5F_v/processed
+<span class="nv">element</span>            <span class="o">=</span> Bi
+<span class="nv">tiffcounter</span>        <span class="o">=</span> 0001
+<span class="nv">energycounterwidth</span> <span class="o">=</span> 4
+<span class="nv">imagescale</span>         <span class="o">=</span> 40
+<span class="nv">outimage</span>           <span class="o">=</span> gif
+
+<span class="o">[</span>files<span class="o">]</span>
+<span class="nv">scan</span>               <span class="o">=</span> %s.001
+<span class="nv">elastic</span>            <span class="o">=</span> %s_elastic_%e_%t.tif
+<span class="nv">image</span>              <span class="o">=</span> %s_%c.tif
+<span class="nv">xdi</span>                <span class="o">=</span> ini/bi.xdi.ini
+
+<span class="o">[</span>spots<span class="o">]</span>
+<span class="nv">xrange</span><span class="o">=</span><span class="m">53</span> 290
+
+<span class="o">[</span>steps<span class="o">]</span>
+<span class="nv">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
+<span class="s">bad 400 weak 0</span>
+<span class="s">gaussian 2.5</span>
+<span class="s">useshield 12</span>
+<span class="s">polyfill</span>
+<span class="s">END</span>
+</pre></div>
+</div>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/exp/rixs.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../bla/index.html" title="The bla program"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="xes.html" title="Non-resonant X-ray Emission Spectroscopy (XES)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

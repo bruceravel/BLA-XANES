@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The bla script &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bla program" href="index.html" />
+    <link rel="next" title="Environment variables" href="env.html" />
+    <link rel="prev" title="Installation" href="install.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="env.html" title="Environment variables"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-bla-script">
+<h1>The bla script<a class="headerlink" href="#the-bla-script" title="Permalink to this headline">¶</a></h1>
+<p>Here is an overview of the command line <strong class="program">bla</strong> program and a
+summary of which command line switches are recognized by each task:</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>bla herfd [cxespvnfqh]  &lt;stub&gt;
+bla rixs  [cxspvnfqh]   &lt;stub&gt;
+bla xes   [cipvnqh]     &lt;stub&gt;
+bla plane [cpvnqh]      &lt;stub&gt;
+bla map   [crpvnqh]     &lt;stub&gt;
+bla mask  [csvnfqh]     &lt;stub&gt;
+bla point [ceih]        &lt;stub&gt;
+
+   --config   | -c    [string]  configuration file (required)
+   --energy   | -e    [integer] emission energy (required for herfd/point tasks)
+   --incident | -i    [integer] data point at which compute HERFD (required for point/xes task)
+   --xdiini   | -x    [string]  XDI configuration file
+   --noscan           [flag]    true if no scan file is present
+   --reuse    | -r    [flag]    reuse mask files for energy map if in outfolder
+   --save     | -s    [flag]    save mask as gif
+   --plot     | -p    [flag]    plot data (herfd/rixs/map/xes tasks)
+   --verbose  | -v    [flag]    write progress messages
+   --nocolor  | -n    [flag]    turn off color coding of screen output
+   --noscan           [flag]    do not use scan file
+   --xesimage         [integer] specify which image to use for XES
+   --format   | -f    [string]  output static image format, gif or tif
+   --quiet    | -q    [flag]    suppress progress messages
+   --help     | -h    [flag]    write this message and exit
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">bla</span></code> script assumes that scan files and image files have
+related names. In this example, the <code class="docutils literal"><span class="pre">&lt;stub&gt;</span></code> is <code class="docutils literal"><span class="pre">Aufoil1</span></code>, then
+scan file is called <code class="docutils literal"><span class="pre">Aufoil1.001</span></code>, and the image files are called
+<code class="docutils literal"><span class="pre">Aufoil1_NNNNN.tif</span></code>. The <code class="docutils literal"><span class="pre">NNNNN</span></code> in the image file name indicates
+the data point and is reflected in one of the columns of the scan
+file. If your data do not follow these patterns, this script will
+fail. File locations are specified in the configuration file.</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>examples:  bla herfd -c=/path/to/config.ini -e=9713 Aufoil1
+           bla rixs  -c=/path/to/config.ini Aufoil1
+           bla plane -c=/path/to/config.ini Aufoil1
+           bla map   -c=/path/to/config.ini Aufoil1
+           bla xes   -c=/path/to/config.ini -i=11970 Aufoil1
+           bla mask  -c=/path/to/config.ini -e=9713 Aufoil1
+           bla point -c=/path/to/config.ini -e=9713 -i=10 Aufoil1
+</pre></div>
+</div>
+<p>Here, “Aufoil1” is the stub, i.e. the basename of the scan and image
+files, and the <code class="docutils literal"><span class="pre">-c</span></code> and <code class="docutils literal"><span class="pre">-e</span></code> command line options are demonstrated.</p>
+<p>The <code class="docutils literal"><span class="pre">-i</span></code> flag, used by <code class="docutils literal"><span class="pre">point</span></code> and <code class="docutils literal"><span class="pre">xes</span></code> can take either an
+integer, indicating the index of the data point, or a number, indicating
+the incident energy of the datapoint. So the following may be
+equivalent:</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>bla point -c=/path/to/config.ini -e=9713 -i=69 Aufoil1
+bla point -c=/path/to/config.ini -e=9713 -i=12000 Aufoil1
+</pre></div>
+</div>
+<p>For the <code class="docutils literal"><span class="pre">point</span></code> task, the <code class="docutils literal"><span class="pre">-i</span></code> flag <strong>must</strong> be specified. For the
+<code class="docutils literal"><span class="pre">xes</span></code> task, if the <code class="docutils literal"><span class="pre">-i</span></code> flag is omited, the midpoint of the scan (in
+index, not in energy) will be used.</p>
+<p>Options that are not used by a function (for example <code class="docutils literal"><span class="pre">-e</span></code> for <code class="docutils literal"><span class="pre">rixs</span></code>
+or <code class="docutils literal"><span class="pre">map</span></code>, or <code class="docutils literal"><span class="pre">-i</span></code> for any task other than <code class="docutils literal"><span class="pre">point</span></code> or <code class="docutils literal"><span class="pre">xes</span></code>) will
+be silently ignored.</p>
+<p><code class="docutils literal"><span class="pre">-c</span></code> is required for all functions unless the <code class="docutils literal"><span class="pre">BLACONFIG</span></code>
+environment variable is set.</p>
+<p>The <code class="docutils literal"><span class="pre">-r</span></code> flag is a time-saver for the <code class="docutils literal"><span class="pre">rixs</span></code>, <code class="docutils literal"><span class="pre">map</span></code>, and <code class="docutils literal"><span class="pre">xes</span></code>
+tasks. When present, this flag tells the program to reuse any mask
+images or scan files found in the output folder. This is safe so long as
+the mask creation parameters in the configuration file have not been
+changed.</p>
+<p>Since the <code class="docutils literal"><span class="pre">point</span></code> task returns a number intended for use during data
+acquisition, verbosity is turned off regardless of the command line
+switches. Use the <code class="docutils literal"><span class="pre">-q</span></code> flag if you want to suppress screen messages
+during the <code class="docutils literal"><span class="pre">mask</span></code> task. Saving is turned on for the <code class="docutils literal"><span class="pre">mask</span></code> task
+regardless of the command line switches.</p>
+<p><code class="docutils literal"><span class="pre">-p</span></code> will cause a plot to be made using Gnuplot before exiting for the
+<code class="docutils literal"><span class="pre">herfd</span></code>, <code class="docutils literal"><span class="pre">xes</span></code>, and <code class="docutils literal"><span class="pre">map</span></code> tasks. The program and plot will exit
+when you hit return. For the <code class="docutils literal"><span class="pre">rixs</span></code> task, the most recent HERFD
+spectrum will be plotted before immediately going on to the next
+emmission eenrgy. The HERFD plots are quite crude, without axis labels
+or other ornaments.</p>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/bla/script.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="env.html" title="Environment variables"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The configuration file &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bla program" href="index.html" />
+    <link rel="next" title="Mask creation recipes" href="mask.html" />
+    <link rel="prev" title="Output" href="output.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="mask.html" title="Mask creation recipes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="output.html" title="Output"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-configuration-file">
+<h1>The configuration file<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h1>
+<p>The configuration file is in the Windows-style ini format. Here is an
+example:</p>
+<div class="highlight-ini"><div class="highlight"><pre><span></span>[measure]
+emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
+scanfolder = /home/bruce/Data/NIST/10ID/2011.12/scans
+tiffolder  = /home/bruce/Data/NIST/10ID/2011.12/tiffs
+outfolder  = /home/bruce/Data/NIST/10ID/2011.12/processed
+element    = Au
+line       = La1
+
+[files]
+scan       = %s.001
+elastic    = %s_elastic_%e_%t.tif
+image      = %s_%c.tif
+
+[steps]
+steps = &lt;&lt;END
+bad 400 weak 0
+multiply by 5
+areal mean radius 2
+bad 400 weak 2
+lonely 3
+social 2
+END
+</pre></div>
+</div>
+<p><a class="reference external" href="https://github.com/bruceravel/BLA-XANES/blob/master/share/config.ini">Here is an example configuration
+file.</a></p>
+<p>The <code class="docutils literal"><span class="pre">emission</span></code> can use a more concise syntax if the sequence of
+elastic energies was measured on a uniform grid. The following are
+equivalent:</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>emission = 9703 9705 9707 9709 9711 9713 9715 9717 9719
+
+emission = 9703 to 9719 by 2
+</pre></div>
+</div>
+<p>White space does not matter, but the words <code class="docutils literal"><span class="pre">to</span></code> and <code class="docutils literal"><span class="pre">by</span></code> are
+required.</p>
+<p>If the <code class="docutils literal"><span class="pre">emission</span></code> line has only a single energy, then you can omit the
+<code class="docutils literal"><span class="pre">-e</span></code> flag when using the <code class="docutils literal"><span class="pre">herfd</span></code>, <code class="docutils literal"><span class="pre">mask</span></code>, or <code class="docutils literal"><span class="pre">point</span></code> tasks.</p>
+<p>This configuration file can sit anywhere on disk and <strong>must</strong> be
+specified at the command line or via the <code class="docutils literal"><span class="pre">BLACONFIG</span></code> environment
+variable when using the <code class="docutils literal"><span class="pre">bla</span></code> script. I would recommend that you put
+it in the current work directory wherever you are working on your data.
+You may wish to keep multiple configuration files around for different
+experiments, different edges, different samples, etc.</p>
+<p>In the <code class="docutils literal"><span class="pre">[measure]</span></code> section, the <code class="docutils literal"><span class="pre">emission</span></code> item, which is not used
+by the <code class="docutils literal"><span class="pre">herfd</span></code> function, contains the list of emission energies at
+which to generate HERFD spectra. The next three items are the locations
+of the scan files, the image files, and the output files. The last two
+items are used to properly scale the color palette of the energy map by
+positively identifying the emission line measured.</p>
+<p>The <code class="docutils literal"><span class="pre">[files]</span></code> section defines several mini-templates for specifying
+file names. In this example, the elastic images are stored on disk with
+names like <code class="docutils literal"><span class="pre">Aufoil1_elastic_9711_00001.tif</span></code>. The &quot;elastic&quot; template is
+<code class="docutils literal"><span class="pre">%s_elastic_%e_%t.tif</span></code>. The <code class="docutils literal"><span class="pre">%s</span></code> is replaced by the stub, <code class="docutils literal"><span class="pre">%e</span></code> and
+<code class="docutils literal"><span class="pre">%t</span></code> are replaced by the elastic energy and the tiff counter (used to
+construct file names on the camera). The tags used in the template
+system are:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span>%s : stub
+%e : emission energy
+%i : incident energy
+%t : tiffcounter
+%c : energy index counter
+%% : literal %
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">[steps]</span></code> section is used to define the sequence of operations
+used to make the mask at any emission energy. The syntax of this section
+is somewhat fussy. It is essential that there are no spaces after either
+instance of the word <code class="docutils literal"><span class="pre">END</span></code>. Other than that, white space is not
+important, but spelling is.</p>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/bla/config.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="mask.html" title="Mask creation recipes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="output.html" title="Output"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

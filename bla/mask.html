@@ -1,0 +1,293 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Mask creation recipes &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bla program" href="index.html" />
+    <link rel="next" title="Tasks of the bla program" href="tasks.html" />
+    <link rel="prev" title="The configuration file" href="config.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tasks.html" title="Tasks of the bla program"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="The configuration file"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="mask-creation-recipes">
+<h1>Mask creation recipes<a class="headerlink" href="#mask-creation-recipes" title="Permalink to this headline">¶</a></h1>
+<p>Mask creation recipes are a sequence of steps, each applying an
+algorithm to the elastic image.</p>
+<p>The steps can come in any almost any order and can be repeated. At the
+end of the final step, the illuminated pixels in the mask will be set
+to a value of 1 so that the final mask can be used as an AND mask to
+create a point in the HERFD or XES spectra.</p>
+<p>Care is taken at the end to remove bad pixels that might have been
+restored by the Gaussian, polyfill, areal, or social pixel steps.</p>
+<div class="section" id="recommended-steps">
+<h2>Recommended steps<a class="headerlink" href="#recommended-steps" title="Permalink to this headline">¶</a></h2>
+<p><strong>Bad and weak pixel removal</strong></p>
+<blockquote>
+<div>The syntax is <code class="docutils literal"><span class="pre">bad</span> <span class="pre">#</span> <span class="pre">weak</span> <span class="pre">#</span></code>. The first number indicates the
+value above which a pixel is assumed to be a bad pixel.  The second
+number is the value below which a pixel is considered weak.  Both
+bad and weak pixels are removed from the mask.</div></blockquote>
+<p><strong>Gaussian blur</strong></p>
+<blockquote>
+<div>The syntax is <code class="docutils literal"><span class="pre">gaussian</span> <span class="pre">#.#</span></code>.  The number is the threshold value
+above which illuminated pixels will be retained.  This is a simple
+convolution using the approximation kernel given <a class="reference external" href="https://en.wikipedia.org/wiki/Kernel_%28image_processing%29">here</a>.
+All pixels which fall above the given threshold are set to 1, all
+pixels below are set to 0.  This does a very good job filtering out
+stray pixels, however it has the negative effect of retaining very
+bright pixels, such as those from diffraction peaks.</div></blockquote>
+<p><strong>useshield</strong></p>
+<blockquote>
+<div><p>The syntax is <code class="docutils literal"><span class="pre">useshield</span> <span class="pre">#</span></code>.  The number indicates how far back
+the trailing image is that will be used to create the shield.
+Consider an elastic image like this one which contains signal both
+from the elastic scattering (the thin stripe of the right) and from
+the onset of the absorption edge (the diffuse signal on the left).</p>
+<div class="figure align-center">
+<a class="reference external image-reference" href="../_images/BNOF_13427.png"><img alt="../_images/BNOF_13427.png" src="../_images/BNOF_13427.png" /></a>
+</div>
+<p>The purpose of the shield is to suppress the signal from the onset
+of the edge, leaving just the elastic bit.  Shields are constructed
+sequentially.  The first <code class="docutils literal"><span class="pre">#</span></code> steps do not have a shield – more
+specifically, the shield is empty.  The next shield uses the mask
+from <code class="docutils literal"><span class="pre">#</span></code> steps prior to block out this signal.  The following
+shield adds the mask from <code class="docutils literal"><span class="pre">#</span></code> steps back to the shield of the
+previous step.  Subsequent steps accumulate the masks from <code class="docutils literal"><span class="pre">#</span></code>
+steps back, adding them to their shields.</p>
+<p>Here is the mask computed from that image:</p>
+<div class="figure align-center">
+<a class="reference external image-reference" href="../_images/BNOF_13427_mask.png"><img alt="../_images/BNOF_13427_mask.png" src="../_images/BNOF_13427_mask.png" /></a>
+</div>
+<p>And here is the shield that was used to block the fluorescence signal:</p>
+<div class="figure align-center">
+<a class="reference external image-reference" href="../_images/BNOF_13427_shield.png"><img alt="../_images/BNOF_13427_shield.png" src="../_images/BNOF_13427_shield.png" /></a>
+</div>
+</div></blockquote>
+<p><strong>polyfill</strong></p>
+<blockquote>
+<div><p>The polyfill algorithm is an attempt to fit a solid figure to the
+measured elastic scattering.  This figure explains the steps:</p>
+<div class="figure align-center">
+<a class="reference external image-reference" href="../_images/polyfill.png"><img alt="../_images/polyfill.png" src="../_images/polyfill.png" /></a>
+</div>
+<p>The first panel is the raw measurement.  The second panel follows
+the Gaussian blur, which removes all of the outlying pixels.  The
+third panel shows the topmost and bottom most pixels in each column
+after the Gaussian blur.  Two polynomials are fit to this
+collection of points, one to the top set and one to the bottom set.
+These polynomials are shown in the fourth panel.  Finally, the
+pixels between the two polynomials are turned on, yielding the
+final mask.</p>
+<p>This step should follow the Gaussian blur and useshield steps.
+It may be necessary to remove spurious points by hand using the
+<code class="docutils literal"><span class="pre">[spots]</span></code> block in the configuration file.  Leaving spurious
+spots in the image can dramatically affect the polynomial fit.</p>
+</div></blockquote>
+<p>A recipe using these steps might be:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>steps<span class="o">]</span>
+<span class="nv">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
+<span class="s">bad 400 weak 0</span>
+<span class="s">gaussian 1.3</span>
+<span class="s">useshield 18</span>
+<span class="s">polyfill</span>
+<span class="s">END</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="other-steps">
+<h2>Other steps<a class="headerlink" href="#other-steps" title="Permalink to this headline">¶</a></h2>
+<p>These are mostly things that I implemented in earlier stages of
+development.  I find the Gaussian blur works better than the lonely
+and social steps and the areal mean.  But all of these are still there
+for testing purposes.</p>
+<p><strong>multiply</strong></p>
+<blockquote>
+<div>Multiply emission image by an overall constant. The syntax is
+<code class="docutils literal"><span class="pre">multiply</span> <span class="pre">by</span> <span class="pre">#</span></code> where the number is the constant scaling factor.</div></blockquote>
+<p><strong>areal mean or median</strong></p>
+<blockquote>
+<div><p>Apply an areal median or mean to each pixel. The syntax is
+<code class="docutils literal"><span class="pre">areal</span> <span class="pre">(median|mean)</span> <span class="pre">radius</span> <span class="pre">#</span></code>. The number defines the size of the
+square considered around each pixel. A value of 1 means a 3x3 square,
+a value of 2 means a 5x5 square. The value of each pixel is set to
+either the mean or the median value of the pixels in the square.</p>
+<p>The median is not implemented at this time.</p>
+</div></blockquote>
+<p><strong>lonely pixels</strong></p>
+<blockquote>
+<div>Remove all the lonely pixels. A lonely pixel is one which is
+illuminated but is not surrounded by enough illuminated pixels. The
+syntax is <code class="docutils literal"><span class="pre">lonely</span> <span class="pre">#</span></code>. The number defines how many illuminated
+pixels are required for a pixel not to be considered lonely.</div></blockquote>
+<p><strong>social pixels</strong></p>
+<blockquote>
+<div>Include all social pixels. A social pixel is one which is not
+illuminated but is surrounded by enough illuminated pixels. The
+syntax is <code class="docutils literal"><span class="pre">social</span> <span class="pre">#</span></code>. The number defines how many of the
+surrounding pixels must be illuminated for the pixel to be turned on.</div></blockquote>
+<p>A recipe using these might be:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>steps<span class="o">]</span>
+<span class="nv">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
+<span class="s">bad 400 weak 2</span>
+<span class="s">lonely 3</span>
+<span class="s">social 2</span>
+<span class="s">END</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="development-tools">
+<h2>Development tools<a class="headerlink" href="#development-tools" title="Permalink to this headline">¶</a></h2>
+<p><strong>energy map</strong></p>
+<blockquote>
+<div><p>Use the energy map computed by the <code class="docutils literal"><span class="pre">map</span></code> task. The syntax is
+<code class="docutils literal"><span class="pre">map</span> <span class="pre">#</span></code> where the number is the width in eV about the emission
+energy. Any pixels with a value of <code class="docutils literal"><span class="pre">&lt;emission&gt;</span> <span class="pre">+/-</span> <span class="pre">&lt;width&gt;</span></code> will be
+included in the mask. Note that it makes no sense to use this step
+with any step other than the bad/weak step, which should precede this
+step.</p>
+<p>This is not working at present.</p>
+</div></blockquote>
+<p><strong>entire image</strong></p>
+<blockquote>
+<div>Use the entire image. The syntax is <code class="docutils literal"><span class="pre">entire</span> <span class="pre">image</span></code>. This step just
+sets all the pixels in the mask to 1 so that the entire image is used
+to compute the energy point. Note that it makes no sense to use this
+step with any step other than the bad/weak step, which should precede
+this step.</div></blockquote>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/bla/mask.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tasks.html" title="Tasks of the bla program"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="The configuration file"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

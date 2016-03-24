@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>High energy resolution fluorescence detection (HERFD) &mdash; Xray::BLA and Metis 2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="up" title="The bent Laue experiment" href="index.html" />
+    <link rel="next" title="Non-resonant X-ray Emission Spectroscopy (XES)" href="xes.html" />
+    <link rel="prev" title="Overview of the BLA measurement" href="overview.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="xes.html" title="Non-resonant X-ray Emission Spectroscopy (XES)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Overview of the BLA measurement"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="high-energy-resolution-fluorescence-detection-herfd">
+<h1>High energy resolution fluorescence detection (HERFD)<a class="headerlink" href="#high-energy-resolution-fluorescence-detection-herfd" title="Permalink to this headline">¶</a></h1>
+<p>Here is an example of a high energy resolution fluorescence detection
+(HERFD) measurement of the Pt L<sub>III</sub> edge using the Lα<sub>1</sub> emission line.  This montage shows a sequence of 112
+exposures of the Pilatus through the energy range of the Pt L<sub>III</sub> XANES measurement.</p>
+<div class="figure align-center" id="id1">
+<a class="reference external image-reference" href="../_images/herfd_montage.png"><img alt="../_images/herfd_montage.png" src="../_images/herfd_montage.png" style="width: 40%;" /></a>
+<p class="caption"><span class="caption-text">The HERFD measurement sequence for the Pt L<sub>III</sub> edge using
+the Lα<sub>1</sub> emission line.</span></p>
+</div>
+<p>At some level, it is clear how this is a XANES spectrum.  The first
+few exposures are below the edge.  There is no fluorescence below the
+edge, so there little signal on the face of the detector.  As the
+monochromator is scanned above the edge, the signal on the detector
+grows.  Through the XAFS oscillations, the intensity of the signal on
+the detector varies.</p>
+<p>To convert these images into a spectrum, it is necessary to create a
+map which translates a pixel location on the detector into an energy.
+That is, the crystal disperses energy over the face of the detector.
+To compute the HERFD signal, we want to include only that portion of
+each image which corresponds to a narrow energy band around the Lα<sub>1</sub> peak energy of 9442 eV.</p>
+<p>To do this, we measure an “elastic image” at 9442 eV.  The
+elastically scattered photons at this energy are dispersed by the Laue
+analyzer onto specific pixels of the detector.  These images are used
+to make a mask that associates those illuminated pixels with the
+energy 9442 eV.</p>
+<div class="figure align-center" id="id2">
+<a class="reference external image-reference" href="../_images/elastic_9442.png"><img alt="../_images/elastic_9442.png" src="../_images/elastic_9442.png" /></a>
+<p class="caption"><span class="caption-text">The measurement of the elastic scattering at 9442 eV, the peak of
+the Lα<sub>1</sub> emission line.</span></p>
+</div>
+<p>The mask creation algorithm has a lot to deal with, as you can see
+from the elastic montage.  The mask creation has to reject weakly
+illuminated pixels on the periphery of each image, leaving only the
+wiggly stripe running through the middle of the each image.  It also
+must reject very bright spots due to to powder diffraction, which
+occasionally occur and are often much brighter than the rest of the
+image.</p>
+<p>Here is the mask generated from the elastic image at 9442 eV.
+The algorithm isolates those pixels which are obviously within the
+stripes of the elastic images, setting each of those pixels to 1,
+while setting all other pixels to 0.</p>
+<div class="figure align-center" id="id3">
+<a class="reference external image-reference" href="../_images/mask_9442.png"><img alt="../_images/mask_9442.png" src="../_images/mask_9442.png" /></a>
+<p class="caption"><span class="caption-text">The mask for 9442 eV, the peak of the Lα<sub>1</sub> emission
+line.</span></p>
+</div>
+<p>This mask is then applied in sequence to the images measured
+throughout the range of the Pt L<sub>III</sub> edge XANES.  This is done
+by multiplying the mask pixel-by-pixel with each measurement in the
+scan.  This extracts only those pixels associated with the peak of the
+Lα<sub>1</sub> emission line.</p>
+<p>The intensity of the masked pixels are summed, yielding the HERFD
+signal at that energy.  This is repeated for each energy point,
+yielding the HERFD spectrum.</p>
+<div class="figure align-center" id="id4">
+<a class="reference external image-reference" href="../_images/herfd_9442.png"><img alt="../_images/herfd_9442.png" src="../_images/herfd_9442.png" /></a>
+<p class="caption"><span class="caption-text">The HERFD using the 9442 eV mask.</span></p>
+</div>
+<p>The command for making that HERFD spectrum from the collection of images is</p>
+<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla herfd -e 9442 -c PtLa1.ini Pt_La1</span>
+</pre></div>
+</div>
+<p>Here <code class="docutils literal"><span class="pre">Pt_La1</span></code> is the “stub”, i.e. the word which begins the
+names of all files in the measurement.  The emission energy at which
+to compute the HERFD is 9442 eV, specified by the <code class="docutils literal"><span class="pre">-e</span></code> command line
+switch.  The ini file defining the parameters of the calculation is
+specified with the <code class="docutils literal"><span class="pre">-c</span></code> switch.</p>
+<p>Here is the ini file:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>measure<span class="o">]</span>
+<span class="nv">emission</span>           <span class="o">=</span> <span class="m">9429</span> to <span class="m">9454</span> by 1
+<span class="nv">scanfolder</span>         <span class="o">=</span> /home/bruce/Data/herfd_data
+<span class="nv">tiffolder</span>          <span class="o">=</span> /home/bruce/Data/herfd_data
+<span class="nv">outfolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/herfd_data/process
+<span class="nv">element</span>            <span class="o">=</span> Pt
+<span class="nv">line</span>               <span class="o">=</span> La1
+<span class="nv">tiffcounter</span>        <span class="o">=</span> 001
+<span class="nv">energycounterwidth</span> <span class="o">=</span> 3
+<span class="nv">imagescale</span>         <span class="o">=</span> 40
+<span class="nv">outimage</span>           <span class="o">=</span> gif
+
+<span class="o">[</span>files<span class="o">]</span>
+<span class="nv">scan</span>               <span class="o">=</span> %s.001
+<span class="nv">elastic</span>            <span class="o">=</span> %s_elastic_%T_001.tif
+<span class="nv">image</span>              <span class="o">=</span> %s_%c.tif
+<span class="nv">xdi</span>                <span class="o">=</span> /home/bruce/git/BLA-XANES/share/bla.xdi.ini
+
+<span class="o">[</span>steps<span class="o">]</span>
+<span class="nv">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
+<span class="s">bad 400 weak 0</span>
+<span class="s">gaussian 2</span>
+<span class="s">andmask</span>
+<span class="s">END</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">[measure]</span></code> block defines the measured elastic energys, the
+locations on input and output files, and various other parameters.
+The <code class="docutils literal"><span class="pre">[files]</span></code> block defines mini-templates used by Xray::BLA to
+construct input and output file names.  The <code class="docutils literal"><span class="pre">[steps]</span></code> block gives
+the recipe for creating the mask from the elastic energy image.</p>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>2</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/exp/herfd.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="xes.html" title="Non-resonant X-ray Emission Spectroscopy (XES)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Overview of the BLA measurement"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The bent Laue experiment</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

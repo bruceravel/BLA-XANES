@@ -6,10 +6,13 @@
 The configuration file
 ======================
 
-The configuration file is in the Windows-style ini format. Here is an
+.. todo:: Explain ``[spots]``
+
+The configuration file is in the Windows-style ini format using a
+here-doc style extension for multi-line parameter values.  Here is an
 example:
 
-.. code-block:: ini
+.. code-block:: bash
 
     [measure]
     emission   = 9703 9705 9707 9709 9711 9713 9715 9717 9719
@@ -27,11 +30,8 @@ example:
     [steps]
     steps = <<END
     bad 400 weak 0
-    multiply by 5
-    areal mean radius 2
-    bad 400 weak 2
-    lonely 3
-    social 2
+    gaussian 2.4
+    polyfill
     END
 
 `Here is an example configuration
@@ -82,8 +82,11 @@ system are:
     %e : emission energy
     %i : incident energy
     %t : tiffcounter
+    %T : padded three-digit energy index
     %c : energy index counter
     %% : literal %
+
+
 
 The ``[steps]`` section is used to define the sequence of operations
 used to make the mask at any emission energy. The syntax of this section

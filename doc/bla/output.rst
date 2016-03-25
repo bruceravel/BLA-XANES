@@ -6,43 +6,64 @@
 Output
 ======
 
--  The output of the ``herfd`` task is a data file containing the HERFD
-   spectrum at the specified emission energy and, if requested, gif
-   images with the mask.
+**herfd task**
 
-   At each energy point, the HERFD signal is computed from the Pilatus
-   image using the mask created as described above. The counts on each
-   pixel lying within the illuminated portion of the mask are summed.
-   This sum is the HERFD signal at that incident energy.
+  The output of the ``herfd`` task is a data file in the `XDI format
+  <https://github.com/XraySpectroscopy/XAS-Data-Interchange>`_
+  containing the HERFD spectrum at the specified emission energy and,
+  if requested, gif images with the mask.
 
-   A column data file is written containing the energy and several
-   scalars from the original measurement and a column containing the
-   HERFD signal. This file can be imported directly into Athena.
+  At each energy point, the HERFD signal is computed from the Pilatus
+  image using the mask created as described above. The counts on each
+  pixel lying within the illuminated portion of the mask are summed.
+  This sum is the HERFD signal at that incident energy.
 
--  The output of the ``rixs`` task is the same as for the ``herfd``
-   script at each emission energy.
+  A column data file is written containing the energy and several
+  scalars from the original measurement and a column containing the
+  HERFD signal. This file can be imported directly into Athena.
 
-   .. todo:: Athena .prj output from :program:`bla` program
+**rixs task**
 
--  The output of the ``xes`` task is a data file containing the XES
-   spectrum from that incident energy with the signal from each emission
-   energy weighted by the number of illuminated pixels in that mask.
+  The output of the ``rixs`` task is the same as for the ``herfd``
+  script at each emission energy.
 
--  The output of the ``map`` task is a data file in a `simple
-   format <http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2>`__
-   which can be read by gnuplot and a gnuplot script for displaying the
-   data. The resulting image will plot a map of detector column vs
-   detector row with the color axis showing energy. Gif files for the
-   masks at each emission energy are also written.
+  .. todo:: Athena .prj output from :program:`bla` program
 
--  The output of the ``mask`` task is a single gif file containing the
-   mask for the specified emission energy.
+**xes task**
 
--  The output of the ``point`` task is the HERFD value extracted from a
-   specified BLA image for a specified emission energy. The value is
-   printed to STDOUT. If files containing the BLA image or the emission
-   mask do not exist or if any other problem is encountered, 0 is
-   printed to STDOUT.
+  The output of the ``xes`` task is a data file in the `XDI format
+  <https://github.com/XraySpectroscopy/XAS-Data-Interchange>`_
+  containing the XES spectrum from that incident energy with the
+  signal from each emission energy weighted by the number of
+  illuminated pixels in that mask.
+
+**plane task**
+
+  The output of the ``plane`` task is a data file in a `simple
+  format <http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2>`__
+  containing the emission intensity in the RIXS plane.  This file can
+  be read by gnuplot to display a map of the RIXS plane.
+
+**map task**
+
+  The output of the ``map`` task is a data file in a `simple format
+  <http://gnuplot.info/docs_4.2/gnuplot.html#x1-33600045.1.2>`__ which
+  can be read by gnuplot to display a map of detector column vs
+  detector row with the color axis showing energy.  Gif files for the
+  masks at each emission energy are also written.
+
+**mask task**
+
+  The output of the ``mask`` task is a single gif file containing the
+  mask for the specified emission energy.
+
+**point task**
+
+  The output of the ``point`` task is the HERFD value extracted from a
+  specified BLA image for a specified emission energy.  The value is
+  printed to STDOUT.  If files containing the BLA image or the emission
+  mask do not exist or if any other problem is encountered, 0 is
+  printed to STDOUT.
 
 On Windows, tiff files are written rather than gif files.
 
@@ -50,37 +71,15 @@ The ``herfd``, ``rixs``, ``xes``, and ``map`` tasks are intended for
 post-processing of a full data set.
 
 The ``mask`` and ``point`` tasks are intended for inlining in the data
-acquisition process. The ``mask`` task should be run after measuring the
+acquisition process.  The ``mask`` task should be run after measuring the
 elastic images at the emission energy and before measuring the HERFD
-data. The ``mask`` task takes about 10 seconds.
+data.  The ``mask`` task takes a couple seconds.
 
 The ``point`` task is intended for generating the HERFD value at a
-specific emission energy during the scan. This value can be used for
-plotting or storing to the output data file. The ``point`` task takes
+specific emission energy during the scan.  This value can be used for
+plotting or storing to the output data file.  The ``point`` task takes
 less than 1 second.
 
-Saving masks as image files
----------------------------
-
-In order to save mask images, you may need to install some additional
-software on your computer.  PDL uses the NetPBM package for image
-format manipulation.  On Ubuntu, the package is called ``netpbm`` and
-is likely already installed.  This is not installed by the Demeter
-installer for Windows, so you have to install it separately.  Download
-and install `the NetPBM Windows installer
-<http://gnuwin32.sourceforge.net/packages/netpbm.htm>`__.
-
-Note where the binaries get installed.  You must add that location to
-the execution path.  This can be done at the Windows command prompt by
-
-.. code-block:: bash
-
-     set PATH=%PATH%;C:\GnuWin32\bin
-
-substituting ``C:\GnuWin32\bin`` with the location on your computer.
-
-Without NetPBM, an invocation of the :program:`bla` program with the
-``-s`` flag will not run to completion.
 
 Animations
 ----------
@@ -96,17 +95,18 @@ Using ImageMagick on the output masks:
 XDI Output
 ----------
 
-All ASCII column data is written in the XDI format.  This is
-particularly handy for the RIXS function.  If XDI metadata is provided,
-then the ``BLA.pixel_ratio`` metadatum will be written to the output
-file.  This number is computed from the number of pixels illuminated in
-the mask at each emission energy.  The pixel ratio for an emission
-energy is the number of pixels from the emission energy with the
-largest number of illuminated pixels divided by the number of
+All ASCII column data is written in the `XDI format
+<https://github.com/XraySpectroscopy/XAS-Data-Interchange>`_.  This is
+particularly handy for the RIXS function.  If XDI metadata is
+provided, then the ``BLA.pixel_ratio`` metadata item will be written
+to the output file.  This number is computed from the number of pixels
+illuminated in the mask at each emission energy.  The pixel ratio for
+an emission energy is the number of pixels from the emission energy
+with the largest number of illuminated pixels divided by the number of
 illuminated pixels at that energy.
 
-The pixel ratio can be used to normalize the mu(E) data from each
-emission energy. The concept is that the normalized mu(E) data are an
+The pixel ratio can be used to normalize the |mu| (E) data from each
+emission energy. The concept is that the normalized |mu| (E) data are an
 approximation of what they would be if each emission energy was equally
 represented on the face of the detector.
 
@@ -116,8 +116,8 @@ available.
 
 XDI metadata about the beamline and sample can be supplied using the
 ``-x`` switch for the :program:`bla` program, the ``BLAXDIINI``
-environment variable, or in the ``[files]`` block of the
-configuration file.  Here is an example
+environment variable, or in the ``[files]`` block of the configuration
+file.  Here is an example ini file used to provide this metadata.
 
 .. code-block:: bash
 

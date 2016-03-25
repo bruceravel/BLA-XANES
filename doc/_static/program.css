@@ -20,5 +20,5 @@ div.body h6 {
     
 div.body h1 { background-color: #79443C; color: #eeeeee}
 div.body h2 { background-color: #FFD69F; border: 2px solid #B35819; }
-div.body h3 { background-color: #D2671D; }
+div.body h3 { background-color: #FFD69F; border: 1px dashed #B35819; }
 

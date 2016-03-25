@@ -105,11 +105,38 @@ sub fetch_metadata {
 
 =head1 NAME
 
-Xray::BLA::Image - Role for manipulating signed 32 bit TIFF files
+Xray::BLA::Image - Role for importing signed 32 bit TIFF files
 
 =head1 VERSION
 
-See L<Xray::BLA>
+See Xray::BLA
+
+=head1 METHODS
+
+=over 4
+
+=item C<Read>
+
+Read a signed 32 bit image from the Pilatus into a PDL data structure
+and set the C<columns> and C<rows> attributes of the Xray::BLA object.
+
+    my $image = $self->Read($pilatus_image);
+
+A million thanks to Chris Marshall for his help on the problem of
+reading signed 32 bit tiff files!  The old PDL-general archives from
+before the move to SourceForge doen't seem to be available, Here is my
+question and Chris' answer from the Wayback Machine:
+L<https://web.archive.org/web/20141030084128/http://mailman.jach.hawaii.edu/pipermail/perldl/2014-March/008623.html>
+
+=item C<fetch_metadata>
+
+Fetch metadata about the Piltus image from the tiff headers.  Return
+an anonymous hash containing C<Model>, C<DateTime>, C<BitsPerSample>,
+C<width>, and C<height>.
+
+    my $hash = $self->fetch_metadata($pilatus_image);
+
+=back
 
 =head1 AUTHOR
 

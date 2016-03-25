@@ -24,11 +24,14 @@ Xray::BLA::Return - A simple return object for use with Xray::BLA
 =item C<status>
 
 A numerical status.  Evaluates to false to indicate a problem.  Also
-used to return a numerical value for a successful return.
+used to return a numerical value for a successful return.  For
+instance, the C<apply_mask> method uses the C<status> to return the
+evaluation of the mask application, i.e. the HERFD value at that
+incident energy point.
 
 =item C<message>
 
-A string response.  This eaither returns an exception message or
+A string response.  This either returns an exception message or
 textual information about a successful return.
 
 =back
@@ -41,10 +44,23 @@ textual information about a successful return.
 
 Returns true if no problem is reported.
 
-   my $ret = $object -> some_method;
+   sub my_method {
+     my ($self, @args) = @_;
+     my $ret = Xray::BLA::Return->new();
+     ##
+     ## do lots of stuff
+     ##
+     $ret -> message("Stuff happened!");
+     $ret -> status(1);
+     return $ret;
+   };
+
+   ## then ...
+
+   my $ret = $object -> my_method;
    do {something} if $ret->is_ok;
 
-   my $ret = $object -> some_method;
+   my $ret = $object -> my_method;
    die $ret->message if not $ret->is_ok;
 
 =back

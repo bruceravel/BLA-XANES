@@ -433,7 +433,63 @@ Xray::BLA::IO - Role containing input and output operations
 
 =head1 VERSION
 
-See L<Xray::BLA>
+See Xray::BLA
+
+=head1 METHODS
+
+=over 4
+
+=item C<mask_file>
+
+Compute the name of an output file from the parameters of the
+calculation.
+
+   my $fname = $self->mask_file($type, $imagetype);
+
+C<$type> is one of C<mask>, C<shield>, C<previousshield>,
+C<rixsplane>, C<anim>, C<map>, C<maskmap>, or an integer denoting a
+file in a sequence.
+
+C<imagetype> is one of "gif", "tif", or "png" and specifies the output
+image format.
+
+=item C<xdi_out>
+
+Write HERFD data to an XDI file.  Return the name of the computed
+output file.  The arguments are the name of the ini file with XDI
+metadata and a reference to the hash containing the calculated HERFD
+data.
+
+   $outfile = $self->xdi_out($xdiini, \@data);
+
+=item C<xdi_xes>
+
+Write XES data to an XDI file.  Return the name of the computed output
+file.  The arguments are the name of the ini file with XDI metadata,
+the name of the XES image file, and a reference to the hash containing
+the calculated XES data.
+
+   my $outfile = $self->xdi_xes($xdiini, $xesimage, \@xes);
+
+=item C<energy_map>
+
+Write the results of the C<map> task to an output data file.  The
+arguments control screen output and the creation (not currently
+working) of an animation showing how the energy map was made.
+
+   my $spectrum -> energy_map(verbose => 1, animate=>0);
+
+=item C<gnuplot_map>
+
+Write gnuplot commands to use the data written by C<energy_map>.
+
+   open(my $GP, '>', 'splot.gp');
+   my $gp = $self->gnuplot_map;
+   print $GP $gp;
+   close $GP;
+
+
+=back
 
 =head1 AUTHOR
 

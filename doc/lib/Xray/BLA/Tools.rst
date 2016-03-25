@@ -10,7 +10,7 @@ NAME
 ****
 
 
-Xray::BLA::Tools - Tools and conveniences for BLA
+Xray::BLA::Tools - A role with tools and conveniences for BLA
 
 
 *******
@@ -18,7 +18,7 @@ VERSION
 *******
 
 
-See `Xray::BLA <http://search.cpan.org/search?query=Xray%3a%3aBLA&mode=module>`_
+See Xray::BLA
 
 
 *******
@@ -39,6 +39,7 @@ METHODS
      %e : emission energy
      %i : incident energy
      %t : tiffcounter
+     %T : padded, 3-digit energy index
      %c : energy index counter
      %% : literal %
  
@@ -52,6 +53,48 @@ METHODS
  
  
  might evaluate to \ *Aufoil1_elastic_9711_00001.tif*\ .
+ 
+
+
+\ ``howlong``\ 
+ 
+ Report on a time span in human readable terms.
+ 
+ 
+ .. code-block:: perl
+ 
+      my $start = DateTime->now( time_zone => 'floating' );
+      ##
+      ## do stuff...
+      ##
+      print $spectrum->howlong($start, $text);
+ 
+ 
+ The first argument is a DateTime object created at the beginning of a
+ lengthy chore.  The second argument is text that will be reported in
+ the return string, as in "$text took NN seconds".
+ 
+
+
+\ ``randomstring``\ 
+ 
+ Return a random string of a specified length, used to make temporary
+ files and folders.
+ 
+ 
+ .. code-block:: perl
+ 
+     my $string = $spectrum->randomstring(6);
+ 
+ 
+ The default is a 6-character string.
+ 
+
+
+\ ``is_windows``\ , \ ``is_osx``\ 
+ 
+ Return true is the operating system is Windows or OSX.  This is a
+ simple heuristic based on \ ``$^O``\  (see http://perldoc.perl.org/perlvar.html);
  
 
 

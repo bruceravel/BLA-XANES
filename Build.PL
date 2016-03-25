@@ -27,6 +27,7 @@ my $build = Module::Build
 	 recommends         => {
 				'PDL::Graphics::Simple'     =>  0,
 				'PDL::Graphics::Gnuplot'    =>  0,
+				'Pod::POM::View::Restructured' => 0,
 	 		       },
 	 sign               => 1,
 	);

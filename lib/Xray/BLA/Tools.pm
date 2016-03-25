@@ -72,11 +72,11 @@ sub is_osx {
 
 =head1 NAME
 
-Xray::BLA::Tools - Tools and conveniences for BLA
+Xray::BLA::Tools - A role with tools and conveniences for BLA
 
 =head1 VERSION
 
-See L<Xray::BLA>
+See Xray::BLA
 
 =head1 METHODS
 
@@ -91,6 +91,7 @@ Construct a file name from BLA object attributes using a simple
    %e : emission energy
    %i : incident energy
    %t : tiffcounter
+   %T : padded, 3-digit energy index
    %c : energy index counter
    %% : literal %
 
@@ -99,6 +100,34 @@ As an example:
    $bla->file_template('%s_elastic_%e_%t.tif')
 
 might evaluate to F<Aufoil1_elastic_9711_00001.tif>.
+
+=item C<howlong>
+
+Report on a time span in human readable terms.
+
+    my $start = DateTime->now( time_zone => 'floating' );
+    ##
+    ## do stuff...
+    ##
+    print $spectrum->howlong($start, $text);
+
+The first argument is a DateTime object created at the beginning of a
+lengthy chore.  The second argument is text that will be reported in
+the return string, as in "$text took NN seconds".
+
+=item C<randomstring
+
+Return a random string of a specified length, used to make temporary
+files and folders.
+
+   my $string = $spectrum->randomstring(6);
+
+The default is a 6-character string.
+
+=item C<is_windows>, C<is_osx>
+
+Return true is the operating system is Windows or OSX.  This is a
+simple heuristic based on C<$^O> (see http://perldoc.perl.org/perlvar.html);
 
 =back
 

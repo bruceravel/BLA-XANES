@@ -113,9 +113,9 @@ General methods
  
  These output image files are gif on linux and tif on Windows.
  
- This method is a wrapper around the contents of the \ ``steps``\ 
- attribute.  Each entry in \ ``steps``\  will be parsed and executed in
- sequence.
+ This method is a wrapper around the contents of the
+ \ ``steps``\  attribute.  Each entry in \ ``steps``\  will be parsed and
+ executed in sequence.
  
 
 
@@ -129,10 +129,11 @@ General methods
 
 \ ``remove_bad_pixels``\ 
  
- This removes the bad pixels from the map using the \ ``bad_pixel_mask``\ 
- attribute.  Some of the steps, \ ``areal``\  for example, can reinsert a
- bad pixel, so it is necessary to follow each step with this method to
- ensure that the bad pixels are not used in HERFD processing.
+ This removes the bad pixels from the map using the
+ \ ``bad_pixel_mask``\  attribute.  Some of the steps, \ ``areal``\  for example,
+ can reinsert a bad pixel, so it is necessary to follow each step with
+ this method to ensure that the bad pixels are not used in HERFD
+ processing.
  
 
 
@@ -161,6 +162,58 @@ Methods for the steps of mask creation
  pixels.
  
  Controlling attributes: \ ``bad_pixel_value``\ , \ ``weak_pixel_value``\ 
+ 
+
+
+\ ``gaussian_blur``\ 
+ 
+ Apply an approximate Gaussian blur filter to the image.  Set all
+ pixels above a threshold value to 1, setting all below that value to
+ 0.  This is a simple convolution with this kernel:
+ 
+ 
+ .. code-block:: perl
+ 
+      1   / 1 2 1 \
+    ---- (  2 4 2  )
+     16   \ 1 2 1 /
+ 
+ 
+ The size of the threshold depends on the intensity of the relevant
+ part of the image.  Very bright, spurious spots will pass through this
+ filter.
+ 
+ Controlling attribute: \ ``gaussian_blur_value``\ 
+ 
+
+
+\ ``useshield``\ 
+ 
+ Construct a shield used to mask out a region of the elastic image
+ associated with fluorescence or some other source of signal.
+ 
+ Shields are constructed sequentially.  The first N steps do not have a
+ shield -- more specifically, the shield is empty.  The next shield
+ uses the mask from N steps prior to block out this signal.  The
+ following shield adds the mask from N steps back to the shield of
+ the previous step.  Subsequent steps accumulate the masks from N
+ steps back, adding them to their shields.
+ 
+ All pixels under the shield are then set to 0.
+ 
+ Controlling attribute: \ ``shield``\ 
+ 
+
+
+\ ``polyfill``\ 
+ 
+ After the Gaussian blur or other filtering step to remove all of the
+ outlying pixels, the top-most and bottom-most pixels in each column
+ are noted.  Two polynomials are fit to this collection of points, one
+ to the top set and one to the bottom set.  The pixels between the two
+ polynomials are turned on, yielding the final mask.
+ 
+ Controlling attributes: none.
  
 
 
@@ -205,8 +258,8 @@ Methods for the steps of mask creation
  
  Set every pixel in the mask to 1.  This makes the "HERFD" using the
  entire image at each energy point.  This is used for testing and
- demonstration purposes and is not actually useful step for making high
- energy resolution data.
+ demonstration purposes and is not actually a useful step for making
+ high energy resolution data.
  
  Controlling attributes: none
  

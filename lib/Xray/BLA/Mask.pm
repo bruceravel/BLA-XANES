@@ -851,9 +851,9 @@ written.
 
 These output image files are gif on linux and tif on Windows.
 
-This method is a wrapper around the contents of the C<steps>
-attribute.  Each entry in C<steps> will be parsed and executed in
-sequence.
+This method is a wrapper around the contents of the
+C<steps> attribute.  Each entry in C<steps> will be parsed and
+executed in sequence.
 
 =item C<check>
 
@@ -863,10 +863,11 @@ C<elastic_image> attributes.
 
 =item C<remove_bad_pixels>
 
-This removes the bad pixels from the map using the C<bad_pixel_mask>
-attribute.  Some of the steps, C<areal> for example, can reinsert a
-bad pixel, so it is necessary to follow each step with this method to
-ensure that the bad pixels are not used in HERFD processing.
+This removes the bad pixels from the map using the
+C<bad_pixel_mask> attribute.  Some of the steps, C<areal> for example,
+can reinsert a bad pixel, so it is necessary to follow each step with
+this method to ensure that the bad pixels are not used in HERFD
+processing.
 
 =item C<do_step>
 
@@ -891,6 +892,48 @@ C<bad_pixel_mask> attribute, which identifies the pixels marked as bad
 pixels.
 
 Controlling attributes: C<bad_pixel_value>, C<weak_pixel_value>
+
+=item C<gaussian_blur>
+
+Apply an approximate Gaussian blur filter to the image.  Set all
+pixels above a threshold value to 1, setting all below that value to
+0.  This is a simple convolution with this kernel:
+
+    1   / 1 2 1 \
+  ---- (  2 4 2  )
+   16   \ 1 2 1 /
+
+The size of the threshold depends on the intensity of the relevant
+part of the image.  Very bright, spurious spots will pass through this
+filter.
+
+Controlling attribute: C<gaussian_blur_value>
+
+=item C<useshield>
+
+Construct a shield used to mask out a region of the elastic image
+associated with fluorescence or some other source of signal.
+
+Shields are constructed sequentially.  The first N steps do not have a
+shield -- more specifically, the shield is empty.  The next shield
+uses the mask from N steps prior to block out this signal.  The
+following shield adds the mask from N steps back to the shield of
+the previous step.  Subsequent steps accumulate the masks from N
+steps back, adding them to their shields.
+
+All pixels under the shield are then set to 0.
+
+Controlling attribute: C<shield>
+
+=item C<polyfill>
+
+After the Gaussian blur or other filtering step to remove all of the
+outlying pixels, the top-most and bottom-most pixels in each column
+are noted.  Two polynomials are fit to this collection of points, one
+to the top set and one to the bottom set.  The pixels between the two
+polynomials are turned on, yielding the final mask.
+
+Controlling attributes: none.
 
 =item C<lonely_pixels>
 
@@ -925,8 +968,8 @@ Controlling attribute: C<scalemask>
 
 Set every pixel in the mask to 1.  This makes the "HERFD" using the
 entire image at each energy point.  This is used for testing and
-demonstration purposes and is not actually useful step for making high
-energy resolution data.
+demonstration purposes and is not actually a useful step for making
+high energy resolution data.
 
 Controlling attributes: none
 

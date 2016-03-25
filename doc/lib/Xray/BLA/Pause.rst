@@ -105,7 +105,7 @@ METHODS
      $object->prompt("What is 2+2? ");
      my $answer = $object->pause;
      chomp $answer;
-     if ($answer eq '4') {
+     if (($answer eq '4') or (uc($answer) eq 'IV')) {
         print "You're a math genius!\n";
      } else {
         print "Sigh. I don't know why I even bother....\n";

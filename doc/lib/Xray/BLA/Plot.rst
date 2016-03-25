@@ -26,27 +26,77 @@ METHODS
 
 
 \ ``plot_mask``\ 
-
+ 
+ Make a surface plot of the current state of the elastic image.
+ 
+ 
+ .. code-block:: perl
+ 
+    $spectrum -> plot_mask;
+ 
+ 
+ This is plotted in the same orientation as ImageJ (i.e. (0,0) is in
+ the \ *upper*\ , left corner.  That's psychotic, but what can you do...?
+ 
 
 
 \ ``plot_energy_point``\ 
-
+ 
+ Make a surface plot of a raw image.
+ 
+ 
+ .. code-block:: perl
+ 
+    $spectrum -> plot_energy_point;
+ 
+ 
+ This is plotted in the same orientation as ImageJ (i.e. (0,0) is in
+ the \ *upper*\ , left corner.
+ 
 
 
 \ ``plot_xanes``\ 
-
+ 
+ Make a plot of the computed HERFD.
+ 
+ 
+ .. code-block:: perl
+ 
+    $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+ 
+ 
+ The arguments are the title of the plot, whether to use
+ Xray::BLA::Pause, and whether to overplot the HERFD with conventional
+ XANES (if it exists),
+ 
 
 
 \ ``plot_xes``\ 
-
+ 
+ Make a plot of the computed XES.
+ 
+ 
+ .. code-block:: perl
+ 
+    $spectrum -> plot_xanes(pause=>0, incident=>$incident, xes=>$self->{xesdata});
+ 
+ 
+ The arguments are whether to use Xray::BLA::Pause, aninteger
+ identifying the incident energy, and a list reference containing the
+ XES data.
+ 
 
 
 \ ``plot_rixs``\ 
-
+ 
+ Make a surface plot of the RIXS plane.
+ 
 
 
 \ ``plot_map``\ 
-
+ 
+ Make a surface plot of the energy map.
+ 
 
 
 \ ``set_palette``\ 
@@ -60,7 +110,15 @@ METHODS
     $spectrum -> set_palette($color);
  
  
- An unknown color is ignored.
+ An unknown color is ignored.  If you do
+ 
+ 
+ .. code-block:: perl
+ 
+    $spectrum -> set_palette("surprise");
+ 
+ 
+ then one of the hues will be chosen at random.  Ooooh!  Fun!
  
 
 

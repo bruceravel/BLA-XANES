@@ -181,21 +181,57 @@ Xray::BLA::Plot - A plotting method for BLA-XANES
 
 =head1 DESCRIPTION
 
+Various plotting tools using the PDL/Gnuplot interface.
+
 =head1 METHODS
 
 =over 4
 
 =item C<plot_mask>
 
+Make a surface plot of the current state of the elastic image.
+
+  $spectrum -> plot_mask;
+
+This is plotted in the same orientation as ImageJ (i.e. (0,0) is in
+the I<upper>, left corner.  That's psychotic, but what can you do...?
+
 =item C<plot_energy_point>
+
+Make a surface plot of a raw image.
+
+  $spectrum -> plot_energy_point;
+
+This is plotted in the same orientation as ImageJ (i.e. (0,0) is in
+the I<upper>, left corner.
 
 =item C<plot_xanes>
 
+Make a plot of the computed HERFD.
+
+  $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+
+The arguments are the title of the plot, whether to use
+Xray::BLA::Pause, and whether to overplot the HERFD with conventional
+XANES (if it exists),
+
 =item C<plot_xes>
+
+Make a plot of the computed XES.
+
+  $spectrum -> plot_xanes(pause=>0, incident=>$incident, xes=>$self->{xesdata});
+
+The arguments are whether to use Xray::BLA::Pause, aninteger
+identifying the incident energy, and a list reference containing the
+XES data.
 
 =item C<plot_rixs>
 
+Make a surface plot of the RIXS plane.
+
 =item C<plot_map>
+
+Make a surface plot of the energy map.
 
 =item C<set_palette>
 
@@ -204,13 +240,17 @@ default), blue, green, orange, purple, and red.
 
   $spectrum -> set_palette($color);
 
-An unknown color is ignored.
+An unknown color is ignored.  If you do
+
+  $spectrum -> set_palette("surprise");
+
+then one of the hues will be chosen at random.  Ooooh!  Fun!
 
 =back
 
 =head1 DEPENDENCIES
 
-L<PDL::Graphics::Gnuplot>
+L<PDL::Graphics::Simple> and L<PDL::Graphics::Gnuplot>
 
 =head1 BUGS AND LIMITATIONS
 

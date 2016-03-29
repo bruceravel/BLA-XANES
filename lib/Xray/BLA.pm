@@ -3,7 +3,7 @@ use Xray::BLA::Return;
 
 
 use version;
-our $VERSION = version->new('2');
+our $VERSION = version->new('3');
 
 use Moose;
 with 'Xray::BLA::Tools';
@@ -99,7 +99,7 @@ has 'outimage'           => (is => 'rw', isa => 'Str', default => q{gif},
 has 'terminal'           => (is => 'rw', isa => 'Str', default => q{qt},
 			     documentation => "The Gnuplot terminal type.");
 
-has 'energy'	         => (is => 'rw', isa => 'Int', default => 0, alias => 'peak_energy',
+has 'energy'	         => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The specific emission energy at which to perform the calculation.");
 has 'incident'	         => (is => 'rw', isa => 'LaxNum', default => 0,,
 			     documentation => "The specific incident energy at which to compute the emission spectrum.");
@@ -126,7 +126,7 @@ has 'gaussian_blur_value'=> (is => 'rw', isa => 'LaxNum', default => 2,
 			     documentation => "The threshold value for leaving pixels in a mask after applying the Gaussian blur filter.");
 has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
-has 'shield'             => (is => 'rw', isa => 'Int', default => 0,
+has 'shield'             => (is => 'rw', isa => 'Int', default => 15,
 			     documentation => "Number of steps used to create a shield from lower-energy emission images for removing a fluorescence signal from the mask.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
@@ -971,11 +971,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum
+Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to XANES and XES spectrum
 
 =head1 VERSION
 
-2
+3
 
 =head1 SYNOPSIS
 
@@ -996,8 +996,16 @@ Xray::BLA imports C<warnings> and C<strict> by default.
 
 This module is an engine for converting a series of tiff images
 collected using a bent Laue analyzer and a Pilatus 100K area detector
-into a high energy resolution XANES spectrum.  A HERFD measurement
-consists of a related set of files from the measurement:
+into high energy resolution XANES spectra, X-ray emission spectra, or
+measurements of the RIXS plane.
+
+All measurements require a set of one or more exposures taken at
+incident energies around the peak of the fluorescence line
+(e.g. Lalpha1 for an L3 edge, etc).  These exposures are used to make
+masks for interpreting the sequence of images at each energy point.
+
+A HERFD measurement also consists of a related set of files from the
+measurement:
 
 =over
 
@@ -1013,108 +1021,149 @@ interpreted to be the HERFD signal at that energy point.
 
 =item 3.
 
-A set of one or more exposures taken at incident energies around the
-peak of the fluorescence line (e.g. Lalpha1 for an L3 edge, etc).
-These exposures are used to make masks for interpreting the sequence
-of images at each energy point.
-
 =back
+
+An XES measurement also consists of one or more images measured at an
+energy above the absorption edge and interpreted as the non-resonant
+emission spectrum.
+
+A RIXS measurement consists of a sequence of images around the
+absorption edge.  This sequence may be the same as the sequence of
+elastic images.
 
 Attributes for specifying the paths to the locations of the column
 data files (C<scanfolder>) and the tiff files (C<tiffolder>,
-C<tifffolder> with 3 C<f>'s is an alias)) are typically set from an
+C<tifffolder> with 3 C<f>'s is an alias) are typically set from an
 ini-style configuration file.
 
-Assumptions are made about the names of the files in those
-locations. Each files is built upon a stub, indicated by the C<stub>
-attribute.  If C<stub> is "Aufoil", then the column data in
-C<scanfolder> file is named F<Aufoil.001>.  The tiff images at each
-energy point are called F<Aufoil_NNNNN.tif> where C<NNNNN> is the
-index of the energy point.  One of the columns in the scan file
-contains this index so it is unambiguous which tiff image corresponds
-to which energy point.  Finally, the elastic exposures are called
-F<Aufoil_elastic_EEEE_#####.tif> where C<EEEE> is the incident energy
-and C<#####> is the numeric counter for the tiff images.  For
-instance, an exposure at the peak of the gold Lalpha1 line would be
-called F<Aufoil_elastic_9713_00001.tif>.
+The names of the image files must follow some sort of pattern so that
+the software can interpret the images in terms of incident and
+emission energies.  These patterns are somewhat flexible, involving
+simple, user-settable file name templates.
 
-If you use a different naming convention, this software in its current
-form B<will break>!  See L</"BUGS AND LIMITATIONS">.
+For HERFD measurements, this software makes assumptions about the
+content of the scan file.  The columns are expected to come in a
+certain order.  If the order of columns chnages, the HERFD will still
+be measured and recorded properly, but the remaining columns in the
+output files may be misidentified.  If the first column is not energy,
+all bets are off.
 
-This software also makes assumptions about the content of the scan
-file.  The columns are expected to come in a certain order.  If the
-order of columns chnages, the HERFD will still be measured and
-recorded properly, but the remaining columns in the output files may
-be misidentified.  If the first column is not energy, all bets are
-off.
+The Pilatus writes strange, signed 32-bit tiff files.  Importing these
+is not obvious.  See Xray::BLA::Image for the details of how this is
+done with PDL.
 
-This software uses an image handling back to interact with these two
-sets of tiff images.  Since the Pilatus writes rather unusual tiff
-files with signed 32 bit integer samples, not every image handling
-package can deal gracefully with them.  I have found two choices in
-the perl universe that work well, L<Imager> and C<Image::Magick>,
-although using L<Image::Magick> requires recompilation to be able to
-use 32 bit sample depth.  Happily, L<Imager> works out of the box, so
-I am using it.
-
-The signed 32 bit tiffs are imported using L<Imager> and immediately
-stuffed into a L<PDL> object.  All subsequent work is done using PDL.
 
 =head1 ATTRIBUTES
+
+=head2 File name template attributes
 
 =over 4
 
 =item C<stub>
 
-The basename of the scan and image files.  The scan file is called
-C<E<lt>stubE<gt>.001>, the image files are called
-C<E<lt>stubE<gt>_NNNNN.tif>, and the processed column data files are
-called C<E<lt>stubE<gt>_E<lt>energyE<gt>.001>.
+The basename of the scan and image files.  For example, in a HERFD
+measurement, the scan file is called C<E<lt>stubE<gt>.001>, the image
+files are called C<E<lt>stubE<gt>_NNNNN.tif>, and the processed column
+data files are called C<E<lt>stubE<gt>_E<lt>energyE<gt>.001>.
 
-=item C<element>
+=item C<scan_file_template> [%s.001]
 
-The element of the absorber.  This is currently only used when making
-the energy v. pixel map.  This can be a two-letter element symbol, a Z
-number, or an element name in English (e.g. Au, 79, or gold).
+A pattern for computing the name of the C<scanfile> from the C<stub>.
+In the default, C<%s> is replaced by the C<stub>.
 
-=item C<line>
+=item C<elastic_file_template> [%s_elastic_%e_%t.tif]
 
-The measured emission line.  This is currently only used when making
-the energy v. pixel map.  This can be a Siegbahn (e.g. La1 or Lalpha1)
-or IUPAC symbol (e.g. L3-M5).
+A pattern for computing the name of the elastic images.  In the
+default, C<%s> is replaced by the C<stub>, C<%e> by the incident
+energy, and C<%t> is a counter.
 
-=item C<scanfile>
+=item C<image_file_template> [%s_%c.tif]
 
-The fully resolved path to the scan file, as determined from C<stub>
-and C<scanfolder>.
-
-=item C<scanfolder>
-
-The folder containing the scan file.  The scan file name is
-constructed from the value of C<stub>.
-
-=item C<tiffolder>
-
-The folder containing the image files.  The image file names are
-constructed from the value of C<stub>.  C<tifffolder> (with 3 C<f>'s)
-is an alias.
+A pattern for computing the name of the measurements images.  In the
+default, C<%s> is replaced by the C<stub>, and C<%t> is a counter.
 
 =item C<tiffcounter>
 
 The counter appended to the name of each tiff image.  By default the
-EPICS camera interface appends C<#####> to the tiff filename.  Since
-one image is measured at each energy, C<00001> is appended, resulting
-in a name like F<Aufoil1_elastic_9713_00001.tif>.  If you have
-configured the camserver to use a different length string or had you
-data acquisition software use a different string altogether, you can
-specify it with this attribute.  Note, though, that this software is
-not very clever about these file names -- it makes strict assumptions
-about the format of the tif file name.
+EPICS camera interface appends C<#####> to the tiff filename (although
+that is user-serviceable).  Since one image is measured at each
+energy, C<00001> is appended, resulting in a name like
+F<Aufoil1_elastic_9713_00001.tif>.  If you have configured the
+camserver to use a different length string or had you data acquisition
+software use a different string altogether, you can specify it with
+this attribute.  The patterns in C<elastic_file_template> or
+C<image_file_template> will use this as the width of this field. This
+can be specified in the ini file.
+
+=item C<energycounterwidth>
+
+The width of the energy counter part of the energy tiff image name.
+
+=back
+
+=head2 IO attributes
+
+=over 4
+
+=item C<element>
+
+The element of the absorber.  This is currently used when plotting and
+when making the energy v. pixel map.  This can be a two-letter element
+symbol, a Z number, or an element name in English (e.g. Au, 79, or
+gold).
+
+=item C<line>
+
+The measured emission line.  This is used when plotting and when
+making the energy v. pixel map.  This can be a Siegbahn (e.g. La1 or
+Lalpha1) or IUPAC symbol (e.g. L3-M5).
+
+=item C<scanfile>
+
+The fully resolved path to the scan file, as determined from C<stub>
+and C<scanfolder>.  This is typically computed from
+C<scan_file_template>.
+
+=item C<scanfolder>
+
+The folder containing the scan file.  This can be specified in the ini
+file.
+
+=item C<tiffolder>
+
+The folder containing the image files.  The image file names are
+constructed from the value of C<elastic_file_template> or
+C<image_file_template>.  C<tifffolder> (with 3 C<f>'s) is an alias.
+
+=item C<elastic_energies>
+
+A reference to a list of energy values at which elastic images were
+measured.
+
+=item C<elastic_file_list>
+
+A reference to a list of the elastic image files found in C<tiffolder>.
+
+=item C<elastic_file_list>
+
+A reference to a list of PDLs containing the elastic image files found
+in C<tiffolder>.
+
+=item C<scan_file_list>
+
+A reference to a list of the measurement image files found in
+C<tiffolder>.
 
 =item C<outfolder>
 
 The folder to which the processed file is written.  The processed file
-name is constructed from the value of C<stub>.
+name is constructed from the value of C<stub>.  This can be specified
+in the ini file.
+
+=item C<cleanup> [false]
+
+A flag indicating whether to remove C<outfolder> before exiting the
+program.
 
 =item C<energy>
 
@@ -1123,13 +1172,12 @@ line.  For example, for the the gold L3 edge experiment, the L alpha 1
 line is likely used.  It's tabulated value is 9715 eV.
 
 The image containing the data measured from the elastic scattering
-with the incident energy at this energy will have a file name something
-like F<E<lt>stubE<gt>_elsatic_E<lt>energyE<gt>_00001.tif>.
+with the incident energy at this energy might have a file name
+something like F<E<lt>stubE<gt>_elsatic_E<lt>energyE<gt>_00001.tif>
+and can be set using C<image_file_template>.
 
 This value can be changed to some other measured elastic energy in
 order to scan the off-axis portion of the spectrum.
-
-C<peak_energy> is an alias for C<energy>.
 
 =item C<incident>
 
@@ -1143,84 +1191,6 @@ The index of the incident energy for an XES slice through the RIXS or
 for evaluation of single HERFD data point.  If not specified, it
 defaults to the midpoint of the energy scan.
 
-=item C<steps>
-
-This contains a reference to an array of steps to be taken for mask
-creation.  For example, if the configuration file contains the
-following:
-
-   ## areal algorithm
-   [steps]
-   steps = <<END
-   bad 400 weak 0
-   areal median radius 2
-   END
-
-then the lines beginning with "bad" and "areal" will be the entries in
-the array, indicating that first bad and weak pixels will be removed
-using the specifies values for C<bad_pixel_value> and
-C<weak_pixel_value>, then an areal median of radius 2 will be computed.
-
-=item C<operation>  [median]
-
-Setting this to "mean" changes the areal median algorithm to an areal
-mean algorithm.
-
-=item C<bad_pixel_value>  [400]
-
-In the first pass over the elastic image, spuriously large pixel
-values -- presumably indicating the locations of bad pixels -- are
-removed from the image by setting them to 0.  This is the cutoff value
-above which a pixel is assumed to be a bad one.
-
-=item C<weak_pixel_value> [3]
-
-In the first pass over the elastic image, small valued pixels are
-removed from the image.  These pixels are presumed to have been
-illuminated by a small number of stray photons not associated with the
-imagining of photons at the peak energy.  Pixels with fewer than this
-n umber of counts are set to 0.
-
-=item C<lonely_pixel_value> [3]
-
-In the second pass over the elastic image, illuminated pixels with
-fewer than this number of illuminated neighboring pixels are removed
-from the image.  This serves the purpose of removing most stray
-pixels not associated with the main image of the peak energy.
-
-This attribute is ignored by the areal median/mean algorithm.
-
-=item C<social_pixel_value> [2]
-
-In the third pass over the elastic image, dark pixels which are
-surrounded by larger than this number of illuminated pixels are
-presumed to be a part of the image of the peak energy.  They are given
-a value of 5 counts.  This serves the propose of making the elastic
-image a solid mask with few gaps in the image of the main peak.
-
-This attribute is ignored by the areal median/mean algorithm.
-
-=item C<radius> [2]
-
-This determines the size of the square used in the areal median/mean
-algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
-each direction.  A value of 2 means to use a 5x5 square.  Thanks to
-PDL, the hit for using a larger radius is quite small.
-
-=item C<elastic_file>
-
-This contains the name of the elastic image file.  It is constructed
-from the values of C<stub>, C<energy>, and C<tiffolder>.
-
-=item C<elastic_image>
-
-This contains the PDL of the elastic image.
-
-=item C<npixels>
-
-The number of illuminated pixels in the mask.  That is, the number of
-pixels contributing to the HERFD signal.
-
 =item C<columns>
 
 When the elastic file is read, this is set with the number of columns
@@ -1233,7 +1203,7 @@ When the elastic file is read, this is set with the number of rows in
 the image.  All images in the measurement are presumed to have the
 same number of rows.  C<height> is an alias for C<rows>.
 
-=item C<colored>
+=item C<colored> [true]
 
 This flag should be true to write colored text to the screen when
 methods are called with the verbose flag on.
@@ -1242,6 +1212,146 @@ methods are called with the verbose flag on.
 
 This flag should be true when run from the command line so that
 progress messages are written to the screen.
+
+=back
+
+
+=head2 Mask recipe attribues
+
+=over 4
+
+=item C<steps>
+
+This contains a reference to an list of steps of a mask creation
+recipe.  For example, if the configuration file contains the
+following:
+
+   ## areal algorithm
+   [steps]
+   steps = <<END
+   bad 400 weak 0
+   gaussian 3.2
+   END
+
+then the lines beginning with "bad" and "gaussian" will be the entries
+in the array, indicating that first bad and weak pixels will be
+removed using the specifies values for C<bad_pixel_value> and
+C<weak_pixel_value>, then a Gaussian blur filter with a threshold of
+C<gaussian_blur_value>.
+
+=item C<bad_pixel_value>  [400]
+
+In the first pass over the elastic image, spuriously large pixel
+values -- presumably indicating the locations of bad pixels -- are
+removed from the image by setting them to 0.  This is the cutoff value
+above which a pixel is assumed to be a bad one.
+
+=item C<bad_pixel_mask>
+
+A PDL containing ones for each pixel found to be a bad pixel.
+
+=item C<weak_pixel_value> [3]
+
+In the first pass over the elastic image, small valued pixels are
+removed from the image.  These pixels are presumed to have been
+illuminated by a small number of stray photons not associated with the
+imagining of photons at the peak energy.  Pixels with fewer than this
+number of counts are set to 0.
+
+=item C<gaussian_blur_value> [2]
+
+The threshold value for keeping pixels after the Gaussian blur
+convolution.
+
+=item C<shield> [15]
+
+The number of trailing elastic images to use when constructing shields
+for removing portions of elastic images containing signal from
+something other than the elastic scattering.  The default says to use
+the mask from 15 energy points back to make a shield for the current
+elastic energy.
+
+=item C<lonely_pixel_value> [3]
+
+In this pass over the elastic image, illuminated pixels with fewer
+than this number of illuminated neighboring pixels are removed from
+the image.  This serves the purpose of removing most stray pixels not
+associated with the main image of the peak energy.
+
+This recipe step is deprecated in favor of the Gaussian blur.
+
+=item C<social_pixel_value> [2]
+
+In this pass over the elastic image, dark pixels which are surrounded
+by larger than this number of illuminated pixels are presumed to be a
+part of the image of the peak energy.  They are given a value of 5
+counts.  This serves the propose of making the elastic image a solid
+mask with few gaps in the image of the main peak.
+
+This recipe step is deprecated in favor of the Gaussian blur.
+
+=item C<scalemask>
+
+The factor by which to multiply the mask during the multiply step.
+
+=item C<operation>  [mean]
+
+Setting this to "median" changes the deprecated areal median algorithm
+to an areal median algorithm.
+
+This recipe step is deprecated in favor of the Gaussian blur.
+
+=item C<radius> [2]
+
+This determines the size of the square used in the areal median/mean
+algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
+each direction.  A value of 2 means to use a 5x5 square.
+
+This recipe step is deprecated in favor of the Gaussian blur.
+
+=item C<deltae>
+
+Energy width for mask creation when creating a mask from a pixel to
+energy map.
+
+=item C<elastic_file>
+
+This contains the name of the elastic image file.  It is typically
+constructed from the values of C<stub>, C<energy>, and C<tiffolder>
+using C<elastic_file_template>.
+
+=item C<elastic_file_template> [%s_elastic_%e_%t.tif]
+
+A pattern used to set the names of the elastic files.
+
+=item C<elastic_image>
+
+This contains the PDL of the elastic image.  As the mask creation
+recipe progresses, this contains the mask in its current state.
+
+=item C<npixels>
+
+The number of illuminated pixels in the mask.  That is, the number of
+pixels contributing to the HERFD or XES signal.
+
+=item C<nbad>
+
+The number of bad pixels found in the bid pixel step.
+
+=back
+
+=head2  Data processing attributes
+
+=over 4
+
+=item C<div10> [false]
+
+When true, divide the emission energy by 10 when writing output files
+or making plots.
+
+=item C<eimax>
+
+Largest value found in a mask during a mask creation step.
 
 =back
 
@@ -1396,27 +1506,25 @@ image for this data point.
 
 =back
 
-=head1 MASK SPECIFICATION SYNTAX
+=head1 MASK SPECIFICATION RECIPES
 
-The steps to mask creation are specified using a simple imperative
-language.  Here's an example of specifying the steps via the
-configuration file:
+The steps to mask creation are specified as recipes using a simple
+imperative language.  Here's an example of specifying the steps via
+the configuration file:
 
     [steps]
     steps = <<END
     bad 400 weak 0
-    multiply by 5
-    areal mean radius 2
-    bad 400 weak 6
-    lonely 3
-    social 2
+    gaussian 3.2
+    shield 15
+    polyfill
     END
 
 Each specification of a step is contained on a single line.
 White space is unimportant, but spelling matters.  The parser has
 little intelligence.
 
-The possible steps are:
+=head2 Main steps
 
 =over 4
 
@@ -1425,6 +1533,34 @@ The possible steps are:
 This specification says to remove bad and weak pixels from the image.
 The first number is the value used for C<bad_pixel_value>.  The second
 number is the value used for C<weak_pixel_value>.
+
+=item <gaussian #.#>
+
+Apply a convolution with a kernel that approximates a Gaussian blur.
+The number is a threshold above which pixels are set to 1 and below
+which pixels are set to 0.
+
+=item <shield #>
+
+Create a shield from trailing masks which is used to remove spurious
+signal from the low energy region of the elastic image due to
+fluorescence from the onset of the absorption edge.  The number is the
+how far the trailing mask is behind the current mask.  The shield is
+cumulative, that is the traling mask is added to the shield from the
+previous elastic energy.
+
+=item polyfill
+
+After applying the Gaussian blur or some other filter (and after
+applying the shield), fit polynomials to the topmost and bottom-most
+pixels in each column of the image.  Fill in the region between the
+polynomials and us that as the mask.
+
+=back
+
+=head2 Other steps
+
+=over 4
 
 =item C<multiply by #>
 
@@ -1471,11 +1607,12 @@ bad pixel pass.  To examine the XANES form the entire image, use this
 
 =back
 
+=head2 Managing the steps
+
 The steps can be specified in any order and repeated as necessary.
 
-The C<steps> attribute is set is a configuration file containing the
-C<[steps]> group is read.  The C<steps> attribute can be manipulated
-by hand:
+The C<steps> attribute is set from a configuration file containing a
+C<[steps]> block.  The C<steps> attribute can be manipulated by hand:
 
    $spectrum->steps(\@list_of_steps);      # set the steps to an array
 
@@ -1552,7 +1689,8 @@ This requires perl 5.10 or later.
 =item *
 
 L<PDL>, L<PDL::IO::FlexRaw>, L<PDL::IO::Pic>,
-L<PDL::Graphics::Simple>, L<PDL::Graphics::Gnuplot>
+L<PDL::Graphics::Simple>, L<PDL::Graphics::Gnuplot>,
+L<PDL::Fit::Polynomial>
 
 =item *
 
@@ -1573,10 +1711,6 @@ L<Term::Sk>
 =item *
 
 L<Text::Template>
-
-=item *
-
-L<Xray::XDI>  (optional)
 
 =back
 

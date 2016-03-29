@@ -131,7 +131,8 @@ Here is the ini file:
 
 The ``[measure]`` block defines the measured elastic energys, the
 locations on input and output files, and various other parameters.
-The ``[files]`` block defines mini-templates used by Xray::BLA to
-construct input and output file names.  The ``[steps]`` block gives
-the recipe for creating the mask from the elastic energy image.
+The ``[files]`` block defines mini-templates used by
+:program:`Xray::BLA` to construct input and output file names.  The
+``[steps]`` block gives the recipe for creating the mask from the
+elastic energy image.
 

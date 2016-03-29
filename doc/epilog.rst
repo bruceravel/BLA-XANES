@@ -11,7 +11,8 @@
 		      
 --------------
 
-Xray::BLA and :demeter:`metis` are copyright |copy| 2011-2014, 2016 Bruce Ravel and Jeremy Kropf |ndash| This document is
+:program:`Xray::BLA` and :demeter:`metis` are copyright |copy|
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf |ndash| This document is
 copyright |copy| 2016 Bruce Ravel
 
 .. :mark:`somerights,.`
@@ -26,4 +27,3 @@ consider `supporting The Creative Commons
 
 .. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
 .. |ndash|  unicode:: U+2013  .. EN DASH
-

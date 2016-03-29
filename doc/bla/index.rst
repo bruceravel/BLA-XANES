@@ -7,27 +7,40 @@
 The bla program
 ===============
 
-Synopsis
---------
+All measurements require a set of Pilatus images taken at energies
+around the fluorescence energy. These are used to make a mask which
+identifies which pixels contain signal related to specific emission
+energies.
 
-A measurement set consists of
 
--  A column data file with columns of energy and scalars from the
-   measurement.
 
--  One Pilatus image for each energy point in the XANES scan containing
-   the HERFD signal at that point.
+A HERFD measurement set also consists of
 
--  A set of Pilatus images taken at energies around the fluorescence
-   energy. These are used to make a mask which identifies which pixels
-   contain signal related to specific emission energies.
+- A column data file with columns of energy and scalars from the
+  measurement.
+
+- One Pilatus image for each energy point in the XANES scan containing
+  the HERFD signal at that point.
+
+
+An XES measurement set also consists of 
+
+- One or more Pilatus images taken above the absorption edge as a
+  measure of the non-resonant XES.
+
+A RIXS measurement consists of
+
+- A set of Pilatus images taken at energies around the onset of the
+  absorption edge.  This may be the same set of images as the elastic
+  images.
 
 This software uses perl, `Moose
 <https://metacpan.org/release/Moose>`__, and `PDL
 <http://pdl.perl.org>`__ to process the images into a high resolution
-XANES spectrum. The GUI, called :demeter:`metis`, uses WxWidgets and
-its perl bindings. See `Xray::BLA::Image <lib/Xray/BLA/Image.html>`__
-for how to import the signed 32 bit tiff images directly into PDL.
+XANES spectrum.  The GUI, called :demeter:`metis`, uses WxWidgets and
+its perl bindings.  See `Xray::BLA::Image <lib/Xray/BLA/Image.html>`__
+for how to import the signed 32 bit tiff images from the Pilatus
+directly into PDL.
 
 
 Usage

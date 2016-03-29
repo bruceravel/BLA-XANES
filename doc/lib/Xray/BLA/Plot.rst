@@ -18,6 +18,8 @@ DESCRIPTION
 ***********
 
 
+Various plotting tools using the PDL/Gnuplot interface.
+
 
 *******
 METHODS
@@ -128,7 +130,7 @@ DEPENDENCIES
 ************
 
 
-`PDL::Graphics::Gnuplot <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aGnuplot&mode=module>`_
+`PDL::Graphics::Simple <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aSimple&mode=module>`_ and `PDL::Graphics::Gnuplot <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aGnuplot&mode=module>`_
 
 
 ********************

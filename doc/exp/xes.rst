@@ -38,20 +38,20 @@ features can be seen clearly in the processed data:
    The XES spectrum of Nb\ :sub:`2`\ O\ :sub:`5` extracted from the image.
 
 To convert the image above into this spectrum, we need to translate
-the pixels in the image into energy.  As in the HERFD measurement,
-this is done by measuring a sequence of images with the monochromator
-set to energies spanning the energy range of the emission line.  In
-the case of the Nb K\ |beta|\ :sub:`2,4` emission line, elastic images
-are measured from 18928 eV to 18994.5 eV,
+the pixels in the image into energy.  Similar to the HERFD
+measurement, this is done by measuring a sequence of images with the
+monochromator set to energies spanning the energy range of the
+emission line.  In the case of the Nb K\ |beta|\ :sub:`2,4` emission
+line, elastic images are measured from 18928 eV to 18994.5 eV,
 
 From each elastic image, a mask is made.  Each mask, then, defines the
 pixels which are illuminated by photons of that energy being dispersed
 through the spectrometer crystal.
 
 At each energy in the range from 18928 eV to 18994.5 eV, the mask is
-multiplied by the non-resonant XES image above.  The illuminate pixels
-are summed and that sum is the emission intensity at that energy.  In
-this way, the XES spectrum is constructed.
+multiplied by the non-resonant XES image above.  The illuminated
+pixels are summed and that sum is the emission intensity at that
+energy.  In this way, the XES spectrum is constructed.
 
 Here are the masks at each energy through the emission peak.
 
@@ -65,7 +65,7 @@ Here are the masks at each energy through the emission peak.
 
 
 Here, in full size, are the masks from the peaks of the Nb K\ |beta|\
-:sub:`2` and Nb K\ |beta|\ :sub:`2` emission lines at 18952.5 eV and
+:sub:`2` and Nb K\ |beta|\ :sub:`4` emission lines at 18952.5 eV and
 18981.5 eV
 
 .. subfigstart::
@@ -83,6 +83,11 @@ Here, in full size, are the masks from the peaks of the Nb K\ |beta|\
    :width: 100%
 
    The mask for the peak of the Nb K\ |beta|\ :sub:`4` emission line
+
+.. figure:: ../_images/nb2o5.png
+   :target: ../_images/nb2o5.png
+   :width: 100%
+
 
 .. subfigend::
    :width: 0.4

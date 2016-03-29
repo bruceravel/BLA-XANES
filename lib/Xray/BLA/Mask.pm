@@ -205,26 +205,41 @@ sub check {
   };
 
   ## does scan file exist?
-  if (not $self->noscan) {
-    my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self->scan_file_template));
-    $self->scanfile($scanfile);
-    if (not -e $scanfile) {
-      $ret->message("Scan file \"$elastic\" does not exist");
-      $ret->status(0);
-      return $ret;
-    };
-    if (not -r $scanfile) {
-      $ret->message("Scan file \"$elastic\" cannot be read");
-      $ret->status(0);
-      return $ret;
-    };
+  my $sf = $self->check_scan;
+  if (not $sf->is_ok) {
+    $ret->status($sf->status);
+    $ret->message($sf->message);
   };
-
   $self->elastic_image($self->Read($self->elastic_file));
 
   return $ret;
 };
 
+sub check_scan {
+  my ($self) = @_;
+  my $ret = Xray::BLA::Return->new;
+  if ($self->noscan) {
+    $ret->status(1);
+    $ret->message("This measurement does not use a scan file");
+    return $ret;
+  } else {
+    my $scanfile = File::Spec->catfile($self->scanfolder, $self->file_template($self->scan_file_template));
+    $self->scanfile($scanfile);
+    if (not -e $scanfile) {
+      $ret->message("Scan file \"$scanfile\" does not exist");
+      $ret->status(0);
+      return $ret;
+    };
+    if (not -r $scanfile) {
+      $ret->message("Scan file \"$scanfile\" cannot be read");
+      $ret->status(0);
+      return $ret;
+    };
+  };
+  $ret->status(1);
+  $ret->message("Scan file ok");
+  return $ret;
+};
 
 sub remove_bad_pixels {
   my ($self) = @_;

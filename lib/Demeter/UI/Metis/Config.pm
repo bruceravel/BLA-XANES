@@ -76,26 +76,26 @@ sub new {
   $self->{line} = Wx::StaticLine->new($self, -1, wxDefaultPosition, [100, 2], wxLI_HORIZONTAL);
   $gbs -> Add($self->{line}, Wx::GBPosition->new($row,0), Wx::GBSpan->new(1,4));
 
-  ++$row;
-  $self->{scan_file_template_label} = Wx::StaticText -> new($self, -1, "Scan file template");
-  $self->{scan_file_template}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->scan_file_template, wxDefaultPosition, [175,-1]);
-  $gbs -> Add($self->{scan_file_template_label},    Wx::GBPosition->new($row,0));
-  $gbs -> Add($self->{scan_file_template},          Wx::GBPosition->new($row,1));
-  $app->mouseover($self->{scan_file_template}, 'Scan file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
+  # ++$row;
+  # $self->{scan_file_template_label} = Wx::StaticText -> new($self, -1, "Scan file template");
+  # $self->{scan_file_template}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->scan_file_template, wxDefaultPosition, [175,-1]);
+  # $gbs -> Add($self->{scan_file_template_label},    Wx::GBPosition->new($row,0));
+  # $gbs -> Add($self->{scan_file_template},          Wx::GBPosition->new($row,1));
+  # $app->mouseover($self->{scan_file_template}, 'Scan file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
 
-  ++$row;
-  $self->{elastic_file_template_label} = Wx::StaticText -> new($self, -1, "Elastic image template");
-  $self->{elastic_file_template}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->elastic_file_template, wxDefaultPosition, [175,-1]);
-  $gbs -> Add($self->{elastic_file_template_label},    Wx::GBPosition->new($row,0));
-  $gbs -> Add($self->{elastic_file_template},          Wx::GBPosition->new($row,1));
-  $app->mouseover($self->{elastic_file_template}, 'Elastic file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
+  # ++$row;
+  # $self->{elastic_file_template_label} = Wx::StaticText -> new($self, -1, "Elastic image template");
+  # $self->{elastic_file_template}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->elastic_file_template, wxDefaultPosition, [175,-1]);
+  # $gbs -> Add($self->{elastic_file_template_label},    Wx::GBPosition->new($row,0));
+  # $gbs -> Add($self->{elastic_file_template},          Wx::GBPosition->new($row,1));
+  # $app->mouseover($self->{elastic_file_template}, 'Elastic file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
 
-  ++$row;
-  $self->{image_file_template_label} = Wx::StaticText -> new($self, -1, "Scan image template");
-  $self->{image_file_template}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->image_file_template, wxDefaultPosition, [175,-1]);
-  $gbs -> Add($self->{image_file_template_label},    Wx::GBPosition->new($row,0));
-  $gbs -> Add($self->{image_file_template},          Wx::GBPosition->new($row,1));
-  $app->mouseover($self->{image_file_template}, 'Image file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
+  # ++$row;
+  # $self->{image_file_template_label} = Wx::StaticText -> new($self, -1, "Scan image template");
+  # $self->{image_file_template}       = Wx::TextCtrl   -> new($self, -1, $app->{base}->image_file_template, wxDefaultPosition, [175,-1]);
+  # $gbs -> Add($self->{image_file_template_label},    Wx::GBPosition->new($row,0));
+  # $gbs -> Add($self->{image_file_template},          Wx::GBPosition->new($row,1));
+  # $app->mouseover($self->{image_file_template}, 'Image file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
 
 
   ++$row;

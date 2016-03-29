@@ -191,9 +191,13 @@ sub set_parameters {
   $app->{base} -> stub(get_symbol($app->{Files}->{stub}->GetValue));
   $app->{base} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
   $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
-  $app->{base} -> scanfolder($app->{Files}->{scan_dir}->GetLabel);
-  $app->{base} -> tifffolder($app->{Files}->{image_dir}->GetLabel);
+  $app->{base} -> scanfolder($app->{Files}->{scan_dir}->GetValue);
+  $app->{base} -> tifffolder($app->{Files}->{image_dir}->GetValue);
   $app->{base} -> div10($app->{Files}->{div10}->GetValue);
+
+  $app->{base} -> scan_file_template($app->{Files}->{scan_template}->GetValue);
+  $app->{base} -> elastic_file_template($app->{Files}->{elastic_template}->GetValue);
+  $app->{base} -> image_file_template($app->{Files}->{image_template}->GetValue);
 
   $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
   $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
@@ -202,9 +206,6 @@ sub set_parameters {
   $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
   $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
   $app->{base} -> set_palette($app->{base}->color);
-  $app->{base} -> scan_file_template($app->{Config}->{scan_file_template}->GetValue);
-  $app->{base} -> elastic_file_template($app->{Config}->{elastic_file_template}->GetValue);
-  $app->{base} -> image_file_template($app->{Config}->{image_file_template}->GetValue);
   $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetLabel);
 
   $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);

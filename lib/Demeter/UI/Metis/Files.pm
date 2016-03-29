@@ -34,15 +34,15 @@ sub new {
   my $element = $app->{base}->element || q{};
   my $line    = $app->{base}->line    || q{};
   $self->{stub_label}    = Wx::StaticText -> new($self, -1, "File stub");
-  $self->{stub}          = Wx::TextCtrl   -> new($self, -1, $stub, wxDefaultPosition, [150,-1]);
+  $self->{stub}          = Wx::TextCtrl   -> new($self, -1, $stub, wxDefaultPosition, [200,-1]);
   $self->{element_label} = Wx::StaticText -> new($self, -1, "Element");
   $self->{element}       = Wx::ComboBox   -> new($self, -1, q{}, wxDefaultPosition, [100,-1], \@elements, wxCB_READONLY);
   $self->{line_label}    = Wx::StaticText -> new($self, -1, "Line");
   $self->{line}          = Wx::ComboBox   -> new($self, -1, $line, wxDefaultPosition, [80,-1], \@lines, wxCB_READONLY);
   $self->{div10}         = Wx::CheckBox   -> new($self, -1, "&Divide by 10");
   $self->{div10}        -> SetValue($app->{base}->div10);
-  $self->{scale24}       = Wx::CheckBox   -> new($self, -1, "&Scale by 2^-24");
-  $self->{scale24}      -> SetValue(0);
+  #$self->{scale24}       = Wx::CheckBox   -> new($self, -1, "&Scale by 2^-24");
+  #$self->{scale24}      -> SetValue(0);
   $hbox -> Add($self->{stub_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{stub},          0, wxLEFT|wxRIGHT, 5);
   $hbox -> Add($self->{element_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
@@ -50,14 +50,14 @@ sub new {
   $hbox -> Add($self->{line_label},    0, wxLEFT|wxRIGHT|wxTOP, 3);
   $hbox -> Add($self->{line},          0, wxLEFT|wxRIGHT, 5);
   $hbox -> Add($self->{div10},         0, wxLEFT|wxRIGHT, 5);
-  $hbox -> Add($self->{scale24},       0, wxLEFT|wxRIGHT, 5);
+  #$hbox -> Add($self->{scale24},       0, wxLEFT|wxRIGHT, 5);
   $self->{element}->SetSelection(get_Z($element)-1) if $element;
   $self->{line}->SetStringSelection($line);
   $app->mouseover($self->{stub}, "Specify the base of the scan and image filenames.");
   $app->mouseover($self->{element}, "Specify the absorber element.");
   $app->mouseover($self->{stub}, "Specify the measured emission line.");
   $app->mouseover($self->{div10}, "Divide emission energies by 10.");
-  $app->mouseover($self->{scale24}, "Scale oversized images by 1/2^24.");
+  #$app->mouseover($self->{scale24}, "Scale oversized images by 1/2^24.");
 
   # my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "metis_logo.png");
   # my $logo = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
@@ -68,16 +68,17 @@ sub new {
 
 
   ## ------ scan folder ----------------------------------------
-  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
-  $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
+  my $gbs = Wx::GridBagSizer->new( 5,5 );
+  $vbox ->  Add($gbs, 0, wxGROW|wxALL, 0);
+
   my $scanfolder = $app->{base}->scanfolder || q{};
   #$self->{scan_label} = Wx::StaticText -> new($self, -1, "Scan folder");
   $self->{scan} = Wx::Button->new($self, -1, "Pick &scan folder", wxDefaultPosition, [140,-1]);
-  $self->{scan_dir} = Wx::StaticText -> new($self, -1, $scanfolder);
+  $self->{scan_dir} = Wx::TextCtrl -> new($self, -1, $scanfolder, wxDefaultPosition, [300,-1], wxTE_READONLY);
   $app->mouseover($self->{scan}, "Select the location of the scan files.");
   #$hbox->Add($self->{scan_label}, 0, wxLEFT|wxRIGHT|wxTOP, 3);
-  $hbox->Add($self->{scan}, 0, wxLEFT|wxRIGHT, 5);
-  $hbox->Add($self->{scan_dir}, 1, wxLEFT|wxRIGHT|wxTOP, 3);
+  $gbs->Add($self->{scan}, Wx::GBPosition->new(0,0));
+  $gbs->Add($self->{scan_dir}, Wx::GBPosition->new(0,1));
   EVT_BUTTON($self, $self->{scan}, sub{SelectFolder(@_, $app, 'scan')});
 
   #$self->{scan} = Wx::DirPickerCtrl->new($self, -1, q{}, "Image folder", wxDefaultPosition, [500,-1],
@@ -86,29 +87,48 @@ sub new {
   #EVT_DIRPICKER_CHANGED($self,$self->{scan},sub{OnDirChanging(@_, $app)});
 
   ## ------ images folder ----------------------------------------
-  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
-  $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
   my $tifffolder = $app->{base}->tifffolder || cwd;
   $self->{image} = Wx::Button->new($self, -1, "Pick &image folder", wxDefaultPosition, [140,-1]);
-  $self->{image_dir} = Wx::StaticText -> new($self, -1, $tifffolder);
-  $hbox -> Add($self->{image},   0, wxLEFT|wxRIGHT, 5);
-  $hbox->Add($self->{image_dir}, 1, wxLEFT|wxRIGHT|wxTOP, 3);
+  $self->{image_dir} = Wx::TextCtrl -> new($self, -1, $tifffolder, wxDefaultPosition, [300,-1], wxTE_READONLY);
+  $gbs -> Add($self->{image},   Wx::GBPosition->new(1,0));
+  $gbs->Add($self->{image_dir}, Wx::GBPosition->new(1,1));
   $app->mouseover($self->{image}, "Select the location of the image files.");
   EVT_BUTTON($self, $self->{image}, sub{SelectFolder(@_, $app, 'image')});
+
+
+  ## ------ templates -------------------------------------------
+  $self->{scan_template_label} = Wx::StaticText -> new($self, -1, "Scan file template");
+  $self->{scan_template} = Wx::TextCtrl -> new($self, -1, $app->{base}->scan_file_template, wxDefaultPosition, [150,-1]);
+  $gbs->Add($self->{scan_template_label}, Wx::GBPosition->new(0,2));
+  $gbs->Add($self->{scan_template}, Wx::GBPosition->new(0,3));
+
+  $self->{elastic_template_label} = Wx::StaticText -> new($self, -1, "Elastic image template");
+  $self->{elastic_template} = Wx::TextCtrl -> new($self, -1, $app->{base}->elastic_file_template, wxDefaultPosition, [150,-1]);
+  $gbs->Add($self->{elastic_template_label}, Wx::GBPosition->new(1,2));
+  $gbs->Add($self->{elastic_template}, Wx::GBPosition->new(1,3));
+
+  $self->{image_template_label} = Wx::StaticText -> new($self, -1, "Scan image template");
+  $self->{image_template} = Wx::TextCtrl -> new($self, -1, $app->{base}->image_file_template, wxDefaultPosition, [150,-1]);
+  $gbs->Add($self->{image_template_label}, Wx::GBPosition->new(2,2));
+  $gbs->Add($self->{image_template}, Wx::GBPosition->new(2,3));
+
+  $app->mouseover($self->{scan_template},    'Elastic file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
+  $app->mouseover($self->{elastic_template}, 'Image file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
+  $app->mouseover($self->{image_template},   'Scan file template: %s=stub, %e=emission energy, %i=incident energy, %t=tiffcounter, %c energy counter');
 
   ## ------ fetch button ----------------------------------------
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
-  $self->{fetch} = Wx::Button->new($self, -1, "&Fetch file lists");
-  $hbox -> Add($self->{fetch}, 1, wxALL, 5);
-  $app->mouseover($self->{image}, "Fetch all image files and populate the file lists below.");
-
-
+  $self->{fetch} = Wx::Button->new($self, -1, "&Fetch file lists", wxDefaultPosition, [-1,-1]);
+  $hbox -> Add($self->{fetch}, 1, wxALL|wxGROW, 5);
+  $app->mouseover($self->{fetch}, "Fetch all image files and populate the file lists below.");
   EVT_BUTTON($self, $self->{fetch}, sub{fetch(@_, $app)});
+
+
 
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
 
-  my $elasticbox       = Wx::StaticBox->new($self, -1, 'Elastic files', wxDefaultPosition, wxDefaultSize);
+  my $elasticbox       = Wx::StaticBox->new($self, -1, "Elastic files\n", wxDefaultPosition, wxDefaultSize);
   my $elasticboxsizer  = Wx::StaticBoxSizer->new( $elasticbox, wxVERTICAL );
 
   $self->{elastic_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
@@ -117,7 +137,7 @@ sub new {
   EVT_LISTBOX_DCLICK($self, $self->{elastic_list}, sub{view(@_, $app, 'elastic')});
   $app->mouseover($self->{elastic_list}, "Double click to display an elastic image file.");
 
-  my $imagebox       = Wx::StaticBox->new($self, -1, 'Image files', wxDefaultPosition, wxDefaultSize);
+  my $imagebox       = Wx::StaticBox->new($self, -1, "Image files\n", wxDefaultPosition, wxDefaultSize);
   my $imageboxsizer  = Wx::StaticBoxSizer->new( $imagebox, wxVERTICAL );
 
   $self->{image_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
@@ -145,20 +165,32 @@ sub fetch {
     delete $app->{bla_of}->{$b};
   };
 
+  my $sft = $self->{scan_template}->GetValue;
+  my $eft = $self->{elastic_template}->GetValue;
+  my $ift = $self->{image_template}->GetValue;
+  $app->{base}->scan_file_template($sft);
+  $app->{base}->elastic_file_template($eft);
+  $app->{base}->image_file_template($ift);
+
   my $stub           = $self->{stub}->GetValue;
-  my $scan_folder    = $self->{scan_dir}->GetLabel;
-  my $image_folder   = $self->{image_dir}->GetLabel;
+  my $scan_folder    = $self->{scan_dir}->GetValue;
+  my $image_folder   = $self->{image_dir}->GetValue;
   $app->{base}->stub($stub);
   $app->{base}->scanfolder($scan_folder);
   $app->{base}->tifffolder($image_folder);
   $app->{base}->div10($self->{div10}->GetValue);
-  $app->{base}->tifscale(2**24) if $self->{scale24}->GetValue;
+  #$app->{base}->tifscale(2**24) if $self->{scale24}->GetValue;
   $app->{bla_of}->{aggregate}->stub($stub);
   $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
   $app->{bla_of}->{aggregate}->tifffolder($image_folder);
   $app->{bla_of}->{aggregate}->div10($self->{div10}->GetValue);
 
 
+  $app->set_parameters;
+  $app->{base} -> clear_elastic_energies;
+  $self->{elastic_list}->Clear;
+  $self->{image_list}->Clear;
+  
   #print '>>>>', $app->{base}->scan_file_template, $/;
   #print '>>>>', File::Spec->catfile($scan_folder, $app->{base}->file_template($app->{base}->scan_file_template)), $/;
   if (not -e File::Spec->catfile($scan_folder, $app->{base}->file_template($app->{base}->scan_file_template))) {
@@ -171,10 +203,11 @@ sub fetch {
 #    return;
 #  };
 
-  $app->set_parameters;
-  $app->{base} -> clear_elastic_energies;
-  $self->{elastic_list}->Clear;
-  $self->{image_list}->Clear;
+  my $sf = $app->{base} -> check_scan;
+  if (not $sf->is_ok) {
+    $app->{main}->status($sf->message, 'alert');
+    return;
+  };
 
   my $us = q{_};
   opendir(my $E, $image_folder);
@@ -232,7 +265,7 @@ sub fetch {
 sub view {
   my ($self, $event, $app, $which) = @_;
   my $stub   = $self->{stub}->GetValue;
-  my $folder = $self->{image_dir}->GetLabel;
+  my $folder = $self->{image_dir}->GetValue;
   my $img    = $self->{$which."_list"} -> GetStringSelection;
   my $file   = File::Spec->catfile($folder, $img);
 
@@ -270,7 +303,7 @@ sub view {
 
 sub SelectFolder {
   my ($self, $event, $app, $which) = @_;
-  my $current = ($which eq 'scan') ? $self->{scan_dir}->GetLabel : $self->{image_dir}->GetLabel;
+  my $current = ($which eq 'scan') ? $self->{scan_dir}->GetValue : $self->{image_dir}->GetValue;
   my $dd = Wx::DirDialog->new( $app->{main}, "Location of $which folder",
                                $current||cwd, wxDD_DEFAULT_STYLE|wxDD_CHANGE_DIR);
   if ($dd->ShowModal == wxID_CANCEL) {
@@ -279,10 +312,10 @@ sub SelectFolder {
   };
   my $dir  = $dd->GetPath;
   if ($which eq 'scan') {
-    $self->{scan_dir}->SetLabel($dir);
+    $self->{scan_dir}->SetValue($dir);
     $app->{base}->scanfolder($dir);
   } else {
-    $self->{image_dir}->SetLabel($dir);
+    $self->{image_dir}->SetValue($dir);
     $app->{base}->tifffolder($dir);
   };
 };

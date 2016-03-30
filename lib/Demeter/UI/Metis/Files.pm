@@ -6,6 +6,7 @@ use warnings;
 use Cwd;
 use Chemistry::Elements qw(get_Z get_symbol);
 use File::Basename;
+use Xray::Absorption;
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
@@ -128,7 +129,7 @@ sub new {
 
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
 
-  my $elasticbox       = Wx::StaticBox->new($self, -1, "Elastic files\n", wxDefaultPosition, wxDefaultSize);
+  my $elasticbox       = Wx::StaticBox->new($self, -1, "Elastic files", wxDefaultPosition, wxDefaultSize);
   my $elasticboxsizer  = Wx::StaticBoxSizer->new( $elasticbox, wxVERTICAL );
 
   $self->{elastic_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
@@ -137,7 +138,7 @@ sub new {
   EVT_LISTBOX_DCLICK($self, $self->{elastic_list}, sub{view(@_, $app, 'elastic')});
   $app->mouseover($self->{elastic_list}, "Double click to display an elastic image file.");
 
-  my $imagebox       = Wx::StaticBox->new($self, -1, "Image files\n", wxDefaultPosition, wxDefaultSize);
+  my $imagebox       = Wx::StaticBox->new($self, -1, "Image files", wxDefaultPosition, wxDefaultSize);
   my $imageboxsizer  = Wx::StaticBoxSizer->new( $imagebox, wxVERTICAL );
 
   $self->{image_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
@@ -148,6 +149,13 @@ sub new {
 
   $vbox -> Add($hbox, 1, wxGROW|wxALL, 5);
 
+  if ($app->{tool} ne 'herfd') {
+    $app->{base}->noscan(1);
+    $app->{base}->scanfolder(q{});
+    $self->{scan_dir}->SetValue(q{});
+    $self->{$_}->Enable(0) foreach (qw(scan scan_dir scan_template scan_template_label));
+  };
+  
   $self -> SetSizerAndFit( $vbox );
 
   return $self;
@@ -158,6 +166,7 @@ sub fetch {
   my $busy = Wx::BusyCursor->new();
 
   $app->{base}->Reset;
+  $app->{base}->noscan(1) if ($app->{tool} ne 'herfd');
   $app->{bla_of}->{aggregate}->Reset;
   ## clear out previous batch of Xray::BLA objects
   foreach my $b (keys %{$app->{bla_of}}) {
@@ -165,37 +174,37 @@ sub fetch {
     delete $app->{bla_of}->{$b};
   };
 
-  my $sft = $self->{scan_template}->GetValue;
-  my $eft = $self->{elastic_template}->GetValue;
-  my $ift = $self->{image_template}->GetValue;
-  $app->{base}->scan_file_template($sft);
-  $app->{base}->elastic_file_template($eft);
-  $app->{base}->image_file_template($ift);
+  # my $sft = $self->{scan_template}->GetValue;
+  # my $eft = $self->{elastic_template}->GetValue;
+  # my $ift = $self->{image_template}->GetValue;
+  # $app->{base}->scan_file_template($sft);
+  # $app->{base}->elastic_file_template($eft);
+  # $app->{base}->image_file_template($ift);
 
-  my $stub           = $self->{stub}->GetValue;
-  my $scan_folder    = $self->{scan_dir}->GetValue;
-  my $image_folder   = $self->{image_dir}->GetValue;
-  $app->{base}->stub($stub);
-  $app->{base}->scanfolder($scan_folder);
-  $app->{base}->tifffolder($image_folder);
-  $app->{base}->div10($self->{div10}->GetValue);
-  #$app->{base}->tifscale(2**24) if $self->{scale24}->GetValue;
-  $app->{bla_of}->{aggregate}->stub($stub);
-  $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
-  $app->{bla_of}->{aggregate}->tifffolder($image_folder);
-  $app->{bla_of}->{aggregate}->div10($self->{div10}->GetValue);
+  # my $stub           = $self->{stub}->GetValue;
+  # my $scan_folder    = $self->{scan_dir}->GetValue;
+  # my $image_folder   = $self->{image_dir}->GetValue;
+  # $app->{base}->stub($stub);
+  # $app->{base}->scanfolder($scan_folder);
+  # $app->{base}->tifffolder($image_folder);
+  # $app->{base}->div10($self->{div10}->GetValue);
+  # #$app->{base}->tifscale(2**24) if $self->{scale24}->GetValue;
+  # $app->{bla_of}->{aggregate}->stub($stub);
+  # $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
+  # $app->{bla_of}->{aggregate}->tifffolder($image_folder);
+  # $app->{bla_of}->{aggregate}->div10($self->{div10}->GetValue);
 
 
-  $app->set_parameters;
   $app->{base} -> clear_elastic_energies;
   $self->{elastic_list}->Clear;
   $self->{image_list}->Clear;
-  
-  #print '>>>>', $app->{base}->scan_file_template, $/;
-  #print '>>>>', File::Spec->catfile($scan_folder, $app->{base}->file_template($app->{base}->scan_file_template)), $/;
-  if (not -e File::Spec->catfile($scan_folder, $app->{base}->file_template($app->{base}->scan_file_template))) {
-    $app->{main}->status("Scan file for $stub not found in $scan_folder.", 'alert');
-    return;
+  $app->set_parameters;
+
+  if (not $app->{base}->noscan) {
+    if (not -e File::Spec->catfile($app->{base}->scanfolder, $app->{base}->file_template($app->{base}->scan_file_template))) {
+      $app->{main}->status(sprintf("Scan file for %s not found in %s.", $app->{base}->stub, $app->{base}->scanfolder) , 'alert');
+      return;
+    };
   };
 
 #  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
@@ -203,13 +212,15 @@ sub fetch {
 #    return;
 #  };
 
-  my $sf = $app->{base} -> check_scan;
-  if (not $sf->is_ok) {
-    $app->{main}->status($sf->message, 'alert');
-    return;
+  if (not $app->{base}->noscan) {
+    my $sf = $app->{base} -> check_scan;
+    if (not $sf->is_ok) {
+      $app->{main}->status($sf->message, 'alert');
+      return;
+    };
   };
 
-  my $us = q{_};
+  my ($us, $stub, $image_folder) = (q{_}, $app->{base}->stub, $app->{base}->tifffolder);
   opendir(my $E, $image_folder);
   my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
   closedir $E;
@@ -247,14 +258,38 @@ sub fetch {
   $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
 
   my ($el, $li) = $app->{base}->guess_element_and_line;
+
+  my $e = Xray::Absorption -> get_energy($el, $li);
+  my @list = ();
+  foreach my $l (@Xray::BLA::line_list) {
+    if (abs($l->[2] - $e) < 30) {
+      push @list, join(" ", ucfirst($l->[0]), ucfirst($l->[1]), $l->[2]);
+    };
+  };
+  if ($#list) {
+    my $scd = Wx::SingleChoiceDialog->new($self, "Which line is this?", "Choose line", \@list);
+    if ($scd->ShowModal == wxID_CANCEL) {
+      $app->{main}->status("Using $el $li.");
+    } else {
+      my $choice = $scd->GetStringSelection;
+      my $en;
+      ($el, $li, $en) = split(" ", $choice);
+      $app->{main}->status("Using $el $li.");
+    };
+  };
+
   $self->{element}->SetSelection(get_Z($el)-1);
   $self->{line}->SetStringSelection($li);
   $app->set_parameters;
 
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
+  $app->{Mask}->{energy} -> Enable(1);
+  $app->{Mask}->{rangemin} -> Enable(1);
+  $app->{Mask}->{rangemax} -> Enable(1);
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
-  $app->{Mask}->{energy} -> SetSelection(int(($#{$app->{base}->elastic_energies}+1)/2));
+  my $start = ($app->{tool} eq 'herfd') ? int(($#{$app->{base}->elastic_energies}+1)/2) : 0;
+  $app->{Mask}->{energy} -> SetSelection($start);
   $app->{Mask}->restore($app);
   $app->{Data}->restore;
 

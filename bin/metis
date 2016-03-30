@@ -21,10 +21,12 @@ BEGIN {
   };
 };
 
+use List::MoreUtils qw(none);
 use Wx;
 Wx::InitAllImageHandlers();
 use Demeter::UI::Metis;
 use vars qw($app);
+our $tool = $ARGV[0] || 'herfd';
+$tool = 'herfd' if none {$tool eq $_} qw(herfd xes);
 $app  = Demeter::UI::Metis->new;
-#$app -> process_argv(@ARGV);
 $app -> MainLoop;

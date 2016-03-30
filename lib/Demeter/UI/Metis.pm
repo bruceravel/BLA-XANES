@@ -23,7 +23,6 @@ use base 'Wx::App';
 use Wx::Perl::Carp;
 
 my $icon_dimension = 30;
-my @utilities = qw(Files Mask Data Config);
 
 use Const::Fast;
 const my $Files  => Wx::NewId();
@@ -35,9 +34,16 @@ const my $About  => Wx::NewId();
 
 
 sub OnInit {
-  my ($app) = @_;
+  my ($app, $tool) = @_;
+  $app->{tool} = $::tool;
+  my @utilities = ();
+  if ($app->{tool} eq 'herfd') {
+    @utilities = qw(Files Mask Data Config);
+  } elsif ($app->{tool} eq 'xes') {
+    @utilities = qw(Files Mask Data Config);
+  };
 
-  $app->{main} = Wx::Frame->new(undef, -1, 'Metis [BLA data processing]', wxDefaultPosition, [850,550],);
+  $app->{main} = Wx::Frame->new(undef, -1, 'Metis for '.uc($app->{tool}).' [BLA data processing]', wxDefaultPosition, [850,550],);
   my $iconfile = File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "metis_icon.png");
   my $icon = Wx::Icon->new( $iconfile, wxBITMAP_TYPE_ANY );
   $app->{main} -> SetIcon($icon);
@@ -45,14 +51,14 @@ sub OnInit {
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
   $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
-  $app->{base} -> task('herfd');
+  $app->{base} -> task($app->{tool});
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
 
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, 'metis.yaml');
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});
-    foreach my $k (qw(stub scanfolder tifffolder element line color div10)) {
+    foreach my $k (qw(stub scanfolder tifffolder element line color div10 width_min width_max)) {
       $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
     foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage terminal
@@ -61,7 +67,7 @@ sub OnInit {
       $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
     foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
-		      lonely_pixel_value scalemask radius shield)) {
+		      lonely_pixel_value scalemask radius gaussian_blur_value shield)) {
       $app->{base}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
     };
   } else {
@@ -102,16 +108,18 @@ sub OnInit {
     $app->{$utility} = $this -> new($page, $app);
     $box->Add($app->{$utility}, 1, wxGROW|wxALL, 0);
 
-    $tb->AddPage($page, $utility, 0, $count);
+    my $lab = $utility;
+    $lab = uc($app->{tool}) if $utility eq 'Data';
+    $tb->AddPage($page, $lab, 0, $count);
   };
   $vbox -> Add($tb, 1, wxEXPAND|wxALL, 0);
 
   my $bar = Wx::MenuBar->new;
   my $filemenu   = Wx::Menu->new;
-  $filemenu->Append($Files,    "Show Files tool\tCtrl+1" );
+  $filemenu->Append($Files,    "Show Files tool\tCtrl+1");
   $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
-  $filemenu->Append($Data,     "Show Data tool\tCtrl+3" );
-  $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4" );
+  $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3");
+  $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4");
   $filemenu->AppendSeparator;
   $filemenu->Append(wxID_EXIT, "E&xit\tCtrl+q" );
 
@@ -133,6 +141,7 @@ sub OnInit {
   $app->{main} -> SetSizer($vbox);
 
   $app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
+  $app->{Mask}->{line}->SetSize(int(2*($app->{Mask}->GetSizeWH)[0]/3), 2);
   EVT_CLOSE( $app->{main},  \&on_close);
   return 1;
 };
@@ -188,7 +197,7 @@ sub set_parameters {
   my ($app) = @_;
 
   ## set values for base object
-  $app->{base} -> stub(get_symbol($app->{Files}->{stub}->GetValue));
+  $app->{base} -> stub($app->{Files}->{stub}->GetValue);
   $app->{base} -> element(get_symbol($app->{Files}->{element}->GetSelection+1));
   $app->{base} -> line($app->{Files}->{line}->GetStringSelection);
   $app->{base} -> scanfolder($app->{Files}->{scan_dir}->GetValue);
@@ -208,8 +217,18 @@ sub set_parameters {
   $app->{base} -> set_palette($app->{base}->color);
   $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetLabel);
 
+  my $val = $app->{Mask}->{gaussianvalue}->GetValue;
+  if (not looks_like_number($val)) { # the only non-number the validator will pass
+    my @list = split(/\./, $val);    # is something like 1.2.3, so presume the
+    $val = join('.', @list[0,1]);    # trailing . is a mistake
+  };
+
+  $app->{base} -> width_min($app->{Mask}->{rangemin}->GetValue);
+  $app->{base} -> width_max($app->{Mask}->{rangemax}->GetValue);
   $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
   $app->{base} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
+  $app->{base} -> gaussian_blur_value($val);
+  $app->{base} -> shield($app->{Mask}->{shieldvalue}->GetValue);
   $app->{base} -> social_pixel_value($app->{Mask}->{socialvalue}->GetValue);
   $app->{base} -> lonely_pixel_value($app->{Mask}->{lonelyvalue}->GetValue);
   $app->{base} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
@@ -221,8 +240,8 @@ sub set_parameters {
   foreach my $k (qw(scanfolder tifffolder element line color palette
 		    imagescale outimage terminal energycounterwidth tiffcounter
 		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
-		    bad_pixel_value weak_pixel_value social_pixel_value
-		    lonely_pixel_value scalemask radius div10 shield
+		    bad_pixel_value gaussian_blur_value shield weak_pixel_value social_pixel_value
+		    lonely_pixel_value scalemask radius div10 shield width_min width_max
 		  )) {
     ## push values into yaml
     $app->{yaml}->[0]->{$k} = $app->{base}->$k;

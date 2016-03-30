@@ -45,7 +45,7 @@ $ENV{TERM} = 'dumb' if ($ENV{TERM} =~ m{\A\s*\z});
 eval 'use Term::ANSIColor ()';
 eval { require Win32::Console::ANSI } if (($^O =~ /MSWin32/) and ($ENV{TERM} eq 'dumb'));
 
-my @line_list = @{$$Xray::Absorption::Elam::r_elam{sorted}};
+our @line_list = @{$$Xray::Absorption::Elam::r_elam{sorted}};
 
 
 ##with 'MooseX::MutatorAttributes';
@@ -126,7 +126,7 @@ has 'gaussian_blur_value'=> (is => 'rw', isa => 'LaxNum', default => 2,
 			     documentation => "The threshold value for leaving pixels in a mask after applying the Gaussian blur filter.");
 has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
-has 'shield'             => (is => 'rw', isa => 'Int', default => 0,
+has 'shield'             => (is => 'rw', isa => 'Int', default => 15,
 			     documentation => "Number of steps used to create a shield from lower-energy emission images for removing a fluorescence signal from the mask.");
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
@@ -194,7 +194,7 @@ has 'spots' => (
 	       );
 has 'width_min' => (is => 'rw', isa => 'LaxNum', default => 0,
 		    documentation => "The smallest coordinate in width to be considered as signal.");
-has 'width_max' => (is => 'rw', isa => 'LaxNum', default => 10000,
+has 'width_max' => (is => 'rw', isa => 'LaxNum', default => 487,
 		    documentation => "The largest coordinate in width to be considered as signal.");
 
 
@@ -573,6 +573,7 @@ sub apply_mask {
 
 sub get_incident_energies {
   my ($self) = @_;
+  return $self if ($self->noscan);
   $self->clear_incident_energies;
   open(my $SCAN, "<", $self->scanfile);
   my @list;

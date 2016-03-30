@@ -188,7 +188,7 @@ sub check {
   my ($self, $elastic) = @_;
 
   my $ret = Xray::BLA::Return->new;
-
+  
   ## does elastic file exist?
   $elastic ||= $self->file_template($self->elastic_file_template);
   ##$elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
@@ -205,10 +205,12 @@ sub check {
   };
 
   ## does scan file exist?
-  my $sf = $self->check_scan;
-  if (not $sf->is_ok) {
-    $ret->status($sf->status);
-    $ret->message($sf->message);
+  if (not $self->noscan) {
+    my $sf = $self->check_scan;
+    if (not $sf->is_ok) {
+      $ret->status($sf->status);
+      $ret->message($sf->message);
+    };
   };
   $self->elastic_image($self->Read($self->elastic_file));
 
@@ -251,6 +253,7 @@ sub remove_bad_pixels {
 sub do_step {
   my ($self, $step, @args) = @_;
   my %args = @args;
+  $step = 'poly_fill' if $step eq 'polyfill';
 
   my $saved_image = $self->elastic_image->copy;
   my $ret = $self->$step(\%args);

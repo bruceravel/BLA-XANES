@@ -7,10 +7,25 @@ use Cwd;
 use Config::IniFiles;
 use File::Basename;
 use File::Spec;
+use Scalar::Util qw(looks_like_number);
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
 use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX);
+use Wx::Perl::TextValidator;
+
+my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
+		       do_shield shieldlabel shieldvalue
+		       do_polyfill
+		       do_social sociallabel socialvalue socialvertical
+		       do_lonely lonelylabel lonelyvalue
+		       do_multiply multiplyvalue
+		       do_areal arealtype areallabel arealvalue
+		       do_entire do_andmask savemask
+		       rangelabel rangemin rangeto rangemax
+		       stub reset energylabel energy undostep savesteps)); # animation rbox do_aggregate
+my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue), @most_widgets);
+
 
 sub new {
   my ($class, $page, $app) = @_;
@@ -54,10 +69,11 @@ sub new {
   my $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxALL, 5);
 
-  $self->{rbox} = Wx::RadioBox->new($self, -1, 'Mask type', wxDefaultPosition, wxDefaultSize,
-				    ['Single energy', 'Aggregate'], 1, wxRA_SPECIFY_COLS);
-  $ebox->Add($self->{rbox}, 0, wxALL, 5);
-  EVT_RADIOBOX($self, $self->{rbox}, sub{MaskType(@_, $app)});
+  #$self->{rbox} = Wx::RadioBox->new($self, -1, 'Mask type', wxDefaultPosition, wxDefaultSize,
+  #				    ['Single energy', 'Aggregate'], 1, wxRA_SPECIFY_COLS);
+  #$ebox->Add($self->{rbox}, 0, wxALL, 5);
+  #EVT_RADIOBOX($self, $self->{rbox}, sub{MaskType(@_, $app)});
+  #$self->{rbox}->Enable(1,0);
 
   $self->{energylabel} = Wx::StaticText->new($self, -1, "Emission energy");
   $self->{energy} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, [150,-1], [], wxCB_READONLY);
@@ -65,6 +81,19 @@ sub new {
   $ebox->Add($self->{energy}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
   EVT_COMBOBOX($self, $self->{energy}, sub{SelectEnergy(@_, $app)});
   $app->mouseover($self->{energy}, "Select the emission energy at which to prepare a mask.");
+
+  $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($ebox, 0, wxGROW|wxLEFT, 5);
+  $self->{rangelabel} = Wx::StaticText->new($self, -1, "Image range in pixels:");
+  $self->{rangemin}   = Wx::SpinCtrl->new($self, -1, $app->{base}->width_min, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 0, 487);
+  $self->{rangeto}    = Wx::StaticText->new($self, -1, " to ");
+  $self->{rangemax}   = Wx::SpinCtrl->new($self, -1, $app->{base}->width_max, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 0, 487);
+  $ebox->Add($self->{rangelabel}, 0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{rangemin},   0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 3);
+  $ebox->Add($self->{rangeto},    0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 3);
+  $ebox->Add($self->{rangemax},   0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 3);
+  $app->mouseover($self->{rangemin}, "The lower bound of the elastic energy range in width.");
+  $app->mouseover($self->{rangemax}, "The upper bound of the elastic energy range in width.");
 
   $vbox ->  Add(1, 1, 1);
 
@@ -90,7 +119,39 @@ sub new {
   $app->mouseover($self->{weakvalue}, "Pixels below this value are considered weak.");
 
   ++$row;
-  $self->{do_areal}   = Wx::Button->new($self, -1, "&Areal step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $self->{do_gaussian}   = Wx::Button->new($self, -1, "&Gaussian blur", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $self->{gaussianlabel} = Wx::StaticText->new($self, -1, 'Threshold:');
+  $self->{gaussianvalue} = Wx::TextCtrl->new($self, -1, $app->{base}->gaussian_blur_value, wxDefaultPosition, [70,-1]);
+  $gbs ->Add($self->{do_gaussian},   Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{gaussianlabel}, Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{gaussianvalue}, Wx::GBPosition->new($row,2));
+  $app->mouseover($self->{do_gaussian},   "Convolute the image using a kernel that approximates a Gaussian blur filter.");
+  $app->mouseover($self->{gaussianvalue}, "The threshold value for the filter -- all pixels above this will be set to 1, below to 0");
+  my $numval = Wx::Perl::TextValidator -> new('[\d.]', \($self->{data}));
+  $self->{gaussianvalue}->SetValidator($numval);
+
+  ++$row;
+  $self->{do_shield}   = Wx::Button->new($self, -1, "Shiel&d", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $self->{shieldlabel} = Wx::StaticText->new($self, -1, 'Trailing value:');
+  $self->{shieldvalue} = Wx::SpinCtrl->new($self, -1, $app->{base}->shield, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 30);
+  $gbs ->Add($self->{do_shield},   Wx::GBPosition->new($row,0));
+  $gbs ->Add($self->{shieldlabel}, Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{shieldvalue}, Wx::GBPosition->new($row,2));
+  $app->mouseover($self->{do_shield},   "Create and use a shield for suppressing fluorescence signal.");
+  $app->mouseover($self->{shieldvalue}, "The trailing value for the shield -- add the N-1 mask to the previous shield.");
+
+  ++$row;
+  $self->{do_polyfill}   = Wx::Button->new($self, -1, "&Polyfill", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $gbs ->Add($self->{do_polyfill},   Wx::GBPosition->new($row,0));
+  $app->mouseover($self->{do_polyfill},   "Fit polynomials to create the final mask.");
+
+  ++$row;
+  $self->{line} = Wx::StaticLine->new($self, -1, wxDefaultPosition, [100, 2], wxLI_HORIZONTAL);
+  $gbs -> Add($self->{line}, Wx::GBPosition->new($row,0), Wx::GBSpan->new(1,5));
+
+
+  ++$row;
+  $self->{do_areal}   = Wx::Button->new($self, -1, "&Areal", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{arealtype}  = Wx::Choice->new($self, -1, wxDefaultPosition, wxDefaultSize,
 					[qw(mean median)]);
   $self->{areallabel} = Wx::StaticText->new($self, -1, 'Radius:');
@@ -105,7 +166,7 @@ sub new {
   $app->mouseover($self->{arealvalue}, "The \"radius\" of the averaging, a value of 1 uses a 3x3 square, 2 uses a 5x5 square.");
 
   ++$row;
-  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $self->{do_lonely} = Wx::Button->new($self, -1, "&Lonely pixels", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{lonelylabel}  = Wx::StaticText->new($self, -1, 'Lonely value:');
   $self->{lonelyvalue}  = Wx::SpinCtrl->new($self, -1, $app->{base}->lonely_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 8);
   $gbs ->Add($self->{do_lonely},   Wx::GBPosition->new($row,0));
@@ -115,7 +176,7 @@ sub new {
   $app->mouseover($self->{lonelyvalue}, "A lit pixel is lonely and will be removed if less than or equal to this number of neighbors are unlit.");
 
   ++$row;
-  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels step", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  $self->{do_social} = Wx::Button->new($self, -1, "&Social pixels", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{sociallabel}  = Wx::StaticText->new($self, -1, 'Social value:');
   $self->{socialvalue}  = Wx::SpinCtrl->new($self, -1, $app->{base}->social_pixel_value, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 8);
   $self->{socialvertical} = Wx::CheckBox->new($self, -1, '&Vertical');
@@ -134,10 +195,10 @@ sub new {
   $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
   $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
 
-  ++$row;
-  $self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
-  $gbs ->Add($self->{do_aggregate},   Wx::GBPosition->new($row,0));
-  $app->mouseover($self->{do_aggregate},   "Multiply the current mask by the aggregate mask.");
+  #++$row;
+  #$self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  #$gbs ->Add($self->{do_aggregate},   Wx::GBPosition->new($row,2));
+  #$app->mouseover($self->{do_aggregate},   "Multiply the current mask by the aggregate mask.");
 
   #++$row;
   $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
@@ -177,20 +238,14 @@ sub new {
 
   #$vbox ->  Add(1, 1, 2);
 
-  foreach my $k (qw(bad social lonely multiply areal entire aggregate andmask)) {
+  foreach my $k (qw(bad gaussian shield polyfill social lonely multiply areal entire andmask)) { #  aggregate
     EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k, 1)});
   };
   EVT_CHECKBOX($self, $self->{socialvertical}, sub{$app->{base}->vertical($self->{socialvertical}->GetValue)});
 
   $self -> SetSizerAndFit( $hbox );
 
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue
-		    do_social sociallabel socialvalue socialvertical
-		    do_lonely lonelylabel lonelyvalue
-		    do_multiply multiplyvalue
-		    do_areal arealtype areallabel arealvalue
-		    do_entire do_aggregate do_andmask savemask animation
-		    stub reset energylabel energy undostep savesteps rbox)) {
+  foreach my $k (@all_widgets, qw(animation)) {
     $self->{$k} -> Enable(0);
   };
 
@@ -200,11 +255,12 @@ sub new {
 sub restore {
   my ($self, $app) = @_;
   $self->{steps_list}->Clear;
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue rbox energylabel energy stub)) {
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue energylabel
+		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
     $self->{$k}->Enable(1);
   };
   $self->SelectEnergy(q{}, $app, 1);
-  $self->{rbox}->SetSelection(0);
+  #$self->{rbox}->SetSelection(0);
 };
 
 
@@ -232,11 +288,7 @@ sub MaskType {
   foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue)) {
     $self->{$k}->Enable(1);
   };
-  foreach my $k (qw(do_social sociallabel socialvalue socialvertical
-		    do_lonely lonelylabel lonelyvalue
-		    do_multiply multiplyvalue
-		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask do_aggregate undostep savemask animation)) {
+  foreach my $k (@most_widgets) {
     $self->{$k}->Enable(0);
   };
   $self->{steps_list}->Clear;
@@ -263,15 +315,12 @@ sub SelectEnergy {
      return;
   };
 
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue)) {
-    $self->{$k}->Enable(1);
-  };
-  foreach my $k (qw(do_social sociallabel socialvalue socialvertical
-		    do_lonely lonelylabel lonelyvalue
-		    do_multiply multiplyvalue
-		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask do_aggregate undostep savemask animation)) {
+  foreach my $k (@most_widgets) {
     $self->{$k}->Enable(0);
+  };
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue stub energylabel energy
+		    rangelabel rangemin rangeto rangemax)) {
+    $self->{$k}->Enable(1);
   };
   #$self->{steps_list}->Clear;
 
@@ -302,7 +351,7 @@ sub Reset {
   my ($self, $event, $app) = @_;
   return if (not $self->{reset}->IsEnabled);
   my $energy = $self->{energy}->GetStringSelection;
-  my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
 
   $self->{steps_list}->Clear;
@@ -316,12 +365,12 @@ sub Reset {
       return;
     };
   };
-  foreach my $k (qw(do_social sociallabel socialvalue socialvertical
-		    do_lonely lonelylabel lonelyvalue
-		    do_multiply multiplyvalue
-		    do_areal arealtype areallabel arealvalue
-		    do_entire do_andmask do_aggregate undostep savesteps savemask animation)) {
+  foreach my $k (@most_widgets) {
     $self->{$k}->Enable(0);
+  };
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue energylabel
+		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
+    $self->{$k}->Enable(1);
   };
   $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
   $app->{Data}->{energylabel}->SetLabel("Current mask energy is <undefined>");
@@ -340,12 +389,12 @@ sub do_step {
   my ($self, $event, $app, $which, $append) = @_;
   my $busy = Wx::BusyCursor->new();
   my $energy = $self->{energy}->GetStringSelection;
-  my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
-  if ($self->{rbox}->GetStringSelection =~ m{Single} and ($energy eq q{})) {
-    $app->{main}->status("You haven't selected an emission energy.", 'alert');
-    undef $busy;
-    return;
-  };
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  #if ($self->{rbox}->GetStringSelection =~ m{Single} and ($energy eq q{})) {
+  #  $app->{main}->status("You haven't selected an emission energy.", 'alert');
+  #  undef $busy;
+  #  return;
+  #};
   my $spectrum = $app->{bla_of}->{$key};
 
   my %args = ();
@@ -356,39 +405,58 @@ sub do_step {
 
   my $success;
   if ($which eq 'bad') {
+    $spectrum -> width_min($self->{rangemin}->GetValue);
+    $spectrum -> width_max($self->{rangemax}->GetValue);
     $spectrum -> bad_pixel_value($self->{badvalue}->GetValue);
     $spectrum -> weak_pixel_value($self->{weakvalue}->GetValue);
     $success = $spectrum -> do_step('bad_pixels', %args);
     $self->{steps_list}->Append(sprintf("bad %d weak %d",
 					$spectrum -> bad_pixel_value,
 					$spectrum -> weak_pixel_value)) if ($success and $append);
-    foreach my $k (qw(do_social sociallabel socialvalue socialvertical
-		      do_lonely lonelylabel lonelyvalue
-		      do_multiply multiplyvalue
-		      do_areal arealtype areallabel arealvalue
-		      do_entire do_andmask savemask
-		      undostep savesteps)) { # animation
+    foreach my $k (@most_widgets) { # animation
       $self->{$k}->Enable(1);
     };
-    $self->{do_aggregate}->Enable(1) if ($spectrum->masktype eq 'single');
+    #$self->{do_aggregate}->Enable(1) if ($spectrum->masktype eq 'single');
     $self->{savemask}->Enable(0) if ($spectrum->is_windows);
     $self->{replot}->Enable(1);
     $self->{reset}->Enable(1);
     $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
     $app->{Data}->{energy} = $spectrum->energy;
-    if ($self->{rbox}->GetSelection == 0) {
-      foreach my $k (qw(stub energylabel herfd mue xes showmasks incident incident_label rixs rshowmasks)) {
-	$app->{Data}->{$k}->Enable(1);
-      };
+    #if ($self->{rbox}->GetSelection == 0) {
+    foreach my $k (qw(stub energylabel herfd mue xes showmasks incident incident_label rixs rshowmasks)) {
+      $app->{Data}->{$k}->Enable(1);
     };
+    #};
     $spectrum->get_incident_energies;
     my $rlist = $spectrum->incident_energies;
     $app->{base}->incident_energies($rlist);
     foreach my $key (keys %{$app->{bla_of}}) {
       $app->{bla_of}->{$key}->incident_energies($rlist);
     };
-    $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
+    if ($app->{tool} eq 'herfd') {
+      $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
+    };
+
+  } elsif ($which eq 'gaussian') {
+    my $val = $self->{gaussianvalue}->GetValue;
+    if (not looks_like_number($val)) { # the only non-number the validator will pass
+      my @list = split(/\./, $val);    # is something like 1.2.3, so presume the
+      $val = join('.', @list[0,1]);    # trailing . is a mistake
+    };
+    $spectrum -> gaussian_blur_value($val);
+    $success = $spectrum -> do_step('gaussian_blur', %args);
+    $self->{steps_list}->Append(sprintf("gaussian %.2f",
+					$spectrum -> gaussian_blur_value)) if ($success and $append);
+
+  } elsif ($which eq 'shield') {
+    $app->{main}->status("Not doing shield yet in Metis.");
+    undef $busy;
+    return;
+
+  } elsif ($which eq 'polyfill') {
+    $success = $spectrum -> do_step('polyfill', %args);
+    $self->{steps_list}->Append("polyfill") if ($success and $append);
 
   } elsif ($which eq 'social') {
     $spectrum -> social_pixel_value($self->{socialvalue}->GetValue);
@@ -479,7 +547,7 @@ sub plot {
 sub replot {
   my ($self, $event, $app, $animate) = @_;
   my $energy = $self->{energy}->GetStringSelection;
-  my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
 
   $animate ||= 0;
@@ -524,7 +592,7 @@ sub replot {
 sub savemask {
   my ($self, $event, $app) = @_;
   my $energy = $self->{energy}->GetStringSelection;
-  my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
 
   my $id = ($spectrum->masktype eq 'aggregate') ? 'aggregate' : $spectrum->energy;
@@ -555,7 +623,7 @@ sub savemask {
 sub animation {
   my ($self, $event, $app) = @_;
   my $energy = $self->{energy}->GetStringSelection;
-  my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
 
   my $fname = $spectrum->stub . "_" . $spectrum->energy . "." . $spectrum->outimage;
@@ -586,7 +654,7 @@ sub undo_last_step {
 sub save_steps {
   my ($self, $event, $app) = @_;
   my $energy = $self->{energy}->GetStringSelection;
-  my $key = ($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
 
   my $fname = $spectrum->stub . ".ini";

@@ -572,7 +572,6 @@ sub gaussian_blur {
   return $ret;
 };
 
-use PDL::Fit::Polynomial qw(fitpoly1d);
 sub poly_fill {
   my ($self, $rargs) = @_;
   my %args = %$rargs;

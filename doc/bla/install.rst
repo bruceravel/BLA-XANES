@@ -11,17 +11,17 @@ This package is intended to be installed on a system on which
 :demeter:`demeter` (`homepage
 <http://bruceravel.github.io/demeter/>`_) is already installed.
 Components from :demeter:`demeter` are essential prerequisites for
-Xray::BLA and :demeter:`metis`.
+:program:`Xray::BLA` and :demeter:`metis`.
 
-To install, do the following:
+To install :program:`Xray::BLA` and :demeter:`metis`, do the following:
 
 .. code-block:: bash
 
-         perl Build.PL
-         sudo ./Build installdeps  ## (if any dependencies are not met)
-         ./Build
-         ./Build test
-         sudo ./Build install
+   perl Build.PL
+   sudo ./Build installdeps  ## (if any dependencies are not met)
+   ./Build
+   ./Build test
+   sudo ./Build install
 
 This will install all the `libraries <../lib/index.html>`_ and put
 three programs into your execution path:
@@ -34,3 +34,12 @@ three programs into your execution path:
    tiff files from the Pilatus.
 
 
+Windows package
+---------------
+
+- Install the :demeter:`demeter` installer package,  then
+- Install the :demeter:`metis` installer package
+
+Both are download and double-click installers.
+
+.. todo:: URLs and further instuctions

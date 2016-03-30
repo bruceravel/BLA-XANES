@@ -78,8 +78,8 @@ measurement.
 
    The ``xes`` task computes the XES spectrum from an image at a
    specified incident energy.  The incidence energy is specified
-   either with the ``-i`` or ``--xesimage`` switch.  This will compute
-   all the masks as needed.
+   either with the ``-i`` or ``--xesimage`` switch, one of which must
+   be used.  This will compute all the masks as needed.
 
    .. code-block:: console
 
@@ -89,7 +89,8 @@ measurement.
    Allowed switches are
 
    ``-i``
-      (*required*) The incidence energy at which to compute the XES
+      (*required*) The incidence energy at which to compute the XES.  This form is used with a
+      HERFD measurement to compute the XES at a particular incidence energy.
    ``--xesimage``
       (*required*) The index or file name of the XES image
    ``--noscan``

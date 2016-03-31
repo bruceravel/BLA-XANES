@@ -22,6 +22,7 @@ use PDL::NiceSlice;
 use PDL::IO::Pic qw(wim rim);
 use PDL::IO::Dumper;
 use PDL::Image2D;
+use PDL::Fit::Polynomial qw(fitpoly1d);
 
 use File::Basename;
 use List::MoreUtils qw(onlyidx);

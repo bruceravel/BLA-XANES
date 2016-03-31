@@ -52,6 +52,9 @@ sub new {
   $hbox -> Add($sbox, 1, wxGROW|wxALL, 5);
   $sbox -> Add($stepsboxsizer, 1, wxGROW|wxALL, 5);
 
+  $self->{pluck} = Wx::Button->new($self, -1, 'Pluck point from plot');
+  $sbox -> Add($self->{pluck}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
+  EVT_BUTTON($self, $self->{pluck}, sub{pluck(@_, $app)});
   $self->{undostep} = Wx::Button->new($self, -1, '&Undo last step');
   $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
@@ -637,6 +640,13 @@ sub animation {
   };
   my $file = $fd->GetPath;
   $self->replot($event, $app, 1);
+};
+
+sub pluck {
+  my ($self, $event, $app) = @_;
+  my ($x, $y) = $app->cursor;
+  #print join("|", $ret->message, $ret->status, $x, $y), $/;
+  print "Plucked point $x  $y\n";
 };
 
 sub undo_last_step {

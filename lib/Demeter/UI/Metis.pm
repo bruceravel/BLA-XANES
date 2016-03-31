@@ -22,6 +22,10 @@ use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 use base 'Wx::App';
 use Wx::Perl::Carp;
 
+use Demeter::UI::Metis::Cursor;
+
+
+
 my $icon_dimension = 30;
 
 use Const::Fast;
@@ -55,7 +59,9 @@ sub OnInit {
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
 
-  $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, 'metis.yaml');
+  ## look for matic.<tool>.yaml or metis.yaml
+  $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml'));
+  $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'yaml')) if not -e $app->{yamlfile};
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});
     foreach my $k (qw(stub scanfolder tifffolder element line color div10 width_min width_max)) {
@@ -141,6 +147,7 @@ sub OnInit {
   $app->{main} -> SetSizer($vbox);
 
   $app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
+  $app->{Config}->{xdi_filename}->SetSize((0.8*$app->{Config}->GetSizeWH)[0], 30);
   $app->{Mask}->{line}->SetSize(int(2*($app->{Mask}->GetSizeWH)[0]/3), 2);
   EVT_CLOSE( $app->{main},  \&on_close);
   return 1;
@@ -215,7 +222,7 @@ sub set_parameters {
   $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
   $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
   $app->{base} -> set_palette($app->{base}->color);
-  $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetLabel);
+  $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetValue);
 
   my $val = $app->{Mask}->{gaussianvalue}->GetValue;
   if (not looks_like_number($val)) { # the only non-number the validator will pass
@@ -251,6 +258,7 @@ sub set_parameters {
       $app->{bla_of}->{$key}->$k($app->{base}->$k);
     };
   };
+  $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml')) if ($app->{yamlfile} =~ m{metis\.yaml\z});
   $app->{yaml}->write($app->{yamlfile});
 
   return $app;

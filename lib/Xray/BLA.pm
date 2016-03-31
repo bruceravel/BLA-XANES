@@ -355,6 +355,11 @@ sub import {
   warnings->import;
 };
 
+#sub BUILD {
+#  my ($self, @params) = @_;
+#  $self->initialize_plot;
+#};
+
 sub DEMOLISH {
   my ($self) = @_;
   return $self if not $self->cleanup;
@@ -909,7 +914,9 @@ sub clone {
   my @list = $self->meta->get_attribute_list;
   foreach my $a (sort @list) {
     next if (any {$a eq $_} qw(elastic_file elastic_image xdata ydata bad_pixel_mask));
-    if (ref($self->$a) =~ m{PDL}) {
+    if (ref($self->$a) eq q{PDL::Graphics::Gnuplot}) {
+      $new->$a($self->$a);
+    } elsif (ref($self->$a) =~ m{PDL}) {
       $new->$a($self->$a->copy);
     } else {
       $new->$a($self->$a);

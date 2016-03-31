@@ -29,6 +29,7 @@ has 'color'   => (is => 'rw', isa => 'Str', default => 'grey',
 has 'palette' => (is => 'rw', isa => 'Str', ## greys
 		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
 		  documentation => 'The Gnuplot definition of the surface plot palette.');
+has 'pdlplot' => (is => 'rw', isa => 'Any', default => sub{ gpwin() } );
 
 ## These are the single hue, sequential palettes from Color Brewer
 ##   http://colorbrewer2.org/
@@ -43,6 +44,12 @@ my %color_choices = (
 		     purple => "defined ( 0 '#4A1486', 1 '#6A51A3', 2 '#807DBA', 3 '#9E9AC8', 4 '#BCBDDC', 5 '#DADAEB', 6 '#EFEDF5', 7 '#FCFBFD' )",
 		     red    => "defined ( 0 '#99000D', 1 '#CB181D', 2 '#EF3B2C', 3 '#FB6A4A', 4 '#FC9272', 5 '#FCBBA1', 6 '#FEE0D2', 7 '#FFF5F0' )",
 		    );
+
+sub initialize_plot {
+  my ($self) = @_;
+  $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  return $self;
+};
 
 sub set_palette {
   my ($self, $color) = @_;
@@ -67,19 +74,21 @@ sub plot_mask {
     $title = basename($self->elastic_file);
   };
   $title = $self->escape_us($title);
-  image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title, terminal=>$self->terminal.' size 675,408',
-	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
-	$self->elastic_image);	#                                                ^^ because imagej^^
-};				#                                                ^^  is psychotic ^^
+  $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  $self->pdlplot->image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
+			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
+			$self->elastic_image);	#                                                ^^ because imagej^^
+};			 	                #                                                ^^  is psychotic ^^
 
 sub plot_energy_point {
   my ($self, $file) = @_;
   my $point = $self->Read($file);
   my $cbm = $self->bad_pixel_value/$self->imagescale;
   my $title = $self->escape_us(basename($file));
-  image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title, terminal=>$self->terminal.' size 675,408',
-	 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
-	$point);
+  $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  $self->pdlplot->image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title,
+			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
+			$point);
   undef $point;
 };
 
@@ -92,22 +101,23 @@ sub plot_xanes {
 
   my $legend = $self->escape_us($args{title});
   my $mu = ($self->is_windows) ? 'mu' : '{/Symbol m}';
+  $self->pdlplot->output($self->terminal, size=>[640,480,'px']);
   if ($args{mue}) {
-    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box', terminal=>$self->terminal,},
+    $self->pdlplot->gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box',},
 
-	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
-	  PDL->new($self->herfd_demeter->ref_array('energy')),
-	  PDL->new($self->herfd_demeter->ref_array('flat')),
+			  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
+			  PDL->new($self->herfd_demeter->ref_array('energy')),
+			  PDL->new($self->herfd_demeter->ref_array('flat')),
 
-	  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>"conventional mu(E)",
-	  PDL->new($self->mue_demeter->ref_array('energy')),
-	  PDL->new($self->mue_demeter->ref_array('flat'))
+			  with=>'lines', lc=>'rgb red', lt=>1, lw=>1, legend=>"conventional mu(E)",
+			  PDL->new($self->mue_demeter->ref_array('energy')),
+			  PDL->new($self->mue_demeter->ref_array('flat'))
 	 );
   } else {
-    gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', terminal=>$self->terminal},
-	  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
-	  PDL->new($self->xdata),
-	  PDL->new($self->ydata));
+    $self->pdlplot->gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD',},
+			  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
+			  PDL->new($self->xdata),
+			  PDL->new($self->ydata));
   };
   $self->pause($args{pause}) if $args{pause};
 }
@@ -117,9 +127,9 @@ sub plot_rixs {
   my ($emin, $emax) = ($spectra[0]->xdata->[0], $spectra[0]->xdata->[-1]);
   my @args;
   if ($#spectra > 40) {
-    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off', terminal=>$self->terminal});
+    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off'});
   } else {
-    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box', terminal=>$self->terminal});
+    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box'});
   };
   ## see lib/Demeter/configuration/gnuplot.demeter_conf from Demeter for color list
   my @thiscolor = qw(blue red dark-green dark-violet yellow4 brown dark-pink gold dark-cyan spring-green);
@@ -132,7 +142,8 @@ sub plot_rixs {
     ++$count;
     last if (($self->is_windows) and ($count > 25));
   };
-  gplot(@args);
+  $self->pdlplot->output($self->terminal, size=>[640,480,'px']);
+  $self->pdlplot->gplot(@args);
 }
 sub plot_map {
   my ($self) = @_;
@@ -149,9 +160,9 @@ sub plot_xes {
     push @e, $p->[0]/$denom;
     push @xes, $p->[1];
   };
-  gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES', terminal=>$self->terminal},
-	with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
-	PDL->new(\@e), PDL->new(\@xes));
+  $self->pdlplot->gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
+			with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
+			PDL->new(\@e), PDL->new(\@xes));
   #my $xesout = $self->xdi_xes($self->xdi_metadata_file, q{}, $args{xes});
   return; # $xesout;
 };

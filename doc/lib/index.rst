@@ -20,4 +20,5 @@ Contents:
    Demeter/UI/Metis/Mask.rst
    Demeter/UI/Metis/Data.rst
    Demeter/UI/Metis/Config.rst
+   Demeter/UI/Metis/Cursor.rst
 

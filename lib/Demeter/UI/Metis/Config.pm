@@ -99,11 +99,12 @@ sub new {
 
 
   ++$row;
-  $self->{xdi_metadata_file} = Wx::Button->new($self, -1, "&XDI metadata file", wxDefaultPosition, [140,-1]);
-  $self->{xdi_filename} = Wx::StaticText -> new($self, -1, $app->{base}->xdi_metadata_file);
+  $self->{xdi_metadata_file} = Wx::Button->new($self, -1, "Select &XDI metadata file", wxDefaultPosition, [190,-1]);
+  $self->{xdi_filename} = Wx::TextCtrl -> new($self, -1, $app->{base}->xdi_metadata_file, wxDefaultPosition, [300,-1], wxTE_READONLY);
   EVT_BUTTON($self, $self->{xdi_metadata_file}, sub{SelectXDIFile(@_, $app)});
   $gbs -> Add($self->{xdi_metadata_file},    Wx::GBPosition->new($row,0));
   $gbs -> Add($self->{xdi_filename},         Wx::GBPosition->new($row,1), Wx::GBSpan->new(1,3));
+  $app->mouseover($self->{xdi_filename}, 'Click the button to the left to select the XDI metadata ini file.');
   $app->mouseover($self->{xdi_metadata_file}, 'Select XDI metadata .ini file.');
 
   $vbox -> Add(1,30,0);
@@ -113,10 +114,6 @@ sub new {
   EVT_BUTTON($self, $self->{set}, sub{$app->set_parameters});
   $app->mouseover($self->{set}, "Set parameters and save Metis' current configuration.");
 
-## image scaling factor
-## tiffcounter
-## energycounterwidth
-## image format
 
   $self -> SetSizerAndFit( $vbox );
 
@@ -131,7 +128,7 @@ sub SelectXDIFile {
 				"INI (*.ini)|*.ini|All files (*)|*",
 				wxFD_OPEN|wxFD_CHANGE_DIR|wxFD_FILE_MUST_EXIST, wxDefaultPosition);
   if ($fd->ShowModal == wxID_CANCEL) {
-    $app->{main}->status("Saving data file canceled.");
+    $app->{main}->status("Selecting XDI metadata ini file canceled.");
     return;
   };
 

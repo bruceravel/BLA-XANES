@@ -11,8 +11,10 @@ use Scalar::Util qw(looks_like_number);
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
-use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX);
+use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX EVT_RIGHT_DOWN EVT_MENU);
 use Wx::Perl::TextValidator;
+
+use Demeter::UI::Metis::PluckPoint;
 
 my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
 		       do_shield shieldlabel shieldvalue
@@ -52,9 +54,6 @@ sub new {
   $hbox -> Add($sbox, 1, wxGROW|wxALL, 5);
   $sbox -> Add($stepsboxsizer, 1, wxGROW|wxALL, 5);
 
-  $self->{pluck} = Wx::Button->new($self, -1, 'Pluck point from plot');
-  $sbox -> Add($self->{pluck}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-  EVT_BUTTON($self, $self->{pluck}, sub{pluck(@_, $app)});
   $self->{undostep} = Wx::Button->new($self, -1, '&Undo last step');
   $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
@@ -64,6 +63,19 @@ sub new {
   $self->{savesteps} = Wx::Button->new($self, -1, 'Save steps');
   $sbox -> Add($self->{savesteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
   EVT_BUTTON($self, $self->{savesteps}, sub{save_steps(@_, $app)});
+
+
+  my $spotsbox       = Wx::StaticBox->new($self, -1, 'Defined spots', wxDefaultPosition, wxDefaultSize);
+  my $spotsboxsizer  = Wx::StaticBoxSizer->new( $spotsbox, wxVERTICAL );
+
+  $self->{spots_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
+  $spotsboxsizer -> Add($self->{spots_list}, 1, wxGROW);
+  $sbox -> Add($spotsboxsizer, 1, wxGROW|wxALL, 5);
+  EVT_RIGHT_DOWN($self->{spots_list}, sub{SpotsMenu(@_, $app)});
+
+  $self->{pluck} = Wx::Button->new($self, -1, 'Pluck point from plot');
+  $sbox -> Add($self->{pluck}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
+  EVT_BUTTON($self, $self->{pluck}, sub{pluck(@_, $app)});
 
 
   $self->{stub} = Wx::StaticText->new($self, -1, 'Stub is <undefined>');
@@ -645,8 +657,61 @@ sub animation {
 sub pluck {
   my ($self, $event, $app) = @_;
   my ($x, $y) = $app->cursor;
-  #print join("|", $ret->message, $ret->status, $x, $y), $/;
-  print "Plucked point $x  $y\n";
+  ($x, $y) = (int($x), int($y));
+  #print "Plucked point $x  $y\n";
+  my $pp = Demeter::UI::Metis::PluckPoint->new($self, $self->{energy}->GetStringSelection, $x, $y);
+  if ($pp->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Making spot canceled.");
+    return;
+  };
+  my $line = join("  ",  $pp->{e}->GetValue, $pp->{x}->GetValue, $pp->{y}->GetValue, $pp->{r}->GetValue);
+  $self->{spots_list}->Append($line);
+};
+
+
+use Const::Fast;
+const my $EDIT   => Wx::NewId();
+const my $DELETE => Wx::NewId();
+
+sub SpotsMenu {
+  my ($self, $event, $app) = @_;
+  my $id = $app->{Mask}->{spots_list}->HitTest($event->GetPosition);
+  $app->{Mask}->{spots_list}->SetSelection($id);
+  my $menu = Wx::Menu->new;
+  $menu->Append($EDIT, "Edit this spot");
+  $menu->Append($DELETE, "Discard this spot");
+  EVT_MENU($menu, -1, sub{OnMenu(@_, $app)});
+  $self->PopupMenu($menu, $event->GetPosition);
+  $event->Skip(0);
+};
+
+sub OnMenu {
+  my ($self, $event, $app) = @_;
+  my $id = $event->GetId;
+  my $item = $app->{Mask}->{spots_list}->GetStringSelection;
+  my ($e, $x, $y, $r) = split(" ", $item);
+ SWITCH: {
+    ($id == $EDIT) and do {
+      my $pp = Demeter::UI::Metis::PluckPoint->new($app->{Mask}->{pluck}, $e, $x, $y, $r);
+      if ($pp->ShowModal == wxID_CANCEL) {
+	$app->{main}->status("Editing spot canceled.");
+	return;
+      };
+      my $line = join("  ",  $pp->{e}->GetValue, $pp->{x}->GetValue, $pp->{y}->GetValue, $pp->{r}->GetValue);
+      $app->{Mask}->{spots_list}->SetString($app->{Mask}->{spots_list}->GetSelection, $line);
+      last SWITCH;
+    };
+    ($id == $DELETE) and do {
+      my $md = Wx::MessageDialog->new($app->{Mask}->{spots_list}, "Really delete \"$item\"?", "Confirm deletion");
+      if ($md->ShowModal == wxID_NO) {
+	$app->{main}->status("Deleting spot canceled.");
+	return;
+      };
+      $app->{Mask}->{spots_list}->Delete($app->{Mask}->{spots_list}->GetSelection);
+      $app->{main}->status("Deleted spot \"$item\".");
+      last SWITCH;
+    };
+  };
 };
 
 sub undo_last_step {
@@ -658,7 +723,6 @@ sub undo_last_step {
   } else {
     $self->replot($event, $app);
   };
-
 };
 
 sub save_steps {

@@ -21,4 +21,5 @@ Contents:
    Demeter/UI/Metis/Data.rst
    Demeter/UI/Metis/Config.rst
    Demeter/UI/Metis/Cursor.rst
+   Demeter/UI/Metis/PluckPoint.rst
 

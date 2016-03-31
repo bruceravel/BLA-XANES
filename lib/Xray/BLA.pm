@@ -929,8 +929,8 @@ sub Reset {
   my ($self) = @_;
   local $|=1;
   foreach my $a ($self->meta->get_attribute_list) {
-    if (any {$a eq $_}  qw(cleanup outfolder ui)) {
-      1;			# do not reset this one
+    if (any {$a eq $_}  qw(cleanup outfolder ui pdlplot)) {
+      1;			# do not reset these
     } elsif (ref($self->meta->get_attribute($a)->default) =~ m{CODE}) {
       $self->$a(&{$self->meta->get_attribute($a)->default});
     } else {

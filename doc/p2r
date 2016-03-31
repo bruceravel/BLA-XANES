@@ -10,7 +10,7 @@ done
 
 pod2rst --infile=../lib/Demeter/UI/Metis.pm --outfile lib/Demeter/UI/Metis.rst
 
-DUM='Config Data Files Mask Cursor'
+DUM='Config Data Files Mask Cursor PluckPoint'
 for f in $DUM; do
     pod2rst --infile=../lib/Demeter/UI/Metis/$f.pm --outfile lib/Demeter/UI/Metis/$f.rst
 done

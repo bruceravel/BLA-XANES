@@ -20,9 +20,7 @@ sub cursor {
   my $return = Xray::BLA::Return->new();
   my $busy = Wx::BusyCursor->new();
   $app->{main}->status("Double click on a point to pluck its value (there WILL be a short pause after clicking) ...", "wait");
-  ($x,$y,$char,$modstring) = $app->{base}->pdlplot->read_mouse('');
-  $x = int($x);
-  $y = int($y);
+  ($x,$y) = $app->{base}->pdlplot->read_mouse('');
   $app->{main}->status(' ');
   undef $busy;
   return($x, $y);

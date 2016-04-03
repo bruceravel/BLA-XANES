@@ -5,6 +5,7 @@ use warnings;
 
 use Cwd;
 use Config::IniFiles;
+use Const::Fast;
 use File::Basename;
 use File::Spec;
 use Scalar::Util qw(looks_like_number);
@@ -28,6 +29,10 @@ my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
 		       stub reset energylabel energy undostep savesteps)); # animation rbox do_aggregate
 my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue), @most_widgets);
 
+my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "up.png");
+my $up   = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
+$icon    = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "down.png");
+my $down = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
 
 sub new {
   my ($class, $page, $app) = @_;
@@ -91,11 +96,19 @@ sub new {
   #$self->{rbox}->Enable(1,0);
 
   $self->{energylabel} = Wx::StaticText->new($self, -1, "Emission energy");
-  $self->{energy} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, [150,-1], [], wxCB_READONLY);
+  $self->{energy}      = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, [150,-1], [], wxCB_READONLY);
+  $self->{energy_up}   = Wx::BitmapButton->new($self, -1, $up);
+  $self->{energy_down} = Wx::BitmapButton->new($self, -1, $down);
   $ebox->Add($self->{energylabel}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
-  $ebox->Add($self->{energy}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
-  EVT_COMBOBOX($self, $self->{energy}, sub{SelectEnergy(@_, $app)});
+  $ebox->Add($self->{energy},      0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{energy_up},   0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{energy_down}, 0, wxALL|wxALIGN_CENTRE_VERTICAL, 5);
+  EVT_COMBOBOX($self, $self->{energy},    sub{SelectEnergy(@_, $app)});
+  EVT_BUTTON($self, $self->{energy_up},   sub{$self->spin_energy('up',   $app)});
+  EVT_BUTTON($self, $self->{energy_down}, sub{$self->spin_energy('down', $app)});
   $app->mouseover($self->{energy}, "Select the emission energy at which to prepare a mask.");
+  $app->mouseover($self->{energy_up},   "Increment the emission energy.");
+  $app->mouseover($self->{energy_down}, "Decrement the emission energy.");
 
   $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxLEFT, 5);
@@ -314,12 +327,14 @@ sub SelectEnergy {
   my ($self, $event, $app, $noplot) = @_;
   my $energy = $self->{energy}->GetStringSelection;
   my $spectrum = $app->{bla_of}->{$energy};
+  my $busy = Wx::BusyCursor->new();
 
   my $elastic_file;
   my $elastic_list = $app->{Files}->{elastic_list};
   foreach my $i (0 .. $elastic_list->GetCount-1) {
     if ($elastic_list->GetString($i) =~ m{$energy}) {
       $elastic_file = $elastic_list->GetString($i);
+      undef $busy;
       last;
     };
   };
@@ -327,13 +342,15 @@ sub SelectEnergy {
   my $ret = $spectrum->check($elastic_file);
   if ($ret->status == 0) {
      $app->{main}->status($ret->message, 'alert');
+      undef $busy;
      return;
   };
 
   foreach my $k (@most_widgets) {
     $self->{$k}->Enable(0);
   };
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue stub energylabel energy
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue stub
+		    energylabel energy energy_up energy_down
 		    rangelabel rangemin rangeto rangemax)) {
     $self->{$k}->Enable(1);
   };
@@ -345,6 +362,8 @@ sub SelectEnergy {
     if ($st =~ m{\Abad}) {
       $self->{badvalue}->SetValue($words[1]);
       $self->{weakvalue}->SetValue($words[3]);
+    } elsif ($st =~ m{\Agaussian}) {
+      $self->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Asocial}) {
       $self->{socialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
@@ -358,8 +377,8 @@ sub SelectEnergy {
     $self->do_step($event, $app, $words[0], 0);
   };
 
-  
   $self->plot($app, $spectrum) if not $noplot;
+  undef $busy;
 };
 
 sub Reset {
@@ -424,6 +443,11 @@ sub do_step {
     $spectrum -> width_max($self->{rangemax}->GetValue);
     $spectrum -> bad_pixel_value($self->{badvalue}->GetValue);
     $spectrum -> weak_pixel_value($self->{weakvalue}->GetValue);
+    $spectrum->clear_spots;
+    foreach my $i (0 .. $self->{spots_list}->GetCount-1) {
+      my $string = $self->{spots_list}->GetString($i);
+      $spectrum->push_spots([split(" ",$string)]);
+    };
     $success = $spectrum -> do_step('bad_pixels', %args);
     $self->{steps_list}->Append(sprintf("bad %d weak %d",
 					$spectrum -> bad_pixel_value,
@@ -654,6 +678,18 @@ sub animation {
   $self->replot($event, $app, 1);
 };
 
+sub spin_energy {
+  my ($self, $direction, $app) = @_;
+  my $id = $self->{energy}->GetSelection;
+  my $total = $self->{energy}->GetCount - 1;
+  return if (($direction eq 'down') and ($id == 0));
+  return if (($direction eq 'up') and ($id == $total));
+  ++ $id if ($direction eq 'up');
+  -- $id if ($direction eq 'down');
+  $self->{energy}->SetSelection($id);
+  SelectEnergy($self, q(), $app)
+};
+
 sub pluck {
   my ($self, $event, $app) = @_;
   my ($x, $y) = $app->cursor;
@@ -669,9 +705,9 @@ sub pluck {
 };
 
 
-use Const::Fast;
-const my $EDIT   => Wx::NewId();
-const my $DELETE => Wx::NewId();
+const my $EDIT       => Wx::NewId();
+const my $DELETE     => Wx::NewId();
+const my $DELETE_ALL => Wx::NewId();
 
 sub SpotsMenu {
   my ($self, $event, $app) = @_;
@@ -680,6 +716,8 @@ sub SpotsMenu {
   my $menu = Wx::Menu->new;
   $menu->Append($EDIT, "Edit this spot");
   $menu->Append($DELETE, "Discard this spot");
+  $menu->AppendSeparator;
+  $menu->Append($DELETE_ALL, "Discard all spots");
   EVT_MENU($menu, -1, sub{OnMenu(@_, $app)});
   $self->PopupMenu($menu, $event->GetPosition);
   $event->Skip(0);
@@ -702,13 +740,25 @@ sub OnMenu {
       last SWITCH;
     };
     ($id == $DELETE) and do {
-      my $md = Wx::MessageDialog->new($app->{Mask}->{spots_list}, "Really delete \"$item\"?", "Confirm deletion");
+      my $md = Wx::MessageDialog->new($app->{Mask}->{spots_list}, "Really delete \"$item\"?", "Confirm deletion",
+				      wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
       if ($md->ShowModal == wxID_NO) {
 	$app->{main}->status("Deleting spot canceled.");
 	return;
       };
       $app->{Mask}->{spots_list}->Delete($app->{Mask}->{spots_list}->GetSelection);
       $app->{main}->status("Deleted spot \"$item\".");
+      last SWITCH;
+    };
+    ($id == $DELETE_ALL) and do {
+      my $md = Wx::MessageDialog->new($app->{Mask}->{spots_list}, "Really delete all spots?", "Confirm deletion",
+				      wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+      if ($md->ShowModal == wxID_NO) {
+	$app->{main}->status("Deleting all spots canceled.");
+	return;
+      };
+      $app->{Mask}->{spots_list}->Clear;
+      $app->{main}->status("Removed all spots.");
       last SWITCH;
     };
   };
@@ -754,7 +804,14 @@ sub save_steps {
   $text .= "elastic            = " . $spectrum -> elastic_file_template . "\n";
   $text .= "image              = " . $spectrum -> image_file_template   . "\n";
   $text .= "xdi                = " . $spectrum -> xdi_metadata_file     . "\n";
-  $text .= "\n[steps]\nsteps = <<END\n";
+  $text .= "\n[spots]\n";
+  $text .= "xrange = " . $spectrum->width_min . " " . $spectrum->width_max . "\n";
+  $text .= "spots=<<END\n";
+  foreach my $n (0 .. $self->{spots_list}->GetCount-1) {
+    $text .= $self->{spots_list}->GetString($n) . "\n";
+  };
+  $text .= "END\n";
+  $text .= "\n[steps]\nsteps=<<END\n";
   foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
     $text .= $self->{steps_list}->GetString($n) . "\n";
   };
@@ -778,10 +835,15 @@ sub restore_steps {
   };
   my $file = $fd->GetPath;
   tie my %ini, 'Config::IniFiles', ( -file => $file );
+
+  my $spots = $ini{spots}{spots};
+  $spots = [$spots] if ref($spots) !~ m{ARRAY};
+  $self->{spots_list}->Clear;
+  foreach my $sp (@$spots) {
+    $self->{spots_list}->Append($sp);
+  }
   my $steps = $ini{steps}{steps};
-
   $self->Reset($event, $app);
-
   foreach my $st (@$steps) {
     my @words = split(" ", $st);
     if ($st =~ m{\Abad}) {

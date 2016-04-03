@@ -36,6 +36,8 @@ const my $Config => Wx::NewId();
 const my $Object => Wx::NewId();
 const my $About  => Wx::NewId();
 
+const my $INCREMENT_ENERGY   => Wx::NewId();
+const my $DECREMENT_ENERGY   => Wx::NewId();
 
 sub OnInit {
   my ($app, $tool) = @_;
@@ -139,6 +141,14 @@ sub OnInit {
   $app->{main}->SetMenuBar( $bar );
   EVT_MENU($app->{main}, -1, sub{my ($frame,  $event) = @_; OnMenuClick($frame, $event, $app)} );
 
+  my $accelerator = Wx::AcceleratorTable->new(
+   					      [wxACCEL_CTRL, 107, $INCREMENT_ENERGY],
+   					      [wxACCEL_CTRL, 106, $DECREMENT_ENERGY],
+   					      #[wxACCEL_ALT,  107, $MOVE_UP],
+   					      #[wxACCEL_ALT,  106, $MOVE_DOWN],
+   					     );
+  $app->{main}->SetAcceleratorTable( $accelerator );
+
   $app->{main} -> Show( 1 );
   $app->{main} -> Refresh;
   $app->{main} -> Update;
@@ -182,8 +192,18 @@ sub OnMenuClick {
       $app->view_attributes;
       return;
     };
-    ($id == $About)   and do {
+    ($id == $About)    and do {
       $app->on_about;
+      return;
+    };
+    ($id == $INCREMENT_ENERGY) and do {
+      return if ($app->{book}->GetSelection != 1);
+      $app->{Mask}->spin_energy('up', $app);
+      return;
+    };
+    ($id == $DECREMENT_ENERGY) and do {
+      return if ($app->{book}->GetSelection != 1);
+      $app->{Mask}->spin_energy('down', $app);
       return;
     };
     ($id == wxID_EXIT) and do {
@@ -271,13 +291,13 @@ sub view_attributes {
   my $id = 'base';
   if ($which eq 'Mask') {
     my $en = $app->{Mask}->{energy}->GetStringSelection;
-    if ($app->{Mask}->{rbox}->GetStringSelection =~ m{Single} and $en) {
-      $spectrum = $app->{bla_of}->{$en};
-      $id = $en;
-    } elsif ($app->{Mask}->{rbox}->GetStringSelection =~ m{Aggregate}) {
-      $spectrum = $app->{bla_of}->{aggregate};
-      $id = 'aggregate';
-    };
+    #if ($app->{Mask}->{rbox}->GetStringSelection =~ m{Single} and $en) {
+    #  $spectrum = $app->{bla_of}->{$en};
+    #  $id = $en;
+    #} elsif ($app->{Mask}->{rbox}->GetStringSelection =~ m{Aggregate}) {
+    #  $spectrum = $app->{bla_of}->{aggregate};
+    #  $id = 'aggregate';
+    #};
   } elsif ($which eq 'Data') {
     my $en = $app->{Data}->{energy};
     $spectrum = $app->{bla_of}->{$en} if $en;

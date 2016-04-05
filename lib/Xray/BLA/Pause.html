@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Xray::BLA::Pause &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Xray::BLA::Pause &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../../../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../index.html" />
     <link rel="next" title="Xray::BLA::Plot" href="Plot.html" />
     <link rel="prev" title="Xray::BLA::Mask" href="Mask.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Mask.html" title="Xray::BLA::Mask"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -96,13 +96,16 @@ colors (usually black on white).  The ANSI colors control sequences
 are part of the default value of this attribute and so can be
 overriden by resetting its value.</p>
 </div></blockquote>
-<p><code class="docutils literal"><span class="pre">highlight</span></code></p>
+<p><code class="docutils literal"><span class="pre">highlight</span></code> [underline]</p>
 <blockquote>
 <div>This sets the form of highlighting of the prompt.  The possible values
 are underline and reverse, which will cause the prompt text to be
 either underlined or reverse video in the sense of <code class="docutils literal"><span class="pre">Term::ANSIColor</span></code>.
 Any other value for this attribute will result in no highlighting of
 the prompt string.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">hl</span></code></p>
+<blockquote>
+<div>This contains the ASCII escape sequence associated with <code class="docutils literal"><span class="pre">highlight</span></code>.</div></blockquote>
 </div>
 <div class="section" id="methods">
 <h2>METHODS<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
@@ -119,7 +122,7 @@ with a question.</p>
 <div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$object</span><span class="o">-&gt;</span><span class="n">prompt</span><span class="p">(</span><span class="s">&quot;What is 2+2? &quot;</span><span class="p">);</span>
 <span class="k">my</span> <span class="nv">$answer</span> <span class="o">=</span> <span class="nv">$object</span><span class="o">-&gt;</span><span class="n">pause</span><span class="p">;</span>
 <span class="nb">chomp</span> <span class="nv">$answer</span><span class="p">;</span>
-<span class="k">if</span> <span class="p">(</span><span class="nv">$answer</span> <span class="ow">eq</span> <span class="s">&#39;4&#39;</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">if</span> <span class="p">((</span><span class="nv">$answer</span> <span class="ow">eq</span> <span class="s">&#39;4&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">uc</span><span class="p">(</span><span class="nv">$answer</span><span class="p">)</span> <span class="ow">eq</span> <span class="s">&#39;IV&#39;</span><span class="p">))</span> <span class="p">{</span>
    <span class="k">print</span> <span class="s">&quot;You&#39;re a math genius!\n&quot;</span><span class="p">;</span>
 <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
    <span class="k">print</span> <span class="s">&quot;Sigh. I don&#39;t know why I even bother....\n&quot;</span><span class="p">;</span>
@@ -131,7 +134,7 @@ with a question.</p>
 <div class="section" id="dependencies">
 <h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
 <p>Demeter's dependencies are in the <em>Bundle/DemeterBundle.pm</em> file.
-This module uses <a class="reference external" href="http://search.cpan.org/search?query=Term%3a%3aANSIColor&amp;mode=module">Term::ANSIColor</a> if it is available.</p>
+This module uses <a class="reference external" href="https://metacpan.org/pod/Term%3a%3aANSIColor">Term::ANSIColor</a> if it is available.</p>
 </div>
 <div class="section" id="bugs-and-limitations">
 <h2>BUGS AND LIMITATIONS<a class="headerlink" href="#bugs-and-limitations" title="Permalink to this headline">¶</a></h2>
@@ -148,7 +151,7 @@ This module uses <a class="reference external" href="http://search.cpan.org/sear
 <h2>LICENCE AND COPYRIGHT<a class="headerlink" href="#licence-and-copyright" title="Permalink to this headline">¶</a></h2>
 <p>Copyright (c) 2006-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.</p>
 <p>This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See perlgpl.</p>
+modify it under the same terms as Perl itself. See <a class="reference external" href="http://perldoc.perl.org/perlgpl.html">perlgpl</a>.</p>
 <p>This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
@@ -157,7 +160,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -182,7 +186,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -231,7 +235,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="Mask.html" title="Xray::BLA::Mask"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Programming documentation</a> &raquo;</li> 
       </ul>
     </div>

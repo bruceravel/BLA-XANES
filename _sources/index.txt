@@ -36,6 +36,8 @@ Contents:
    metis/index.rst
    lib/index.rst
 
+.. todo:: page for pilplot
+
 
 ..
    Indices and tables

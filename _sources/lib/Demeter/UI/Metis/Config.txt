@@ -73,7 +73,7 @@ Copyright (c) 2006-2014,2016 Bruce Ravel and Jeremy Kropf.  All rights
 reserved.
 
 This module is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself. See perlgpl.
+under the same terms as Perl itself. See `perlgpl <http://perldoc.perl.org/perlgpl.html>`_.
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Troubleshooting &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Troubleshooting &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../index.html" />
     <link rel="up" title="The bla program" href="index.html" />
     <link rel="next" title="The Metis program" href="../metis/index.html" />
     <link rel="prev" title="Tasks of the bla program" href="tasks.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="tasks.html" title="Tasks of the bla program"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
       </ul>
     </div>  
@@ -59,6 +59,23 @@
             
   <div class="section" id="troubleshooting">
 <h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="saving-masks-as-image-files">
+<h2>Saving masks as image files<a class="headerlink" href="#saving-masks-as-image-files" title="Permalink to this headline">¶</a></h2>
+<p>In order to save mask images, you may need to install some additional
+software on your computer.  PDL uses the NetPBM package for image
+format manipulation.  On Ubuntu, the package is called <code class="docutils literal"><span class="pre">netpbm</span></code> and
+is likely already installed.  This is not installed by the Demeter
+installer for Windows, so you have to install it separately.  Download
+and install <a class="reference external" href="http://gnuwin32.sourceforge.net/packages/netpbm.htm">the NetPBM Windows installer</a>.</p>
+<p>Note where the binaries get installed.  You must add that location to
+the execution path.  This can be done at the Windows command prompt by</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">set</span> <span class="nv">PATH</span><span class="o">=</span>%PATH%<span class="p">;</span>C:<span class="se">\G</span>nuWin32<span class="se">\b</span>in
+</pre></div>
+</div>
+<p>substituting <code class="docutils literal"><span class="pre">C:\GnuWin32\bin</span></code> with the location on your computer.</p>
+<p>Without NetPBM, an invocation of the <strong class="program">bla</strong> program with the
+<code class="docutils literal"><span class="pre">-s</span></code> flag will not run to completion.</p>
+</div>
 <div class="section" id="error-checking">
 <h2>Error checking<a class="headerlink" href="#error-checking" title="Permalink to this headline">¶</a></h2>
 <p>The library is not particularly robust in terms of flagging problems.
@@ -82,12 +99,16 @@ consequence.</p>
 </pre></div>
 </div>
 <p>Similar near lines 3256, 3301.</p>
+<p>Another solution is to replace <code class="docutils literal"><span class="pre">print</span> <span class="pre">STDERR</span></code> with <code class="docutils literal"><span class="pre">carp</span></code> at line
+3116 and elsewhere.  If that is done, then Metis is instrumented to
+handle terminal-related chatter a bit more gracefully.</p>
 
 <br>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -112,7 +133,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -161,7 +182,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="tasks.html" title="Tasks of the bla program"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
       </ul>
     </div>

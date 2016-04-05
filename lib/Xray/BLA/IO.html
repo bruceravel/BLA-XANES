@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Xray::BLA::IO &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Xray::BLA::IO &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../../../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../index.html" />
     <link rel="next" title="Xray::BLA::Image" href="Image.html" />
     <link rel="prev" title="Xray::BLA" href="../BLA.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="../BLA.html" title="Xray::BLA"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -65,7 +65,62 @@
 </div>
 <div class="section" id="version">
 <h2>VERSION<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
-<p>See <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA&amp;mode=module">Xray::BLA</a></p>
+<p>See Xray::BLA</p>
+</div>
+<div class="section" id="methods">
+<h2>METHODS<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">mask_file</span></code></p>
+<blockquote>
+<div><p>Compute the name of an output file from the parameters of the
+calculation.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">$fname</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">mask_file</span><span class="p">(</span><span class="nv">$type</span><span class="p">,</span> <span class="nv">$imagetype</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">$type</span></code> is one of <code class="docutils literal"><span class="pre">mask</span></code>, <code class="docutils literal"><span class="pre">shield</span></code>, <code class="docutils literal"><span class="pre">previousshield</span></code>,
+<code class="docutils literal"><span class="pre">rixsplane</span></code>, <code class="docutils literal"><span class="pre">anim</span></code>, <code class="docutils literal"><span class="pre">map</span></code>, <code class="docutils literal"><span class="pre">maskmap</span></code>, or an integer denoting a
+file in a sequence.</p>
+<p><code class="docutils literal"><span class="pre">imagetype</span></code> is one of &quot;gif&quot;, &quot;tif&quot;, or &quot;png&quot; and specifies the output
+image format.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">xdi_out</span></code></p>
+<blockquote>
+<div><p>Write HERFD data to an XDI file.  Return the name of the computed
+output file.  The arguments are the name of the ini file with XDI
+metadata and a reference to the hash containing the calculated HERFD
+data.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$outfile</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">xdi_out</span><span class="p">(</span><span class="nv">$xdiini</span><span class="p">,</span> <span class="o">\</span><span class="nv">@data</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">xdi_xes</span></code></p>
+<blockquote>
+<div><p>Write XES data to an XDI file.  Return the name of the computed output
+file.  The arguments are the name of the ini file with XDI metadata,
+the name of the XES image file, and a reference to the hash containing
+the calculated XES data.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">$outfile</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">xdi_xes</span><span class="p">(</span><span class="nv">$xdiini</span><span class="p">,</span> <span class="nv">$xesimage</span><span class="p">,</span> <span class="o">\</span><span class="nv">@xes</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">energy_map</span></code></p>
+<blockquote>
+<div><p>Write the results of the <code class="docutils literal"><span class="pre">map</span></code> task to an output data file.  The
+arguments control screen output and the creation (not currently
+working) of an animation showing how the energy map was made.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">energy_map</span><span class="p">(</span><span class="n">verbose</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="n">animate</span><span class="o">=&gt;</span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">gnuplot_map</span></code></p>
+<blockquote>
+<div><p>Write gnuplot commands to use the data written by <code class="docutils literal"><span class="pre">energy_map</span></code>.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nb">open</span><span class="p">(</span><span class="k">my</span> <span class="nv">$GP</span><span class="p">,</span> <span class="s">&#39;&gt;&#39;</span><span class="p">,</span> <span class="s">&#39;splot.gp&#39;</span><span class="p">);</span>
+<span class="k">my</span> <span class="nv">$gp</span> <span class="o">=</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="n">gnuplot_map</span><span class="p">;</span>
+<span class="k">print</span> <span class="nv">$GP</span> <span class="nv">$gp</span><span class="p">;</span>
+<span class="nb">close</span> <span class="nv">$GP</span><span class="p">;</span>
+</pre></div>
+</div>
+</div></blockquote>
 </div>
 <div class="section" id="author">
 <h2>AUTHOR<a class="headerlink" href="#author" title="Permalink to this headline">¶</a></h2>
@@ -77,7 +132,7 @@
 <p>Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All
 rights reserved.</p>
 <p>This module is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself. See perlgpl.</p>
+under the same terms as Perl itself. See <a class="reference external" href="http://perldoc.perl.org/perlgpl.html">perlgpl</a>.</p>
 <p>This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
@@ -86,7 +141,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -111,7 +167,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -160,7 +216,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="../BLA.html" title="Xray::BLA"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Programming documentation</a> &raquo;</li> 
       </ul>
     </div>

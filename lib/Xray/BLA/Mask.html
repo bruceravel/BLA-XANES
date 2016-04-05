@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Xray::BLA::Mask &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Xray::BLA::Mask &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../../../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../index.html" />
     <link rel="next" title="Xray::BLA::Pause" href="Pause.html" />
     <link rel="prev" title="Xray::BLA::Image" href="Image.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Image.html" title="Xray::BLA::Image"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -65,7 +65,7 @@
 </div>
 <div class="section" id="version">
 <h2>VERSION<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
-<p>See <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA&amp;mode=module">Xray::BLA</a></p>
+<p>See <a class="reference external" href="https://metacpan.org/pod/Xray%3a%3aBLA">Xray::BLA</a></p>
 </div>
 <div class="section" id="methods">
 <h2>METHODS<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
@@ -118,8 +118,9 @@ along with a pause for viewing it.  This is only used in CLI mode.</div></blockq
 mask creation step.  When given a false value, the image file will be
 written.</div></blockquote>
 <p>These output image files are gif on linux and tif on Windows.</p>
-<p>This method is a wrapper around the contents of the <code class="docutils literal"><span class="pre">steps</span></code>attribute.  Each entry in <code class="docutils literal"><span class="pre">steps</span></code> will be parsed and executed in
-sequence.</p>
+<p>This method is a wrapper around the contents of the
+<code class="docutils literal"><span class="pre">steps</span></code> attribute.  Each entry in <code class="docutils literal"><span class="pre">steps</span></code> will be parsed and
+executed in sequence.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">check</span></code></p>
 <blockquote>
@@ -128,9 +129,11 @@ imported as an image file.  This sets the <code class="docutils literal"><span c
 <code class="docutils literal"><span class="pre">elastic_image</span></code> attributes.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">remove_bad_pixels</span></code></p>
 <blockquote>
-<div>This removes the bad pixels from the map using the <code class="docutils literal"><span class="pre">bad_pixel_mask</span></code>attribute.  Some of the steps, <code class="docutils literal"><span class="pre">areal</span></code> for example, can reinsert a
-bad pixel, so it is necessary to follow each step with this method to
-ensure that the bad pixels are not used in HERFD processing.</div></blockquote>
+<div>This removes the bad pixels from the map using the
+<code class="docutils literal"><span class="pre">bad_pixel_mask</span></code> attribute.  Some of the steps, <code class="docutils literal"><span class="pre">areal</span></code> for example,
+can reinsert a bad pixel, so it is necessary to follow each step with
+this method to ensure that the bad pixels are not used in HERFD
+processing.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">do_step</span></code></p>
 <blockquote>
 <div>A wrapper around the various mask processing steps.  This calls the
@@ -148,6 +151,43 @@ must be the first step in mask processing.  This also sets the
 <code class="docutils literal"><span class="pre">bad_pixel_mask</span></code> attribute, which identifies the pixels marked as bad
 pixels.</p>
 <p>Controlling attributes: <code class="docutils literal"><span class="pre">bad_pixel_value</span></code>, <code class="docutils literal"><span class="pre">weak_pixel_value</span></code></p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">gaussian_blur</span></code></p>
+<blockquote>
+<div><p>Apply an approximate Gaussian blur filter to the image.  Set all
+pixels above a threshold value to 1, setting all below that value to
+0.  This is a simple convolution with this kernel:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span>  <span class="mi">1</span>   <span class="o">/</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">1</span> <span class="o">\</span>
+<span class="o">----</span> <span class="p">(</span>  <span class="mi">2</span> <span class="mi">4</span> <span class="mi">2</span>  <span class="p">)</span>
+ <span class="mi">16</span>   <span class="o">\</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">1</span> <span class="o">/</span>
+</pre></div>
+</div>
+<p>The size of the threshold depends on the intensity of the relevant
+part of the image.  Very bright, spurious spots will pass through this
+filter.</p>
+<p>Controlling attribute: <code class="docutils literal"><span class="pre">gaussian_blur_value</span></code></p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">useshield</span></code></p>
+<blockquote>
+<div><p>Construct a shield used to mask out a region of the elastic image
+associated with fluorescence or some other source of signal.</p>
+<p>Shields are constructed sequentially.  The first N steps do not have a
+shield -- more specifically, the shield is empty.  The next shield
+uses the mask from N steps prior to block out this signal.  The
+following shield adds the mask from N steps back to the shield of
+the previous step.  Subsequent steps accumulate the masks from N
+steps back, adding them to their shields.</p>
+<p>All pixels under the shield are then set to 0.</p>
+<p>Controlling attribute: <code class="docutils literal"><span class="pre">shield</span></code></p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">polyfill</span></code></p>
+<blockquote>
+<div><p>After the Gaussian blur or other filtering step to remove all of the
+outlying pixels, the top-most and bottom-most pixels in each column
+are noted.  Two polynomials are fit to this collection of points, one
+to the top set and one to the bottom set.  The pixels between the two
+polynomials are turned on, yielding the final mask.</p>
+<p>Controlling attributes: none.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">lonely_pixels</span></code></p>
 <blockquote>
@@ -177,8 +217,8 @@ determined by the value of the <code class="docutils literal"><span class="pre">
 <blockquote>
 <div><p>Set every pixel in the mask to 1.  This makes the &quot;HERFD&quot; using the
 entire image at each energy point.  This is used for testing and
-demonstration purposes and is not actually useful step for making high
-energy resolution data.</p>
+demonstration purposes and is not actually a useful step for making
+high energy resolution data.</p>
 <p>Controlling attributes: none</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">mapmask</span></code></p>
@@ -203,7 +243,7 @@ data point in a HERFD scan.</p>
 <p>Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All
 rights reserved.</p>
 <p>This module is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself. See perlgpl.</p>
+under the same terms as Perl itself. See <a class="reference external" href="http://perldoc.perl.org/perlgpl.html">perlgpl</a>.</p>
 <p>This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
@@ -212,7 +252,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -237,7 +278,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -286,7 +327,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="Image.html" title="Xray::BLA::Image"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Programming documentation</a> &raquo;</li> 
       </ul>
     </div>

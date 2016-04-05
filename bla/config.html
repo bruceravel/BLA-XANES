@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The configuration file &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>The configuration file &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../index.html" />
     <link rel="up" title="The bla program" href="index.html" />
     <link rel="next" title="Mask creation recipes" href="mask.html" />
     <link rel="prev" title="Output" href="output.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="output.html" title="Output"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
       </ul>
     </div>  
@@ -59,25 +59,33 @@
             
   <div class="section" id="the-configuration-file">
 <h1>The configuration file<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h1>
-<div class="admonition-todo admonition" id="index-0">
-<p class="first admonition-title">Todo</p>
-<p class="last">Explain <code class="docutils literal"><span class="pre">[spots]</span></code></p>
-</div>
 <p>The configuration file is in the Windows-style ini format using a
 here-doc style extension for multi-line parameter values.  Here is an
 example:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span><span class="o">[</span>measure<span class="o">]</span>
-<span class="nv">emission</span>   <span class="o">=</span> <span class="m">9703</span> <span class="m">9705</span> <span class="m">9707</span> <span class="m">9709</span> <span class="m">9711</span> <span class="m">9713</span> <span class="m">9715</span> <span class="m">9717</span> 9719
-<span class="nv">scanfolder</span> <span class="o">=</span> /home/bruce/Data/NIST/10ID/2011.12/scans
-<span class="nv">tiffolder</span>  <span class="o">=</span> /home/bruce/Data/NIST/10ID/2011.12/tiffs
-<span class="nv">outfolder</span>  <span class="o">=</span> /home/bruce/Data/NIST/10ID/2011.12/processed
-<span class="nv">element</span>    <span class="o">=</span> Au
-<span class="nv">line</span>       <span class="o">=</span> La1
+<span class="nv">emission</span>           <span class="o">=</span> <span class="m">9703</span> <span class="m">9705</span> <span class="m">9707</span> <span class="m">9709</span> <span class="m">9711</span> <span class="m">9713</span> <span class="m">9715</span> <span class="m">9717</span> 9719
+<span class="nv">scanfolder</span>         <span class="o">=</span> /home/bruce/Data/NIST/10ID/2011.12/scans
+<span class="nv">tiffolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/10ID/2011.12/tiffs
+<span class="nv">outfolder</span>          <span class="o">=</span> /home/bruce/Data/NIST/10ID/2011.12/processed
+<span class="nv">element</span>            <span class="o">=</span> Au
+<span class="nv">line</span>               <span class="o">=</span> La1
+<span class="nv">tiffcounter</span>        <span class="o">=</span> 0001
+<span class="nv">energycounterwidth</span> <span class="o">=</span> 4
+<span class="nv">imagescale</span>         <span class="o">=</span> 40
+<span class="nv">outimage</span>           <span class="o">=</span> gif
 
 <span class="o">[</span>files<span class="o">]</span>
-<span class="nv">scan</span>       <span class="o">=</span> %s.001
-<span class="nv">elastic</span>    <span class="o">=</span> %s_elastic_%e_%t.tif
-<span class="nv">image</span>      <span class="o">=</span> %s_%c.tif
+<span class="nv">scan</span>    <span class="o">=</span> %s.001
+<span class="nv">elastic</span> <span class="o">=</span> %s_elastic_%e_%t.tif
+<span class="nv">image</span>   <span class="o">=</span> %s_%c.tif
+
+<span class="o">[</span>spots<span class="o">]</span>
+<span class="nv">xrange</span> <span class="o">=</span> <span class="m">58</span> 334
+<span class="nv">spots</span><span class="o">=</span><span class="s">&lt;&lt;END</span>
+<span class="s">9705       289  67  3</span>
+<span class="s">9707-9713  164 128  3</span>
+<span class="s">9715+       61 193 10</span>
+<span class="s">END</span>
 
 <span class="o">[</span>steps<span class="o">]</span>
 <span class="nv">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
@@ -87,9 +95,21 @@ example:</p>
 <span class="s">END</span>
 </pre></div>
 </div>
-<p><a class="reference external" href="https://github.com/bruceravel/BLA-XANES/blob/master/share/config.ini">Here is an example configuration
-file.</a></p>
-<p>The <code class="docutils literal"><span class="pre">emission</span></code> can use a more concise syntax if the sequence of
+<p>This configuration file can sit anywhere on disk and <strong>must</strong> be
+specified at the command line or via the <code class="docutils literal"><span class="pre">BLACONFIG</span></code> environment
+variable when using the <code class="docutils literal"><span class="pre">bla</span></code> script. I would recommend that you put
+it in the current work directory wherever you are working on your data.
+You may wish to keep multiple configuration files around for different
+experiments, different edges, different samples, etc.</p>
+<div class="section" id="the-measure-block">
+<h2>The <code class="docutils literal"><span class="pre">[measure]</span></code> block<a class="headerlink" href="#the-measure-block" title="Permalink to this headline">¶</a></h2>
+<p><strong>Emission energies</strong></p>
+<blockquote>
+<div><p>In the <code class="docutils literal"><span class="pre">[measure]</span></code> section, the <code class="docutils literal"><span class="pre">emission</span></code> item, which is not used
+by the <code class="docutils literal"><span class="pre">herfd</span></code> function, contains the list of emission energies at
+which to generate HERFD spectra.  The next three items are the locations
+of the scan files, the image files, and the output files.</p>
+<p>The <code class="docutils literal"><span class="pre">emission</span></code> line can use a more concise syntax if the sequence of
 elastic energies was measured on a uniform grid. The following are
 equivalent:</p>
 <div class="highlight-text"><div class="highlight"><pre><span></span>emission = 9703 9705 9707 9709 9711 9713 9715 9717 9719
@@ -97,22 +117,34 @@ equivalent:</p>
 emission = 9703 to 9719 by 2
 </pre></div>
 </div>
-<p>White space does not matter, but the words <code class="docutils literal"><span class="pre">to</span></code> and <code class="docutils literal"><span class="pre">by</span></code> are
-required.</p>
+<p>The amount of white space does not matter in the concise format, but
+the words <code class="docutils literal"><span class="pre">to</span></code> and <code class="docutils literal"><span class="pre">by</span></code> are required.</p>
 <p>If the <code class="docutils literal"><span class="pre">emission</span></code> line has only a single energy, then you can omit the
 <code class="docutils literal"><span class="pre">-e</span></code> flag when using the <code class="docutils literal"><span class="pre">herfd</span></code>, <code class="docutils literal"><span class="pre">mask</span></code>, or <code class="docutils literal"><span class="pre">point</span></code> tasks.</p>
-<p>This configuration file can sit anywhere on disk and <strong>must</strong> be
-specified at the command line or via the <code class="docutils literal"><span class="pre">BLACONFIG</span></code> environment
-variable when using the <code class="docutils literal"><span class="pre">bla</span></code> script. I would recommend that you put
-it in the current work directory wherever you are working on your data.
-You may wish to keep multiple configuration files around for different
-experiments, different edges, different samples, etc.</p>
-<p>In the <code class="docutils literal"><span class="pre">[measure]</span></code> section, the <code class="docutils literal"><span class="pre">emission</span></code> item, which is not used
-by the <code class="docutils literal"><span class="pre">herfd</span></code> function, contains the list of emission energies at
-which to generate HERFD spectra. The next three items are the locations
-of the scan files, the image files, and the output files. The last two
-items are used to properly scale the color palette of the energy map by
-positively identifying the emission line measured.</p>
+</div></blockquote>
+<p><strong>element and line</strong></p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">element</span></code> and <code class="docutils literal"><span class="pre">line</span></code> are used to identify the emission line being
+measured.  This information can sometimes be determined from energy
+range of the input data, but not reliably.  The identification of the
+emission line is used when labeling plots, making the map in the
+<code class="docutils literal"><span class="pre">map</span></code> task, and to set certain defaults in <font size=-1 color="#8C4112">METIS</font>.</div></blockquote>
+<p><strong>tiffcounter and energycounterwidth</strong></p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">tiffcounter</span></code> and <code class="docutils literal"><span class="pre">energycounterwidth</span></code> are used along with the
+templates in the <code class="docutils literal"><span class="pre">[files]</span></code> block to construct file names for
+sequences of images.</div></blockquote>
+<p><strong>imagescale</strong></p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">imagescale</span></code> is used to set the color scale of surface plots when
+displaying Pilatus images and masks.</div></blockquote>
+<p><strong>outimage</strong></p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">outimage</span></code> sets the format for output image files.  The sensible
+choices are gif, tiff, and png.</div></blockquote>
+</div>
+<div class="section" id="the-files-block">
+<h2>The <code class="docutils literal"><span class="pre">[files]</span></code> block<a class="headerlink" href="#the-files-block" title="Permalink to this headline">¶</a></h2>
 <p>The <code class="docutils literal"><span class="pre">[files]</span></code> section defines several mini-templates for specifying
 file names. In this example, the elastic images are stored on disk with
 names like <code class="docutils literal"><span class="pre">Aufoil1_elastic_9711_00001.tif</span></code>. The &quot;elastic&quot; template is
@@ -129,21 +161,72 @@ system are:</p>
 %% : literal %
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">[steps]</span></code> section is used to define the sequence of operations
-used to make the mask at any emission energy. The syntax of this section
-is somewhat fussy. It is essential that there are no spaces after either
-instance of the word <code class="docutils literal"><span class="pre">END</span></code>. Other than that, white space is not
-important, but spelling is.</p>
+<p><code class="docutils literal"><span class="pre">scan</span></code> specifies the pattern of the scan file name.  <code class="docutils literal"><span class="pre">elastic</span></code>
+specifies the pattern of the elastic images.  <code class="docutils literal"><span class="pre">image</span></code> specifies the
+pattern of the images used to make the HERFD or RIXS data.</p>
+</div>
+<div class="section" id="the-spots-block">
+<h2>The <code class="docutils literal"><span class="pre">[spots]</span></code> block<a class="headerlink" href="#the-spots-block" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">[spots]</span></code> block is used to manually exclude regions of the
+elastic image from mask creation.  Particularly bright, spurious,
+illuminated regions of the elastic image can survive filtering steps
+in a mask creation recipe, such as the Gaussian blur or the lonely
+pixels filter.  Such spurious pixels will certainly add spurious
+signal to a HERFD or XES measurement.  They can also serious impact
+the polyfill recipe step.  If other algorithmic steps fail to remove
+such points, regions can be specified by hand.</p>
+<p><strong>xrange</strong></p>
+<blockquote>
+<div>The <code class="docutils literal"><span class="pre">xrange</span></code> specifies the region of the detector that sees signal
+from the elastic measurements.  This can be determined by examining
+the lowest and highest energies in the elastic sequence and noting the
+pixels in the width direction of the detector containing the elastic
+signal.  Pixels outside of this range are set to 0.</div></blockquote>
+<p><strong>spots</strong></p>
+<blockquote>
+<div><p>Individual spots – due to diffraction peaks or other effects –
+that fall within the range on the detector subtended by the sequence
+of elastic energies can be removed by specifying their locations and
+the elastic energies at which they appear.</p>
+<p>The syntax of this section is somewhat fussy. It is essential that
+there are no spaces after either instance of the word <code class="docutils literal"><span class="pre">END</span></code>. Other
+than that, white space is not important, but spelling is.</p>
+<p>An individual line contains four items, the energy at which the spot
+appears, the x and y coordinates, and a radius.  All pixels within the
+specified radius of the x-y coordinate will be set to 0.</p>
+<p>The energy at which to do this manual spot removal has some syntax.
+The simplest, as in the first line, specifies the energy at which to
+do the manual removal.  In this example, only the image at 9705 eV has
+a spot at (289,67).</p>
+<p>In the second example, a spot at (164,128) appears in the images from
+9707 eV to 9713 eV, inclusive.</p>
+<p>In the third example, a spot appears at (61,193) from 9715 eV to the
+end of the energy sequence.</p>
+</div></blockquote>
+<p>Take care not to make the radii too small – you want to remove the
+entire spurious spot.  But if the spot is close to the elastic
+scattering, making the radius tool large will undesirably remove some
+of the elastic signal.</p>
+</div>
+<div class="section" id="the-steps-block">
+<h2>The <code class="docutils literal"><span class="pre">[steps]</span></code> block<a class="headerlink" href="#the-steps-block" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">[steps]</span></code> section is used to define the <a class="reference external" href="mask.html">recipe used to make the
+mask</a> at any emission energy. The syntax of this section
+is somewhat fussy. It is essential that there are no spaces after
+either instance of the word <code class="docutils literal"><span class="pre">END</span></code>. Other than that, white space is
+not important, but spelling is.</p>
 
 <br>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
 consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
 </div>
 
 
@@ -163,7 +246,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -212,7 +295,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="output.html" title="Output"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
       </ul>
     </div>

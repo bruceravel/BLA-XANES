@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Mask creation recipes &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Mask creation recipes &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../index.html" />
     <link rel="up" title="The bla program" href="index.html" />
     <link rel="next" title="Tasks of the bla program" href="tasks.html" />
     <link rel="prev" title="The configuration file" href="config.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="config.html" title="The configuration file"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
       </ul>
     </div>  
@@ -84,7 +84,7 @@ All pixels which fall above the given threshold are set to 1, all
 pixels below are set to 0.  This does a very good job filtering out
 stray pixels, however it has the negative effect of retaining very
 bright pixels, such as those from diffraction peaks.</div></blockquote>
-<p><strong>useshield</strong></p>
+<p><strong>Shield</strong></p>
 <blockquote>
 <div><p>The syntax is <code class="docutils literal"><span class="pre">useshield</span> <span class="pre">#</span></code>.  The number indicates how far back
 the trailing image is that will be used to create the shield.
@@ -148,11 +148,11 @@ spots in the image can dramatically affect the polynomial fit.</p>
 development.  I find the Gaussian blur works better than the lonely
 and social steps and the areal mean.  But all of these are still there
 for testing purposes.</p>
-<p><strong>multiply</strong></p>
+<p><strong>Multiply</strong></p>
 <blockquote>
 <div>Multiply emission image by an overall constant. The syntax is
 <code class="docutils literal"><span class="pre">multiply</span> <span class="pre">by</span> <span class="pre">#</span></code> where the number is the constant scaling factor.</div></blockquote>
-<p><strong>areal mean or median</strong></p>
+<p><strong>Areal mean or median</strong></p>
 <blockquote>
 <div><p>Apply an areal median or mean to each pixel. The syntax is
 <code class="docutils literal"><span class="pre">areal</span> <span class="pre">(median|mean)</span> <span class="pre">radius</span> <span class="pre">#</span></code>. The number defines the size of the
@@ -161,13 +161,13 @@ a value of 2 means a 5x5 square. The value of each pixel is set to
 either the mean or the median value of the pixels in the square.</p>
 <p>The median is not implemented at this time.</p>
 </div></blockquote>
-<p><strong>lonely pixels</strong></p>
+<p><strong>Lonely pixels</strong></p>
 <blockquote>
 <div>Remove all the lonely pixels. A lonely pixel is one which is
 illuminated but is not surrounded by enough illuminated pixels. The
 syntax is <code class="docutils literal"><span class="pre">lonely</span> <span class="pre">#</span></code>. The number defines how many illuminated
 pixels are required for a pixel not to be considered lonely.</div></blockquote>
-<p><strong>social pixels</strong></p>
+<p><strong>Social pixels</strong></p>
 <blockquote>
 <div>Include all social pixels. A social pixel is one which is not
 illuminated but is surrounded by enough illuminated pixels. The
@@ -185,7 +185,7 @@ surrounding pixels must be illuminated for the pixel to be turned on.</div></blo
 </div>
 <div class="section" id="development-tools">
 <h2>Development tools<a class="headerlink" href="#development-tools" title="Permalink to this headline">¶</a></h2>
-<p><strong>energy map</strong></p>
+<p><strong>Energy map</strong></p>
 <blockquote>
 <div><p>Use the energy map computed by the <code class="docutils literal"><span class="pre">map</span></code> task. The syntax is
 <code class="docutils literal"><span class="pre">map</span> <span class="pre">#</span></code> where the number is the width in eV about the emission
@@ -195,7 +195,7 @@ with any step other than the bad/weak step, which should precede this
 step.</p>
 <p>This is not working at present.</p>
 </div></blockquote>
-<p><strong>entire image</strong></p>
+<p><strong>Entire image</strong></p>
 <blockquote>
 <div>Use the entire image. The syntax is <code class="docutils literal"><span class="pre">entire</span> <span class="pre">image</span></code>. This step just
 sets all the pixels in the mask to 1 so that the entire image is used
@@ -207,7 +207,8 @@ this step.</div></blockquote>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -232,7 +233,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -281,7 +282,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="config.html" title="The configuration file"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
       </ul>
     </div>

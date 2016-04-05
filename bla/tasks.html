@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tasks of the bla program &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Tasks of the bla program &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../index.html" />
     <link rel="up" title="The bla program" href="index.html" />
     <link rel="next" title="Troubleshooting" href="troubleshoot.html" />
     <link rel="prev" title="Mask creation recipes" href="mask.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="mask.html" title="Mask creation recipes"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
       </ul>
     </div>  
@@ -124,8 +124,8 @@ emission energies specified in the configuration file.</p>
 <blockquote>
 <div><p>The <code class="docutils literal"><span class="pre">xes</span></code> task computes the XES spectrum from an image at a
 specified incident energy.  The incidence energy is specified
-either with the <code class="docutils literal"><span class="pre">-i</span></code> or <code class="docutils literal"><span class="pre">--xesimage</span></code> switch.  This will compute
-all the masks as needed.</p>
+either with the <code class="docutils literal"><span class="pre">-i</span></code> or <code class="docutils literal"><span class="pre">--xesimage</span></code> switch, one of which must
+be used.  This will compute all the masks as needed.</p>
 <div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">bla xes -c=/path/to/config.ini -i 11970 Aufoil1</span>
 <span class="go">bla xes -c=/path/to/config.ini --noscan --xesimage=1  Nb2O3_Kb2_2</span>
 </pre></div>
@@ -133,7 +133,8 @@ all the masks as needed.</p>
 <p>Allowed switches are</p>
 <dl class="docutils">
 <dt><code class="docutils literal"><span class="pre">-i</span></code></dt>
-<dd>(<em>required</em>) The incidence energy at which to compute the XES</dd>
+<dd>(<em>required</em>) The incidence energy at which to compute the XES.  This form is used with a
+HERFD measurement to compute the XES at a particular incidence energy.</dd>
 <dt><code class="docutils literal"><span class="pre">--xesimage</span></code></dt>
 <dd>(<em>required</em>) The index or file name of the XES image</dd>
 <dt><code class="docutils literal"><span class="pre">--noscan</span></code></dt>
@@ -248,7 +249,8 @@ calculation</dd>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -273,7 +275,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -322,7 +324,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="mask.html" title="Mask creation recipes"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
       </ul>
     </div>

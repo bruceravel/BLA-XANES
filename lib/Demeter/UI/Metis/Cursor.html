@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Demeter::UI::Metis::Mask &mdash; Xray::BLA and Metis 3 documentation</title>
+    <title>Demeter::UI::Metis::Cursor &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -26,8 +26,8 @@
     <link rel="shortcut icon" href="../../../../_static/metis_icon.ico"/>
     <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../../index.html" />
-    <link rel="next" title="Demeter::UI::Metis::Data" href="Data.html" />
-    <link rel="prev" title="Demeter::UI::Metis::Files" href="Files.html" />
+    <link rel="next" title="Demeter::UI::Metis::PluckPoint" href="PluckPoint.html" />
+    <link rel="prev" title="Demeter::UI::Metis::Config" href="Config.html" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/demeter.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/keys.css" />
@@ -42,10 +42,10 @@
           <a href="../../../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="Data.html" title="Demeter::UI::Metis::Data"
+          <a href="PluckPoint.html" title="Demeter::UI::Metis::PluckPoint"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="Files.html" title="Demeter::UI::Metis::Files"
+          <a href="Config.html" title="Demeter::UI::Metis::Config"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
@@ -57,32 +57,37 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="demeter-ui-metis-mask">
-<h1>Demeter::UI::Metis::Mask<a class="headerlink" href="#demeter-ui-metis-mask" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="demeter-ui-metis-cursor">
+<h1>Demeter::UI::Metis::Cursor<a class="headerlink" href="#demeter-ui-metis-cursor" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="name">
 <h2>NAME<a class="headerlink" href="#name" title="Permalink to this headline">¶</a></h2>
-<p>Demeter::UI::Metis::Mask - Metis' mask creation tool</p>
+<p>Demeter::UI::Metis::Cursor - interact with a plotting cursor</p>
 </div>
 <div class="section" id="version">
 <h2>VERSION<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
-<p>This documentation refers to Xray::BLA version 2.</p>
+<p>See Xray::BLA</p>
 </div>
-<div class="section" id="description">
-<h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Metis is a graphical interface the Xray::BLA package for processing
-data from an energy dispersive bent Laue analyzer spectrometer in
-which the signal is dispersed onto the face of a Pilatus camera.</p>
-<p>The mask tool is used to process an elastic image into a mask for
-processing a sequence of camera exposures into a HERFD spectrum.</p>
+<div class="section" id="synopsis">
+<h2>SYNOPSIS<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p>This module provides a way of interacting with the plot cursor in Metis</p>
 </div>
-<div class="section" id="dependencies">
-<h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p>Xray::BLA and Metis's dependencies are in the <em>Build.PL</em> file.</p>
+<div class="section" id="methods">
+<h2>METHODS<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">cursor</span></code></p>
+<blockquote>
+<div><p>This is exported.  Calling is starts a busy cursor and waits (possibly
+forever) for the user to click on a point in the plot window.  It
+returns the X and Y coordinate of the point clicked upon.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="p">(</span><span class="nv">$x</span><span class="p">,</span> <span class="nv">$y</span><span class="p">)</span> <span class="o">=</span> <span class="nv">$app</span><span class="o">-&gt;</span><span class="n">cursor</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">$app</span></code> is a reference to the top level Metis application.</p>
+</div></blockquote>
 </div>
 <div class="section" id="bugs-and-limitations">
 <h2>BUGS AND LIMITATIONS<a class="headerlink" href="#bugs-and-limitations" title="Permalink to this headline">¶</a></h2>
-<p>Please report problems as issues at the github site
-<a class="reference external" href="https://github.com/bruceravel/BLA-XANES">https://github.com/bruceravel/BLA-XANES</a></p>
+<p>Please report problems to the Ifeffit Mailing List
+(<a class="reference external" href="http://cars9.uchicago.edu/mailman/listinfo/ifeffit/">http://cars9.uchicago.edu/mailman/listinfo/ifeffit/</a>)</p>
 <p>Patches are welcome.</p>
 </div>
 <div class="section" id="author">
@@ -159,7 +164,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../../../_sources/lib/Demeter/UI/Metis/Mask.txt"
+      <li><a href="../../../../_sources/lib/Demeter/UI/Metis/Cursor.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -174,10 +179,10 @@ consider <a class="reference external" href="http://creativecommons.org/support/
           <a href="../../../../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="Data.html" title="Demeter::UI::Metis::Data"
+          <a href="PluckPoint.html" title="Demeter::UI::Metis::PluckPoint"
              >next</a> |</li>
         <li class="right" >
-          <a href="Files.html" title="Demeter::UI::Metis::Files"
+          <a href="Config.html" title="Demeter::UI::Metis::Config"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" >Programming documentation</a> &raquo;</li> 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Demeter::UI::Metis::Mask &mdash; Xray::BLA and Metis 3 documentation</title>
+    <title>Demeter::UI::Metis::PluckPoint &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -26,8 +26,7 @@
     <link rel="shortcut icon" href="../../../../_static/metis_icon.ico"/>
     <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../../index.html" />
-    <link rel="next" title="Demeter::UI::Metis::Data" href="Data.html" />
-    <link rel="prev" title="Demeter::UI::Metis::Files" href="Files.html" />
+    <link rel="prev" title="Demeter::UI::Metis::Cursor" href="Cursor.html" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/demeter.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/keys.css" />
@@ -42,10 +41,7 @@
           <a href="../../../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="Data.html" title="Demeter::UI::Metis::Data"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="Files.html" title="Demeter::UI::Metis::Files"
+          <a href="Cursor.html" title="Demeter::UI::Metis::Cursor"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
@@ -57,32 +53,61 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="demeter-ui-metis-mask">
-<h1>Demeter::UI::Metis::Mask<a class="headerlink" href="#demeter-ui-metis-mask" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="demeter-ui-metis-pluckpoint">
+<h1>Demeter::UI::Metis::PluckPoint<a class="headerlink" href="#demeter-ui-metis-pluckpoint" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="name">
 <h2>NAME<a class="headerlink" href="#name" title="Permalink to this headline">¶</a></h2>
-<p>Demeter::UI::Metis::Mask - Metis' mask creation tool</p>
+<p>Demeter::UI::Metis::PluckPoint - Widget for defining a spot for removal from an image</p>
 </div>
 <div class="section" id="version">
 <h2>VERSION<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
-<p>This documentation refers to Xray::BLA version 2.</p>
+<p>See Xray::BLA</p>
 </div>
-<div class="section" id="description">
-<h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Metis is a graphical interface the Xray::BLA package for processing
-data from an energy dispersive bent Laue analyzer spectrometer in
-which the signal is dispersed onto the face of a Pilatus camera.</p>
-<p>The mask tool is used to process an elastic image into a mask for
-processing a sequence of camera exposures into a HERFD spectrum.</p>
+<div class="section" id="synopsis">
+<h2>SYNOPSIS<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<p>This module provides a dialog for defining a spot in an image to be
+removed during the bad/weak step in a recipe.  This dialog prompts an
+energy, an x/y position, and a radius, whihc are returned as a
+white-space separate string.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">$pp</span> <span class="o">=</span> <span class="nn">Demeter::UI::Metis::</span><span class="n">PluckPoint</span><span class="o">-&gt;</span><span class="k">new</span><span class="p">(</span><span class="nv">$self</span><span class="p">,</span> <span class="nv">$self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">energy</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">GetStringSelection</span><span class="p">,</span> <span class="nv">$x</span><span class="p">,</span> <span class="nv">$y</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$pp</span><span class="o">-&gt;</span><span class="n">ShowModal</span> <span class="o">==</span> <span class="n">wxID_CANCEL</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nv">$app</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">main</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">status</span><span class="p">(</span><span class="s">&quot;Making spot canceled.&quot;</span><span class="p">);</span>
+  <span class="k">return</span><span class="p">;</span>
+<span class="p">};</span>
+<span class="k">my</span> <span class="nv">$line</span> <span class="o">=</span> <span class="nb">join</span><span class="p">(</span><span class="s">&quot;  &quot;</span><span class="p">,</span>  <span class="nv">$pp</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">e</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">GetValue</span><span class="p">,</span> <span class="nv">$pp</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">x</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">GetValue</span><span class="p">,</span> <span class="nv">$pp</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">y</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">GetValue</span><span class="p">,</span> <span class="nv">$pp</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">r</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">GetValue</span><span class="p">);</span>
+</pre></div>
 </div>
-<div class="section" id="dependencies">
-<h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p>Xray::BLA and Metis's dependencies are in the <em>Build.PL</em> file.</p>
+<p>The energy part of this string can refer to a single energy or an
+energy range using this syntax:</p>
+<p><code class="docutils literal"><span class="pre">energy</span></code></p>
+<blockquote>
+<div><p>This refers to the elastic image a specific energy.  For example:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="mi">11191</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">emin-emax</span></code></p>
+<blockquote>
+<div><p>This refers to a range of elastic energies, inclusive.  For example:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="mi">11194</span><span class="o">-</span><span class="mi">11196</span>
+</pre></div>
+</div>
+<p>It is important that there be no white space around the dash.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">emin+</span></code></p>
+<blockquote>
+<div><p>This refers to a range of elastic energies beginning at the specified
+value and going to the end of the data set.  For example:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="mi">11198</span><span class="o">+</span>
+</pre></div>
+</div>
+<p>It is important that there be no white space around the plus sign..</p>
+</div></blockquote>
 </div>
 <div class="section" id="bugs-and-limitations">
 <h2>BUGS AND LIMITATIONS<a class="headerlink" href="#bugs-and-limitations" title="Permalink to this headline">¶</a></h2>
-<p>Please report problems as issues at the github site
-<a class="reference external" href="https://github.com/bruceravel/BLA-XANES">https://github.com/bruceravel/BLA-XANES</a></p>
+<p>Please report problems to the Ifeffit Mailing List
+(<a class="reference external" href="http://cars9.uchicago.edu/mailman/listinfo/ifeffit/">http://cars9.uchicago.edu/mailman/listinfo/ifeffit/</a>)</p>
 <p>Patches are welcome.</p>
 </div>
 <div class="section" id="author">
@@ -159,7 +184,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="../../../../_sources/lib/Demeter/UI/Metis/Mask.txt"
+      <li><a href="../../../../_sources/lib/Demeter/UI/Metis/PluckPoint.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -174,10 +199,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
           <a href="../../../../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="Data.html" title="Demeter::UI::Metis::Data"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="Files.html" title="Demeter::UI::Metis::Files"
+          <a href="Cursor.html" title="Demeter::UI::Metis::Cursor"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" >Programming documentation</a> &raquo;</li> 

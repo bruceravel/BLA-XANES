@@ -1,16 +1,16 @@
 .. highlight:: perl
 
 
-########################
-Demeter::UI::Metis::Mask
-########################
+##########################
+Demeter::UI::Metis::Cursor
+##########################
 
 ****
 NAME
 ****
 
 
-Demeter::UI::Metis::Mask - Metis' mask creation tool
+Demeter::UI::Metis::Cursor - interact with a plotting cursor
 
 
 *******
@@ -18,28 +18,38 @@ VERSION
 *******
 
 
-This documentation refers to Xray::BLA version 2.
+See Xray::BLA
 
 
-***********
-DESCRIPTION
-***********
+********
+SYNOPSIS
+********
 
 
-Metis is a graphical interface the Xray::BLA package for processing
-data from an energy dispersive bent Laue analyzer spectrometer in
-which the signal is dispersed onto the face of a Pilatus camera.
-
-The mask tool is used to process an elastic image into a mask for
-processing a sequence of camera exposures into a HERFD spectrum.
+This module provides a way of interacting with the plot cursor in Metis
 
 
-************
-DEPENDENCIES
-************
+*******
+METHODS
+*******
 
 
-Xray::BLA and Metis's dependencies are in the \ *Build.PL*\  file.
+
+\ ``cursor``\ 
+ 
+ This is exported.  Calling is starts a busy cursor and waits (possibly
+ forever) for the user to click on a point in the plot window.  It
+ returns the X and Y coordinate of the point clicked upon.
+ 
+ 
+ .. code-block:: perl
+ 
+    my ($x, $y) = $app->cursor;
+ 
+ 
+ where \ ``$app``\  is a reference to the top level Metis application.
+ 
+
 
 
 ********************
@@ -47,8 +57,8 @@ BUGS AND LIMITATIONS
 ********************
 
 
-Please report problems as issues at the github site
-`https://github.com/bruceravel/BLA-XANES <https://github.com/bruceravel/BLA-XANES>`_
+Please report problems to the Ifeffit Mailing List
+(`http://cars9.uchicago.edu/mailman/listinfo/ifeffit/ <http://cars9.uchicago.edu/mailman/listinfo/ifeffit/>`_)
 
 Patches are welcome.
 

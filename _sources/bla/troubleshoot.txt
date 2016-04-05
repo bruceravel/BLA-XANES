@@ -6,6 +6,30 @@
 Troubleshooting
 ===============
 
+Saving masks as image files
+---------------------------
+
+In order to save mask images, you may need to install some additional
+software on your computer.  PDL uses the NetPBM package for image
+format manipulation.  On Ubuntu, the package is called ``netpbm`` and
+is likely already installed.  This is not installed by the Demeter
+installer for Windows, so you have to install it separately.  Download
+and install `the NetPBM Windows installer
+<http://gnuwin32.sourceforge.net/packages/netpbm.htm>`__.
+
+Note where the binaries get installed.  You must add that location to
+the execution path.  This can be done at the Windows command prompt by
+
+.. code-block:: bash
+
+     set PATH=%PATH%;C:\GnuWin32\bin
+
+substituting ``C:\GnuWin32\bin`` with the location on your computer.
+
+Without NetPBM, an invocation of the :program:`bla` program with the
+``-s`` flag will not run to completion.
+
+
 Error checking
 --------------
 
@@ -35,3 +59,7 @@ Around line 3116 of ``PDL::Graphics::Gnuplot``, add the following line:
     $optionsWarnings = '' if($optionsWarnings =- m/^\s+$/s);
 
 Similar near lines 3256, 3301.
+
+Another solution is to replace ``print STDERR`` with ``carp`` at line
+3116 and elsewhere.  If that is done, then Metis is instrumented to
+handle terminal-related chatter a bit more gracefully.

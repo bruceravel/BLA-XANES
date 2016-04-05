@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Xray::BLA::Plot &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Xray::BLA::Plot &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../../../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../index.html" />
     <link rel="next" title="Xray::BLA::Return" href="Return.html" />
     <link rel="prev" title="Xray::BLA::Pause" href="Pause.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Pause.html" title="Xray::BLA::Pause"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -61,19 +61,79 @@
 <h1>Xray::BLA::Plot<a class="headerlink" href="#xray-bla-plot" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="name">
 <h2>NAME<a class="headerlink" href="#name" title="Permalink to this headline">¶</a></h2>
-<p>Xray::BLA::Plot - A plotting method for BLA-XANES</p>
+<p>Xray::BLA::Plot - A plotting role for BLA-XANES</p>
 </div>
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Various plotting tools using the PDL/Gnuplot interface, inplemented as
+a Moose role.</p>
+</div>
+<div class="section" id="attributes">
+<h2>ATTRIBUTES<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
+<p>This role add these attributes to the Xray::BLA object.</p>
+<p><code class="docutils literal"><span class="pre">cbmax</span></code></p>
+<blockquote>
+<div>Forced upper bound to the color range of the surface plot.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">color</span></code></p>
+<blockquote>
+<div>Color scheme for the palette used in mask surface plots.  The color
+schemes are all monochrome, but of different hues.  The possibilities
+are <code class="docutils literal"><span class="pre">black</span></code>, <code class="docutils literal"><span class="pre">blue</span></code>, <code class="docutils literal"><span class="pre">red</span></code>, <code class="docutils literal"><span class="pre">orange</span></code>, <code class="docutils literal"><span class="pre">green</span></code>, and <code class="docutils literal"><span class="pre">purple</span></code>.
+This can also be set to <code class="docutils literal"><span class="pre">surprise</span></code>, which will randomly choose one of
+the defined hues when the first plot is made.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">palette</span></code></p>
+<blockquote>
+<div>This contains the Gnuplot palette definition for the choise of <code class="docutils literal"><span class="pre">color</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">pdlplot</span></code></p>
+<blockquote>
+<div>This is a reference to the PDL object used to make the plots.</div></blockquote>
 </div>
 <div class="section" id="methods">
 <h2>METHODS<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
 <p><code class="docutils literal"><span class="pre">plot_mask</span></code></p>
+<blockquote>
+<div><p>Make a surface plot of the current state of the elastic image.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">plot_mask</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This is plotted in the same orientation as ImageJ (i.e. (0,0) is in
+the <em>upper</em>, left corner.  That's psychotic, but what can you do...?</p>
+</div></blockquote>
 <p><code class="docutils literal"><span class="pre">plot_energy_point</span></code></p>
+<blockquote>
+<div><p>Make a surface plot of a raw image.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">plot_energy_point</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>This is plotted in the same orientation as ImageJ (i.e. (0,0) is in
+the <em>upper</em>, left corner.</p>
+</div></blockquote>
 <p><code class="docutils literal"><span class="pre">plot_xanes</span></code></p>
+<blockquote>
+<div><p>Make a plot of the computed HERFD.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">plot_xanes</span><span class="p">(</span><span class="n">title</span><span class="o">=&gt;</span><span class="nv">$title</span><span class="p">,</span> <span class="n">pause</span><span class="o">=&gt;</span><span class="mi">0</span><span class="p">,</span> <span class="n">mue</span><span class="o">=&gt;</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">mue</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">GetValue</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The arguments are the title of the plot, whether to use
+Xray::BLA::Pause, and whether to overplot the HERFD with conventional
+XANES (if it exists),</p>
+</div></blockquote>
 <p><code class="docutils literal"><span class="pre">plot_xes</span></code></p>
+<blockquote>
+<div><p>Make a plot of the computed XES.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">plot_xanes</span><span class="p">(</span><span class="n">pause</span><span class="o">=&gt;</span><span class="mi">0</span><span class="p">,</span> <span class="n">incident</span><span class="o">=&gt;</span><span class="nv">$incident</span><span class="p">,</span> <span class="n">xes</span><span class="o">=&gt;</span><span class="nv">$self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">xesdata</span><span class="p">});</span>
+</pre></div>
+</div>
+<p>The arguments are whether to use Xray::BLA::Pause, aninteger
+identifying the incident energy, and a list reference containing the
+XES data.</p>
+</div></blockquote>
 <p><code class="docutils literal"><span class="pre">plot_rixs</span></code></p>
+<blockquote>
+<div>Make a surface plot of the RIXS plane.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">plot_map</span></code></p>
+<blockquote>
+<div>Make a surface plot of the energy map.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">set_palette</span></code></p>
 <blockquote>
 <div><p>Change the hue of the image plots.  The choices are grey (the
@@ -81,12 +141,16 @@ default), blue, green, orange, purple, and red.</p>
 <div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">set_palette</span><span class="p">(</span><span class="nv">$color</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>An unknown color is ignored.</p>
+<p>An unknown color is ignored.  If you do</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span> <span class="o">-&gt;</span> <span class="n">set_palette</span><span class="p">(</span><span class="s">&quot;surprise&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>then one of the hues will be chosen at random.  Ooooh!  Fun!</p>
 </div></blockquote>
 </div>
 <div class="section" id="dependencies">
 <h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aGnuplot&amp;mode=module">PDL::Graphics::Gnuplot</a></p>
+<p><a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aSimple">PDL::Graphics::Simple</a> and <a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aGnuplot">PDL::Graphics::Gnuplot</a></p>
 </div>
 <div class="section" id="bugs-and-limitations">
 <h2>BUGS AND LIMITATIONS<a class="headerlink" href="#bugs-and-limitations" title="Permalink to this headline">¶</a></h2>
@@ -98,16 +162,17 @@ default), blue, green, orange, purple, and red.</p>
 <h2>AUTHOR<a class="headerlink" href="#author" title="Permalink to this headline">¶</a></h2>
 <p>Bruce Ravel (bravel AT bnl DOT gov)</p>
 <p><a class="reference external" href="http://github.com/bruceravel/BLA-XANES">http://github.com/bruceravel/BLA-XANES</a></p>
-<p>gnuplot-colorbrewer is written and maintained by Anna Schneider
-&lt;annarschneider AT gmail DOT com&gt; and released under the Apache
-License 2.0.  ColorBrewer is a project of Cynthia Brewer, Mark
-Harrower, and The Pennsylvania State University.</p>
+<p>The palettes were taken from gnuplot-colorbrewer at
+<a class="reference external" href="https://github.com/Gnuplotting/gnuplot-palettes">https://github.com/Gnuplotting/gnuplot-palettes</a>, which is written
+and maintained by Anna Schneider &lt;annarschneider AT gmail DOT com&gt; and
+released under the Apache License 2.0.  ColorBrewer is a project of
+Cynthia Brewer, Mark Harrower, and The Pennsylvania State University.</p>
 </div>
 <div class="section" id="licence-and-copyright">
 <h2>LICENCE AND COPYRIGHT<a class="headerlink" href="#licence-and-copyright" title="Permalink to this headline">¶</a></h2>
 <p>Copyright (c) 2006-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.</p>
 <p>This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See perlgpl.</p>
+modify it under the same terms as Perl itself. See <a class="reference external" href="http://perldoc.perl.org/perlgpl.html">perlgpl</a>.</p>
 <p>This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
@@ -116,7 +181,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -141,7 +207,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -190,7 +256,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="Pause.html" title="Xray::BLA::Pause"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Programming documentation</a> &raquo;</li> 
       </ul>
     </div>

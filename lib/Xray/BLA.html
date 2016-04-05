@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Xray::BLA &mdash; Xray::BLA and Metis 2 documentation</title>
+    <title>Xray::BLA &mdash; Xray::BLA and Metis 3 documentation</title>
     
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2',
+        VERSION:     '3',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 2 documentation" href="../../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../index.html" />
     <link rel="up" title="Programming documentation" href="../index.html" />
     <link rel="next" title="Xray::BLA::IO" href="BLA/IO.html" />
     <link rel="prev" title="Programming documentation" href="../index.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="../index.html" title="Programming documentation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -61,11 +61,11 @@
 <h1>Xray::BLA<a class="headerlink" href="#xray-bla" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="name">
 <h2>NAME<a class="headerlink" href="#name" title="Permalink to this headline">¶</a></h2>
-<p>Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to a XANES spectrum</p>
+<p>Xray::BLA - Convert bent-Laue analyzer + Pilatus 100K data to XANES and XES spectrum</p>
 </div>
 <div class="section" id="version">
 <h2>VERSION<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
-<p>2</p>
+<p>3</p>
 </div>
 <div class="section" id="synopsis">
 <h2>SYNOPSIS<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
@@ -87,108 +87,153 @@
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>This module is an engine for converting a series of tiff images
 collected using a bent Laue analyzer and a Pilatus 100K area detector
-into a high energy resolution XANES spectrum.  A HERFD measurement
-consists of a related set of files from the measurement:</p>
+into high energy resolution XANES spectra, X-ray emission spectra, or
+measurements of the RIXS plane.</p>
+<p>All measurements require a set of one or more exposures taken at
+incident energies around the peak of the fluorescence line
+(e.g. Lalpha1 for an L3 edge, etc).  These exposures are used to make
+masks for interpreting the sequence of images at each energy point.</p>
+<p>A HERFD measurement also consists of a related set of files from the
+measurement:</p>
 <ol class="arabic simple">
 <li>A column data file containing the energy, signals from other scalars,
 and a few other columns</li>
 <li>A tiff image of an exposure at each energy point.  This image must be
 interpreted to be the HERFD signal at that energy point.</li>
-<li>A set of one or more exposures taken at incident energies around the
-peak of the fluorescence line (e.g. Lalpha1 for an L3 edge, etc).
-These exposures are used to make masks for interpreting the sequence
-of images at each energy point.</li>
+<li></li>
 </ol>
+<p>An XES measurement also consists of one or more images measured at an
+energy above the absorption edge and interpreted as the non-resonant
+emission spectrum.</p>
+<p>A RIXS measurement consists of a sequence of images around the
+absorption edge.  This sequence may be the same as the sequence of
+elastic images.</p>
 <p>Attributes for specifying the paths to the locations of the column
 data files (<code class="docutils literal"><span class="pre">scanfolder</span></code>) and the tiff files (<code class="docutils literal"><span class="pre">tiffolder</span></code>,
-<code class="docutils literal"><span class="pre">tifffolder</span></code> with 3 <code class="docutils literal"><span class="pre">f</span></code>'s is an alias)) are typically set from an
+<code class="docutils literal"><span class="pre">tifffolder</span></code> with 3 <code class="docutils literal"><span class="pre">f</span></code>'s is an alias) are typically set from an
 ini-style configuration file.</p>
-<p>Assumptions are made about the names of the files in those
-locations. Each files is built upon a stub, indicated by the <code class="docutils literal"><span class="pre">stub</span></code>attribute.  If <code class="docutils literal"><span class="pre">stub</span></code> is &quot;Aufoil&quot;, then the column data in
-<code class="docutils literal"><span class="pre">scanfolder</span></code> file is named <em>Aufoil.001</em>.  The tiff images at each
-energy point are called <em>Aufoil_NNNNN.tif</em> where <code class="docutils literal"><span class="pre">NNNNN</span></code> is the
-index of the energy point.  One of the columns in the scan file
-contains this index so it is unambiguous which tiff image corresponds
-to which energy point.  Finally, the elastic exposures are called
-<em>Aufoil_elastic_EEEE_#####.tif</em> where <code class="docutils literal"><span class="pre">EEEE</span></code> is the incident energy
-and <code class="docutils literal"><span class="pre">#####</span></code> is the numeric counter for the tiff images.  For
-instance, an exposure at the peak of the gold Lalpha1 line would be
-called <em>Aufoil_elastic_9713_00001.tif</em>.</p>
-<p>If you use a different naming convention, this software in its current
-form <strong>will break</strong>!  See <a class="reference internal" href="#bugs-and-limitations">BUGS AND LIMITATIONS</a>.</p>
-<p>This software also makes assumptions about the content of the scan
-file.  The columns are expected to come in a certain order.  If the
-order of columns chnages, the HERFD will still be measured and
-recorded properly, but the remaining columns in the output files may
-be misidentified.  If the first column is not energy, all bets are
-off.</p>
-<p>This software uses an image handling back to interact with these two
-sets of tiff images.  Since the Pilatus writes rather unusual tiff
-files with signed 32 bit integer samples, not every image handling
-package can deal gracefully with them.  I have found two choices in
-the perl universe that work well, Imager and <code class="docutils literal"><span class="pre">Image::Magick</span></code>,
-although using <a class="reference external" href="http://search.cpan.org/search?query=Image%3a%3aMagick&amp;mode=module">Image::Magick</a> requires recompilation to be able to
-use 32 bit sample depth.  Happily, Imager works out of the box, so
-I am using it.</p>
-<p>The signed 32 bit tiffs are imported using Imager and immediately
-stuffed into a PDL object.  All subsequent work is done using PDL.</p>
+<p>The names of the image files must follow some sort of pattern so that
+the software can interpret the images in terms of incident and
+emission energies.  These patterns are somewhat flexible, involving
+simple, user-settable file name templates.</p>
+<p>For HERFD measurements, this software makes assumptions about the
+content of the scan file.  The columns are expected to come in a
+certain order.  If the order of columns chnages, the HERFD will still
+be measured and recorded properly, but the remaining columns in the
+output files may be misidentified.  If the first column is not energy,
+all bets are off.</p>
+<p>The Pilatus writes strange, signed 32-bit tiff files.  Importing these
+is not obvious.  See Xray::BLA::Image for the details of how this is
+done with PDL.</p>
 </div>
 <div class="section" id="attributes">
 <h2>ATTRIBUTES<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="file-name-template-attributes">
+<h3>File name template attributes<a class="headerlink" href="#file-name-template-attributes" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">stub</span></code></p>
 <blockquote>
-<div>The basename of the scan and image files.  The scan file is called
-<code class="docutils literal"><span class="pre">&lt;stub&gt;.001</span></code>, the image files are called
-<code class="docutils literal"><span class="pre">&lt;stub&gt;_NNNNN.tif</span></code>, and the processed column data files are
-called <code class="docutils literal"><span class="pre">&lt;stub&gt;_&lt;energy&gt;.001</span></code>.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">element</span></code></p>
+<div>The basename of the scan and image files.  For example, in a HERFD
+measurement, the scan file is called <code class="docutils literal"><span class="pre">&lt;stub&gt;.001</span></code>, the image
+files are called <code class="docutils literal"><span class="pre">&lt;stub&gt;_NNNNN.tif</span></code>, and the processed column
+data files are called <code class="docutils literal"><span class="pre">&lt;stub&gt;_&lt;energy&gt;.001</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">scan_file_template</span></code> [%s.001]</p>
 <blockquote>
-<div>The element of the absorber.  This is currently only used when making
-the energy v. pixel map.  This can be a two-letter element symbol, a Z
-number, or an element name in English (e.g. Au, 79, or gold).</div></blockquote>
-<p><code class="docutils literal"><span class="pre">line</span></code></p>
+<div>A pattern for computing the name of the <code class="docutils literal"><span class="pre">scanfile</span></code> from the <code class="docutils literal"><span class="pre">stub</span></code>.
+In the default, <code class="docutils literal"><span class="pre">%s</span></code> is replaced by the <code class="docutils literal"><span class="pre">stub</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_file_template</span></code> [%s_elastic_%e_%t.tif]</p>
 <blockquote>
-<div>The measured emission line.  This is currently only used when making
-the energy v. pixel map.  This can be a Siegbahn (e.g. La1 or Lalpha1)
-or IUPAC symbol (e.g. L3-M5).</div></blockquote>
-<p><code class="docutils literal"><span class="pre">scanfile</span></code></p>
+<div>A pattern for computing the name of the elastic images.  In the
+default, <code class="docutils literal"><span class="pre">%s</span></code> is replaced by the <code class="docutils literal"><span class="pre">stub</span></code>, <code class="docutils literal"><span class="pre">%e</span></code> by the incident
+energy, and <code class="docutils literal"><span class="pre">%t</span></code> is a counter.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">image_file_template</span></code> [%s_%c.tif]</p>
 <blockquote>
-<div>The fully resolved path to the scan file, as determined from <code class="docutils literal"><span class="pre">stub</span></code>and <code class="docutils literal"><span class="pre">scanfolder</span></code>.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">scanfolder</span></code></p>
-<blockquote>
-<div>The folder containing the scan file.  The scan file name is
-constructed from the value of <code class="docutils literal"><span class="pre">stub</span></code>.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">tiffolder</span></code></p>
-<blockquote>
-<div>The folder containing the image files.  The image file names are
-constructed from the value of <code class="docutils literal"><span class="pre">stub</span></code>.  <code class="docutils literal"><span class="pre">tifffolder</span></code> (with 3 <code class="docutils literal"><span class="pre">f</span></code>'s)
-is an alias.</div></blockquote>
+<div>A pattern for computing the name of the measurements images.  In the
+default, <code class="docutils literal"><span class="pre">%s</span></code> is replaced by the <code class="docutils literal"><span class="pre">stub</span></code>, and <code class="docutils literal"><span class="pre">%t</span></code> is a counter.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">tiffcounter</span></code></p>
 <blockquote>
 <div>The counter appended to the name of each tiff image.  By default the
-EPICS camera interface appends <code class="docutils literal"><span class="pre">#####</span></code> to the tiff filename.  Since
-one image is measured at each energy, <code class="docutils literal"><span class="pre">00001</span></code> is appended, resulting
-in a name like <em>Aufoil1_elastic_9713_00001.tif</em>.  If you have
-configured the camserver to use a different length string or had you
-data acquisition software use a different string altogether, you can
-specify it with this attribute.  Note, though, that this software is
-not very clever about these file names -- it makes strict assumptions
-about the format of the tif file name.</div></blockquote>
+EPICS camera interface appends <code class="docutils literal"><span class="pre">#####</span></code> to the tiff filename (although
+that is user-serviceable).  Since one image is measured at each
+energy, <code class="docutils literal"><span class="pre">00001</span></code> is appended, resulting in a name like
+<em>Aufoil1_elastic_9713_00001.tif</em>.  If you have configured the
+camserver to use a different length string or had you data acquisition
+software use a different string altogether, you can specify it with
+this attribute.  The patterns in <code class="docutils literal"><span class="pre">elastic_file_template</span></code> or
+<code class="docutils literal"><span class="pre">image_file_template</span></code> will use this as the width of this field. This
+can be specified in the ini file.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">energycounterwidth</span></code></p>
+<blockquote>
+<div>The width of the energy counter part of the energy tiff image name.</div></blockquote>
+</div>
+<div class="section" id="io-attributes">
+<h3>IO attributes<a class="headerlink" href="#io-attributes" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">task</span></code></p>
+<blockquote>
+<div>The task currently being performed.  This is one of <code class="docutils literal"><span class="pre">herfd</span></code>, <code class="docutils literal"><span class="pre">rixs</span></code>,
+<code class="docutils literal"><span class="pre">point</span></code>, <code class="docutils literal"><span class="pre">map</span></code>, <code class="docutils literal"><span class="pre">mask</span></code>, <code class="docutils literal"><span class="pre">xes</span></code>, or <code class="docutils literal"><span class="pre">plane</span></code>, with a few more
+possibilities use at the command line for debugging or development.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">ui</span></code></p>
+<blockquote>
+<div>The user interaction mode, likely one of <code class="docutils literal"><span class="pre">cli</span></code> or <code class="docutils literal"><span class="pre">wx</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">element</span></code></p>
+<blockquote>
+<div>The element of the absorber.  This is currently used when plotting and
+when making the energy v. pixel map.  This can be a two-letter element
+symbol, a Z number, or an element name in English (e.g. Au, 79, or
+gold).</div></blockquote>
+<p><code class="docutils literal"><span class="pre">line</span></code></p>
+<blockquote>
+<div>The measured emission line.  This is used when plotting and when
+making the energy v. pixel map.  This can be a Siegbahn (e.g. La1 or
+Lalpha1) or IUPAC symbol (e.g. L3-M5).</div></blockquote>
+<p><code class="docutils literal"><span class="pre">scanfile</span></code></p>
+<blockquote>
+<div>The fully resolved path to the scan file, as determined from <code class="docutils literal"><span class="pre">stub</span></code>and <code class="docutils literal"><span class="pre">scanfolder</span></code>.  This is typically computed from
+<code class="docutils literal"><span class="pre">scan_file_template</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">scanfolder</span></code></p>
+<blockquote>
+<div>The folder containing the scan file.  This can be specified in the ini
+file.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">tiffolder</span></code></p>
+<blockquote>
+<div>The folder containing the image files.  The image file names are
+constructed from the value of <code class="docutils literal"><span class="pre">elastic_file_template</span></code> or
+<code class="docutils literal"><span class="pre">image_file_template</span></code>.  <code class="docutils literal"><span class="pre">tifffolder</span></code> (with 3 <code class="docutils literal"><span class="pre">f</span></code>'s) is an alias.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">outfolder</span></code></p>
 <blockquote>
-<div>The folder to which the processed file is written.  The processed file
-name is constructed from the value of <code class="docutils literal"><span class="pre">stub</span></code>.</div></blockquote>
+<div>The folder where output images and spectra are written.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">outimage</span></code> [gif]</p>
+<blockquote>
+<div>The format of output images, usually one of <code class="docutils literal"><span class="pre">gif</span></code>, <code class="docutils literal"><span class="pre">png</span></code>, or <code class="docutils literal"><span class="pre">tif</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_energies</span></code></p>
+<blockquote>
+<div>A reference to a list of energy values at which elastic images were
+measured.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_file_list</span></code></p>
+<blockquote>
+<div>A reference to a list of the elastic image files found in <code class="docutils literal"><span class="pre">tiffolder</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_file_list</span></code></p>
+<blockquote>
+<div>A reference to a list of PDLs containing the elastic image files found
+in <code class="docutils literal"><span class="pre">tiffolder</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">scan_file_list</span></code></p>
+<blockquote>
+<div>A reference to a list of the measurement image files found in
+<code class="docutils literal"><span class="pre">tiffolder</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">cleanup</span></code> [false]</p>
+<blockquote>
+<div>A flag indicating whether to remove <code class="docutils literal"><span class="pre">outfolder</span></code> before exiting the
+program.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">energy</span></code></p>
 <blockquote>
 <div><p>This normally takes the tabulated value of the measured fluorescence
 line.  For example, for the the gold L3 edge experiment, the L alpha 1
 line is likely used.  It's tabulated value is 9715 eV.</p>
 <p>The image containing the data measured from the elastic scattering
-with the incident energy at this energy will have a file name something
-like <em>&lt;stub&gt;_elsatic_&lt;energy&gt;_00001.tif</em>.</p>
+with the incident energy at this energy might have a file name
+something like <em>&lt;stub&gt;_elsatic_&lt;energy&gt;_00001.tif</em>and can be set using <code class="docutils literal"><span class="pre">image_file_template</span></code>.</p>
 <p>This value can be changed to some other measured elastic energy in
 order to scan the off-axis portion of the spectrum.</p>
-<p><code class="docutils literal"><span class="pre">peak_energy</span></code> is an alias for <code class="docutils literal"><span class="pre">energy</span></code>.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">incident</span></code></p>
 <blockquote>
@@ -200,75 +245,6 @@ to the midpoint of the energy scan.</div></blockquote>
 <div>The index of the incident energy for an XES slice through the RIXS or
 for evaluation of single HERFD data point.  If not specified, it
 defaults to the midpoint of the energy scan.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">steps</span></code></p>
-<blockquote>
-<div><p>This contains a reference to an array of steps to be taken for mask
-creation.  For example, if the configuration file contains the
-following:</p>
-<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="c1">## areal algorithm</span>
-<span class="p">[</span><span class="n">steps</span><span class="p">]</span>
-<span class="n">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
-<span class="s">bad 400 weak 0</span>
-<span class="s">areal median radius 2</span>
-<span class="s">END</span>
-</pre></div>
-</div>
-<p>then the lines beginning with &quot;bad&quot; and &quot;areal&quot; will be the entries in
-the array, indicating that first bad and weak pixels will be removed
-using the specifies values for <code class="docutils literal"><span class="pre">bad_pixel_value</span></code> and
-<code class="docutils literal"><span class="pre">weak_pixel_value</span></code>, then an areal median of radius 2 will be computed.</p>
-</div></blockquote>
-<p><code class="docutils literal"><span class="pre">operation</span></code>  [median]</p>
-<blockquote>
-<div>Setting this to &quot;mean&quot; changes the areal median algorithm to an areal
-mean algorithm.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">bad_pixel_value</span></code>  [400]</p>
-<blockquote>
-<div>In the first pass over the elastic image, spuriously large pixel
-values -- presumably indicating the locations of bad pixels -- are
-removed from the image by setting them to 0.  This is the cutoff value
-above which a pixel is assumed to be a bad one.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">weak_pixel_value</span></code> [3]</p>
-<blockquote>
-<div>In the first pass over the elastic image, small valued pixels are
-removed from the image.  These pixels are presumed to have been
-illuminated by a small number of stray photons not associated with the
-imagining of photons at the peak energy.  Pixels with fewer than this
-n umber of counts are set to 0.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">lonely_pixel_value</span></code> [3]</p>
-<blockquote>
-<div><p>In the second pass over the elastic image, illuminated pixels with
-fewer than this number of illuminated neighboring pixels are removed
-from the image.  This serves the purpose of removing most stray
-pixels not associated with the main image of the peak energy.</p>
-<p>This attribute is ignored by the areal median/mean algorithm.</p>
-</div></blockquote>
-<p><code class="docutils literal"><span class="pre">social_pixel_value</span></code> [2]</p>
-<blockquote>
-<div><p>In the third pass over the elastic image, dark pixels which are
-surrounded by larger than this number of illuminated pixels are
-presumed to be a part of the image of the peak energy.  They are given
-a value of 5 counts.  This serves the propose of making the elastic
-image a solid mask with few gaps in the image of the main peak.</p>
-<p>This attribute is ignored by the areal median/mean algorithm.</p>
-</div></blockquote>
-<p><code class="docutils literal"><span class="pre">radius</span></code> [2]</p>
-<blockquote>
-<div>This determines the size of the square used in the areal median/mean
-algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
-each direction.  A value of 2 means to use a 5x5 square.  Thanks to
-PDL, the hit for using a larger radius is quite small.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">elastic_file</span></code></p>
-<blockquote>
-<div>This contains the name of the elastic image file.  It is constructed
-from the values of <code class="docutils literal"><span class="pre">stub</span></code>, <code class="docutils literal"><span class="pre">energy</span></code>, and <code class="docutils literal"><span class="pre">tiffolder</span></code>.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">elastic_image</span></code></p>
-<blockquote>
-<div>This contains the PDL of the elastic image.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">npixels</span></code></p>
-<blockquote>
-<div>The number of illuminated pixels in the mask.  That is, the number of
-pixels contributing to the HERFD signal.</div></blockquote>
 <p><code class="docutils literal"><span class="pre">columns</span></code></p>
 <blockquote>
 <div>When the elastic file is read, this is set with the number of columns
@@ -279,7 +255,7 @@ same number of columns.  <code class="docutils literal"><span class="pre">width<
 <div>When the elastic file is read, this is set with the number of rows in
 the image.  All images in the measurement are presumed to have the
 same number of rows.  <code class="docutils literal"><span class="pre">height</span></code> is an alias for <code class="docutils literal"><span class="pre">rows</span></code>.</div></blockquote>
-<p><code class="docutils literal"><span class="pre">colored</span></code></p>
+<p><code class="docutils literal"><span class="pre">colored</span></code> [true]</p>
 <blockquote>
 <div>This flag should be true to write colored text to the screen when
 methods are called with the verbose flag on.</div></blockquote>
@@ -287,10 +263,205 @@ methods are called with the verbose flag on.</div></blockquote>
 <blockquote>
 <div>This flag should be true when run from the command line so that
 progress messages are written to the screen.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">incident_energies</span></code></p>
+<blockquote>
+<div>An array reference containing the incident energies of a HERFD scan.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">herfd_file_list</span></code></p>
+<blockquote>
+<div>An array reference containing output files from a RIXS sequence.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">herfd_pixels_used</span></code></p>
+<blockquote>
+<div>An array reference containing numbers of illuminated pixels from a RIXS sequence.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">noscan</span></code></p>
+<blockquote>
+<div>A boolean indicating whether a scan file was written.  This is
+typically true for the HERFD and RIXS tasks and false for XES and
+plane tasks.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">xdi_metadata_file</span></code></p>
+<blockquote>
+<div>The fully resolved path name for an ini file containing XDi metadata
+to be used in output ASCII column files.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">sentinal</span></code></p>
+<blockquote>
+<div><p>A code reference used to provide feedback during particularly lengthy
+operations.  For example:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">sentinal</span><span class="p">(</span><span class="n">sub</span><span class="p">{</span><span class="nb">printf</span><span class="p">(</span><span class="s">&quot;Processing point %d of %d\n&quot;</span><span class="p">,</span> <span class="nv">$_</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nv">$npoints</span><span class="p">)});</span>
+</pre></div>
+</div>
+<p>or, writing to the Metis status bar:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">sentinal</span><span class="p">(</span><span class="n">sub</span><span class="p">{</span><span class="nv">$app</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">main</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">status</span><span class="p">(</span><span class="s">&quot;Processing point &quot;</span><span class="o">.</span><span class="nv">$_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="s">&quot; of $np&quot;</span><span class="p">,</span> <span class="s">&#39;wait&#39;</span><span class="p">)});</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="mask-recipe-attribues">
+<h3>Mask recipe attribues<a class="headerlink" href="#mask-recipe-attribues" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">steps</span></code></p>
+<blockquote>
+<div><p>This contains a reference to an list of steps of a mask creation
+recipe.  For example, if the configuration file contains the
+following:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="c1">## areal algorithm</span>
+<span class="p">[</span><span class="n">steps</span><span class="p">]</span>
+<span class="n">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
+<span class="s">bad 400 weak 0</span>
+<span class="s">gaussian 3.2</span>
+<span class="s">END</span>
+</pre></div>
+</div>
+<p>then the lines beginning with &quot;bad&quot; and &quot;gaussian&quot; will be the entries
+in the array, indicating that first bad and weak pixels will be
+removed using the specifies values for <code class="docutils literal"><span class="pre">bad_pixel_value</span></code> and
+<code class="docutils literal"><span class="pre">weak_pixel_value</span></code>, then a Gaussian blur filter with a threshold of
+<code class="docutils literal"><span class="pre">gaussian_blur_value</span></code>.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">bad_pixel_value</span></code>  [400]</p>
+<blockquote>
+<div>In the first pass over the elastic image, spuriously large pixel
+values -- presumably indicating the locations of bad pixels -- are
+removed from the image by setting them to 0.  This is the cutoff value
+above which a pixel is assumed to be a bad one.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">bad_pixel_mask</span></code></p>
+<blockquote>
+<div>A PDL containing ones for each pixel found to be a bad pixel.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">weak_pixel_value</span></code> [3]</p>
+<blockquote>
+<div>In the first pass over the elastic image, small valued pixels are
+removed from the image.  These pixels are presumed to have been
+illuminated by a small number of stray photons not associated with the
+imagining of photons at the peak energy.  Pixels with fewer than this
+number of counts are set to 0.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">width_min</span></code> and <code class="docutils literal"><span class="pre">width_max</span></code> [0 and 487]</p>
+<blockquote>
+<div>The columns in the elastic image within which all elastic signal at
+all energies will be found.  Pixels outside those columns will be set
+to zero.  This is a way of suppressing obviously spurious signal.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">spots</span></code></p>
+<blockquote>
+<div><p>A reference to a list of lists containing spots to be removed from
+elastic images during the bad/weak recipe step.  Each entry in the
+list is a reference to a list of 4 numbers, the elastic energy, the x
+and y coordinates of the spot, and the radius of the spot.  At that
+energy, the pixels within the radius around the (xy) coordinates will
+be set to zero.  This is mostly sued to avoid skewing the polynomial
+fits in the polyfit recipe step, but is, in general, a hands-on way of
+removing spurious pixels from the elastic images.</p>
+<p>The first entry in each list reference can be a single energy value or
+a range specified either as &quot;emin-emax&quot;, which is an enclusive range
+over which to remove the spot, or &quot;energy+&quot; which removes the spot
+from the specified elastic image and from all subsequent images.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">gaussian_blur_value</span></code> [2]</p>
+<blockquote>
+<div>The threshold value for keeping pixels after the Gaussian blur
+convolution.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">shield</span></code> [15]</p>
+<blockquote>
+<div>The number of trailing elastic images to use when constructing shields
+for removing portions of elastic images containing signal from
+something other than the elastic scattering.  The default says to use
+the mask from 15 energy points back to make a shield for the current
+elastic energy.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">lonely_pixel_value</span></code> [3]</p>
+<blockquote>
+<div><p>In this pass over the elastic image, illuminated pixels with fewer
+than this number of illuminated neighboring pixels are removed from
+the image.  This serves the purpose of removing most stray pixels not
+associated with the main image of the peak energy.</p>
+<p>This recipe step is deprecated in favor of the Gaussian blur.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">social_pixel_value</span></code> [2]</p>
+<blockquote>
+<div><p>In this pass over the elastic image, dark pixels which are surrounded
+by larger than this number of illuminated pixels are presumed to be a
+part of the image of the peak energy.  They are given a value of 5
+counts.  This serves the propose of making the elastic image a solid
+mask with few gaps in the image of the main peak.</p>
+<p>This recipe step is deprecated in favor of the Gaussian blur.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">scalemask</span></code></p>
+<blockquote>
+<div>The factor by which to multiply the mask during the multiply step.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">operation</span></code>  [mean]</p>
+<blockquote>
+<div><p>Setting this to &quot;median&quot; changes the deprecated areal median algorithm
+to an areal median algorithm.</p>
+<p>This recipe step is deprecated in favor of the Gaussian blur.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">radius</span></code> [2]</p>
+<blockquote>
+<div><p>This determines the size of the square used in the areal median/mean
+algorithm.  A value of 1 means to use a 3x3 square, i.e. 1 pixel in
+each direction.  A value of 2 means to use a 5x5 square.</p>
+<p>This recipe step is deprecated in favor of the Gaussian blur.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">deltae</span></code></p>
+<blockquote>
+<div>Energy width for mask creation when creating a mask from a pixel to
+energy map.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_file</span></code></p>
+<blockquote>
+<div>This contains the name of the elastic image file.  It is typically
+constructed from the values of <code class="docutils literal"><span class="pre">stub</span></code>, <code class="docutils literal"><span class="pre">energy</span></code>, and <code class="docutils literal"><span class="pre">tiffolder</span></code>using <code class="docutils literal"><span class="pre">elastic_file_template</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_file_template</span></code> [%s_elastic_%e_%t.tif]</p>
+<blockquote>
+<div>A pattern used to set the names of the elastic files.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">elastic_image</span></code></p>
+<blockquote>
+<div>This contains the PDL of the elastic image.  As the mask creation
+recipe progresses, this contains the mask in its current state.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">npixels</span></code></p>
+<blockquote>
+<div>The number of illuminated pixels in the mask.  That is, the number of
+pixels contributing to the HERFD or XES signal.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">nbad</span></code></p>
+<blockquote>
+<div>The number of bad pixels found in the bid pixel step.</div></blockquote>
+</div>
+<div class="section" id="data-processing-attributes">
+<h3>Data processing attributes<a class="headerlink" href="#data-processing-attributes" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">div10</span></code> [false]</p>
+<blockquote>
+<div>When true, divide the emission energy by 10 when writing output files
+or making plots.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">eimax</span></code></p>
+<blockquote>
+<div>Largest value found in a mask during a mask creation step.</div></blockquote>
+</div>
+<div class="section" id="attributes-related-to-plotting-xas-like-or-image-data">
+<h3>Attributes related to plotting XAS-like or image data<a class="headerlink" href="#attributes-related-to-plotting-xas-like-or-image-data" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">terminal</span></code></p>
+<blockquote>
+<div>The Gnuplot terminal type to use.  This is likely one of <code class="docutils literal"><span class="pre">qt</span></code>,
+<code class="docutils literal"><span class="pre">wxt</span></code>, <code class="docutils literal"><span class="pre">x11</span></code>, <code class="docutils literal"><span class="pre">windows</span></code>, or <code class="docutils literal"><span class="pre">aqua</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">herfd_demeter</span></code></p>
+<blockquote>
+<div>A Demeter::Data object containing the HERFD data.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">mue_demeter</span></code></p>
+<blockquote>
+<div>A Demeter::Data object containing the conventional XANES data, if available.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">xdata</span></code></p>
+<blockquote>
+<div>An array reference containing the x-axis data for plotting.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">ydata</span></code></p>
+<blockquote>
+<div>An array reference containing the y-axis data for plotting.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">mudata</span></code></p>
+<blockquote>
+<div>An array reference containing conventional mu(E) data for plotting.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">normpixels</span></code></p>
+<blockquote>
+<div>A normalized scaling factor representing the number of illuminated
+pixels in the final mask used for a HERFD scan or a RIXS sequence.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">imagescale</span></code></p>
+<blockquote>
+<div>A scaling factor for the color scale when plotting images.  A bigger
+number leads to a smaller range of the plot.</div></blockquote>
+</div>
 </div>
 <div class="section" id="methods">
 <h2>METHODS<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
-<p>All methods return an object of type <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&amp;mode=module">Xray::BLA::Return</a>.  This
+<p>All methods return an object of type Xray::BLA::Return.  This
 object has two attributes: <code class="docutils literal"><span class="pre">status</span></code> and <code class="docutils literal"><span class="pre">message</span></code>.  A successful
 return will have a positive definite <code class="docutils literal"><span class="pre">status</span></code>.  Any reporting (for
 example exception reporting) is done via the <code class="docutils literal"><span class="pre">message</span></code> attribute.</p>
@@ -309,7 +480,7 @@ Xray::BLA object.</p>
 <p><code class="docutils literal"><span class="pre">guess_element_and_line</span></code></p>
 <blockquote>
 <div><p>Using the median of the list of energies in the <code class="docutils literal"><span class="pre">elastic_energies</span></code>attribute, guess the element and line using a list of tabiulated line
-energies from <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aAbsorption&amp;mode=module">Xray::Absorption</a>.</p>
+energies from Xray::Absorption.</p>
 <div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="p">(</span><span class="nv">$el</span><span class="p">,</span> <span class="nv">$li</span><span class="p">)</span> <span class="o">=</span> <span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">guess_element_and_line</span><span class="p">;</span>
 </pre></div>
 </div>
@@ -330,7 +501,7 @@ to be written showing the stages of mask creation.</p>
 <p>These output image files are gif.</p>
 <p>This method is a wrapper around the contents of the <code class="docutils literal"><span class="pre">step</span></code> attribute.
 Each entry in <code class="docutils literal"><span class="pre">step</span></code> will be parsed and executed in sequence.</p>
-<p>See <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aMask&amp;mode=module">Xray::BLA::Mask</a></p>
+<p>See Xray::BLA::Mask</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">scan</span></code></p>
 <blockquote>
@@ -344,7 +515,7 @@ standard output about every data point being processed.</p>
 <p>The <code class="docutils literal"><span class="pre">xdiini</span></code> argument takes the file name of an ini-style
 configuration file for XDI metadata.  If no ini file is supplied, then
 no metadata and no column labels will be written to the output file.</p>
-<p>An <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&amp;mode=module">Xray::BLA::Return</a> object is returned.  Its <code class="docutils literal"><span class="pre">message</span></code> attribute
+<p>An Xray::BLA::Return object is returned.  Its <code class="docutils literal"><span class="pre">message</span></code> attribute
 contains the fully resolved file name for the output HERFD data file.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">energy_map</span></code></p>
@@ -359,7 +530,7 @@ been generated from the measured elastic image.</p>
 standard output about file written.</p>
 <p>When true, the <code class="docutils literal"><span class="pre">animate</span></code> argument causes an animated gif file to be
 written containing a movie of the processed elastic masks.</p>
-<p>The returned <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&amp;mode=module">Xray::BLA::Return</a> object conveys no information at
+<p>The returned Xray::BLA::Return object conveys no information at
 this time.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">compute_xes</span></code></p>
@@ -375,7 +546,7 @@ small integer is given, use that incident energy point.  If an energy
 value is given, use that energy or the nearest larger energy.</p>
 <p>When true, the <code class="docutils literal"><span class="pre">verbose</span></code> argument causes messages to be printed to
 standard output about file written.</p>
-<p>The returned <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&amp;mode=module">Xray::BLA::Return</a> object conveys no information at
+<p>The returned Xray::BLA::Return object conveys no information at
 this time.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">get_incident</span></code></p>
@@ -392,12 +563,12 @@ are set with the values of the midpoint (by index) of the data range.</p>
 </div>
 <div class="section" id="internal-methods">
 <h3>Internal methods<a class="headerlink" href="#internal-methods" title="Permalink to this headline">¶</a></h3>
-<p>All of these methods return a <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&amp;mode=module">Xray::BLA::Return</a> object, which has
+<p>All of these methods return a Xray::BLA::Return object, which has
 two attributes, and integer <code class="docutils literal"><span class="pre">status</span></code> to indicate the return status (1
 is normal in all cases here) and an string <code class="docutils literal"><span class="pre">message</span></code> containing a
 short description of the exception (an empty string indicates no
 exception).</p>
-<p>See <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aMask&amp;mode=module">Xray::BLA::Mask</a> for details about the mask generation steps.</p>
+<p>See Xray::BLA::Mask for details about the mask generation steps.</p>
 <p><code class="docutils literal"><span class="pre">check</span></code></p>
 <blockquote>
 <div><p>Confirm that the scan file and elastic image taken from the values of
@@ -420,31 +591,54 @@ image for this data point.</p>
 </div></blockquote>
 </div>
 </div>
-<div class="section" id="mask-specification-syntax">
-<h2>MASK SPECIFICATION SYNTAX<a class="headerlink" href="#mask-specification-syntax" title="Permalink to this headline">¶</a></h2>
-<p>The steps to mask creation are specified using a simple imperative
-language.  Here's an example of specifying the steps via the
-configuration file:</p>
+<div class="section" id="mask-specification-recipes">
+<h2>MASK SPECIFICATION RECIPES<a class="headerlink" href="#mask-specification-recipes" title="Permalink to this headline">¶</a></h2>
+<p>The steps to mask creation are specified as recipes using a simple
+imperative language.  Here's an example of specifying the steps via
+the configuration file:</p>
 <div class="highlight-perl"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">steps</span><span class="p">]</span>
 <span class="n">steps</span> <span class="o">=</span> <span class="s">&lt;&lt;END</span>
 <span class="s">bad 400 weak 0</span>
-<span class="s">multiply by 5</span>
-<span class="s">areal mean radius 2</span>
-<span class="s">bad 400 weak 6</span>
-<span class="s">lonely 3</span>
-<span class="s">social 2</span>
+<span class="s">gaussian 3.2</span>
+<span class="s">shield 15</span>
+<span class="s">polyfill</span>
 <span class="s">END</span>
 </pre></div>
 </div>
 <p>Each specification of a step is contained on a single line.
 White space is unimportant, but spelling matters.  The parser has
 little intelligence.</p>
-<p>The possible steps are:</p>
+<div class="section" id="main-steps">
+<h3>Main steps<a class="headerlink" href="#main-steps" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal"><span class="pre">bad</span> <span class="pre">#</span> <span class="pre">weak</span> <span class="pre">#</span></code></p>
 <blockquote>
 <div>This specification says to remove bad and weak pixels from the image.
 The first number is the value used for <code class="docutils literal"><span class="pre">bad_pixel_value</span></code>.  The second
 number is the value used for <code class="docutils literal"><span class="pre">weak_pixel_value</span></code>.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">gaussian</span> <span class="pre">#.#</span></code></p>
+<blockquote>
+<div>Apply a convolution with a kernel that approximates a Gaussian blur.
+The number is a threshold above which pixels are set to 1 and below
+which pixels are set to 0.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">shield</span> <span class="pre">#</span></code></p>
+<blockquote>
+<div>Create a shield from trailing masks which is used to remove spurious
+signal from the low energy region of the elastic image due to
+fluorescence from the onset of the absorption edge.  The number is the
+how far the trailing mask is behind the current mask.  The shield is
+cumulative, that is the traling mask is added to the shield from the
+previous elastic energy.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">polyfill</span></code></p>
+<blockquote>
+<div>After applying the Gaussian blur or some other filter (and after
+applying the shield), fit polynomials to the topmost and bottom-most
+pixels in each column of the image.  Fill in the region between the
+polynomials and us that as the mask.</div></blockquote>
+</div>
+<div class="section" id="other-steps">
+<h3>Other steps<a class="headerlink" href="#other-steps" title="Permalink to this headline">¶</a></h3>
+<p>These are other possible mask recipe steps.  Some are kept for
+historical interest.</p>
 <p><code class="docutils literal"><span class="pre">multiply</span> <span class="pre">by</span> <span class="pre">#</span></code></p>
 <blockquote>
 <div>This specification says to multiply the image by a constant.  That is,
@@ -485,10 +679,12 @@ bad pixel pass.  To examine the XANES form the entire image, use this</p>
 </pre></div>
 </div>
 </div></blockquote>
+</div>
+<div class="section" id="managing-the-steps">
+<h3>Managing the steps<a class="headerlink" href="#managing-the-steps" title="Permalink to this headline">¶</a></h3>
 <p>The steps can be specified in any order and repeated as necessary.</p>
-<p>The <code class="docutils literal"><span class="pre">steps</span></code> attribute is set is a configuration file containing the
-<code class="docutils literal"><span class="pre">[steps]</span></code> group is read.  The <code class="docutils literal"><span class="pre">steps</span></code> attribute can be manipulated
-by hand:</p>
+<p>The <code class="docutils literal"><span class="pre">steps</span></code> attribute is set from a configuration file containing a
+<code class="docutils literal"><span class="pre">[steps]</span></code> block.  The <code class="docutils literal"><span class="pre">steps</span></code> attribute can be manipulated by hand:</p>
 <div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">steps</span><span class="p">(</span><span class="o">\</span><span class="nv">@list_of_steps</span><span class="p">);</span>      <span class="c1"># set the steps to an array</span>
 
 <span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">push_steps</span><span class="p">(</span><span class="s">&quot;multiply by 7&quot;</span><span class="p">);</span> <span class="c1"># add to the end of the list of steps</span>
@@ -498,6 +694,18 @@ by hand:</p>
 <span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">steps</span><span class="p">(</span><span class="o">[]</span><span class="p">);</span> <span class="c1"># or</span>
 <span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">clear_steps</span><span class="p">;</span>                 <span class="c1"># remove all steps from the list</span>
 </pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">spots</span></code> attribute can be manipulated in similar manner.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">spots</span><span class="p">(</span><span class="o">\</span><span class="nv">@list_of_spots</span><span class="p">);</span>          <span class="c1"># set the spots to an array</span>
+
+<span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">push_spots</span><span class="p">([</span><span class="mi">11235</span><span class="p">,</span> <span class="mi">57</span><span class="p">,</span> <span class="mi">87</span><span class="p">,</span> <span class="mi">5</span><span class="p">]]);</span> <span class="c1"># add to the end of the list of steps</span>
+
+<span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">pop_spots</span><span class="p">;</span>                       <span class="c1"># remove the last item from the list</span>
+
+<span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">spots</span><span class="p">(</span><span class="o">[]</span><span class="p">);</span>                       <span class="c1"># or</span>
+<span class="nv">$spectrum</span><span class="o">-&gt;</span><span class="n">clear_spots</span><span class="p">;</span>                     <span class="c1"># remove all steps from the list</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="error-handling">
@@ -535,7 +743,7 @@ emission energy.  The concept is that the normalized mu(E) data are an
 approximation of what they would be if each emission energy was
 equally represented on the face of the detector.</p>
 <p>The version of Athena based on Demeter will be able to use these
-values as importance or plot multiplier values if the <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aXDI&amp;mode=module">Xray::XDI</a>
+values as importance or plot multiplier values if the Xray::XDI
 module is available.</p>
 </div>
 <div class="section" id="configuration-and-environment">
@@ -543,37 +751,32 @@ module is available.</p>
 <p>Using the script in the <em>bin/</em> directory, file locations, elastic
 energies, and mask parameters are specified in an ini-style
 configuration file.  An example is found in <em>share/config.ini</em>.</p>
-<p>If using <a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aXDI&amp;mode=module">Xray::XDI</a>, metadata can be supplied by an ini-style file.
+<p>If using Xray::XDI, metadata can be supplied by an ini-style file.
 And example is found in <em>share/bla.xdi.ini</em>.</p>
 </div>
 <div class="section" id="dependencies">
 <h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p>This requires perl 5.10 or later.</p>
-<div class="section" id="cpan">
-<h3>CPAN<a class="headerlink" href="#cpan" title="Permalink to this headline">¶</a></h3>
+<p>This requires perl 5.10 or later -- preferably <em>much</em> later.</p>
 <p>*</p>
 <blockquote>
-<div>PDL, <a class="reference external" href="http://search.cpan.org/search?query=PDL%3a%3aIO%3a%3aFlexRaw&amp;mode=module">PDL::IO::FlexRaw</a>, <a class="reference external" href="http://search.cpan.org/search?query=PDL%3a%3aIO%3a%3aPic&amp;mode=module">PDL::IO::Pic</a>,
-<a class="reference external" href="http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aSimple&amp;mode=module">PDL::Graphics::Simple</a>, <a class="reference external" href="http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aGnuplot&amp;mode=module">PDL::Graphics::Gnuplot</a></div></blockquote>
+<div>PDL, <a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aIO%3a%3aFlexRaw">PDL::IO::FlexRaw</a>, <a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aIO%3a%3aPic">PDL::IO::Pic</a>,
+<a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aSimple">PDL::Graphics::Simple</a>, <a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aGnuplot">PDL::Graphics::Gnuplot</a>,
+<a class="reference external" href="https://metacpan.org/pod/PDL%3a%3aFit%3a%3aPolynomial">PDL::Fit::Polynomial</a></div></blockquote>
 <p>*</p>
 <blockquote>
-<div>Moose, <a class="reference external" href="http://search.cpan.org/search?query=MooseX%3a%3aAttributeHelpers&amp;mode=module">MooseX::AttributeHelpers</a>, <a class="reference external" href="http://search.cpan.org/search?query=MooseX%3a%3aAliases&amp;mode=module">MooseX::Aliases</a></div></blockquote>
+<div>Moose, <a class="reference external" href="https://metacpan.org/pod/MooseX%3a%3aAttributeHelpers">MooseX::AttributeHelpers</a>, <a class="reference external" href="https://metacpan.org/pod/MooseX%3a%3aAliases">MooseX::Aliases</a></div></blockquote>
 <p>*</p>
 <blockquote>
-<div><a class="reference external" href="http://search.cpan.org/search?query=Math%3a%3aRound&amp;mode=module">Math::Round</a></div></blockquote>
+<div><a class="reference external" href="https://metacpan.org/pod/Math%3a%3aRound">Math::Round</a></div></blockquote>
 <p>*</p>
 <blockquote>
-<div><a class="reference external" href="http://search.cpan.org/search?query=Config%3a%3aIniFiles&amp;mode=module">Config::IniFiles</a></div></blockquote>
+<div><a class="reference external" href="https://metacpan.org/pod/Config%3a%3aIniFiles">Config::IniFiles</a></div></blockquote>
 <p>*</p>
 <blockquote>
-<div><a class="reference external" href="http://search.cpan.org/search?query=Term%3a%3aSk&amp;mode=module">Term::Sk</a></div></blockquote>
+<div><a class="reference external" href="https://metacpan.org/pod/Term%3a%3aSk">Term::Sk</a></div></blockquote>
 <p>*</p>
 <blockquote>
-<div><a class="reference external" href="http://search.cpan.org/search?query=Text%3a%3aTemplate&amp;mode=module">Text::Template</a></div></blockquote>
-<p>*</p>
-<blockquote>
-<div><a class="reference external" href="http://search.cpan.org/search?query=Xray%3a%3aXDI&amp;mode=module">Xray::XDI</a>  (optional)</div></blockquote>
-</div>
+<div><a class="reference external" href="https://metacpan.org/pod/Text%3a%3aTemplate">Text::Template</a></div></blockquote>
 </div>
 <div class="section" id="bugs-and-limitations">
 <h2>BUGS AND LIMITATIONS<a class="headerlink" href="#bugs-and-limitations" title="Permalink to this headline">¶</a></h2>
@@ -590,7 +793,7 @@ And example is found in <em>share/bla.xdi.ini</em>.</p>
 <h2>LICENCE AND COPYRIGHT<a class="headerlink" href="#licence-and-copyright" title="Permalink to this headline">¶</a></h2>
 <p>Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.</p>
 <p>This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See perlgpl.</p>
+modify it under the same terms as Perl itself. See <a class="reference external" href="http://perldoc.perl.org/perlgpl.html">perlgpl</a>.</p>
 <p>This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
@@ -599,7 +802,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
 
 <br>
 <hr class="docutils" />
-<p>Xray::BLA and <font size=-1 color="#8C4112">METIS</font> are copyright © 2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
 copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
@@ -624,7 +828,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>2</b></p>
+<p>Current version: <b>3</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -673,7 +877,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="../index.html" title="Programming documentation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Xray::BLA and Metis 2 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Programming documentation</a> &raquo;</li> 
       </ul>
     </div>

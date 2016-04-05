@@ -40,7 +40,7 @@ Recommended steps
    stray pixels, however it has the negative effect of retaining very
    bright pixels, such as those from diffraction peaks.
 
-**useshield**
+**Shield**
 
    The syntax is ``useshield #``.  The number indicates how far back
    the trailing image is that will be used to create the shield.
@@ -119,12 +119,12 @@ development.  I find the Gaussian blur works better than the lonely
 and social steps and the areal mean.  But all of these are still there
 for testing purposes.
 
-**multiply**
+**Multiply**
 
    Multiply emission image by an overall constant. The syntax is
    ``multiply by #`` where the number is the constant scaling factor.
 
-**areal mean or median**
+**Areal mean or median**
 
    Apply an areal median or mean to each pixel. The syntax is
    ``areal (median|mean) radius #``. The number defines the size of the
@@ -134,14 +134,14 @@ for testing purposes.
 
    The median is not implemented at this time.
 
-**lonely pixels**
+**Lonely pixels**
 
    Remove all the lonely pixels. A lonely pixel is one which is
    illuminated but is not surrounded by enough illuminated pixels. The
    syntax is ``lonely #``. The number defines how many illuminated
    pixels are required for a pixel not to be considered lonely.
 
-**social pixels**
+**Social pixels**
 
    Include all social pixels. A social pixel is one which is not
    illuminated but is surrounded by enough illuminated pixels. The
@@ -164,7 +164,7 @@ A recipe using these might be:
 Development tools
 -----------------
 
-**energy map**
+**Energy map**
 
    Use the energy map computed by the ``map`` task. The syntax is
    ``map #`` where the number is the width in eV about the emission
@@ -175,7 +175,7 @@ Development tools
 
    This is not working at present.
 
-**entire image**
+**Entire image**
 
    Use the entire image. The syntax is ``entire image``. This step just
    sets all the pixels in the mask to 1 so that the entire image is used

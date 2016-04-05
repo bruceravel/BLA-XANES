@@ -179,6 +179,20 @@ IO attributes
 
 
 
+\ ``task``\ 
+ 
+ The task currently being performed.  This is one of \ ``herfd``\ , \ ``rixs``\ ,
+ \ ``point``\ , \ ``map``\ , \ ``mask``\ , \ ``xes``\ , or \ ``plane``\ , with a few more
+ possibilities use at the command line for debugging or development.
+ 
+
+
+\ ``ui``\ 
+ 
+ The user interaction mode, likely one of \ ``cli``\  or \ ``wx``\ .
+ 
+
+
 \ ``element``\ 
  
  The element of the absorber.  This is currently used when plotting and
@@ -219,6 +233,18 @@ IO attributes
  
 
 
+\ ``outfolder``\ 
+ 
+ The folder where output images and spectra are written.
+ 
+
+
+\ ``outimage``\  [gif]
+ 
+ The format of output images, usually one of \ ``gif``\ , \ ``png``\ , or \ ``tif``\ .
+ 
+
+
 \ ``elastic_energies``\ 
  
  A reference to a list of energy values at which elastic images were
@@ -243,14 +269,6 @@ IO attributes
  
  A reference to a list of the measurement image files found in
  \ ``tiffolder``\ .
- 
-
-
-\ ``outfolder``\ 
- 
- The folder to which the processed file is written.  The processed file
- name is constructed from the value of \ ``stub``\ .  This can be specified
- in the ini file.
  
 
 
@@ -323,6 +341,60 @@ IO attributes
  
 
 
+\ ``incident_energies``\ 
+ 
+ An array reference containing the incident energies of a HERFD scan.
+ 
+
+
+\ ``herfd_file_list``\ 
+ 
+ An array reference containing output files from a RIXS sequence.
+ 
+
+
+\ ``herfd_pixels_used``\ 
+ 
+ An array reference containing numbers of illuminated pixels from a RIXS sequence.
+ 
+
+
+\ ``noscan``\ 
+ 
+ A boolean indicating whether a scan file was written.  This is
+ typically true for the HERFD and RIXS tasks and false for XES and
+ plane tasks.
+ 
+
+
+\ ``xdi_metadata_file``\ 
+ 
+ The fully resolved path name for an ini file containing XDi metadata
+ to be used in output ASCII column files.
+ 
+
+
+\ ``sentinal``\ 
+ 
+ A code reference used to provide feedback during particularly lengthy
+ operations.  For example:
+ 
+ 
+ .. code-block:: perl
+ 
+     $spectrum->sentinal(sub{printf("Processing point %d of %d\n", $_[0], $npoints)});
+ 
+ 
+ or, writing to the Metis status bar:
+ 
+ 
+ .. code-block:: perl
+ 
+     $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
+ 
+ 
+
+
 
 Mask recipe attribues
 =====================
@@ -376,6 +448,32 @@ Mask recipe attribues
  illuminated by a small number of stray photons not associated with the
  imagining of photons at the peak energy.  Pixels with fewer than this
  number of counts are set to 0.
+ 
+
+
+\ ``width_min``\  and \ ``width_max``\  [0 and 487]
+ 
+ The columns in the elastic image within which all elastic signal at
+ all energies will be found.  Pixels outside those columns will be set
+ to zero.  This is a way of suppressing obviously spurious signal.
+ 
+
+
+\ ``spots``\ 
+ 
+ A reference to a list of lists containing spots to be removed from
+ elastic images during the bad/weak recipe step.  Each entry in the
+ list is a reference to a list of 4 numbers, the elastic energy, the x
+ and y coordinates of the spot, and the radius of the spot.  At that
+ energy, the pixels within the radius around the (xy) coordinates will
+ be set to zero.  This is mostly sued to avoid skewing the polynomial
+ fits in the polyfit recipe step, but is, in general, a hands-on way of
+ removing spurious pixels from the elastic images.
+ 
+ The first entry in each list reference can be a single energy value or
+ a range specified either as "emin-emax", which is an enclusive range
+ over which to remove the spot, or "energy+" which removes the spot
+ from the specified elastic image and from all subsequent images.
  
 
 
@@ -505,13 +603,70 @@ Data processing attributes
 
 
 
+Attributes related to plotting XAS-like or image data
+=====================================================
+
+
+
+\ ``terminal``\ 
+ 
+ The Gnuplot terminal type to use.  This is likely one of \ ``qt``\ ,
+ \ ``wxt``\ , \ ``x11``\ , \ ``windows``\ , or \ ``aqua``\ .
+ 
+
+
+\ ``herfd_demeter``\ 
+ 
+ A Demeter::Data object containing the HERFD data.
+ 
+
+
+\ ``mue_demeter``\ 
+ 
+ A Demeter::Data object containing the conventional XANES data, if available.
+ 
+
+
+\ ``xdata``\ 
+ 
+ An array reference containing the x-axis data for plotting.
+ 
+
+
+\ ``ydata``\ 
+ 
+ An array reference containing the y-axis data for plotting.
+ 
+
+
+\ ``mudata``\ 
+ 
+ An array reference containing conventional mu(E) data for plotting.
+ 
+
+
+\ ``normpixels``\ 
+ 
+ A normalized scaling factor representing the number of illuminated
+ pixels in the final mask used for a HERFD scan or a RIXS sequence.
+ 
+
+
+\ ``imagescale``\ 
+ 
+ A scaling factor for the color scale when plotting images.  A bigger
+ number leads to a smaller range of the plot.
+ 
+
+
+
 
 *******
 METHODS
 *******
 
 
-All methods return an object of type `Xray::BLA::Return <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&mode=module>`_.  This
+All methods return an object of type Xray::BLA::Return.  This
 object has two attributes: \ ``status``\  and \ ``message``\ .  A successful
 return will have a positive definite \ ``status``\ .  Any reporting (for
 example exception reporting) is done via the \ ``message``\  attribute.
@@ -541,7 +696,7 @@ API
  
  Using the median of the list of energies in the \ ``elastic_energies``\ 
  attribute, guess the element and line using a list of tabiulated line
- energies from `Xray::Absorption <http://search.cpan.org/search?query=Xray%3a%3aAbsorption&mode=module>`_.
+ energies from Xray::Absorption.
  
  
  .. code-block:: perl
@@ -576,7 +731,7 @@ API
  This method is a wrapper around the contents of the \ ``step``\  attribute.
  Each entry in \ ``step``\  will be parsed and executed in sequence.
  
- See `Xray::BLA::Mask <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aMask&mode=module>`_
+ See Xray::BLA::Mask
  
 
 
@@ -598,7 +753,7 @@ API
  configuration file for XDI metadata.  If no ini file is supplied, then
  no metadata and no column labels will be written to the output file.
  
- An `Xray::BLA::Return <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&mode=module>`_ object is returned.  Its \ ``message``\  attribute
+ An Xray::BLA::Return object is returned.  Its \ ``message``\  attribute
  contains the fully resolved file name for the output HERFD data file.
  
 
@@ -621,7 +776,7 @@ API
  When true, the \ ``animate``\  argument causes an animated gif file to be
  written containing a movie of the processed elastic masks.
  
- The returned `Xray::BLA::Return <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&mode=module>`_ object conveys no information at
+ The returned Xray::BLA::Return object conveys no information at
  this time.
  
 
@@ -645,7 +800,7 @@ API
  When true, the \ ``verbose``\  argument causes messages to be printed to
  standard output about file written.
  
- The returned `Xray::BLA::Return <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&mode=module>`_ object conveys no information at
+ The returned Xray::BLA::Return object conveys no information at
  this time.
  
 
@@ -672,13 +827,13 @@ Internal methods
 ================
 
 
-All of these methods return a `Xray::BLA::Return <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aReturn&mode=module>`_ object, which has
+All of these methods return a Xray::BLA::Return object, which has
 two attributes, and integer \ ``status``\  to indicate the return status (1
 is normal in all cases here) and an string \ ``message``\  containing a
 short description of the exception (an empty string indicates no
 exception).
 
-See `Xray::BLA::Mask <http://search.cpan.org/search?query=Xray%3a%3aBLA%3a%3aMask&mode=module>`_ for details about the mask generation steps.
+See Xray::BLA::Mask for details about the mask generation steps.
 
 
 \ ``check``\ 
@@ -753,7 +908,7 @@ Main steps
  
 
 
-<gaussian #.#>
+\ ``gaussian #.#``\ 
  
  Apply a convolution with a kernel that approximates a Gaussian blur.
  The number is a threshold above which pixels are set to 1 and below
@@ -761,7 +916,7 @@ Main steps
  
 
 
-<shield #>
+\ ``shield #``\ 
  
  Create a shield from trailing masks which is used to remove spurious
  signal from the low energy region of the elastic image due to
@@ -772,7 +927,7 @@ Main steps
  
 
 
-polyfill
+\ ``polyfill``\ 
  
  After applying the Gaussian blur or some other filter (and after
  applying the shield), fit polynomials to the topmost and bottom-most
@@ -785,6 +940,9 @@ polyfill
 Other steps
 ===========
 
+
+These are other possible mask recipe steps.  Some are kept for
+historical interest.
 
 
 \ ``multiply by #``\ 
@@ -867,6 +1025,21 @@ The \ ``steps``\  attribute is set from a configuration file containing a
     $spectrum->clear_steps;                 # remove all steps from the list
 
 
+The \ ``spots``\  attribute can be manipulated in similar manner.
+
+
+.. code-block:: perl
+
+    $spectrum->spots(\@list_of_spots);          # set the spots to an array
+ 
+    $spectrum->push_spots([11235, 57, 87, 5]]); # add to the end of the list of steps
+ 
+    $spectrum->pop_spots;                       # remove the last item from the list
+ 
+    $spectrum->spots([]);                       # or
+    $spectrum->clear_spots;                     # remove all steps from the list
+
+
 
 
 **************
@@ -918,7 +1091,7 @@ approximation of what they would be if each emission energy was
 equally represented on the face of the detector.
 
 The version of Athena based on Demeter will be able to use these
-values as importance or plot multiplier values if the `Xray::XDI <http://search.cpan.org/search?query=Xray%3a%3aXDI&mode=module>`_
+values as importance or plot multiplier values if the Xray::XDI
 module is available.
 
 
@@ -931,7 +1104,7 @@ Using the script in the \ *bin/*\  directory, file locations, elastic
 energies, and mask parameters are specified in an ini-style
 configuration file.  An example is found in \ *share/config.ini*\ .
 
-If using `Xray::XDI <http://search.cpan.org/search?query=Xray%3a%3aXDI&mode=module>`_, metadata can be supplied by an ini-style file.
+If using Xray::XDI, metadata can be supplied by an ini-style file.
 And example is found in \ *share/bla.xdi.ini*\ .
 
 
@@ -940,50 +1113,45 @@ DEPENDENCIES
 ************
 
 
-This requires perl 5.10 or later.
-
-CPAN
-====
-
+This requires perl 5.10 or later -- preferably \ *much*\  later.
 
 
 \*
  
- PDL, `PDL::IO::FlexRaw <http://search.cpan.org/search?query=PDL%3a%3aIO%3a%3aFlexRaw&mode=module>`_, `PDL::IO::Pic <http://search.cpan.org/search?query=PDL%3a%3aIO%3a%3aPic&mode=module>`_,
- `PDL::Graphics::Simple <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aSimple&mode=module>`_, `PDL::Graphics::Gnuplot <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aGnuplot&mode=module>`_,
- `PDL::Fit::Polynomial <http://search.cpan.org/search?query=PDL%3a%3aFit%3a%3aPolynomial&mode=module>`_
+ PDL, `PDL::IO::FlexRaw <https://metacpan.org/pod/PDL%3a%3aIO%3a%3aFlexRaw>`_, `PDL::IO::Pic <https://metacpan.org/pod/PDL%3a%3aIO%3a%3aPic>`_,
+ `PDL::Graphics::Simple <https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aSimple>`_, `PDL::Graphics::Gnuplot <https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aGnuplot>`_,
+ `PDL::Fit::Polynomial <https://metacpan.org/pod/PDL%3a%3aFit%3a%3aPolynomial>`_
  
 
 
 \*
  
- Moose, `MooseX::AttributeHelpers <http://search.cpan.org/search?query=MooseX%3a%3aAttributeHelpers&mode=module>`_, `MooseX::Aliases <http://search.cpan.org/search?query=MooseX%3a%3aAliases&mode=module>`_
+ Moose, `MooseX::AttributeHelpers <https://metacpan.org/pod/MooseX%3a%3aAttributeHelpers>`_, `MooseX::Aliases <https://metacpan.org/pod/MooseX%3a%3aAliases>`_
  
 
 
 \*
  
- `Math::Round <http://search.cpan.org/search?query=Math%3a%3aRound&mode=module>`_
+ `Math::Round <https://metacpan.org/pod/Math%3a%3aRound>`_
  
 
 
 \*
  
- `Config::IniFiles <http://search.cpan.org/search?query=Config%3a%3aIniFiles&mode=module>`_
+ `Config::IniFiles <https://metacpan.org/pod/Config%3a%3aIniFiles>`_
  
 
 
 \*
  
- `Term::Sk <http://search.cpan.org/search?query=Term%3a%3aSk&mode=module>`_
+ `Term::Sk <https://metacpan.org/pod/Term%3a%3aSk>`_
  
 
 
 \*
  
- `Text::Template <http://search.cpan.org/search?query=Text%3a%3aTemplate&mode=module>`_
+ `Text::Template <https://metacpan.org/pod/Text%3a%3aTemplate>`_
  
-
 
 
 
@@ -1017,7 +1185,7 @@ LICENCE AND COPYRIGHT
 Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See perlgpl.
+modify it under the same terms as Perl itself. See `perlgpl <http://perldoc.perl.org/perlgpl.html>`_.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of

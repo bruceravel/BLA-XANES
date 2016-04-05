@@ -20,7 +20,22 @@ use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 		 EVT_RIGHT_DOWN EVT_LEFT_DOWN EVT_CHECKLISTBOX
 		 EVT_MENU EVT_CLOSE);
 use base 'Wx::App';
-use Wx::Perl::Carp;
+
+use Wx::Perl::Carp qw(verbose);
+$SIG{__WARN__} = sub { if ($_[0] =~ m{Reading ras files from sequential devices not supported}) { 1 } else { Wx::Perl::Carp::warn($_[0]) } };
+$SIG{__DIE__}  = sub { if ($_[0] =~ m{Reading ras files from sequential devices not supported}) { 1 } else { Wx::Perl::Carp::warn($_[0]) } };
+
+# use Sub::Override;
+# my $override = Sub::Override->new('PDL::Core::barf',
+# 				  sub {
+# 				    print '>>>', $_[0], '<<<', $/;
+# 				    if ($_[0] =~ m{Reading ras files from sequential devices not supported}) {
+# 				      return;
+# 				    }
+# 				    Wx::Perl::Carp::warn($_[0]);
+# 				  }
+# 				 );
+
 
 use Demeter::UI::Metis::Cursor;
 
@@ -371,6 +386,14 @@ sub status {
   #$self->{Status}->put_text($text, $type);
   $self->Refresh;
 };
+
+package PDL::Graphics::Gnuplot;
+{
+  no warnings 'redefine';
+  sub barf { goto &Carp::cluck };
+}
+
+
 
 1;
 

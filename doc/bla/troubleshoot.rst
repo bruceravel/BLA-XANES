@@ -59,3 +59,7 @@ Around line 3116 of ``PDL::Graphics::Gnuplot``, add the following line:
     $optionsWarnings = '' if($optionsWarnings =- m/^\s+$/s);
 
 Similar near lines 3256, 3301.
+
+Another solution is to replace ``print STDERR`` with ``carp`` at line
+3116 and elsewhere.  If that is done, then Metis is instrumented to
+handle terminal-related chatter a bit more gracefully.

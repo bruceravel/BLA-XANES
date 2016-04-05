@@ -188,11 +188,40 @@ sub plot_close {
 
 =head1 NAME
 
-Xray::BLA::Plot - A plotting method for BLA-XANES
+Xray::BLA::Plot - A plotting role for BLA-XANES
 
 =head1 DESCRIPTION
 
-Various plotting tools using the PDL/Gnuplot interface.
+Various plotting tools using the PDL/Gnuplot interface, inplemented as
+a Moose role.
+
+=head1 ATTRIBUTES
+
+This role add these attributes to the Xray::BLA object.
+
+=over 4
+
+=item C<cbmax>
+
+Forced upper bound to the color range of the surface plot.
+
+=item C<color>
+
+Color scheme for the palette used in mask surface plots.  The color
+schemes are all monochrome, but of different hues.  The possibilities
+are C<black>, C<blue>, C<red>, C<orange>, C<green>, and C<purple>.
+This can also be set to C<surprise>, which will randomly choose one of
+the defined hues when the first plot is made.
+
+=item C<palette>
+
+This contains the Gnuplot palette definition for the choise of C<color>.
+
+=item C<pdlplot>
+
+This is a reference to the PDL object used to make the plots.
+
+=back
 
 =head1 METHODS
 
@@ -276,10 +305,11 @@ Bruce Ravel (bravel AT bnl DOT gov)
 
 L<http://github.com/bruceravel/BLA-XANES>
 
-gnuplot-colorbrewer is written and maintained by Anna Schneider
-<annarschneider AT gmail DOT com> and released under the Apache
-License 2.0.  ColorBrewer is a project of Cynthia Brewer, Mark
-Harrower, and The Pennsylvania State University.
+The palettes were taken from gnuplot-colorbrewer at
+L<https://github.com/Gnuplotting/gnuplot-palettes>, which is written
+and maintained by Anna Schneider and released under the Apache License
+2.0.  ColorBrewer is a project of Cynthia Brewer, Mark Harrower, and
+The Pennsylvania State University.
 
 =head1 LICENCE AND COPYRIGHT
 

@@ -10,7 +10,7 @@ NAME
 ****
 
 
-Xray::BLA::Plot - A plotting method for BLA-XANES
+Xray::BLA::Plot - A plotting role for BLA-XANES
 
 
 ***********
@@ -18,7 +18,45 @@ DESCRIPTION
 ***********
 
 
-Various plotting tools using the PDL/Gnuplot interface.
+Various plotting tools using the PDL/Gnuplot interface, inplemented as
+a Moose role.
+
+
+**********
+ATTRIBUTES
+**********
+
+
+This role add these attributes to the Xray::BLA object.
+
+
+\ ``cbmax``\ 
+ 
+ Forced upper bound to the color range of the surface plot.
+ 
+
+
+\ ``color``\ 
+ 
+ Color scheme for the palette used in mask surface plots.  The color
+ schemes are all monochrome, but of different hues.  The possibilities
+ are \ ``black``\ , \ ``blue``\ , \ ``red``\ , \ ``orange``\ , \ ``green``\ , and \ ``purple``\ .
+ This can also be set to \ ``surprise``\ , which will randomly choose one of
+ the defined hues when the first plot is made.
+ 
+
+
+\ ``palette``\ 
+ 
+ This contains the Gnuplot palette definition for the choise of \ ``color``\ .
+ 
+
+
+\ ``pdlplot``\ 
+ 
+ This is a reference to the PDL object used to make the plots.
+ 
+
 
 
 *******
@@ -130,7 +168,7 @@ DEPENDENCIES
 ************
 
 
-`PDL::Graphics::Simple <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aSimple&mode=module>`_ and `PDL::Graphics::Gnuplot <http://search.cpan.org/search?query=PDL%3a%3aGraphics%3a%3aGnuplot&mode=module>`_
+`PDL::Graphics::Simple <https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aSimple>`_ and `PDL::Graphics::Gnuplot <https://metacpan.org/pod/PDL%3a%3aGraphics%3a%3aGnuplot>`_
 
 
 ********************
@@ -153,10 +191,11 @@ Bruce Ravel (bravel AT bnl DOT gov)
 
 `http://github.com/bruceravel/BLA-XANES <http://github.com/bruceravel/BLA-XANES>`_
 
-gnuplot-colorbrewer is written and maintained by Anna Schneider
-<annarschneider AT gmail DOT com> and released under the Apache
-License 2.0.  ColorBrewer is a project of Cynthia Brewer, Mark
-Harrower, and The Pennsylvania State University.
+The palettes were taken from gnuplot-colorbrewer at
+`https://github.com/Gnuplotting/gnuplot-palettes <https://github.com/Gnuplotting/gnuplot-palettes>`_, which is written
+and maintained by Anna Schneider <annarschneider AT gmail DOT com> and
+released under the Apache License 2.0.  ColorBrewer is a project of
+Cynthia Brewer, Mark Harrower, and The Pennsylvania State University.
 
 
 *********************
@@ -167,7 +206,7 @@ LICENCE AND COPYRIGHT
 Copyright (c) 2006-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See perlgpl.
+modify it under the same terms as Perl itself. See `perlgpl <http://perldoc.perl.org/perlgpl.html>`_.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of

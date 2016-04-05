@@ -104,13 +104,17 @@ colors (usually black on white).  The ANSI colors control sequences
 are part of the default value of this attribute and so can be
 overriden by resetting its value.
 
-=item C<highlight>
+=item C<highlight> [underline]
 
 This sets the form of highlighting of the prompt.  The possible values
 are underline and reverse, which will cause the prompt text to be
 either underlined or reverse video in the sense of C<Term::ANSIColor>.
 Any other value for this attribute will result in no highlighting of
 the prompt string.
+
+=item C<hl>
+
+This contains the ASCII escape sequence associated with C<highlight>.
 
 =back
 

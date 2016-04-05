@@ -140,7 +140,7 @@ has 'radius'             => (is => 'rw', isa => 'Int', default => 2,
 has 'scalemask'          => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The value by which to multiply the mask during the multiplication step of mask creation.");
 has 'nsmooth'            => (is => 'rw', isa => 'Int', default => 4,
-			     documentation => "The number of repotition of the three-point smoothing used in energy map creation.");
+			     documentation => "The number of repitition of the three-point smoothing used in energy map creation.");
 
 has 'imagescale'         => (is => 'rw', isa => 'LaxNum', default => 40,
 			     documentation => "A scaling factor for the color scale when plotting images.  A bigger number leads to a smaller range of the plot.");
@@ -271,7 +271,7 @@ has 'herfd_pixels_used' => (
 					  'pop_herfd_pixels_used'   => 'pop',
 					  'clear_herfd_pixels_used' => 'clear',
 					 },
-			    documentation => "An array reference containing numbers of illuminate pixels from a RIXS sequence."
+			    documentation => "An array reference containing numbers of illuminated pixels from a RIXS sequence."
 			   );
 
 has 'incident_energies' => (
@@ -284,7 +284,7 @@ has 'incident_energies' => (
 					  'pop_incident_energies'   => 'pop',
 					  'clear_incident_energies' => 'clear',
 					 },
-			    documentation => "An array reference containing the incident energies of the scan."
+			    documentation => "An array reference containing the incident energies of a HERFD scan."
 			   );
 
 
@@ -1113,6 +1113,16 @@ The width of the energy counter part of the energy tiff image name.
 
 =over 4
 
+=item C<task>
+
+The task currently being performed.  This is one of C<herfd>, C<rixs>,
+C<point>, C<map>, C<mask>, C<xes>, or C<plane>, with a few more
+possibilities use at the command line for debugging or development.
+
+=item C<ui>
+
+The user interaction mode, likely one of C<cli> or C<wx>.
+
 =item C<element>
 
 The element of the absorber.  This is currently used when plotting and
@@ -1143,6 +1153,14 @@ The folder containing the image files.  The image file names are
 constructed from the value of C<elastic_file_template> or
 C<image_file_template>.  C<tifffolder> (with 3 C<f>'s) is an alias.
 
+=item C<outfolder>
+
+The folder where output images and spectra are written.
+
+=item C<outimage> [gif]
+
+The format of output images, usually one of C<gif>, C<png>, or C<tif>.
+
 =item C<elastic_energies>
 
 A reference to a list of energy values at which elastic images were
@@ -1161,12 +1179,6 @@ in C<tiffolder>.
 
 A reference to a list of the measurement image files found in
 C<tiffolder>.
-
-=item C<outfolder>
-
-The folder to which the processed file is written.  The processed file
-name is constructed from the value of C<stub>.  This can be specified
-in the ini file.
 
 =item C<cleanup> [false]
 
@@ -1221,6 +1233,40 @@ methods are called with the verbose flag on.
 This flag should be true when run from the command line so that
 progress messages are written to the screen.
 
+=item C<incident_energies>
+
+An array reference containing the incident energies of a HERFD scan.
+
+=item C<herfd_file_list>
+
+An array reference containing output files from a RIXS sequence.
+
+=item C<herfd_pixels_used>
+
+An array reference containing numbers of illuminated pixels from a RIXS sequence.
+
+=item C<noscan>
+
+A boolean indicating whether a scan file was written.  This is
+typically true for the HERFD and RIXS tasks and false for XES and
+plane tasks.
+
+=item C<xdi_metadata_file>
+
+The fully resolved path name for an ini file containing XDi metadata
+to be used in output ASCII column files.
+
+=item C<sentinal>
+
+A code reference used to provide feedback during particularly lengthy
+operations.  For example:
+
+   $spectrum->sentinal(sub{printf("Processing point %d of %d\n", $_[0], $npoints)});
+
+or, writing to the Metis status bar:
+
+   $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
+
 =back
 
 
@@ -1265,6 +1311,28 @@ removed from the image.  These pixels are presumed to have been
 illuminated by a small number of stray photons not associated with the
 imagining of photons at the peak energy.  Pixels with fewer than this
 number of counts are set to 0.
+
+=item C<width_min> and C<width_max> [0 and 487]
+
+The columns in the elastic image within which all elastic signal at
+all energies will be found.  Pixels outside those columns will be set
+to zero.  This is a way of suppressing obviously spurious signal.
+
+=item C<spots>
+
+A reference to a list of lists containing spots to be removed from
+elastic images during the bad/weak recipe step.  Each entry in the
+list is a reference to a list of 4 numbers, the elastic energy, the x
+and y coordinates of the spot, and the radius of the spot.  At that
+energy, the pixels within the radius around the (xy) coordinates will
+be set to zero.  This is mostly sued to avoid skewing the polynomial
+fits in the polyfit recipe step, but is, in general, a hands-on way of
+removing spurious pixels from the elastic images.
+
+The first entry in each list reference can be a single energy value or
+a range specified either as "emin-emax", which is an enclusive range
+over which to remove the spot, or "energy+" which removes the spot
+from the specified elastic image and from all subsequent images.
 
 =item C<gaussian_blur_value> [2]
 
@@ -1363,9 +1431,50 @@ Largest value found in a mask during a mask creation step.
 
 =back
 
+=head2 Attributes related to plotting XAS-like or image data
+
+=over 4
+
+=item C<terminal>
+
+The Gnuplot terminal type to use.  This is likely one of C<qt>,
+C<wxt>, C<x11>, C<windows>, or C<aqua>.
+
+=item C<herfd_demeter>
+
+A Demeter::Data object containing the HERFD data.
+
+=item C<mue_demeter>
+
+A Demeter::Data object containing the conventional XANES data, if available.
+
+=item C<xdata>
+
+An array reference containing the x-axis data for plotting.
+
+=item C<ydata>
+
+An array reference containing the y-axis data for plotting.
+
+=item C<mudata>
+
+An array reference containing conventional mu(E) data for plotting.
+
+=item C<normpixels>
+
+A normalized scaling factor representing the number of illuminated
+pixels in the final mask used for a HERFD scan or a RIXS sequence.
+
+=item C<imagescale>
+
+A scaling factor for the color scale when plotting images.  A bigger
+number leads to a smaller range of the plot.
+
+=back
+
 =head1 METHODS
 
-All methods return an object of type L<Xray::BLA::Return>.  This
+All methods return an object of type Xray::BLA::Return.  This
 object has two attributes: C<status> and C<message>.  A successful
 return will have a positive definite C<status>.  Any reporting (for
 example exception reporting) is done via the C<message> attribute.
@@ -1388,7 +1497,7 @@ Xray::BLA object.
 
 Using the median of the list of energies in the C<elastic_energies>
 attribute, guess the element and line using a list of tabiulated line
-energies from L<Xray::Absorption>.
+energies from Xray::Absorption.
 
   my ($el, $li) = $spectrum->guess_element_and_line;
 
@@ -1413,7 +1522,7 @@ These output image files are gif.
 This method is a wrapper around the contents of the C<step> attribute.
 Each entry in C<step> will be parsed and executed in sequence.
 
-See L<Xray::BLA::Mask>
+See Xray::BLA::Mask
 
 =item C<scan>
 
@@ -1429,7 +1538,7 @@ The C<xdiini> argument takes the file name of an ini-style
 configuration file for XDI metadata.  If no ini file is supplied, then
 no metadata and no column labels will be written to the output file.
 
-An L<Xray::BLA::Return> object is returned.  Its C<message> attribute
+An Xray::BLA::Return object is returned.  Its C<message> attribute
 contains the fully resolved file name for the output HERFD data file.
 
 =item C<energy_map>
@@ -1446,7 +1555,7 @@ standard output about file written.
 When true, the C<animate> argument causes an animated gif file to be
 written containing a movie of the processed elastic masks.
 
-The returned L<Xray::BLA::Return> object conveys no information at
+The returned Xray::BLA::Return object conveys no information at
 this time.
 
 =item C<compute_xes>
@@ -1464,7 +1573,7 @@ value is given, use that energy or the nearest larger energy.
 When true, the C<verbose> argument causes messages to be printed to
 standard output about file written.
 
-The returned L<Xray::BLA::Return> object conveys no information at
+The returned Xray::BLA::Return object conveys no information at
 this time.
 
 =item C<get_incident>
@@ -1482,13 +1591,13 @@ are set with the values of the midpoint (by index) of the data range.
 
 =head2 Internal methods
 
-All of these methods return a L<Xray::BLA::Return> object, which has
+All of these methods return a Xray::BLA::Return object, which has
 two attributes, and integer C<status> to indicate the return status (1
 is normal in all cases here) and an string C<message> containing a
 short description of the exception (an empty string indicates no
 exception).
 
-See L<Xray::BLA::Mask> for details about the mask generation steps.
+See Xray::BLA::Mask for details about the mask generation steps.
 
 =over 4
 
@@ -1542,13 +1651,13 @@ This specification says to remove bad and weak pixels from the image.
 The first number is the value used for C<bad_pixel_value>.  The second
 number is the value used for C<weak_pixel_value>.
 
-=item <gaussian #.#>
+=item C<gaussian #.#>
 
 Apply a convolution with a kernel that approximates a Gaussian blur.
 The number is a threshold above which pixels are set to 1 and below
 which pixels are set to 0.
 
-=item <shield #>
+=item C<shield #>
 
 Create a shield from trailing masks which is used to remove spurious
 signal from the low energy region of the elastic image due to
@@ -1557,7 +1666,7 @@ how far the trailing mask is behind the current mask.  The shield is
 cumulative, that is the traling mask is added to the shield from the
 previous elastic energy.
 
-=item polyfill
+=item C<polyfill>
 
 After applying the Gaussian blur or some other filter (and after
 applying the shield), fit polynomials to the topmost and bottom-most
@@ -1567,6 +1676,9 @@ polynomials and us that as the mask.
 =back
 
 =head2 Other steps
+
+These are other possible mask recipe steps.  Some are kept for
+historical interest.
 
 =over 4
 
@@ -1631,6 +1743,17 @@ C<[steps]> block.  The C<steps> attribute can be manipulated by hand:
    $spectrum->steps([]); # or
    $spectrum->clear_steps;                 # remove all steps from the list
 
+The C<spots> attribute can be manipulated in similar manner.
+
+   $spectrum->spots(\@list_of_spots);          # set the spots to an array
+
+   $spectrum->push_spots([11235, 57, 87, 5]]); # add to the end of the list of steps
+
+   $spectrum->pop_spots;                       # remove the last item from the list
+
+   $spectrum->spots([]);                       # or
+   $spectrum->clear_spots;                     # remove all steps from the list
+
 
 =head1 ERROR HANDLING
 
@@ -1674,7 +1797,7 @@ approximation of what they would be if each emission energy was
 equally represented on the face of the detector.
 
 The version of Athena based on Demeter will be able to use these
-values as importance or plot multiplier values if the L<Xray::XDI>
+values as importance or plot multiplier values if the Xray::XDI
 module is available.
 
 =head1 CONFIGURATION AND ENVIRONMENT
@@ -1683,14 +1806,12 @@ Using the script in the F<bin/> directory, file locations, elastic
 energies, and mask parameters are specified in an ini-style
 configuration file.  An example is found in F<share/config.ini>.
 
-If using L<Xray::XDI>, metadata can be supplied by an ini-style file.
+If using Xray::XDI, metadata can be supplied by an ini-style file.
 And example is found in F<share/bla.xdi.ini>.
 
 =head1 DEPENDENCIES
 
-This requires perl 5.10 or later.
-
-=head2 CPAN
+This requires perl 5.10 or later -- preferably I<much> later.
 
 =over 4
 

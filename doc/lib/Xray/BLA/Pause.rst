@@ -67,13 +67,19 @@ ATTRIBUTES
  
 
 
-\ ``highlight``\ 
+\ ``highlight``\  [underline]
  
  This sets the form of highlighting of the prompt.  The possible values
  are underline and reverse, which will cause the prompt text to be
  either underlined or reverse video in the sense of \ ``Term::ANSIColor``\ .
  Any other value for this attribute will result in no highlighting of
  the prompt string.
+ 
+
+
+\ ``hl``\ 
+ 
+ This contains the ASCII escape sequence associated with \ ``highlight``\ .
  
 
 
@@ -121,7 +127,7 @@ DEPENDENCIES
 
 
 Demeter's dependencies are in the \ *Bundle/DemeterBundle.pm*\  file.
-This module uses `Term::ANSIColor <http://search.cpan.org/search?query=Term%3a%3aANSIColor&mode=module>`_ if it is available.
+This module uses `Term::ANSIColor <https://metacpan.org/pod/Term%3a%3aANSIColor>`_ if it is available.
 
 
 ********************
@@ -153,7 +159,7 @@ LICENCE AND COPYRIGHT
 Copyright (c) 2006-2014,2016 Bruce Ravel, Jeremy Kropf. All rights reserved.
 
 This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See perlgpl.
+modify it under the same terms as Perl itself. See `perlgpl <http://perldoc.perl.org/perlgpl.html>`_.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of

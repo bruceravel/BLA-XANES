@@ -18,7 +18,7 @@ VERSION
 *******
 
 
-See `Xray::BLA <http://search.cpan.org/search?query=Xray%3a%3aBLA&mode=module>`_
+See `Xray::BLA <https://metacpan.org/pod/Xray%3a%3aBLA>`_
 
 
 *******
@@ -302,7 +302,7 @@ Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All
 rights reserved.
 
 This module is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself. See perlgpl.
+under the same terms as Perl itself. See `perlgpl <http://perldoc.perl.org/perlgpl.html>`_.
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of

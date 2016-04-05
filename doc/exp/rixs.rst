@@ -63,7 +63,7 @@ RIXS spectra.
 
 
 The command using the :program:`bla` program is very similar to the
-the command for making a single HERFD spectrum.  In fact, all this
+command for making a single HERFD spectrum.  In fact, all this
 does is iterate the HERFD command over all elastic energies.
 
 .. code-block:: console
@@ -135,7 +135,7 @@ time I am writing this).
 
 
 The command using the :program:`bla` program is very similar to the
-the command for computing a singole XES spectrum.  Instead of
+command for computing a single XES spectrum.  Instead of
 specifying the image to process, all images in the sequence are
 iterated over.
 

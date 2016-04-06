@@ -556,7 +556,8 @@ sub do_step {
   $spectrum->remove_bad_pixels;
   $self->plot($app, $spectrum);
   if ($success) {
-    $app->{main}->status("Plotted result of $which step.");
+    my $np = $spectrum->elastic_image->gt(0,0)->sum;
+    $app->{main}->status("Plotted result of $which step.  $np illuminated pixels.");
   } else {
     $app->{main}->status("That action resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
   };
@@ -617,7 +618,8 @@ sub replot {
     $spectrum->mask(elastic=>$elastic_file);
   };
   $self->plot($app, $spectrum);
-  $app->{main}->status("Replotted mask for $energy.");
+  my $np = $spectrum->elastic_image->gt(0,0)->sum;
+  $app->{main}->status("Replotted mask for $energy.  $np illuminated pixels.");
   undef $busy;
 };
 

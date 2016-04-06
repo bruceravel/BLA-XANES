@@ -45,21 +45,29 @@ another way, it's up to you to do file management sensibly.
 PDL and Gnuplot
 ---------------
 
-Apply ``share/PGG/PGG.patch`` to
-``/usr/local/share/perl/5.20.2/PDL/Graphics/Gnuplot.pm`` to suppress the
-``Reading ras files from sequential devices not supported`` warning when
-using the qt terminal. This is a qt issue and appears to be of no
-consequence.
+Developing :demeter:`metis` uncovered some shortcomings of
+`PDL::Graphics::Gnuplot
+<https://metacpan.org/pod/PDL::Graphics::Gnuplot>`_.  I made a `pull
+request <https://github.com/drzowie/PDL-Graphics-Gnuplot/pull/49>`_
+that addressed most of my concerns.  Eventually, the modified version
+of P::G::G will be a prerequisite.
 
-Around line 3116 of ``PDL::Graphics::Gnuplot``, add the following line:
+In a nutshell, the problem is that :program:`Gnuplot` puts up a lot of
+chatter on STDOUT and STDERR.  P::G::G has trouble recognizing when
+that chatter indicates a real problem and when it is something benign
+that can be ignored.  For example, when using the qt terminal in 
+:program:`Gnuplot`, this line gets written frequently to the screen
+and often triggers an exception:
 
-.. code-block:: perl
+.. code-block:: text
 
-    $optionsWarnings =- s/^Reading ras files from sequential devices not supported.*$//mg;
-    $optionsWarnings = '' if($optionsWarnings =- m/^\s+$/s);
+   Reading ras files from sequential devices not supported
 
-Similar near lines 3256, 3301.
+It is, however, a completely harmless warning.
 
-Another solution is to replace ``print STDERR`` with ``carp`` at line
-3116 and elsewhere.  If that is done, then Metis is instrumented to
-handle terminal-related chatter a bit more gracefully.
+In any case, :demeter:`metis` is instrumented to handle that and a few
+other common warnings without any reaction.  Other unexpected warnings
+will be displayed in a Wx dialog box rather than sent to the screen or
+triggering an exception.  That provides enough feedback to investigate
+the problem without causing the program to terminate.
+

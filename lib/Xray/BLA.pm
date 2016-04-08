@@ -177,6 +177,9 @@ has 'elastic_image'      => (is => 'rw', isa => 'PDL', default => sub {PDL::null
 has 'eimax'              => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "unit pixel size in mask");
 
+has 'shield_image'       => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			     documentation => "The PDL object containing the shield image.");
+
 
 has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			   documentation => "The PDL object containing the bad pixel mask.");
@@ -1404,6 +1407,10 @@ A pattern used to set the names of the elastic files.
 
 This contains the PDL of the elastic image.  As the mask creation
 recipe progresses, this contains the mask in its current state.
+
+=item C<elastic_image>
+
+This contains the PDL of the shield image.
 
 =item C<npixels>
 

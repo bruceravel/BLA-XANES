@@ -364,6 +364,8 @@ sub SelectEnergy {
       $self->{weakvalue}->SetValue($words[3]);
     } elsif ($st =~ m{\Agaussian}) {
       $self->{gaussianvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Auseshield}) {
+      $self->{shieldvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Asocial}) {
       $self->{socialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
@@ -488,10 +490,22 @@ sub do_step {
     $self->{steps_list}->Append(sprintf("gaussian %.2f",
 					$spectrum -> gaussian_blur_value)) if ($success and $append);
 
-  } elsif ($which eq 'shield') {
-    $app->{main}->status("Not doing shield yet in Metis.");
-    undef $busy;
-    return;
+  } elsif ($which =~ m{(?:use)?shield}) {
+    my $id =  $self->{energy} -> GetCurrentSelection;
+
+    my $prev = 0;
+    $prev = $app->{bla_of}->{$self->{energy}->GetString($id-1)} if $id > 0;
+    my $old = 0;
+    $old = $app->{bla_of}->{$self->{energy}->GetString($id-$app->{base}->shield)} if $id > $app->{base}->shield;
+
+    #$app->{main}->status("Not doing shield yet in Metis.");
+    $args{save_shield} = 0;
+    $args{use} = [$prev, $old];
+    $success = $spectrum -> do_step('useshield', %args);
+    $self->{steps_list}->Append(sprintf("useshield %d",
+					$spectrum -> shield)) if ($success and $append);
+    #undef $busy;
+    #return;
 
   } elsif ($which eq 'polyfill') {
     $success = $spectrum -> do_step('polyfill', %args);

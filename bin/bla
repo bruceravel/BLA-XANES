@@ -99,7 +99,7 @@ MODE: {
     $energy = $elastic[0] if ((not $energy) and ($#elastic == 0));
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> energy($energy);
-    $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate, plot=>$plot);
+    $spectrum -> mask(verbose=>$verbose, save=>$save, animate=>$animate, plot=>$plot, use=>'file');
     my $ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
     $spectrum -> plot_xanes(type=>'data', title=>$spectrum->stub) if $plot;
     last MODE;
@@ -112,7 +112,7 @@ MODE: {
     warn("BLA error: no emission energy specified (use the -e switch)\n") && exit 1 if not $energy;
     $spectrum -> screen($verbose);
     $spectrum -> energy($energy);
-    $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate, plot=>$plot);
+    $spectrum -> mask(verbose=>$verbose, save=>1, animate=>$animate, plot=>$plot, use=>'file');
     last MODE;
   };
 
@@ -145,10 +145,10 @@ MODE: {
       #};
       my $ret = Xray::BLA::Return->new;
       if (not -e $file) {
-	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate, use=>'file');
 	$ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
       } elsif (not $reuse) {
-	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate);
+	$spectrum -> mask(save=>$save, verbose=>$verbose, animate=>$animate, use=>'file');
 	$ret = $spectrum -> scan(verbose=>$verbose, xdiini=>$xdiini);
       } else {
 	$ret->status(0); # do nothing
@@ -310,9 +310,9 @@ sub fetch_elastic_sequence {
     $spectrum -> energy($e);
     my $file = $spectrum->mask_file("mask", $spectrum->outimage);
     if (not -e $file) {
-      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate, useshield=>$spectrum->shield);
+      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate, use=>'file');
     } elsif (not $reuse) {
-      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate, useshield=>$spectrum->shield);
+      $spectrum -> mask(save=>1, verbose=>$verbose, animate=>$animate, use=>'file');
     } else {
       $need_to_check = 1;
     };

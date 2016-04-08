@@ -34,6 +34,7 @@ sub mask {
   $args{unity}    ||= 0;
   $args{pass}     ||= 0;
   $args{vertical} ||= 0;
+  $args{use}        = 'file' if ref($args{use}) !~ m{ARRAY};
   $args{save}     ||= 0;
   $args{verbose}  ||= 0;
   $args{animate}  ||= 0;
@@ -154,6 +155,7 @@ sub mask {
 
       ($args[0] eq 'useshield') and do {
 	$self->shield($args[1]);
+	$args{save_shield} = ($self->ui eq 'cli') ? 1 : 0;
 	$self->do_step('useshield', %args);
 	last STEPS;
       };
@@ -262,6 +264,7 @@ sub do_step {
     $self->elastic_image($saved_image);
     return 0;
   } elsif ($ret->status == 0) {
+    print "oops!\n";
     die $self->report($ret->message, 'bold red').$/;
   } else {
     print $ret->message if $args{verbose};
@@ -430,6 +433,15 @@ sub andmask {
 
 sub useshield {
   my ($self, $rargs) = @_;
+  if ($rargs->{use} eq 'file') {
+    return $self->useshield_from_files($rargs);
+  } else {
+    return $self->useshield_from_pdls($rargs);
+  };
+};
+
+sub useshield_from_files {
+  my ($self, $rargs) = @_;
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
   my $shield = zeros($self->elastic_image->dims);
@@ -460,8 +472,11 @@ sub useshield {
     $shield = $pdl;
   };
 
-  my $fname = $self->mask_file("shield", $self->outimage);
-  $shield->wim($fname);
+  my $fname;
+  if ($args{save_shield}) {
+    $fname = $self->mask_file("shield", $self->outimage);
+    $shield->wim($fname);
+  };
   $shield -> inplace -> eq(0,0); # invert the shield; 0-->1 and 1-->0
   $self->elastic_image->inplace->mult($shield,0);
   $self->npixels($self->elastic_image->sum);
@@ -473,7 +488,40 @@ sub useshield {
   };
   my $on = $self->elastic_image->sum;
   $str .= "\t$on illuminated pixels\n";
-  $str .= "\tWrote shield file, $fname\n";
+  $str .= "\tWrote shield file, $fname\n" if ($args{save_shield});
+  $ret->status($self->npixels);
+  $ret->message($str);
+  return $ret;
+};
+
+## $rargs->{use} is an array of 2 PDL, 0 is the PDL for the previous
+## elastic energy, 1 is the PDL for <shield> elastic energies back
+sub useshield_from_pdls {
+  my ($self, $rargs) = @_;
+  my $ret = Xray::BLA::Return->new;
+  my $shield = zeros($self->elastic_image->dims);
+  my $prevshield = zeros($self->elastic_image->dims);
+  my $oldmask = zeros($self->elastic_image->dims);
+
+  $prevshield = $rargs->{use}->[0]->shield_image  if $rargs->{use}->[0] != 0;
+  $oldmask    = $rargs->{use}->[1]->elastic_image if $rargs->{use}->[1] != 0;
+
+  if ($rargs->{use}->[0] == 0 or $rargs->{use}->[1] == 0) {
+    $self->shield_image(zeros($self->elastic_image->dims));
+    return $ret;
+  };
+  ##print $rargs->{use}->[0]->energy, " ", $rargs->{use}->[1]->energy, $/;
+
+  my $pdl = $prevshield + $oldmask;
+  my $kernel = ones(2,2);
+  my $smoothed = $pdl->gt(0,0)->or2( $pdl->conv2d($kernel, {Boundary => 'Truncate'})->ge(2,0), 0 );
+  $pdl = $smoothed;
+  $self->shield_image($pdl);
+  $self->elastic_image->inplace->mult($shield->eq(0,0),0);
+  $self->npixels($self->elastic_image->sum);
+  my $str = $self->report("Applying shield (shield(".$rargs->{use}->[0]->energy.") + mask(".$rargs->{use}->[1]->energy."))", 'cyan');
+  my $on = $self->elastic_image->sum;
+  $str .= "\t$on illuminated pixels\n";
   $ret->status($self->npixels);
   $ret->message($str);
   return $ret;

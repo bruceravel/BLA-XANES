@@ -287,7 +287,7 @@ sub restore {
 		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
     $self->{$k}->Enable(1);
   };
-  $self->SelectEnergy(q{}, $app, 1);
+  $self->SelectEnergy(q{}, $app, {noplot=>1});
   #$self->{rbox}->SetSelection(0);
 };
 
@@ -324,8 +324,15 @@ sub MaskType {
 
 
 sub SelectEnergy {
-  my ($self, $event, $app, $noplot) = @_;
+  my ($self, $event, $app, $args) = @_;
   my $energy = $self->{energy}->GetStringSelection;
+  my $interactive = 1;
+  if ((exists $args->{energy}) and (exists $app->{bla_of}->{$args->{energy}})) {
+    $energy = $args->{energy};
+    $interactive = 0;
+  };
+  my $noplot = $args->{noplot} || 0;
+
   my $spectrum = $app->{bla_of}->{$energy};
   my $busy = Wx::BusyCursor->new();
 
@@ -346,15 +353,17 @@ sub SelectEnergy {
      return;
   };
 
-  foreach my $k (@most_widgets) {
-    $self->{$k}->Enable(0);
+  if ($interactive) {
+    foreach my $k (@most_widgets) {
+      $self->{$k}->Enable(0);
+    };
+    foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue stub
+		      energylabel energy energy_up energy_down
+		      rangelabel rangemin rangeto rangemax)) {
+      $self->{$k}->Enable(1);
+    };
+    #$self->{steps_list}->Clear;
   };
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue stub
-		    energylabel energy energy_up energy_down
-		    rangelabel rangemin rangeto rangemax)) {
-    $self->{$k}->Enable(1);
-  };
-  #$self->{steps_list}->Clear;
 
   foreach my $i (0 .. $self->{steps_list}->GetCount-1) {
     my $st = $self->{steps_list}->GetString($i);
@@ -365,9 +374,24 @@ sub SelectEnergy {
     } elsif ($st =~ m{\Agaussian}) {
       $self->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Auseshield}) {
+
+      my $i = 0;
+      foreach my $is (0 .. $self->{energy}->GetCount-1) {
+	if ($energy eq $self->{energy}->GetString($is)) {
+	  $i = $is;
+	  last;
+	};
+      };
+      if ($i > 0) {		# recursion!
+	my $e = $self->{energy}->GetString($i-1);
+	my $this = $app->{bla_of}->{$e};
+	if ($this->elastic_image->getndims == 1 or $this->shield_image->getndims == 1) {
+	  $self->SelectEnergy($event, $app, {energy=>$e, noplot=>1});
+	};
+      };
       $self->{shieldvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Asocial}) {
-      $self->{socialvalue}->SetValue($words[1]);
+      $self->{soacialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
       $self->{lonelyvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Amultiply}) {
@@ -379,9 +403,10 @@ sub SelectEnergy {
     $self->do_step($event, $app, $words[0], 0);
   };
 
-  $self->plot($app, $spectrum) if not $noplot;
+  $self->plot($app, $spectrum, 1) if not $noplot;
   undef $busy;
 };
+
 
 sub Reset {
   my ($self, $event, $app) = @_;
@@ -439,6 +464,7 @@ sub do_step {
   $args{unity}    = 0;
   $args{vertical} = $self->{socialvertical}->GetValue;
 
+  my $quiet = 1;
   my $success;
   if ($which eq 'bad') {
     $spectrum -> width_min($self->{rangemin}->GetValue);
@@ -478,6 +504,7 @@ sub do_step {
     if ($app->{tool} eq 'herfd') {
       $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
     };
+    $quiet = 0;
 
   } elsif ($which eq 'gaussian') {
     my $val = $self->{gaussianvalue}->GetValue;
@@ -492,11 +519,10 @@ sub do_step {
 
   } elsif ($which =~ m{(?:use)?shield}) {
     my $id =  $self->{energy} -> GetCurrentSelection;
-
     my $prev = 0;
-    $prev = $app->{bla_of}->{$self->{energy}->GetString($id-1)} if $id > 0;
-    my $old = 0;
-    $old = $app->{bla_of}->{$self->{energy}->GetString($id-$app->{base}->shield)} if $id > $app->{base}->shield;
+    my $old  = 0;
+    $prev = $app->{bla_of}->{$self->{energy}->GetString($id-1)} if ($id > 0);
+    $old  = $app->{bla_of}->{$self->{energy}->GetString($id-$app->{base}->shield)} if ($id > $app->{base}->shield);
 
     #$app->{main}->status("Not doing shield yet in Metis.");
     $args{save_shield} = 0;
@@ -568,7 +594,7 @@ sub do_step {
 
   };
   $spectrum->remove_bad_pixels;
-  $self->plot($app, $spectrum);
+  $self->plot($app, $spectrum, $quiet);
   if ($success) {
     my $np = $spectrum->elastic_image->gt(0,0)->sum;
     $app->{main}->status("Plotted result of $which step.  $np illuminated pixels.");
@@ -581,7 +607,8 @@ sub do_step {
 
 
 sub plot {
-  my ($self, $app, $spectrum) = @_;
+  my ($self, $app, $spectrum, $quiet) = @_;
+  $quiet ||= 0;
   my $cbm = int($spectrum->elastic_image->max);
   if ($cbm < 1) {
     $cbm = 1;
@@ -594,7 +621,7 @@ sub plot {
   } else {
     $spectrum->plot_mask('aggregate');
   };
-  $app->{main}->status("Plotted ".$spectrum->elastic_file);
+  $app->{main}->status("Plotted ".$spectrum->elastic_file) if not $quiet;
 };
 
 

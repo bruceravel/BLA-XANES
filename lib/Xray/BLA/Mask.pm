@@ -503,10 +503,10 @@ sub useshield_from_pdls {
   my $prevshield = zeros($self->elastic_image->dims);
   my $oldmask = zeros($self->elastic_image->dims);
 
-  $prevshield = $rargs->{use}->[0]->shield_image  if $rargs->{use}->[0] != 0;
-  $oldmask    = $rargs->{use}->[1]->elastic_image if $rargs->{use}->[1] != 0;
+  $prevshield = $rargs->{use}->[0]->shield_image  if UNIVERSAL::isa($rargs->{use}->[0], 'PDL');
+  $oldmask    = $rargs->{use}->[1]->elastic_image if UNIVERSAL::isa($rargs->{use}->[1], 'PDL');
 
-  if ($rargs->{use}->[0] == 0 or $rargs->{use}->[1] == 0) {
+  if (not UNIVERSAL::isa($rargs->{use}->[0], 'PDL') or not UNIVERSAL::isa($rargs->{use}->[1], 'PDL')) {
     $self->shield_image(zeros($self->elastic_image->dims));
     return $ret;
   };

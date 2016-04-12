@@ -3,6 +3,7 @@ package Demeter::UI::Metis;
 use Demeter qw(:hephaestus);
 use Xray::BLA;
 use Demeter::UI::Artemis::ShowText;
+use Demeter::UI::Athena::Status;
 
 use Chemistry::Elements qw(get_Z get_symbol);
 use File::Basename;
@@ -50,6 +51,7 @@ const my $Data   => Wx::NewId();
 const my $Config => Wx::NewId();
 const my $Object => Wx::NewId();
 const my $About  => Wx::NewId();
+const my $Status => Wx::NewId();
 
 const my $INCREMENT_ENERGY   => Wx::NewId();
 const my $DECREMENT_ENERGY   => Wx::NewId();
@@ -69,6 +71,10 @@ sub OnInit {
   my $icon = Wx::Icon->new( $iconfile, wxBITMAP_TYPE_ANY );
   $app->{main} -> SetIcon($icon);
   #EVT_CLOSE($app->{main}, sub{$app->on_close($_[1])});
+
+  $app->{main}->{Status} = Demeter::UI::Athena::Status->new($app->{main});
+  $app->{main}->{Status}->SetTitle("Metis [Status Buffer]");
+
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
   $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
@@ -148,6 +154,7 @@ sub OnInit {
 
   my $helpmenu   = Wx::Menu->new;
   $helpmenu->Append($Object,   "View Xray::BLA attributes\tCtrl+0" );
+  $helpmenu->Append($Status,   "Show status buffer" );
   $helpmenu->AppendSeparator;
   $helpmenu->Append($About,    "About Metis" );
 
@@ -210,6 +217,10 @@ sub OnMenuClick {
     ($id == $About)    and do {
       $app->on_about;
       return;
+    };
+    ($id == $Status) and do {
+      $app->{main}->{Status} -> Show(1);
+      last SWITCH;
     };
     ($id == $INCREMENT_ENERGY) and do {
       return if ($app->{book}->GetSelection != 1);
@@ -383,7 +394,7 @@ sub status {
   $self->GetStatusBar->SetBackgroundColour($color);
   $self->GetStatusBar->SetStatusText($text);
   return if ($type =~ m{nobuffer});
-  #$self->{Status}->put_text($text, $type);
+  $self->{Status}->put_text($text, $type);
   $self->Refresh;
 };
 

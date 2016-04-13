@@ -241,6 +241,8 @@ sub fetch {
   };
   $self->{image_list}->InsertItems(\@image_list,0);
 
+
+  $app->{main}->status("Setting up elastic files.  This may take some time....");
   foreach my $e (@elastic_list) {
     $app->{base}->push_elastic_file_list($e);
     ($e =~ m{elastic_(\d+)_}) and
@@ -257,6 +259,29 @@ sub fetch {
   $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
   $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
 
+  $app->{base}->get_incident_energies;
+  my $rlist = $app->{base}->incident_energies;
+  $app->{base}->incident_energies($rlist);
+  foreach my $key (keys %{$app->{bla_of}}) {
+    $app->{bla_of}->{$key}->incident_energies($rlist);
+  };
+
+
+  $app->{Data}->{incident}->Clear;
+  if ($app->{tool} eq 'herfd') {
+    foreach my $en (@$rlist) {
+      $app->{Data}->{incident}->Append($en);
+    };
+    $app->{Data}->{incident}->SetSelection(int($#{$rlist}/2));
+  } else {
+    foreach my $im (@image_list) {
+      $app->{Data}->{incident}->Append($im);
+    };
+    $app->{Data}->{incident}->SetSelection(0);
+  };
+
+
+  
   my ($el, $li) = $app->{base}->guess_element_and_line;
 
   my $e = Xray::Absorption -> get_energy($el, $li);

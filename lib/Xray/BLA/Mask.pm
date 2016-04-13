@@ -523,7 +523,7 @@ sub useshield_from_pdls {
   my $smoothed = $pdl->gt(0,0)->or2( $pdl->conv2d($kernel, {Boundary => 'Truncate'})->ge(2,0), 0 );
   $pdl = $smoothed;
   $self->shield_image($pdl);
-  $self->elastic_image->inplace->mult($shield->eq(0,0),0);
+  $self->elastic_image->inplace->mult($pdl->eq(0,0),0);
   $self->npixels($self->elastic_image->sum);
   my $str = $self->report("Applying shield (shield(".$rargs->{use}->[0]->energy.") + mask(".$rargs->{use}->[1]->energy."))", 'cyan');
   my $on = $self->elastic_image->sum;

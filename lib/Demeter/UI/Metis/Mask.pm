@@ -233,6 +233,9 @@ sub new {
   $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,3), Wx::GBSpan->new(1,2));
   $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
 
+  ++$row;
+  $self->{line2} = Wx::StaticLine->new($self, -1, wxDefaultPosition, [100, 2], wxLI_HORIZONTAL);
+  $gbs -> Add($self->{line2}, Wx::GBPosition->new($row,0), Wx::GBSpan->new(1,5));
 
   $vbox ->  Add(1, 1, 2);
 
@@ -338,6 +341,7 @@ sub SelectEnergy {
   };
   my $noplot    = $args->{noplot}    || 0;
   my $recursing = $args->{recursing} || 0;
+  my $quiet     = $args->{quiet}     || 0;
 
   my $spectrum = $app->{bla_of}->{$energy};
   my $busy = Wx::BusyCursor->new();
@@ -410,7 +414,7 @@ sub SelectEnergy {
       $self->{arealtype}->SetStringSelection($words[1]);
       $self->{arealvalue}->SetValue($words[1]);
     };
-    $self->do_step($event, $app, $words[0], 0, $energy);
+    $self->do_step($event, $app, $words[0], 0, $energy, $quiet);
   };
 
   $self->plot($app, $spectrum, 1) if not $noplot;
@@ -461,11 +465,13 @@ sub Reset {
 ## $append: flag for modifying steps list, also use this as a flag for whether one of the step
 ##          buttons was pushed or if automation brought us here
 ## $energy: 0 or undef means to use current selection, or use specified selection
+## $quiet:  suppress status bar messages
 sub do_step {
-  my ($self, $event, $app, $which, $append, $energy) = @_;
+  my ($self, $event, $app, $which, $append, $energy, $nostatus) = @_;
   my $busy = 0;
   $busy = Wx::BusyCursor->new() if $append;
-  $energy ||= $self->{energy}->GetStringSelection;
+  $energy   ||= $self->{energy}->GetStringSelection;
+  $nostatus ||= 0;
   my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   #if ($self->{rbox}->GetStringSelection =~ m{Single} and ($energy eq q{})) {
   #  $app->{main}->status("You haven't selected an emission energy.", 'alert');
@@ -518,19 +524,13 @@ sub do_step {
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
     $app->{Data}->{energy} = $spectrum->energy;
     #if ($self->{rbox}->GetSelection == 0) {
-    foreach my $k (qw(stub energylabel herfd mue xes showmasks incident incident_label rixs rshowmasks)) {
+    foreach my $k (qw(stub energylabel herfd mue xes reuse showmasks incident incident_label rixs rshowmasks)) {
       $app->{Data}->{$k}->Enable(1);
     };
     #};
-    $spectrum->get_incident_energies;
-    my $rlist = $spectrum->incident_energies;
-    $app->{base}->incident_energies($rlist);
-    foreach my $key (keys %{$app->{bla_of}}) {
-      $app->{bla_of}->{$key}->incident_energies($rlist);
-    };
-    if ($app->{tool} eq 'herfd') {
-      $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
-    };
+    #if ($app->{tool} eq 'herfd') {
+    #  $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
+    #};
     $quiet = 0;
 
   } elsif ($which eq 'gaussian') {
@@ -629,11 +629,13 @@ sub do_step {
   };
   $spectrum->remove_bad_pixels;
   my $tab = ($energy == $self->{energy}->GetStringSelection) ? q{} : q{    };
-  $self->plot($app, $spectrum, $quiet, $tab);
-  if ($success) {
-    $app->{main}->status(sprintf("%s%s step, energy=%s, %d illuminated pixels.", $tab, $which, $energy, $spectrum->elastic_image->gt(0,0)->sum));
-  } else {
-    $app->{main}->status("${tab}The $which step resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
+  $self->plot($app, $spectrum, $quiet||$nostatus, $tab);
+  if (not $nostatus) {
+    if ($success) {
+      $app->{main}->status(sprintf("%s%s step, energy=%s, %d illuminated pixels.", $tab, $which, $energy, $spectrum->elastic_image->gt(0,0)->sum));
+    } else {
+      $app->{main}->status("${tab}The $which step resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
+    };
   };
   undef $busy if $busy;
 

@@ -42,7 +42,7 @@ sub new {
 
   $vbox->Add(1,30,0);
 
-  my $button_width = 125;
+  my $button_width = 115;
 
   my $herfdbox       = Wx::StaticBox->new($self, -1, ' HERFD ', wxDefaultPosition, wxDefaultSize);
   my $herfdboxsizer  = Wx::StaticBoxSizer->new( $herfdbox, wxHORIZONTAL );
@@ -68,7 +68,13 @@ sub new {
   $hfbox -> Add($self->{mue}, 0, wxGROW|wxALL, 0);
   $self->{mue}->SetValue(0);
 
-  $vbox->Add(1,30,0);
+  if ($app->{tool} eq 'herfd') {
+    $vbox->Add(1,30,0);
+  } else {
+    $vbox->Hide($herfdboxsizer, 1);
+    $vbox->Layout;
+  };
+
 
   my $xesbox       = Wx::StaticBox->new($self, -1, ' XES ', wxDefaultPosition, wxDefaultSize);
   my $xesboxsizer  = Wx::StaticBoxSizer->new( $xesbox, wxVERTICAL );
@@ -77,11 +83,14 @@ sub new {
   my $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
 
-  $self->{incident_label} = Wx::StaticText->new($self, -1, 'Incident energy');
-  $self->{incident} = Wx::TextCtrl->new($self, -1, q{}, wxDefaultPosition, wxDefaultSize);
+  my $lab = ($app->{tool} eq 'herfd') ? 'Incident energy' : 'XES measurement';
+  $self->{incident_label} = Wx::StaticText->new($self, -1, $lab);
+  $self->{incident} = Wx::ComboBox->new($self, -1, q{}, wxDefaultPosition, [200,-1], [], wxCB_READONLY);
+  $self->{reuse} = Wx::CheckBox->new($self, -1, "Reuse masks");
   $xbox -> Add($self->{incident_label}, 0, wxGROW|wxALL, 5);
   $xbox -> Add($self->{incident}, 0, wxGROW|wxALL, 5);
-  $app->mouseover($self->{incident}, "Select the incident energy at which to compute the XES.");
+  $xbox -> Add($self->{reuse}, 0, wxGROW|wxALL, 5);
+#  $app->mouseover($self->{incident}, "Select the ".lc($lab)." for which to compute the XES.");
 
   $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
@@ -98,7 +107,7 @@ sub new {
   EVT_BUTTON($self, $self->{replot_xes}, sub{replot_xes(@_, $app)});
   EVT_BUTTON($self, $self->{save_xes},   sub{save_xes(@_, $app)});
   EVT_BUTTON($self, $self->{xes_rixs},   sub{xes_rixs(@_, $app)});
-  $app->mouseover($self->{xes}, "Process XES data at the selected incident energy.");
+  $app->mouseover($self->{xes},        "Process XES data at the selected incident energy.");
   $app->mouseover($self->{replot_xes}, "Replot the last XES spectrum.");
   $app->mouseover($self->{save_xes},   "Save the last XES data to a column data file.");
   $app->mouseover($self->{xes_rixs},   "Plot a map of the RIXS in the XES direction.");
@@ -131,8 +140,10 @@ sub new {
   $rixsboxsizer -> Add($self->{rshowmasks}, 0, wxGROW|wxALL, 0);
   $self->{rshowmasks}->SetValue(1);
 
+  $vbox->Add(2,1,1);
+  
 
-  foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks
+  foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks reuse
 		    incident incident_label
 		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs rshowmasks)) {
     $self->{$k}->Enable(0);
@@ -278,24 +289,33 @@ sub plot_xes {
   my $rsteps = $self->fetch_steps($spectrum, $app);
 
   my $incident  = $self->{incident}->GetValue;
-  my $diff = 999999;
-  my $ni = 0;
-  my $nincident = $ni;
-  foreach my $in (@{$spectrum->incident_energies}) {
-    if (abs($incident - $in) < $diff) {
-      $diff = abs($incident - $in);
-      $nincident = $ni;
-    };
-    ++$ni;
-  };
-  $incident = $spectrum->incident_energies->[$nincident];
-  return if (not $incident);
-  $self->{incident}->SetValue($incident);
+  my $file;
+  my $nincident = 0;
 
-  my $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder,
-				 $app->{Files}->{image_list}->GetString($nincident));
+  ## get the image file to process
+  if ($app->{tool} eq 'herfd') { # figure out which file corresponds to  this energy in the HERFD scan
+    my $diff = 999999;
+    my $ni = 0;
+    foreach my $in (@{$spectrum->incident_energies}) {
+      if (abs($incident - $in) < $diff) {
+	$diff = abs($incident - $in);
+	$nincident = $ni;
+      };
+      ++$ni;
+    };
+    $incident = $spectrum->incident_energies->[$nincident];
+    return if (not $incident);
+    $self->{incident}->SetValue($incident);
+    $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder,
+				$app->{Files}->{image_list}->GetString($nincident));
+
+  } else {			# for XES, the incident list contains the file names directly
+    $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder, $incident);
+  };
   my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
 
+  $self->{showmasks}->SetValue(0) if $self->{reuse}->GetValue;
+  
   my ($r, $x, $n, @xes);
   my $max = 0;
   my $nemission = $#{[keys %{$app->{bla_of}}]};
@@ -307,15 +327,16 @@ sub plot_xes {
     $app->{main}->status(sprintf("Emission energy = %.1f (%d of %d)",
 				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
 			 'wait') if not $count%5;;
-    $app->{bla_of}->{$key}->incident($incident);
-    $app->{bla_of}->{$key}->nincident($nincident);
-    #my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
-    #if (not $lca->is_LequivalentR()) {
+    if ($app->{tool} eq 'herfd') {
+      $app->{bla_of}->{$key}->incident($incident);
+      $app->{bla_of}->{$key}->nincident($nincident);
+    };
 
     ## push step list to rest of project
     $app->{bla_of}->{$key}->steps($rsteps);
-    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
-				 aggregate=>$app->{bla_of}->{aggregate});
+    #$app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
+    #				 aggregate=>$app->{bla_of}->{aggregate});
+    $app->{Mask}->SelectEnergy($event, $app, {energy=>$key, noplot=>1, quiet=>1}) if not $self->{reuse}->GetValue;
     $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
     $n = $app->{bla_of}->{$key}->npixels;
     $max = $n if ($n > $max);
@@ -339,9 +360,8 @@ sub plot_xes {
   $self->{replot_xes} -> Enable(1);
   $self->{save_xes}   -> Enable(1);
   $self->{xes_rixs}   -> Enable(1);
-  $app->{main}->status("Plotted XES with incident energy = " .
-		       $incident .
-		       Xray::BLA->howlong($start, '.  That'));
+  my $message = ($app->{tool} eq 'herfd') ? "Plotted XES with incident energy = " : "Plotted XES for measurement ";
+  $app->{main}->status($message . $incident . Xray::BLA->howlong($start, '.  That'));
   undef $busy;
 
 };
@@ -358,6 +378,7 @@ sub save_xes {
   my ($self, $event, $app) = @_;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   my $fname = sprintf("%s_%d.xes", $spectrum->stub, $spectrum->incident);
+  ($fname = $self->{incident}->GetStringSelection) =~ s{tif\z}{xes} if $app->{tool} eq 'xes';
   my $fd = Wx::FileDialog->new( $app->{main}, "Save XES data file", cwd, $fname,
 				"XES (*.xes)|*.xes|All files (*)|*",
 				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
@@ -367,11 +388,7 @@ sub save_xes {
     return;
   };
   my $file = $fd->GetPath;
-  copy($self->{xesout}, $file);
-  #open(my $O, '>', $file);
-  #print $O $spectrum->xdi_xes_head($spectrum->xdi_metadata_file, <xesimage file name>);
-  #print $O read_text($self->{xesout});
-  #close $0;
+  $outfile = $spectrum->xdi_xes($self->{xdi_filename}, $args{xesimage}, \@xes);
   $app->{main}->status("Saved XES to ".$file);
 };
 

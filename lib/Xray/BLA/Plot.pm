@@ -21,6 +21,7 @@ use PDL::Graphics::Gnuplot qw(gplot image gpwin);
 use File::Basename;
 use List::MoreUtils qw(all none any);
 use Math::Random;
+use Scalar::Util qw(looks_like_number);
 
 has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20,
 		  documentation => "Forced upper bound to the color range of the surface plot.");
@@ -172,8 +173,14 @@ sub plot_xes {
     push @e, $p->[0]/$denom;
     push @xes, $p->[1];
   };
+  my $legend = $args{incident};
+  if (looks_like_number($legend)) {
+    $legend = "incident energy = ".$legend;
+  } else {
+    $legend =~ s{_}{\\\\_}g;
+  };
   $self->pdlplot->gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
-			with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>'incident energy = '.$args{incident},
+			with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
 			PDL->new(\@e), PDL->new(\@xes));
   #my $xesout = $self->xdi_xes($self->xdi_metadata_file, q{}, $args{xes});
   return; # $xesout;

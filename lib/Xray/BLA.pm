@@ -3,7 +3,7 @@ use Xray::BLA::Return;
 
 
 use version;
-our $VERSION = version->new('3');
+our $VERSION = version->new('4');
 
 use Moose;
 with 'Xray::BLA::Tools';

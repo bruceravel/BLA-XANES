@@ -80,6 +80,18 @@ sub plot_mask {
 			$self->elastic_image);	#                                                ^^ because imagej^^
 };			 	                #                                                ^^  is psychotic ^^
 
+sub plot_shield {
+  my ($self) = @_;
+  return if $self->shield_image->isnull;
+  return if $self->shield_image->getndims == 1;
+  my $title = "shield for ".basename($self->elastic_file);
+  $title = $self->escape_us($title);
+  $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  $self->pdlplot->image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
+			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
+			$self->shield_image);
+};
+
 sub plot_energy_point {
   my ($self, $file) = @_;
   my $point = $self->Read($file);

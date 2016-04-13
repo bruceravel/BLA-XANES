@@ -376,6 +376,7 @@ my $normal = wxNullColour;
 my $wait   = Wx::Colour->new("#C5E49A");
 my $alert  = Wx::Colour->new("#FCDD9F");
 my $error  = Wx::Colour->new("#FD7E6F");
+my $header = wxNullColour;
 my $debug  = 0;
 sub status {
   my ($self, $text, $type) = @_;

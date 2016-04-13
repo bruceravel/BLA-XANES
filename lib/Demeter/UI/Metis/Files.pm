@@ -133,7 +133,7 @@ sub new {
   my $elasticboxsizer  = Wx::StaticBoxSizer->new( $elasticbox, wxVERTICAL );
 
   $self->{elastic_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
-  $elasticboxsizer -> Add($self->{elastic_list}, 1, wxGROW);
+  $elasticboxsizer -> Add($self->{elastic_list}, 1, wxGROW|wxALL, 4);
   $hbox -> Add($elasticboxsizer, 1, wxGROW|wxALL, 5);
   EVT_LISTBOX_DCLICK($self, $self->{elastic_list}, sub{view(@_, $app, 'elastic')});
   $app->mouseover($self->{elastic_list}, "Double click to display an elastic image file.");
@@ -142,7 +142,7 @@ sub new {
   my $imageboxsizer  = Wx::StaticBoxSizer->new( $imagebox, wxVERTICAL );
 
   $self->{image_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
-  $imageboxsizer -> Add($self->{image_list}, 1, wxGROW);
+  $imageboxsizer -> Add($self->{image_list}, 1, wxGROW|wxALL, 4);
   $hbox -> Add($imageboxsizer, 1, wxGROW|wxALL, 5);
   EVT_LISTBOX_DCLICK($self, $self->{image_list}, sub{view(@_, $app, 'image')});
   $app->mouseover($self->{image_list}, "Double click to display the image file for a data point.");

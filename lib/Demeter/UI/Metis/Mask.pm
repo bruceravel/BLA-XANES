@@ -26,7 +26,7 @@ my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
 		       do_areal arealtype areallabel arealvalue
 		       do_entire do_andmask savemask
 		       rangelabel rangemin rangeto rangemax
-		       stub reset energylabel energy undostep savesteps)); # animation rbox do_aggregate
+		       stub plotshield reset energylabel energy undostep savesteps)); # animation rbox do_aggregate
 my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue), @most_widgets);
 
 my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "up.png");
@@ -253,21 +253,26 @@ sub new {
 
   $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
-  $self->{replot} = Wx::Button -> new($self, -1, '&Replot');
-  $svbox->Add($self->{replot}, 1, wxGROW|wxALL, 5);
-  $self->{reset} = Wx::Button -> new($self, -1, 'Rese&t');
-  $svbox->Add($self->{reset}, 1, wxGROW|wxALL, 5);
-  EVT_BUTTON($self, $self->{replot}, sub{replot(@_, $app, 0)});
-  EVT_BUTTON($self, $self->{reset}, sub{Reset(@_, $app)});
-  $self->{replot}->Enable(0);
-  $self->{reset}->Enable(0);
-  $app->mouseover($self->{replot}, "Replot the mask after rerunning the processing steps.");
-  $app->mouseover($self->{reset},  "Return to the measured elastic image and restart the mask.");
+  $self->{replot}     = Wx::Button -> new($self, -1, '&Replot');
+  $self->{plotshield} = Wx::Button -> new($self, -1, 'Plot shield');
+  $self->{reset}      = Wx::Button -> new($self, -1, 'Rese&t');
+  $svbox->Add($self->{replot},     1, wxGROW|wxALL, 5);
+  $svbox->Add($self->{plotshield}, 1, wxGROW|wxALL, 5);
+  $svbox->Add($self->{reset},      1, wxGROW|wxALL, 5);
+  EVT_BUTTON($self, $self->{replot},     sub{replot(@_, $app, 0)});
+  EVT_BUTTON($self, $self->{plotshield}, sub{plot_shield(@_, $app, 0)});
+  EVT_BUTTON($self, $self->{reset},      sub{Reset(@_, $app)});
+  $self->{replot}     -> Enable(0);
+  $self->{plotshield} -> Enable(0);
+  $self->{reset}      -> Enable(0);
+  $app->mouseover($self->{replot},     "Replot the mask after rerunning the processing steps");
+  $app->mouseover($self->{plotshield}, "Plot the shield for this mask");
+  $app->mouseover($self->{reset},      "Return to the measured elastic image and restart the mask");
 
   #$vbox ->  Add(1, 1, 2);
 
   foreach my $k (qw(bad gaussian shield polyfill social lonely multiply areal entire andmask)) { #  aggregate
-    EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k, 1)});
+    EVT_BUTTON($self, $self->{"do_".$k}, sub{do_step(@_, $app, $k, 1, 0)});
   };
   EVT_CHECKBOX($self, $self->{socialvertical}, sub{$app->{base}->vertical($self->{socialvertical}->GetValue)});
 
@@ -331,7 +336,8 @@ sub SelectEnergy {
     $energy = $args->{energy};
     $interactive = 0;
   };
-  my $noplot = $args->{noplot} || 0;
+  my $noplot    = $args->{noplot}    || 0;
+  my $recursing = $args->{recursing} || 0;
 
   my $spectrum = $app->{bla_of}->{$energy};
   my $busy = Wx::BusyCursor->new();
@@ -374,19 +380,23 @@ sub SelectEnergy {
     } elsif ($st =~ m{\Agaussian}) {
       $self->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Auseshield}) {
-
-      my $i = 0;
-      foreach my $is (0 .. $self->{energy}->GetCount-1) {
-	if ($energy eq $self->{energy}->GetString($is)) {
-	  $i = $is;
-	  last;
+      ## need to check that every elastic energy up to this one has been processed...
+      if (not $recursing) {
+	my $i = 0;
+	foreach my $is (0 .. $self->{energy}->GetCount-1) {
+	  if ($energy eq $self->{energy}->GetString($is)) {
+	    $i = $is;
+	    last;
+	  };
 	};
-      };
-      if ($i > 0) {		# recursion!
-	my $e = $self->{energy}->GetString($i-1);
-	my $this = $app->{bla_of}->{$e};
-	if ($this->elastic_image->getndims == 1 or $this->shield_image->getndims == 1) {
-	  $self->SelectEnergy($event, $app, {energy=>$e, noplot=>1});
+	foreach my $j (0 .. $i-1) {
+	  my $e = $self->{energy}->GetString($j);
+	  my $this = $app->{bla_of}->{$e};
+	  #print join("|", $i, $j, $this->elastic_image->shape, $this->shield_image->shape), $/;
+	  if ($this->elastic_image->getndims == 1 or $this->shield_image->getndims == 1) {
+	    $self->SelectEnergy($event, $app, {energy=>$e, noplot=>1, recursing=>1});
+	    $app->{main}->{Status}->Update;
+	  };
 	};
       };
       $self->{shieldvalue}->SetValue($words[1]);
@@ -400,7 +410,7 @@ sub SelectEnergy {
       $self->{arealtype}->SetStringSelection($words[1]);
       $self->{arealvalue}->SetValue($words[1]);
     };
-    $self->do_step($event, $app, $words[0], 0);
+    $self->do_step($event, $app, $words[0], 0, $energy);
   };
 
   $self->plot($app, $spectrum, 1) if not $noplot;
@@ -440,16 +450,22 @@ sub Reset {
     $app->{Data}->{$k}->Enable(0);
   };
   $self->{replot}->Enable(0);
+  $self->{plotshield}->Enable(0);
   $self->{reset}->Enable(0);
 
   $spectrum->aggregate if ($spectrum->masktype eq 'aggregate');
   $self->plot($app, $spectrum);
 };
 
+## $which:  name of step
+## $append: flag for modifying steps list, also use this as a flag for whether one of the step
+##          buttons was pushed or if automation brought us here
+## $energy: 0 or undef means to use current selection, or use specified selection
 sub do_step {
-  my ($self, $event, $app, $which, $append) = @_;
-  my $busy = Wx::BusyCursor->new();
-  my $energy = $self->{energy}->GetStringSelection;
+  my ($self, $event, $app, $which, $append, $energy) = @_;
+  my $busy = 0;
+  $busy = Wx::BusyCursor->new() if $append;
+  $energy ||= $self->{energy}->GetStringSelection;
   my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   #if ($self->{rbox}->GetStringSelection =~ m{Single} and ($energy eq q{})) {
   #  $app->{main}->status("You haven't selected an emission energy.", 'alert');
@@ -463,6 +479,16 @@ sub do_step {
   $args{verbose}  = 0;
   $args{unity}    = 0;
   $args{vertical} = $self->{socialvertical}->GetValue;
+
+  if ($append and $self->{steps_list}->GetCount) {
+    my $previous = $self->{steps_list}->GetString($self->{steps_list}->GetCount-1);
+    #print join("|", $which, $previous), $/;
+    if ($previous =~ m{$which}) {
+      $app->{main}->status("Can't do $which twice in a row.", 'alert');
+      undef $busy if $busy;
+      return;
+    };
+  };
 
   my $quiet = 1;
   my $success;
@@ -482,6 +508,7 @@ sub do_step {
 					$spectrum -> weak_pixel_value)) if ($success and $append);
     foreach my $k (@most_widgets) { # animation
       $self->{$k}->Enable(1);
+      $self->{plotshield}->Enable(0);
     };
     #$self->{do_aggregate}->Enable(1) if ($spectrum->masktype eq 'single');
     $self->{savemask}->Enable(0) if ($spectrum->is_windows);
@@ -518,7 +545,13 @@ sub do_step {
 					$spectrum -> gaussian_blur_value)) if ($success and $append);
 
   } elsif ($which =~ m{(?:use)?shield}) {
-    my $id =  $self->{energy} -> GetCurrentSelection;
+    my $id;# =  $self->{energy} -> GetCurrentSelection;
+    foreach my $i (0 .. $self->{energy}->GetCount-1) {
+      if ($energy eq $self->{energy}->GetString($i)) {
+	$id = $i;
+	last;
+      };
+    };
     my $prev = 0;
     my $old  = 0;
     $prev = $app->{bla_of}->{$self->{energy}->GetString($id-1)} if ($id > 0);
@@ -530,6 +563,7 @@ sub do_step {
     $success = $spectrum -> do_step('useshield', %args);
     $self->{steps_list}->Append(sprintf("useshield %d",
 					$spectrum -> shield)) if ($success and $append);
+    $self->{plotshield}->Enable(1);
     #undef $busy;
     #return;
 
@@ -562,7 +596,7 @@ sub do_step {
     $spectrum -> radius($self->{arealvalue}->GetValue);
     if ($spectrum -> operation eq 'median') {
       $app->{main}->status("Areal median is not available yet.", 'alert');
-      undef $busy;
+      undef $busy if $busy;
       return;
     };
     $success = $spectrum -> do_step('areal', %args);
@@ -576,7 +610,7 @@ sub do_step {
   } elsif ($which eq 'aggregate') {
     if ($app->{bla_of}->{aggregate}->elastic_image->isnull) {
       $app->{main}->status("You haven't made an aggregate mask yet.", 'alert');
-      undef $busy;
+      undef $busy if $busy;
       return;
     };
     $app->{bla_of}->{aggregate} -> do_step('andmask', %args); # gotta be sure!
@@ -594,21 +628,22 @@ sub do_step {
 
   };
   $spectrum->remove_bad_pixels;
-  $self->plot($app, $spectrum, $quiet);
+  my $tab = ($energy == $self->{energy}->GetStringSelection) ? q{} : q{    };
+  $self->plot($app, $spectrum, $quiet, $tab);
   if ($success) {
-    my $np = $spectrum->elastic_image->gt(0,0)->sum;
-    $app->{main}->status("Plotted result of $which step.  $np illuminated pixels.");
+    $app->{main}->status(sprintf("%s%s step, energy=%s, %d illuminated pixels.", $tab, $which, $energy, $spectrum->elastic_image->gt(0,0)->sum));
   } else {
-    $app->{main}->status("That action resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
+    $app->{main}->status("${tab}The $which step resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
   };
-  undef $busy;
+  undef $busy if $busy;
 
 };
 
 
 sub plot {
-  my ($self, $app, $spectrum, $quiet) = @_;
+  my ($self, $app, $spectrum, $quiet, $tab) = @_;
   $quiet ||= 0;
+  $tab   ||= q{};
   my $cbm = int($spectrum->elastic_image->max);
   if ($cbm < 1) {
     $cbm = 1;
@@ -621,7 +656,7 @@ sub plot {
   } else {
     $spectrum->plot_mask('aggregate');
   };
-  $app->{main}->status("Plotted ".$spectrum->elastic_file) if not $quiet;
+  $app->{main}->status("${tab}Plotted ".$spectrum->elastic_file, 'header') if not $quiet;
 };
 
 
@@ -630,38 +665,21 @@ sub replot {
   my $energy = $self->{energy}->GetStringSelection;
   my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
   my $spectrum = $app->{bla_of}->{$key};
-
-  $animate ||= 0;
   my $busy = Wx::BusyCursor->new();
   $spectrum->energy($energy);
-
-  my $elastic_file;
-  my $elastic_list = $app->{Files}->{elastic_list};
-  foreach my $i (0 .. $elastic_list->GetCount-1) {
-    if ($elastic_list->GetString($i) =~ m{$energy}) {
-      $elastic_file = $elastic_list->GetString($i);
-      last;
-    };
-  };
-
-  my $ret = $spectrum->check($elastic_file);
-  if ($ret->status == 0) {
-     $app->{main}->status($ret->message, 'alert');
-     return;
-  };
-  $spectrum->clear_steps;
-  foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
-    $spectrum->push_steps($self->{steps_list}->GetString($n));
-  };
-  if ($animate) {
-    $spectrum->mask(animate=>1);
-  } else {
-    $spectrum->mask(elastic=>$elastic_file);
-  };
   $self->plot($app, $spectrum);
   my $np = $spectrum->elastic_image->gt(0,0)->sum;
   $app->{main}->status("Replotted mask for $energy.  $np illuminated pixels.");
   undef $busy;
+};
+
+sub plot_shield {
+  my ($self, $event, $app) = @_;
+  my $energy = $self->{energy}->GetStringSelection;
+  my $key = $energy;
+  my $spectrum = $app->{bla_of}->{$key};
+  $spectrum->plot_shield;
+  $app->{main}->status("Plotted shield for $energy.");
 };
 
 ## Need to install NetPbm and Tiff tools
@@ -902,7 +920,7 @@ sub restore_steps {
       $self->{arealtype}->SetStringSelection($words[1]);
       $self->{arealvalue}->SetValue($words[1]);
     };
-    $self->do_step($event, $app, $words[0], 1);
+    $self->do_step($event, $app, $words[0], 1, 0);
   };
 };
 1;

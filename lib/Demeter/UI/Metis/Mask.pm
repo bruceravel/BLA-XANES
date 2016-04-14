@@ -545,6 +545,11 @@ sub do_step {
 					$spectrum -> gaussian_blur_value)) if ($success and $append);
 
   } elsif ($which =~ m{(?:use)?shield}) {
+    my $val = $self->{shieldvalue}->GetValue;
+    $app->{base}->shield($val);
+    foreach my $k (keys %{$app->{bla_of}}) {
+      $app->{bla_of}->{$k}->shield($val);
+    };
     my $id;# =  $self->{energy} -> GetCurrentSelection;
     foreach my $i (0 .. $self->{energy}->GetCount-1) {
       if ($energy eq $self->{energy}->GetString($i)) {
@@ -834,7 +839,8 @@ sub undo_last_step {
   if ($last == 1) {
     $self->Reset($event, $app);
   } else {
-    $self->replot($event, $app);
+    $self->SelectEnergy(q{}, $app);
+    #$self->replot($event, $app);
   };
 };
 
@@ -858,7 +864,7 @@ sub save_steps {
   my $text = "[measure]\n";
   $text .= 'emission           = ' . join(" ", @{$spectrum->elastic_energies}) . "\n";
   foreach my $k (qw(scanfolder tiffolder element line tiffcounter energycounterwidth
-		    imagescale outimage)) {
+		    imagescale outimage div10 terminal color)) {
     $text .= sprintf("%-18s = %s\n", $k, $spectrum->$k);
   };
   $text .= "outfolder          = " . $fd->GetDirectory . "\n";

@@ -6,11 +6,13 @@ use Demeter::UI::Artemis::ShowText;
 use Demeter::UI::Athena::Status;
 
 use Chemistry::Elements qw(get_Z get_symbol);
+use Cwd;
 use File::Basename;
 use File::Copy;
 use File::Path;
 use File::Spec;
 use Scalar::Util qw(looks_like_number);
+use Text::Wrap;
 use YAML::Tiny;
 
 use Wx qw(:everything);
@@ -49,6 +51,7 @@ const my $Files  => Wx::NewId();
 const my $Mask   => Wx::NewId();
 const my $Data   => Wx::NewId();
 const my $Config => Wx::NewId();
+const my $Import => Wx::NewId();
 const my $Object => Wx::NewId();
 const my $About  => Wx::NewId();
 const my $Status => Wx::NewId();
@@ -64,6 +67,8 @@ sub OnInit {
     @utilities = qw(Files Mask Data Config);
   } elsif ($app->{tool} eq 'xes') {
     @utilities = qw(Files Mask Data Config);
+  } elsif ($app->{tool} eq 'rxes') {
+    @utilities = qw(Files Mask Data Config);
   };
 
   $app->{main} = Wx::Frame->new(undef, -1, 'Metis for '.uc($app->{tool}).' [BLA data processing]', wxDefaultPosition, [850,550],);
@@ -78,7 +83,8 @@ sub OnInit {
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
   $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
-  $app->{base} -> task($app->{tool});
+  my $task = ($app->{tool} eq 'rxes') ? 'plane' : $app->{tool};
+  $app->{base} -> task($task);
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
 
@@ -150,6 +156,8 @@ sub OnInit {
   $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3");
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4");
   $filemenu->AppendSeparator;
+  $filemenu->Append($Import,   "Import configuration\tCtrl+i");
+  $filemenu->AppendSeparator;
   $filemenu->Append(wxID_EXIT, "E&xit\tCtrl+q" );
 
   my $helpmenu   = Wx::Menu->new;
@@ -176,7 +184,7 @@ sub OnInit {
   $app->{main} -> Update;
   $app->{main} -> status("Welcome to Metis version $Xray::BLA::VERSION, copyright 2012-2014,2016 Bruce Ravel, Jeremy Kropf");
 
-  $app->{main} -> SetSizer($vbox);
+  $app->{main} -> SetSizerAndFit($vbox);
 
   $app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
   $app->{Config}->{xdi_filename}->SetSize((0.8*$app->{Config}->GetSizeWH)[0], 30);
@@ -213,6 +221,10 @@ sub OnMenuClick {
     };
     ($id == $Object)   and do {
       $app->view_attributes;
+      return;
+    };
+    ($id == $Import)   and do {
+      $app->restore_config;
       return;
     };
     ($id == $About)    and do {
@@ -311,6 +323,71 @@ sub set_parameters {
   return $app;
 };
 
+sub restore_config {
+  my ($app) = @_;
+  my $fd = Wx::FileDialog->new( $app->{main}, "Restore configuration", cwd, q{},
+				"INI (*.ini)|*.ini|All files (*)|*",
+				wxFD_OPEN|wxFD_CHANGE_DIR|wxFD_FILE_MUST_EXIST,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Restoring configuration canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  tie my %ini, 'Config::IniFiles', ( -file => $file );
+
+  $app->{Files}->{stub}      -> SetValue(basename($file, qw(.ini)));
+  $app->{Files}->{scan_dir}  -> SetValue($ini{measure}{scanfolder});
+  $app->{Files}->{image_dir} -> SetValue($ini{measure}{tiffolder});
+
+  $app->{Files}->{element} -> SetValue($ini{measure}{element});
+  $app->{Files}->{line}    -> SetValue($ini{measure}{line});
+  $app->{Files}->{div10}   -> SetValue($ini{measure}{div10});
+
+  $app->{Files}->{scan_template}    -> SetValue($ini{files}{scan});
+  $app->{Files}->{elastic_template} -> SetValue($ini{files}{elastic});
+  $app->{Files}->{image_template}   -> SetValue($ini{files}{image});
+  $app->{Config}->{xdi_filename}     -> SetValue($ini{files}{xdi});
+
+  $app->{Config}->{imagescale}         -> SetValue($ini{measure}{imagescale});
+  $app->{Config}->{tiffcounter}        -> SetValue($ini{measure}{tiffcounter});
+  $app->{Config}->{energycounterwidth} -> SetValue($ini{measure}{energycounterwidth});
+  $app->{Config}->{outimage}           -> SetStringSelection($ini{measure}{outimage});
+  $app->{Config}->{terminal}           -> SetStringSelection($ini{measure}{terminal});
+  $app->{Config}->{color}              -> SetStringSelection($ini{measure}{color});
+
+  my $spots = $ini{spots}{spots};
+  $spots = [$spots] if ref($spots) !~ m{ARRAY};
+  $app->{Mask}->{spots_list}->Clear;
+  foreach my $sp (@$spots) {
+    next if not $sp;
+    $app->{Mask}->{spots_list}->Append($sp);
+  }
+  my $steps = $ini{steps}{steps};
+  $app->{Mask}->Reset(q{}, $app);
+  foreach my $st (@$steps) {
+    my @words = split(" ", $st);
+    if ($st =~ m{\Abad}) {
+      $app->{Mask}->{badvalue}->SetValue($words[1]);
+      $app->{Mask}->{weakvalue}->SetValue($words[3]);
+    } elsif ($st =~ m{\Agaussian}) {
+      $app->{Mask}->{gaussianvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\A(?:use)?shield}) {
+      $app->{Mask}->{shieldvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Asocial}) {
+      $app->{Mask}->{socialvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Alonely}) {
+      $app->{Mask}->{lonelyvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Amultiply}) {
+      $app->{Mask}->{multiplyvalue}->SetValue($words[1]);
+    } elsif ($st =~ m{\Aareal}) {
+      $app->{Mask}->{arealtype}->SetStringSelection($words[1]);
+      $app->{Mask}->{arealvalue}->SetValue($words[1]);
+    };
+  };
+};
+
+
 sub view_attributes {
   my ($app) = @_;
   my $which = $app->{book}->GetPageText($app->{book}->GetSelection);
@@ -340,6 +417,10 @@ sub view_attributes {
     $text .= "\n\nConventional mu(E) Demeter object:\n\n";
     $text .= $spectrum->mue_demeter->serialization;
   };
+
+  $text .= $/ x 3;
+  $text .= "Elastic energies:\n";
+  $text .= wrap("    ", "    ", join(" ", @{$app->{base}->elastic_energies})). $/;
 
   my $dialog = Demeter::UI::Artemis::ShowText
     -> new($app->{main}, $text, "Structure of \"$id\" object")

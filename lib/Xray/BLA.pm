@@ -556,7 +556,7 @@ sub apply_mask {
   } elsif ($#{$self->scan_file_list} > -1) {
     $image = $self->scan_file_list->[$tif-1];
   } else {
-    $image = File::Spec->catfile($self->tiffolder, $self->file_template($self->image_file_template, $tif));
+    $image = File::Spec->catfile($self->tiffolder, $self->file_template($self->image_file_template, {counter=>$tif}));
   };
   if (not -e $image) {
     warn "\tskipping $image, file not found\n" if not $args{silence};

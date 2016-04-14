@@ -149,13 +149,18 @@ sub new {
 
   $vbox -> Add($hbox, 1, wxGROW|wxALL, 5);
 
-  if ($app->{tool} ne 'herfd') {
+  if ($app->{tool} eq 'xes') {
     $app->{base}->noscan(1);
     $app->{base}->scanfolder(q{});
     $self->{scan_dir}->SetValue(q{});
     $self->{$_}->Enable(0) foreach (qw(scan scan_dir scan_template scan_template_label));
+  } elsif ($app->{tool} eq 'rxes') {
+    $app->{base}->noscan(0);
+    $app->{base}->image_file_template(q{});
+    $self->{image_template}->SetValue(q{});
+    $self->{$_}->Enable(0) foreach (qw(image_template image_template_label));
   };
-  
+
   $self -> SetSizerAndFit( $vbox );
 
   return $self;
@@ -174,27 +179,6 @@ sub fetch {
     delete $app->{bla_of}->{$b};
   };
 
-  # my $sft = $self->{scan_template}->GetValue;
-  # my $eft = $self->{elastic_template}->GetValue;
-  # my $ift = $self->{image_template}->GetValue;
-  # $app->{base}->scan_file_template($sft);
-  # $app->{base}->elastic_file_template($eft);
-  # $app->{base}->image_file_template($ift);
-
-  # my $stub           = $self->{stub}->GetValue;
-  # my $scan_folder    = $self->{scan_dir}->GetValue;
-  # my $image_folder   = $self->{image_dir}->GetValue;
-  # $app->{base}->stub($stub);
-  # $app->{base}->scanfolder($scan_folder);
-  # $app->{base}->tifffolder($image_folder);
-  # $app->{base}->div10($self->{div10}->GetValue);
-  # #$app->{base}->tifscale(2**24) if $self->{scale24}->GetValue;
-  # $app->{bla_of}->{aggregate}->stub($stub);
-  # $app->{bla_of}->{aggregate}->scanfolder($scan_folder);
-  # $app->{bla_of}->{aggregate}->tifffolder($image_folder);
-  # $app->{bla_of}->{aggregate}->div10($self->{div10}->GetValue);
-
-
   $app->{base} -> clear_elastic_energies;
   $self->{elastic_list}->Clear;
   $self->{image_list}->Clear;
@@ -207,11 +191,6 @@ sub fetch {
     };
   };
 
-#  if (($stub eq $app->{base}->stub) and ($self->{elastic_list}->GetCount)) {
-#    $app->{main}->status("Stub $stub hasn't changed.");
-#    return;
-#  };
-
   if (not $app->{base}->noscan) {
     my $sf = $app->{base} -> check_scan;
     if (not $sf->is_ok) {
@@ -220,40 +199,45 @@ sub fetch {
     };
   };
 
+  my $elastic_re = $app->{base}->file_template($self->{elastic_template}->GetValue, {re=>1});
   my ($us, $stub, $image_folder) = (q{_}, $app->{base}->stub, $app->{base}->tifffolder);
   opendir(my $E, $image_folder);
-  my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ =~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $E));
+  my @elastic_list = sort {$a cmp $b} grep {$_ =~ m{$elastic_re}} readdir $E;
   closedir $E;
-  #print join($/, @elastic_list), $/;
   if ($#elastic_list == -1) {
-    $app->{main}->status("No elastic files for $stub found in $image_folder.", 'alert');
+    $app->{main}->status("No elastic files for $elastic_re found in $image_folder.", 'alert');
     return;
   };
   $self->{elastic_list}->InsertItems(\@elastic_list,0);
 
-  opendir(my $I, $image_folder);
-  my @image_list = sort {$a cmp $b} grep {$_ =~ m{\A$stub$us}} (grep {$_ !~ m{elastic}} (grep {$_ =~ m{.tif\z}} readdir $I));
-  closedir $I;
-  #print join($/, @image_list), $/;
-  if ($#image_list == -1) {
-    $app->{main}->status("No image files for $stub found in $image_folder.", 'alert');
-    return;
+  my @image_list = ();
+  if ($self->{image_template}->GetValue !~ m{\A\s*\z}) {
+    my $image_re   = $app->{base}->file_template($self->{image_template}->GetValue, {re=>1});
+    opendir(my $I, $image_folder);
+    @image_list = sort {$a cmp $b} grep {$_ =~ m{$image_re}} readdir $I;
+    closedir $I;
+    if ($#image_list == -1) {
+      $app->{main}->status("No image files for $image_re found in $image_folder.", 'alert');
+      return;
+    };
+    $self->{image_list}->InsertItems(\@image_list,0);
   };
-  $self->{image_list}->InsertItems(\@image_list,0);
-
 
   $app->{main}->status("Setting up elastic files.  This may take some time....");
   foreach my $e (@elastic_list) {
     $app->{base}->push_elastic_file_list($e);
-    ($e =~ m{elastic_(\d+)_}) and
-      $app->{base}->push_elastic_energies($1);
-    $app->{bla_of}->{$1} = $app->{base}->clone;
-    $app->{bla_of}->{$1}->elastic_file($e);
-    $app->{bla_of}->{$1}->energy($1);
-    my $ret = $app->{bla_of}->{$1}->check($e);
-    if ($ret->status == 0) {
-      $app->{main}->status($ret->message, 'alert');
-      return;
+    if ($e =~ m{$elastic_re}) {
+      my $this = $+{e} || $+{c};
+
+      $app->{base}->push_elastic_energies($this);
+      $app->{bla_of}->{$this} = $app->{base}->clone;
+      $app->{bla_of}->{$this}->elastic_file($this);
+      $app->{bla_of}->{$this}->energy($this);
+      my $ret = $app->{bla_of}->{$this}->check($e);
+      if ($ret->status == 0) {
+	$app->{main}->status($ret->message, 'alert');
+	return;
+      };
     };
   };
   $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
@@ -335,14 +319,20 @@ sub view {
     return;
   };
 
+  my $elastic_re = $app->{base}->file_template($self->{elastic_template}->GetValue, {re=>1});
   my $spectrum;
-  ($img =~ m{elastic_(\d+)_}) and
-    $spectrum = $app->{bla_of}->{$1};
+  if ($img =~ m{$elastic_re}) {
+    my $this = $+{e} || $+{c};
+    $spectrum = $app->{bla_of}->{$this};
+  } else {
+    $app->{main}->status("Can't find the file you just clicked on...", 'error');
+  };
 
   $spectrum -> tifffolder($folder);
   $spectrum -> stub($stub);
-  if ($file =~ m{elastic_(\d+)_}) {
-    $spectrum -> energy($1);
+  if ($file =~ m{$elastic_re}) {
+    my $this = $+{e} || $+{c};
+    $spectrum -> energy($this);
   } else {
     $app->{main}->status("Can't figure out energy...", 'alert');
     return;

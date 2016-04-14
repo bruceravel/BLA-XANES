@@ -42,7 +42,7 @@ sub new {
 
   $vbox->Add(1,30,0);
 
-  my $button_width = 115;
+  my $button_width = 125;
 
   my $herfdbox       = Wx::StaticBox->new($self, -1, ' HERFD ', wxDefaultPosition, wxDefaultSize);
   my $herfdboxsizer  = Wx::StaticBoxSizer->new( $herfdbox, wxHORIZONTAL );
@@ -91,6 +91,7 @@ sub new {
   $xbox -> Add($self->{incident}, 0, wxGROW|wxALL, 5);
   $xbox -> Add($self->{reuse}, 0, wxGROW|wxALL, 5);
 #  $app->mouseover($self->{incident}, "Select the ".lc($lab)." for which to compute the XES.");
+  EVT_COMBOBOX($self, $self->{incident}, sub{ $self->{replot_xes}->Enable(0); $self->{save_xes} -> Enable(0); });
 
   $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
@@ -101,16 +102,16 @@ sub new {
   $xbox -> Add($self->{replot_xes}, 0, wxGROW|wxALL, 5);
   $self->{save_xes} = Wx::Button->new($self, -1, 'Save XES data', wxDefaultPosition, [$button_width,-1]);
   $xbox -> Add($self->{save_xes}, 0, wxGROW|wxALL, 5);
-  $self->{xes_rixs} = Wx::Button->new($self, -1, 'RIXS map', wxDefaultPosition, [$button_width,-1]);
-  $xbox -> Add($self->{xes_rixs}, 0, wxGROW|wxALL, 5);
+  #$self->{xes_rixs} = Wx::Button->new($self, -1, 'RIXS map', wxDefaultPosition, [$button_width,-1]);
+  #$xbox -> Add($self->{xes_rixs}, 0, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{xes},        sub{plot_xes(@_, $app)});
   EVT_BUTTON($self, $self->{replot_xes}, sub{replot_xes(@_, $app)});
   EVT_BUTTON($self, $self->{save_xes},   sub{save_xes(@_, $app)});
-  EVT_BUTTON($self, $self->{xes_rixs},   sub{xes_rixs(@_, $app)});
+  #EVT_BUTTON($self, $self->{xes_rixs},   sub{xes_rixs(@_, $app)});
   $app->mouseover($self->{xes},        "Process XES data at the selected incident energy.");
   $app->mouseover($self->{replot_xes}, "Replot the last XES spectrum.");
   $app->mouseover($self->{save_xes},   "Save the last XES data to a column data file.");
-  $app->mouseover($self->{xes_rixs},   "Plot a map of the RIXS in the XES direction.");
+  #$app->mouseover($self->{xes_rixs},   "Plot a map of the RIXS in the XES direction.");
 
   $self->{showmasks} = Wx::CheckBox->new($self, -1, "Sh&ow masks as they are created");
   $xbox -> Add($self->{showmasks}, 0, wxGROW|wxALL, 0);
@@ -134,18 +135,56 @@ sub new {
   EVT_BUTTON($self, $self->{save_rixs},   sub{save_rixs(@_, $app)});
   $app->mouseover($self->{rixs}, "Process RIXS data,i.e. HERFD at all emission energies.");
   $app->mouseover($self->{replot_rixs}, "Replot the last RIXS data.");
-  $app->mouseover($self->{save_rixs},   "Save the last DATA data to an Athena project file.");
+  $app->mouseover($self->{save_rixs},   "Save the last HERFD data to an Athena project file.");
 
   $self->{rshowmasks} = Wx::CheckBox->new($self, -1, "Show m&asks as they are created");
   $rixsboxsizer -> Add($self->{rshowmasks}, 0, wxGROW|wxALL, 0);
   $self->{rshowmasks}->SetValue(1);
 
+  my $planebox       = Wx::StaticBox->new($self, -1, ' RXES Plane ', wxDefaultPosition, wxDefaultSize);
+  my $planeboxsizer  = Wx::StaticBoxSizer->new( $planebox, wxHORIZONTAL );
+  $vbox -> Add($planeboxsizer, 0, wxGROW|wxALL, 5);
+
+  $self->{rxes} = Wx::Button->new($self, -1, 'RXES Plane', wxDefaultPosition, [$button_width,-1]);
+  $planeboxsizer -> Add($self->{rxes}, 0, wxGROW|wxALL, 5);
+  $self->{replot_rxes} = Wx::Button->new($self, -1, 'Replot RXES', wxDefaultPosition, [$button_width,-1]);
+  $planeboxsizer -> Add($self->{replot_rxes}, 0, wxGROW|wxALL, 5);
+  $self->{save_rxes} = Wx::Button->new($self, -1, 'Save RXES data', wxDefaultPosition, [$button_width,-1]);
+  $planeboxsizer -> Add($self->{save_rxes}, 0, wxGROW|wxALL, 5);
+  EVT_BUTTON($self, $self->{rxes},        sub{plot_plane(@_, $app)});
+  EVT_BUTTON($self, $self->{replot_rxes}, sub{replot_plane(@_, $app)});
+  EVT_BUTTON($self, $self->{save_rxes},   sub{save_plane(@_, $app)});
+  $app->mouseover($self->{rxes}, "Process resonant XES plane");
+  $app->mouseover($self->{replot_rxes}, "Replot the last RXES data.");
+  $app->mouseover($self->{save_rxes},   "Save the last RXES data.");
+
+  $self->{xshowmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
+  $planeboxsizer -> Add($self->{xshowmasks}, 0, wxGROW|wxALL, 0);
+  $self->{xshowmasks}->SetValue(1);
+
+
+  if ($app->{tool} eq 'herfd') {
+    $vbox->Hide($planeboxsizer, 1);
+    $vbox->Layout;
+  } elsif ($app->{tool} eq 'xes') {
+    $vbox->Hide($rixsboxsizer, 1);
+    $vbox->Hide($planeboxsizer, 1);
+    $vbox->Layout;
+  } elsif ($app->{tool} eq 'rxes') {
+    $vbox->Hide($rixsboxsizer, 1);
+    $vbox->Layout;
+  };
+
+
   $vbox->Add(2,1,1);
-  
+
 
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks reuse
 		    incident incident_label
-		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs rshowmasks)) {
+		    xes replot_xes save_xes
+		    rixs replot_rixs save_rixs rshowmasks
+		    rxes replot_rxes save_rxes xshowmasks
+		  )) { # xes_rixs 
     $self->{$k}->Enable(0);
   };
 
@@ -159,7 +198,10 @@ sub restore {
   my ($self) = @_;
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks
 		    incident incident_label
-		    xes replot_xes save_xes xes_rixs rixs replot_rixs save_rixs rshowmasks)) {
+		    xes replot_xes save_xes
+		    rixs replot_rixs save_rixs rshowmasks
+		    rxes replot_rxes save_rxes xshowmasks
+		  )) { # xes_rixs 
     $self->{$k}->Enable(0);
   };
   $self->{herfdbox}->SetLabel(' HERFD');
@@ -326,7 +368,7 @@ sub plot_xes {
     ++$count;
     $app->{main}->status(sprintf("Emission energy = %.1f (%d of %d)",
 				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
-			 'wait') if not $count%5;;
+			 'wait') if not $count%5;
     if ($app->{tool} eq 'herfd') {
       $app->{bla_of}->{$key}->incident($incident);
       $app->{bla_of}->{$key}->nincident($nincident);
@@ -359,7 +401,7 @@ sub plot_xes {
 
   $self->{replot_xes} -> Enable(1);
   $self->{save_xes}   -> Enable(1);
-  $self->{xes_rixs}   -> Enable(1);
+  #$self->{xes_rixs}   -> Enable(1);
   my $message = ($app->{tool} eq 'herfd') ? "Plotted XES with incident energy = " : "Plotted XES for measurement ";
   $app->{main}->status($message . $incident . Xray::BLA->howlong($start, '.  That'));
   undef $busy;
@@ -388,7 +430,10 @@ sub save_xes {
     return;
   };
   my $file = $fd->GetPath;
-  $outfile = $spectrum->xdi_xes($self->{xdi_filename}, $args{xesimage}, \@xes);
+  my $outfile = $spectrum->xdi_xes($app->{base}->xdi_metadata_file,
+				   File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder, $self->{incident}->GetStringSelection),
+				   $self->{xesdata});
+  move($outfile, $file);
   $app->{main}->status("Saved XES to ".$file);
 };
 
@@ -578,6 +623,18 @@ sub save_rixs {
     $list[0]->write_athena($file, @list);
     $app->{main}->status("Saved XAFS-like RIXS to an Athena project file.");
   };
+};
+
+sub plot_plane {
+  my ($self, $event, $app) = @_;
+};
+
+sub replot_plane {
+  my ($self, $event, $app) = @_;
+};
+
+sub save_plane {
+  my ($self, $event, $app) = @_;
 };
 
 

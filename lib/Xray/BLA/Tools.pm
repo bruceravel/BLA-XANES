@@ -6,8 +6,9 @@ use DateTime;
 use Math::Random;
 
 sub file_template {
-  my ($self, $tem, $integer) = @_;
-  $integer ||= 0;
+  my ($self, $tem, $args) = @_;
+  my $integer = $args->{counter} || 0;
+  my $return_re = $args->{re} || 0;
 
   my $pattern = '%' . $self->energycounterwidth . '.' . $self->energycounterwidth . 'd';
   my $counter = sprintf($pattern, $integer);
@@ -20,9 +21,19 @@ sub file_template {
 	       c   => $counter,
 	       '%' => '%'
 	      );
+  if ($return_re) {		# use named captures groups, see
+    $table{e} = q{(?<e>\d+)};   # http://perldoc.perl.org/perlre.html#Capture-groups
+    $table{c} = q{(?<c>\d+)};
+    $table{T} = q{(?<T>\d+)};
+  };
 
   my $regex = '[' . join('', keys(%table)) . ']';
   $tem =~ s{\%($regex)}{$table{$1}}g;
+
+  if ($return_re) {
+    $tem =~ s{\.}{\\.}g;
+  }
+
   return $tem;
 };
 
@@ -100,6 +111,15 @@ As an example:
    $bla->file_template('%s_elastic_%e_%t.tif')
 
 might evaluate to F<Aufoil1_elastic_9711_00001.tif>.
+
+Optional arguments:
+
+   $bla->file_template('%s_elastic_%e_%t.tif', {counter=>$n, re=>1})
+
+C<counter> is used to increment a file name counter.  C<re> indicates
+that the template should return a suitable regular expression for
+C<%e> and C<%c>.
+
 
 =item C<howlong>
 

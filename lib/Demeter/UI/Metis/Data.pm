@@ -327,10 +327,8 @@ sub plot_xes {
   my $start = DateTime->now( time_zone => 'floating' );
 
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
-
-  my $rsteps = $self->fetch_steps($spectrum, $app);
-
   my $incident  = $self->{incident}->GetValue;
+
   my $file;
   my $nincident = 0;
 
@@ -347,6 +345,8 @@ sub plot_xes {
     };
     $incident = $spectrum->incident_energies->[$nincident];
     return if (not $incident);
+    $spectrum->incident($incident);
+    $spectrum->nincident($nincident);
     $self->{incident}->SetValue($incident);
     $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder,
 				$app->{Files}->{image_list}->GetString($nincident));
@@ -357,12 +357,34 @@ sub plot_xes {
   my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
 
   $self->{showmasks}->SetValue(0) if $self->{reuse}->GetValue;
-  
+
+  my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $self->{reuse}->GetValue);
+
+  $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>$r_xes);
+  $self->{xesdata} = $r_xes;
+
+  $self->{replot_xes} -> Enable(1);
+  $self->{save_xes}   -> Enable(1);
+  #$self->{xes_rixs}   -> Enable(1);
+  my $message = ($app->{tool} eq 'herfd') ? "Plotted XES with incident energy = " : "Plotted XES for measurement ";
+  $app->{main}->status($message . $incident . Xray::BLA->howlong($start, '.  That'));
+  undef $busy;
+
+};
+
+## $spectrum: Xray::BLA at this energy
+## $point: PDL of current image
+## $reuse: true --> don't compute masks, false --> compute masks
+sub all_masks {
+  my ($self, $app, $event, $spectrum, $point, $reuse) = @_;
+
   my ($r, $x, $n, @xes);
   my $max = 0;
-  my $nemission = $#{[keys %{$app->{bla_of}}]};
-  my $count = 0;
   my $denom = ($spectrum->div10) ? 10 : 1;
+  my $nemission = $#{[keys %{$app->{bla_of}}]};
+  my $rsteps = $self->fetch_steps($spectrum, $app);
+
+  my $count = 0;
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
     ++$count;
@@ -370,15 +392,15 @@ sub plot_xes {
 				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
 			 'wait') if not $count%5;
     if ($app->{tool} eq 'herfd') {
-      $app->{bla_of}->{$key}->incident($incident);
-      $app->{bla_of}->{$key}->nincident($nincident);
+      $app->{bla_of}->{$key}->incident($spectrum->incident);
+      $app->{bla_of}->{$key}->nincident($spectrum->nincident);
     };
 
     ## push step list to rest of project
     $app->{bla_of}->{$key}->steps($rsteps);
     #$app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
     #				 aggregate=>$app->{bla_of}->{aggregate});
-    $app->{Mask}->SelectEnergy($event, $app, {energy=>$key, noplot=>1, quiet=>1}) if not $self->{reuse}->GetValue;
+    $app->{Mask}->SelectEnergy($event, $app, {energy=>$key, noplot=>1, quiet=>1}) if not $reuse;
     $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
     $n = $app->{bla_of}->{$key}->npixels;
     $max = $n if ($n > $max);
@@ -396,16 +418,7 @@ sub plot_xes {
     $app->{bla_of}->{$key}->normpixels($max/$app->{bla_of}->{$key}->npixels);
   };
 
-  $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>\@xes);
-  $self->{xesdata} = \@xes;
-
-  $self->{replot_xes} -> Enable(1);
-  $self->{save_xes}   -> Enable(1);
-  #$self->{xes_rixs}   -> Enable(1);
-  my $message = ($app->{tool} eq 'herfd') ? "Plotted XES with incident energy = " : "Plotted XES for measurement ";
-  $app->{main}->status($message . $incident . Xray::BLA->howlong($start, '.  That'));
-  undef $busy;
-
+  return \@xes;
 };
 
 sub replot_xes {
@@ -534,19 +547,18 @@ sub plot_rixs {
     next if ($key eq 'aggregate');
 
     ++$count;
-    #my $lca = List::Compare->new('-u', '-a', $rsteps, $app->{bla_of}->{$key}->steps);
-    #if (not $lca->is_LequivalentR()) {
-      $app->{main}->status(sprintf("Computing mask for emission energy %.1f (%d of %d)",
-				   $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
-			   'wait');
-      $app->{bla_of}->{$key}->steps($rsteps); # bring all the masks up to date
-      $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
-				   aggregate=>$app->{bla_of}->{aggregate});
-      if ($self->{rshowmasks}->GetValue) {
-	$app->{bla_of}->{$key}->cbmax(1);
-	$app->{bla_of}->{$key}->plot_mask;
-      };
-    #};
+
+    $app->{main}->status(sprintf("Computing mask for emission energy %.1f (%d of %d)",
+				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
+			 'wait');
+    $app->{bla_of}->{$key}->steps($rsteps); # bring all the masks up to date
+    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
+				 aggregate=>$app->{bla_of}->{aggregate});
+    if ($self->{rshowmasks}->GetValue) {
+      $app->{bla_of}->{$key}->cbmax(1);
+      $app->{bla_of}->{$key}->plot_mask;
+    };
+
     $max = $app->{bla_of}->{$key}->npixels if ($app->{bla_of}->{$key}->npixels > $max);
     $app->{bla_of}->{$key}->scan_file_list($sfl);
     $app->{main}->status(sprintf("Computing HERFD for emission energy %.1f (%d of %d)",
@@ -627,6 +639,10 @@ sub save_rixs {
 
 sub plot_plane {
   my ($self, $event, $app) = @_;
+
+
+   # my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $reuse);
+
 };
 
 sub replot_plane {

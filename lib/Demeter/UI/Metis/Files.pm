@@ -171,7 +171,7 @@ sub fetch {
   my $busy = Wx::BusyCursor->new();
 
   $app->{base}->Reset;
-  $app->{base}->noscan(1) if ($app->{tool} ne 'herfd');
+  $app->{base}->noscan(1) if ($app->{tool} eq 'xes');
   $app->{bla_of}->{aggregate}->Reset;
   ## clear out previous batch of Xray::BLA objects
   foreach my $b (keys %{$app->{bla_of}}) {
@@ -246,8 +246,10 @@ sub fetch {
   $app->{base}->get_incident_energies;
   my $rlist = $app->{base}->incident_energies;
   $app->{base}->incident_energies($rlist);
+  #$app->{base}->elastic_energies($rlist) if ($app->{tool} eq 'rxes');
   foreach my $key (keys %{$app->{bla_of}}) {
     $app->{bla_of}->{$key}->incident_energies($rlist);
+    #$app->{bla_of}->{$key}->elastic_energies($rlist) if ($app->{tool} eq 'rxes');
   };
 
 
@@ -264,31 +266,34 @@ sub fetch {
     $app->{Data}->{incident}->SetSelection(0);
   };
 
-
-  
-  my ($el, $li) = $app->{base}->guess_element_and_line;
-
-  my $e = Xray::Absorption -> get_energy($el, $li);
-  my @list = ();
-  foreach my $l (@Xray::BLA::line_list) {
-    if (abs($l->[2] - $e) < 30) {
-      push @list, join(" ", ucfirst($l->[0]), ucfirst($l->[1]), $l->[2]);
+  if ($app->{tool} eq 'rxes') {
+    $self->{element}->SetStringSelection('H');
+    $self->{line}->SetStringSelection('Ka1');
+    $self->{element}->Enable(0);
+    $self->{line}->Enable(0);
+  } else {
+    my ($el, $li) = $app->{base}->guess_element_and_line;
+    my $e = Xray::Absorption -> get_energy($el, $li);
+    my @list = ();
+    foreach my $l (@Xray::BLA::line_list) {
+      if (abs($l->[2] - $e) < 30) {
+	push @list, join(" ", ucfirst($l->[0]), ucfirst($l->[1]), $l->[2]);
+      };
     };
-  };
-  if ($#list) {
-    my $scd = Wx::SingleChoiceDialog->new($self, "Which line is this?", "Choose line", \@list);
-    if ($scd->ShowModal == wxID_CANCEL) {
-      $app->{main}->status("Using $el $li.");
-    } else {
-      my $choice = $scd->GetStringSelection;
-      my $en;
-      ($el, $li, $en) = split(" ", $choice);
-      $app->{main}->status("Using $el $li.");
+    if ($#list) {
+      my $scd = Wx::SingleChoiceDialog->new($self, "Which line is this?", "Choose line", \@list);
+      if ($scd->ShowModal == wxID_CANCEL) {
+	$app->{main}->status("Using $el $li.");
+      } else {
+	my $choice = $scd->GetStringSelection;
+	my $en;
+	($el, $li, $en) = split(" ", $choice);
+	$app->{main}->status("Using $el $li.");
+      };
     };
+    $self->{element}->SetSelection(get_Z($el)-1);
+    $self->{line}->SetStringSelection($li);
   };
-
-  $self->{element}->SetSelection(get_Z($el)-1);
-  $self->{line}->SetStringSelection($li);
   $app->set_parameters;
 
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");

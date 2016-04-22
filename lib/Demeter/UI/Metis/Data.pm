@@ -390,7 +390,7 @@ sub all_masks {
     ++$count;
     $app->{main}->status(sprintf("Emission energy = %.1f (%d of %d)",
 				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
-			 'wait') if not $count%5;
+			 'wait') if (not $count%5 and not $reuse);
     if ($app->{tool} eq 'herfd') {
       $app->{bla_of}->{$key}->incident($spectrum->incident);
       $app->{bla_of}->{$key}->nincident($spectrum->nincident);
@@ -640,9 +640,27 @@ sub save_rixs {
 sub plot_plane {
   my ($self, $event, $app) = @_;
 
+  my $holol;			# compute_xes returns a list-of-lists, so this is a hash-of-lol
+  my $reuse = 0;
+  my $denom = ($app->{Files}->{div10}->GetValue) ? 10 : 1;
+  my $nemission = $#{[keys %{$app->{bla_of}}]} - 1;
+  my $count = 0;
+  my ($spectrum, $file, $point);
+  foreach my $key (sort keys %{$app->{bla_of}}) {
+    next if ($key =~ m{aggregate|base});
+    my $energy = $app->{bla_of}->{$key}->get_incident($key);
+    ++$count;
+    $spectrum  = $app->{bla_of}->{$key};
+    $point = $app->{bla_of}->{$self->{energy}}->Read($app->{bla_of}->{$key}->elastic_file);
 
-   # my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $reuse);
-
+    my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $reuse);
+    $holol->{$energy} = $r_xes;	# $ret is a list-of-lists
+    $reuse = 1;
+    $app->{main}->status(sprintf("Incident energy = %.1f (%d of %d)", $energy/$denom, $count, $nemission), 'wait') if not $count%5;
+  };
+  my $ret = $spectrum->rixs_plane($holol, xdiini=>$app->{base}->xdi_metadata_file); # returns BLA::Return object with output file name and max intensity
+  $app->{base}->plot_plane($holol);
+  print $spectrum->report(sprintf("Wrote %s (max value = %d)", $ret->message, $ret->status), 'bold green');
 };
 
 sub replot_plane {

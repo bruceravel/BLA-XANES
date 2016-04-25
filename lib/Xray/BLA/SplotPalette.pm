@@ -215,6 +215,82 @@ our $jet = "defined ( 0 '#000090',\\
                       8 '#7f0000')";
 
 our $pm3d = 'rgbformulae 7,5,15';
- 
+
 
 1;
+
+=head1 NAME
+
+Xray::BLA::SplotPalette - A repository of gnuplot surface plot palette definitions
+
+=head1 VERSION
+
+See Xray::BLA
+
+=head1 STNOPSIS
+
+This exports several constants containing strings which define useful
+Gnuplot palettes.
+
+   use Xray::BLA::SplotPalette qw($moreland $parula $kindlemann $blackbody $jet $pm3d);
+
+=head1 PALETTES
+
+=over 4
+
+=item C<parula>
+
+The default palette.  This implements the Matlab parula colormap.  See
+http://www.gnuplotting.org/matlab-colorbar-parula-with-gnuplot/
+
+This is a blue to yellow colormap with fairly uniform intensity
+variation over the scale.
+
+=item C<moreland>
+
+This is Kenneth Moreland's "smooth cool warm" colormap.  See
+http://www.kennethmoreland.com/color-advice/
+
+=item C<kindleman>
+
+This is Kenneth Moreland's implementation of the Kindleann color map,
+a rainbow color map with the luminance adjusted such that it
+monotonically changes over the full scale.  See
+http://www.kennethmoreland.com/color-advice/ and
+http://www.cs.utah.edu/~gk/papers/vis02/
+
+=item C<blackbody>
+
+This is Kenneth Moreland's colormap based on the colors of black body
+radiation.  See http://www.kennethmoreland.com/color-advice/
+
+=item C<jet>
+
+This is the Matlab rainbow colormap.  Your humble author dislikes this
+colormap, but it's a popular one.
+
+=item C<pm3d>
+
+This is Gnuplot default color map.
+
+=back
+
+=head1 AUTHOR
+
+Bruce Ravel (bravel AT bnl DOT gov)
+
+L<http://github.com/bruceravel/BLA-XANES>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All
+rights reserved.
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See L<perlgpl>.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=cut

@@ -54,6 +54,18 @@ METHODS
  
  might evaluate to \ *Aufoil1_elastic_9711_00001.tif*\ .
  
+ Optional arguments:
+ 
+ 
+ .. code-block:: perl
+ 
+     $bla->file_template('%s_elastic_%e_%t.tif', {counter=>$n, re=>1})
+ 
+ 
+ \ ``counter``\  is used to increment a file name counter.  \ ``re``\  indicates
+ that the template should return a suitable regular expression for
+ \ ``%e``\  and \ ``%c``\ .
+ 
 
 
 \ ``howlong``\ 

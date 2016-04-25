@@ -870,6 +870,7 @@ sub save_steps {
 		    imagescale outimage div10 terminal color)) {
     $text .= sprintf("%-18s = %s\n", $k, $spectrum->$k);
   };
+  $text .= "palette            = " . $spectrum->splot_palette_name . "\n";
   $text .= "outfolder          = " . $fd->GetDirectory . "\n";
   $text .= "\n[files]\n";
   $text .= "scan               = " . $spectrum -> scan_file_template    . "\n";

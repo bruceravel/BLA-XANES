@@ -48,12 +48,12 @@ sub new {
   $app->mouseover($self->{tiffcounter}, "The counter part of the name of the elastic TIFF file, eg the \"00001\" in \"Aufoil1_elastic_9713_00001.tif\".");
 
   #++$row;
-  $self->{terminal_label} = Wx::StaticText -> new($self, -1, "Plotting terminal");
-  $self->{terminal}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(wxt qt x11 aqua windows)]);
-  $gbs -> Add($self->{terminal_label},    Wx::GBPosition->new($row,3));
-  $gbs -> Add($self->{terminal},          Wx::GBPosition->new($row,4));
-  $self->{terminal}->SetStringSelection($app->{base}->terminal);
-  $app->mouseover($self->{terminal}, "The Gnuplot terminal type.");
+  $self->{palette_label} = Wx::StaticText -> new($self, -1, "Splot palette");
+  $self->{palette}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(parula moreland kindlemann blackbody jet pm3d)]);
+  $gbs -> Add($self->{palette_label},    Wx::GBPosition->new($row,3));
+  $gbs -> Add($self->{palette},          Wx::GBPosition->new($row,4));
+  $self->{palette}->SetStringSelection($app->{base}->splot_palette_name);
+  $app->mouseover($self->{palette}, "The palette for the plot of the RXES plane type.");
 
   ++$row;
   $self->{energycounterwidth_label} = Wx::StaticText -> new($self, -1, "Energy index width");
@@ -63,7 +63,15 @@ sub new {
   $app->mouseover($self->{energycounterwidth}, "The width of the part of the energy point TIFF file name indicating the energy index, eg the 5 digits in \"Aufoil1_00040.tif\".");
 
 
-  ##++$row;
+  #++$row;
+  $self->{terminal_label} = Wx::StaticText -> new($self, -1, "Plotting terminal");
+  $self->{terminal}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(wxt qt x11 aqua windows)]);
+  $gbs -> Add($self->{terminal_label},    Wx::GBPosition->new($row,3));
+  $gbs -> Add($self->{terminal},          Wx::GBPosition->new($row,4));
+  $self->{terminal}->SetStringSelection($app->{base}->terminal);
+  $app->mouseover($self->{terminal}, "The Gnuplot terminal type.");
+
+  ++$row;
   $self->{outimage_label} = Wx::StaticText -> new($self, -1, "Output image format");
   $self->{outimage}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(gif tif png)]);
   $gbs -> Add($self->{outimage_label},    Wx::GBPosition->new($row,3));

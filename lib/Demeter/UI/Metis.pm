@@ -97,7 +97,7 @@ sub OnInit {
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'yaml')) if not -e $app->{yamlfile};
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});
-    foreach my $k (qw(stub scanfolder tifffolder element line color div10 width_min width_max)) {
+    foreach my $k (qw(stub scanfolder tifffolder element line color splot_palette_name div10 width_min width_max)) {
       $app->{base}->$k($app->{yaml}->[0]->{$k}) if defined $app->{yaml}->[0]->{$k};
     };
     foreach my $c (qw(imagescale tiffcounter energycounterwidth outimage terminal
@@ -113,6 +113,7 @@ sub OnInit {
     $app->{yaml} = YAML::Tiny -> new;
   };
   $app->{base}->set_palette($app->{base}->color);
+  $app->{base}->set_splot_palette($app->{base}->splot_palette_name);
 
   $app->{bla_of}= {};
   $app->{bla_of}->{aggregate}  = $app->{base}->clone();
@@ -290,6 +291,8 @@ sub set_parameters {
   $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
   $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
   $app->{base} -> set_palette($app->{base}->color);
+  $app->{base} -> splot_palette_name($app->{Config}->{palette}->GetStringSelection);
+  $app->{base} -> set_splot_palette($app->{base}->splot_palette_name);
   $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetValue);
 
   my $val = $app->{Mask}->{gaussianvalue}->GetValue;
@@ -312,7 +315,7 @@ sub set_parameters {
   ## shield
 
   $app->{yaml}->[0]->{stub} = $app->{Files}->{stub}->GetValue;
-  foreach my $k (qw(scanfolder tifffolder element line color palette
+  foreach my $k (qw(scanfolder tifffolder element line color palette splot_palette_name
 		    imagescale outimage terminal energycounterwidth tiffcounter
 		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
 		    bad_pixel_value gaussian_blur_value shield weak_pixel_value social_pixel_value
@@ -364,6 +367,7 @@ sub restore_config {
   $app->{Config}->{outimage}           -> SetStringSelection($ini{measure}{outimage});
   $app->{Config}->{terminal}           -> SetStringSelection($ini{measure}{terminal});
   $app->{Config}->{color}              -> SetStringSelection($ini{measure}{color});
+  $app->{Config}->{palette}            -> SetStringSelection($ini{measure}{palette});
 
   my $spots = $ini{spots}{spots};
   $spots = [$spots] if ref($spots) !~ m{ARRAY};

@@ -251,9 +251,9 @@ variation over the scale.
 This is Kenneth Moreland's "smooth cool warm" colormap.  See
 http://www.kennethmoreland.com/color-advice/
 
-=item C<kindleman>
+=item C<kindlemann>
 
-This is Kenneth Moreland's implementation of the Kindleann color map,
+This is Kenneth Moreland's implementation of the Kindlemann color map,
 a rainbow color map with the luminance adjusted such that it
 monotonically changes over the full scale.  See
 http://www.kennethmoreland.com/color-advice/ and

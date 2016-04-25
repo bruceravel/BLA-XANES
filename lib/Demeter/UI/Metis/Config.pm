@@ -49,7 +49,7 @@ sub new {
 
   #++$row;
   $self->{palette_label} = Wx::StaticText -> new($self, -1, "Splot palette");
-  $self->{palette}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(parula moreland kindlemann blackbody jet pm3d)]);
+  $self->{palette}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(parula moreland kindlemann blackbody jet pm3d lineargray)]);
   $gbs -> Add($self->{palette_label},    Wx::GBPosition->new($row,3));
   $gbs -> Add($self->{palette},          Wx::GBPosition->new($row,4));
   $self->{palette}->SetStringSelection($app->{base}->splot_palette_name);

@@ -18,7 +18,7 @@ package Xray::BLA::SplotPalette;
 use strict;
 #use Encode;
 use base qw( Exporter );
-our @EXPORT_OK = qw($moreland $parula $kindlemann $blackbody $jet $pm3d);
+our @EXPORT_OK = qw($moreland $parula $kindlemann $blackbody $jet $pm3d, $lineargray);
 
 # Matlab color map parula, see:
 # http://www.mathworks.de/products/matlab/matlab-graphics/#new_look_for_matlab_graphics
@@ -216,6 +216,29 @@ our $jet = "defined ( 0 '#000090',\\
 
 our $pm3d = 'rgbformulae 7,5,15';
 
+our $lineargray = 'defined (\
+0.000000  0.219608  0.180392  0.176471,\
+0.050000  0.250980  0.203922  0.200000,\
+0.100000  0.301961  0.250980  0.239216,\
+0.150000  0.329412  0.282353  0.266667,\
+0.200000  0.360784  0.313725  0.290196,\
+0.250000  0.388235  0.341176  0.317647,\
+0.300000  0.419608  0.376471  0.345098,\
+0.350000  0.450980  0.407843  0.368627,\
+0.400000  0.470588  0.431373  0.388235,\
+0.450000  0.490196  0.454902  0.407843,\
+0.500000  0.509804  0.478431  0.427451,\
+0.550000  0.541176  0.513725  0.454902,\
+0.600000  0.580392  0.556863  0.494118,\
+0.650000  0.611765  0.592157  0.525490,\
+0.700000  0.650980  0.639216  0.564706,\
+0.750000  0.701961  0.690196  0.607843,\
+0.800000  0.749020  0.741176  0.658824,\
+0.850000  0.788235  0.784314  0.701961,\
+0.900000  0.819608  0.819608  0.737255,\
+0.950000  0.878431  0.878431  0.807843,\
+1.000000  0.941176  0.941176  0.894118,\
+)';
 
 1;
 
@@ -272,6 +295,11 @@ colormap, but it's a popular one.
 =item C<pm3d>
 
 This is Gnuplot default color map.
+
+=item C<lineargrey>
+
+This is a linear, greyscale colormap with a slightly off-gray tone
+towards brown.  See https://datascience.lanl.gov/colormaps.html
 
 =back
 

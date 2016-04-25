@@ -171,7 +171,11 @@ sub new {
     $vbox->Hide($planeboxsizer, 1);
     $vbox->Layout;
   } elsif ($app->{tool} eq 'rxes') {
+    $vbox->Hide($xesboxsizer, 1);
     $vbox->Hide($rixsboxsizer, 1);
+    $self->{showmasks}->SetValue(0);
+    $self->{rshowmasks}->SetValue(0);
+    $self->{xshowmasks}->SetValue(0);
     $vbox->Layout;
   };
 
@@ -273,6 +277,7 @@ sub plot_herfd {
   undef $toss;
 
   $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $spectrum -> sentinal(sub{1});
   $self->{$_} -> Enable(1) foreach (qw(replot_herfd save_herfd));
   $self->{herfdbox}->SetLabel(' HERFD ('.$spectrum->energy.')');
@@ -289,6 +294,7 @@ sub replot_herfd {
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   my $title = $spectrum->stub . ' at ' . $self->{current};
   $spectrum -> plot_xanes(title=>$title, pause=>0, mue=>$self->{mue}->GetValue);
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $app->{main}->status("Replotted HERFD with emission energy = ".$self->{current});
 };
 
@@ -361,6 +367,7 @@ sub plot_xes {
   my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $self->{reuse}->GetValue);
 
   $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>$r_xes);
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $self->{xesdata} = $r_xes;
 
   $self->{replot_xes} -> Enable(1);
@@ -387,9 +394,11 @@ sub all_masks {
   my $count = 0;
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
+    $app->{bla_of}->{$key}->get_incident($key);
+    my $energy = $app->{bla_of}->{$key}->incident;
     ++$count;
     $app->{main}->status(sprintf("Emission energy = %.1f (%d of %d)",
-				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
+				 $app->{bla_of}->{$key}->incident/$denom, $count, $nemission),
 			 'wait') if (not $count%5 and not $reuse);
     if ($app->{tool} eq 'herfd') {
       $app->{bla_of}->{$key}->incident($spectrum->incident);
@@ -426,6 +435,7 @@ sub replot_xes {
   my $incident  = $self->{incident}->GetValue;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   $self->{xesout} = $spectrum->plot_xes(pause=>0, incident=>$incident, xes=>$self->{xesdata});
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $app->{main}->status("Replotted XES with incident energy = ".$self->{incident}->GetValue);
 };
 
@@ -586,6 +596,7 @@ sub plot_rixs {
   };
 
   $spectrum->plot_rixs(@sorted_list);
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
 
   $self->{replot_rixs} -> Enable(1);
   $self->{save_rixs}   -> Enable(1);
@@ -601,6 +612,7 @@ sub replot_rixs {
     push @list, $app->{bla_of}->{$key};
   };
   $spectrum->plot_rixs(@list);
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $app->{main}->status("Replotted RIXS as XAFS-like data.");
 };
 
@@ -640,15 +652,18 @@ sub save_rixs {
 sub plot_plane {
   my ($self, $event, $app) = @_;
 
+  my $busy = Wx::BusyCursor->new();
+  my $start = DateTime->now( time_zone => 'floating' );
   my $holol;			# compute_xes returns a list-of-lists, so this is a hash-of-lol
   my $reuse = 0;
   my $denom = ($app->{Files}->{div10}->GetValue) ? 10 : 1;
-  my $nemission = $#{[keys %{$app->{bla_of}}]} - 1;
+  my $nemission = $#{[keys %{$app->{bla_of}}]};
   my $count = 0;
   my ($spectrum, $file, $point);
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key =~ m{aggregate|base});
-    my $energy = $app->{bla_of}->{$key}->get_incident($key);
+    $app->{bla_of}->{$key}->get_incident($key);
+    my $energy = $app->{bla_of}->{$key}->incident;
     ++$count;
     $spectrum  = $app->{bla_of}->{$key};
     $point = $app->{bla_of}->{$self->{energy}}->Read($app->{bla_of}->{$key}->elastic_file);
@@ -659,16 +674,39 @@ sub plot_plane {
     $app->{main}->status(sprintf("Incident energy = %.1f (%d of %d)", $energy/$denom, $count, $nemission), 'wait') if not $count%5;
   };
   my $ret = $spectrum->rixs_plane($holol, xdiini=>$app->{base}->xdi_metadata_file); # returns BLA::Return object with output file name and max intensity
+  $app->{holol} = $holol;
   $app->{base}->plot_plane($holol);
-  print $spectrum->report(sprintf("Wrote %s (max value = %d)", $ret->message, $ret->status), 'bold green');
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
+  $self->{replot_rxes}->Enable(1);
+  $self->{save_rxes}->Enable(1);
+  $app->{main}->status("Plotted RXES plane" . Xray::BLA->howlong($start, '.  That'));
+  $app->{plane_file} = $ret->message;
+  #$app->{main}->status(sprintf("Wrote %s (max value = %d)", $ret->message, $ret->status));
+  undef $busy;
 };
 
 sub replot_plane {
   my ($self, $event, $app) = @_;
+  my $busy = Wx::BusyCursor->new();
+  $app->{base}->plot_plane($app->{holol});
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
+  undef $busy;
 };
 
 sub save_plane {
   my ($self, $event, $app) = @_;
+  my $fname = sprintf("%s_rixsplane.dat", $app->{base}->stub);
+  my $fd = Wx::FileDialog->new( $app->{main}, "Save RIXS plane to a matrix data file", cwd, $fname,
+				"Data file (*.dat)|*.dat|All files (*)|*",
+				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Saving RXES plane data file canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  copy($app->{plane_file}, $file);
+  $app->{main}->status("Plotted RXES plane as " . $file);
 };
 
 

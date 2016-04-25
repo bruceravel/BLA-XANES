@@ -351,6 +351,7 @@ sub view {
   };
   $spectrum->cbmax($cbm);# if $step =~ m{social};
   $spectrum->plot_mask;
+  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $app->{main}->status("Plotted ".$spectrum->elastic_file);
 
 };

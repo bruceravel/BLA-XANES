@@ -163,7 +163,6 @@ sub plot_shield {
 
 sub plot_plane {
   my ($self, $holol) = @_;
-  my $x = PDL::Core::pdl(sort keys %$holol);
 
   my @x = ();
   my @y = ();
@@ -186,18 +185,26 @@ sub plot_plane {
     push @z, \@thisz;
   };
 
-  my ($xmin, $xmax) = (11550,11590);
-  my $title = "RXES plane for ".basename($self->elastic_file);
+  my $px = PDL::Core::pdl(\@x);
+  my $py = PDL::Core::pdl(\@y)->inplace->transpose;
+  my $pz = PDL::Core::pdl(\@z)->inplace->transpose;
+
+  # print $px->shape, $/;
+  # print $py->shape, $/;
+  # print $pz->shape, $/;
+
+  my $xmin = 10 * int($x[0]/10 + 0.5);
+  my $xmax = 10 * int($x[-1]/10 + 0.5);
+  my $title = "RXES plane for ".$self->stub;
   $title = $self->escape_us($title);
   $self->pdlplot->output($self->terminal, size=>[500,520,'px']);
-  $self->pdlplot->image({pm3d=>'map', view=>[0,0,1,1], # origin=>'0.02,-0.2', size=>'0.7, 1.4',
+  $self->pdlplot->image({pm3d=>'map', view=>[0,0,1,1], size=>'0.8, 1', # origin=>'0.02,-0.2',
 			 palette=>$self->splot_palette, title=>$title,
 			 colorbox=>['user', 'vertical', size=>"0.025,0.7"], #, origin=>"0.03,0.15"],
 			 xlabel=>'incident (eV)', ylabel=>'energy loss (eV)', cblabel=>'emission intensity',
 			 ymin=>-5, ymax=>40, xtics=>"$xmin,10,$xmax",
 			},
-			PDL::Core::pdl(\@x), PDL::Core::pdl(\@y), PDL::Core::pdl(\@z));
-  print $PDL::Graphics::Gnuplot::last_plotcmd;
+			$px, $py, $pz);
 };
 
 

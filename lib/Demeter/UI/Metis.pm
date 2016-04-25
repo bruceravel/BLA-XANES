@@ -4,6 +4,7 @@ use Demeter qw(:hephaestus);
 use Xray::BLA;
 use Demeter::UI::Artemis::ShowText;
 use Demeter::UI::Athena::Status;
+use Demeter::UI::Metis::LastPlot;
 
 use Chemistry::Elements qw(get_Z get_symbol);
 use Cwd;
@@ -47,14 +48,15 @@ use Demeter::UI::Metis::Cursor;
 my $icon_dimension = 30;
 
 use Const::Fast;
-const my $Files  => Wx::NewId();
-const my $Mask   => Wx::NewId();
-const my $Data   => Wx::NewId();
-const my $Config => Wx::NewId();
-const my $Import => Wx::NewId();
-const my $Object => Wx::NewId();
-const my $About  => Wx::NewId();
-const my $Status => Wx::NewId();
+const my $Files    => Wx::NewId();
+const my $Mask     => Wx::NewId();
+const my $Data     => Wx::NewId();
+const my $Config   => Wx::NewId();
+const my $Import   => Wx::NewId();
+const my $Object   => Wx::NewId();
+const my $About    => Wx::NewId();
+const my $Status   => Wx::NewId();
+const my $Lastplot => Wx::NewId();
 
 const my $INCREMENT_ENERGY   => Wx::NewId();
 const my $DECREMENT_ENERGY   => Wx::NewId();
@@ -80,6 +82,8 @@ sub OnInit {
   $app->{main}->{Status} = Demeter::UI::Athena::Status->new($app->{main});
   $app->{main}->{Status}->SetTitle("Metis [Status Buffer]");
 
+  $app->{main}->{Lastplot} = Demeter::UI::Metis::LastPlot->new($app->{main});
+  $app->{main}->{Lastplot}->SetTitle("Metis [Last Plot]");
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
   $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
@@ -163,6 +167,7 @@ sub OnInit {
   my $helpmenu   = Wx::Menu->new;
   $helpmenu->Append($Object,   "View Xray::BLA attributes\tCtrl+0" );
   $helpmenu->Append($Status,   "Show status buffer" );
+  $helpmenu->Append($Lastplot, "Show last Gnuplot script" );
   $helpmenu->AppendSeparator;
   $helpmenu->Append($About,    "About Metis" );
 
@@ -233,6 +238,10 @@ sub OnMenuClick {
     };
     ($id == $Status) and do {
       $app->{main}->{Status} -> Show(1);
+      last SWITCH;
+    };
+    ($id == $Lastplot) and do {
+      $app->{main}->{Lastplot} -> Show(1);
       last SWITCH;
     };
     ($id == $INCREMENT_ENERGY) and do {

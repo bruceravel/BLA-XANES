@@ -417,7 +417,10 @@ sub SelectEnergy {
     $self->do_step($event, $app, $words[0], 0, $energy, $quiet);
   };
 
-  $self->plot($app, $spectrum, 1) if not $noplot;
+  if (not $noplot) {
+    $self->plot($app, $spectrum, 1);
+    $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
+  };
   undef $busy;
 };
 

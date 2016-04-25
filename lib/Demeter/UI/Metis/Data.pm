@@ -679,7 +679,7 @@ sub plot_plane {
   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $self->{replot_rxes}->Enable(1);
   $self->{save_rxes}->Enable(1);
-  $app->{main}->status("Plotted RXES plane" . Xray::BLA->howlong($start, '.  That'));
+  $app->{main}->status("Plotted RXES plane for " . $app->{base}->stub . Xray::BLA->howlong($start, '.  That'));
   $app->{plane_file} = $ret->message;
   #$app->{main}->status(sprintf("Wrote %s (max value = %d)", $ret->message, $ret->status));
   undef $busy;
@@ -690,6 +690,7 @@ sub replot_plane {
   my $busy = Wx::BusyCursor->new();
   $app->{base}->plot_plane($app->{holol});
   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
+  $app->{main}->status("Plotted RXES plane for " . $app->{base}->stub);
   undef $busy;
 };
 
@@ -706,7 +707,7 @@ sub save_plane {
   };
   my $file = $fd->GetPath;
   copy($app->{plane_file}, $file);
-  $app->{main}->status("Plotted RXES plane as " . $file);
+  $app->{main}->status("Saved RXES plane for " . $app->{base}->stub . ' as ' . $file);
 };
 
 

@@ -18,7 +18,7 @@ package Xray::BLA::SplotPalette;
 use strict;
 #use Encode;
 use base qw( Exporter );
-our @EXPORT_OK = qw($moreland $parula $kindlemann $blackbody $jet $pm3d, $lineargray);
+our @EXPORT_OK = qw($moreland $parula $kindlemann $blackbody $jet $pm3d $lineargray);
 
 # Matlab color map parula, see:
 # http://www.mathworks.de/products/matlab/matlab-graphics/#new_look_for_matlab_graphics
@@ -237,8 +237,7 @@ our $lineargray = 'defined (\
 0.850000  0.788235  0.784314  0.701961,\
 0.900000  0.819608  0.819608  0.737255,\
 0.950000  0.878431  0.878431  0.807843,\
-1.000000  0.941176  0.941176  0.894118,\
-)';
+1.000000  0.941176  0.941176  0.894118)';
 
 1;
 

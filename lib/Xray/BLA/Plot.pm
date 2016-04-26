@@ -32,7 +32,7 @@ has 'palette' => (is => 'rw', isa => 'Str', ## greys
 		  documentation => 'The Gnuplot definition of the image plot palette.');
 has 'pdlplot' => (is => 'rw', isa => 'Any', default => sub{ gpwin() } );
 
-use Xray::BLA::SplotPalette qw($moreland $parula $kindlemann $blackbody $jet $pm3d, $lineargray);
+use Xray::BLA::SplotPalette qw($moreland $parula $kindlemann $blackbody $jet $pm3d $lineargray);
 has 'splot_palette_name' => (is => 'rw', isa => 'Str', default => 'parula', #trigger => &set_splot_palette,
 			     documentation => 'The name of the surface plot palette.');
 has 'splot_palette' => (is => 'rw', isa => 'Str',

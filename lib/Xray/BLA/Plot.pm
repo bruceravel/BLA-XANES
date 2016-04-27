@@ -32,11 +32,11 @@ has 'palette' => (is => 'rw', isa => 'Str', ## greys
 		  documentation => 'The Gnuplot definition of the image plot palette.');
 has 'pdlplot' => (is => 'rw', isa => 'Any', default => sub{ gpwin() } );
 
-use Xray::BLA::SplotPalette qw($moreland $parula $kindlemann $blackbody $jet $pm3d $lineargray);
-has 'splot_palette_name' => (is => 'rw', isa => 'Str', default => 'parula', #trigger => &set_splot_palette,
+use Graphics::Gnuplot::Palettes qw(palette palette_names);
+has 'splot_palette_name' => (is => 'rw', isa => 'Str', default => 'Parula', #trigger => &set_splot_palette,
 			     documentation => 'The name of the surface plot palette.');
 has 'splot_palette' => (is => 'rw', isa => 'Str',
-			default => $parula,
+			default => sub{palette("Parula")},
 			documentation => 'The Gnuplot definition of the surface plot palette.');
 
 
@@ -73,15 +73,17 @@ sub set_palette {
   return $self;
 };
 
-my %palette_choices = (
-		       parula => $parula, moreland => $moreland, kindlemann => $kindlemann,
-		       jet    => $jet,    pm3d     => $pm3d,     blackbody  => $blackbody,
-		       lineargray => $lineargray
-		      );
+#my %palette_choices = (
+#		       parula => $parula, moreland => $moreland, kindlemann => $kindlemann,
+#		       jet    => $jet,    pm3d     => $pm3d,     blackbody  => $blackbody,
+#		       lineargray => $lineargray
+#		      );
 sub set_splot_palette {
   my ($self, $pal) = @_;
   $pal ||= $self->splot_palette_name;
-  $self->splot_palette($palette_choices{$pal});
+  $pal = "Parula" if (none {$_ eq $pal} palette_names);
+  $self->splot_palette_name($pal);
+  $self->splot_palette(palette($pal));
   return $self;
 };
 

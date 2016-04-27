@@ -24,6 +24,7 @@ my $build = Module::Build
 				'Term::Sk'                  => '0.07',
 				'Text::Template'            =>  0,
 				'YAML::Tiny'                =>  0,
+				'Graphics::Gnuplot::Palettes' => 0,
 			       },
 	 recommends         => {
 				'PDL::Graphics::Simple'     =>  0,

@@ -30,6 +30,9 @@ To install, do the following:
 :      ./Build test
 :      sudo ./Build install
 
+The requirement ~Graphics::Gnuplot::Palettes~ is not on CPAN and will
+not be installed at the ~Build installdeps~ step.  Download this
+package from https://github.com/bruceravel/Graphics-Gnuplot-Palettes
 
 ** Usage
 

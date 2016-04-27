@@ -15,7 +15,6 @@ Contents:
    Xray/BLA/Plot.rst
    Xray/BLA/Return.rst
    Xray/BLA/Tools.rst
-   Xray/BLA/SplotPalette.rst
    Demeter/UI/Metis.rst
    Demeter/UI/Metis/Files.rst
    Demeter/UI/Metis/Mask.rst

@@ -9,6 +9,8 @@ use Wx qw( :everything );
 use base 'Wx::Panel';
 use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON);
 
+use Graphics::Gnuplot::Palettes qw(palette_names);
+
 sub new {
   my ($class, $page, $app) = @_;
   my $self = $class->SUPER::new($page, -1, wxDefaultPosition, wxDefaultSize, wxMAXIMIZE_BOX );
@@ -49,11 +51,12 @@ sub new {
 
   #++$row;
   $self->{palette_label} = Wx::StaticText -> new($self, -1, "Splot palette");
-  $self->{palette}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(parula moreland kindlemann blackbody jet pm3d lineargray)]);
+  $self->{palette}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [palette_names()]);
   $gbs -> Add($self->{palette_label},    Wx::GBPosition->new($row,3));
   $gbs -> Add($self->{palette},          Wx::GBPosition->new($row,4));
   $self->{palette}->SetStringSelection($app->{base}->splot_palette_name);
   $app->mouseover($self->{palette}, "The palette for the plot of the RXES plane type.");
+  #qw(parula moreland kindlemann blackbody jet pm3d lineargray)
 
   ++$row;
   $self->{energycounterwidth_label} = Wx::StaticText -> new($self, -1, "Energy index width");

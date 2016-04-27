@@ -12,7 +12,7 @@ do_sed()
 pod2rst --infile=../lib/Xray/BLA.pm --outfile lib/Xray/BLA.rst
 do_sed lib/Xray/BLA.rst
 
-XB='IO Image Mask Pause Plot Return Tools SplotPalette'
+XB='IO Image Mask Pause Plot Return Tools'
 for f in $XB; do
     pod2rst --infile=../lib/Xray/BLA/$f.pm --outfile lib/Xray/BLA/$f.rst
     do_sed lib/Xray/BLA/$f.rst

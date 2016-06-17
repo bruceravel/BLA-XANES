@@ -1,7 +1,7 @@
 ; -- demeter_and_strawberry_perl.iss --
 
 #define MyInstName "Metis_Installer_for_Windows"
-#define MyAppVersion "1"
+#define MyAppVersion "2.2"
 #define MyAppPublisher "Bruce Ravel"
 #define MyAppURL "https://github.io/bruceravel/BLA-XANES"
 #define Metis "Metis"
@@ -29,7 +29,7 @@ SolidCompression=yes
 SourceDir=c:\strawberry
 OutputDir=c:\output\Metis\version{#MyAppVersion}
 OutputBaseFilename={#MyInstName}_{#MyAppVersion}
-AppComments=XAS Data Processing and Analysis
+AppComments=Bent Laue Spectrometer Data Processing
 AppContact={#MyAppURL}
 AppCopyright=Metis is copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf
 ; AppMutex= TODO!

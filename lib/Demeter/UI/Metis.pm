@@ -64,6 +64,7 @@ const my $DECREMENT_ENERGY   => Wx::NewId();
 sub OnInit {
   my ($app, $tool) = @_;
   $app->{tool} = $::tool;
+  $app->{save} = 0;
   my @utilities = ();
   if ($app->{tool} eq 'herfd') {
     @utilities = qw(Files Mask Data Config);
@@ -200,8 +201,31 @@ sub OnInit {
   return 1;
 };
 
+sub save_indicator {
+  my ($app, $should_save) = @_;
+  my $current = $app->{main}->GetTitle();
+  $current =~ s{\A\* }{};
+  $current =~ s{ \*\z}{};
+  if ($should_save) {
+    $app->{main}->SetTitle('* ' . $current . ' *');
+    $app->{Mask}->{savesteps}->SetBackgroundColour(Wx::Colour->new(255,206,215));
+  } else {
+    $app->{main}->SetTitle($current);
+    $app->{Mask}->{savesteps}->SetBackgroundColour($app->{Mask}->{restoresteps}->GetBackgroundColour);
+  };
+  $app->{save} = $should_save;
+};
+
+
 sub on_close {
   my ($app) = @_;
+  if ($::app->{save}) {
+    my $md = Wx::MessageDialog->new($app->{main}, "Save mask creation steps?", "Save mask creation steps?",
+				    wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+    if ($md->ShowModal == wxID_YES) {
+      Demeter::UI::Metis::Mask::save_steps($::app->{Mask}, q{}, $::app)
+      };
+  };
   $app->Destroy;
 };
 
@@ -309,7 +333,7 @@ sub set_parameters {
   $app->{base} -> shield($app->{Mask}->{shieldvalue}->GetValue);
   $app->{base} -> social_pixel_value($app->{Mask}->{socialvalue}->GetValue);
   $app->{base} -> lonely_pixel_value($app->{Mask}->{lonelyvalue}->GetValue);
-  $app->{base} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
+  #$app->{base} -> scalemask($app->{Mask}->{multiplyvalue}->GetValue);
   $app->{base} -> radius($app->{Mask}->{arealvalue}->GetValue);
 
   ## shield
@@ -391,8 +415,8 @@ sub restore_config {
       $app->{Mask}->{socialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
       $app->{Mask}->{lonelyvalue}->SetValue($words[1]);
-    } elsif ($st =~ m{\Amultiply}) {
-      $app->{Mask}->{multiplyvalue}->SetValue($words[1]);
+    #} elsif ($st =~ m{\Amultiply}) {
+    #  $app->{Mask}->{multiplyvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Aareal}) {
       $app->{Mask}->{arealtype}->SetStringSelection($words[1]);
       $app->{Mask}->{arealvalue}->SetValue($words[1]);

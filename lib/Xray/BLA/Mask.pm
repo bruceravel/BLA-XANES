@@ -606,10 +606,18 @@ sub gaussian_blur {
   my $ret = Xray::BLA::Return->new;
 
   my $gbv   = $self->gaussian_blur_value;
-  
   my $onoff = $self->elastic_image->gt(0,0);
   my $before = $onoff->sum;
-  my $kernel = pdl( [ [1./16, 2./16, 1./16], [2./16, 4./16, 2./16], [1./16, 2./16, 1./16] ] );
+  my $kernel = pdl( [ [1./16, 2./16, 1./16],
+  		      [2./16, 4./16, 2./16],
+  		      [1./16, 2./16, 1./16] ] );
+  #my $kernel = pdl( [ [1.0,  4.0,  7.0,  4.0, 1.0],
+#		      [4.0, 16.0, 26.0, 16.0, 4.0],
+#		      [7.0, 26.0, 41.0, 26.0, 7.0],
+#		      [1.0,  4.0,  7.0,  4.0, 1.0],
+#		      [4.0, 16.0, 26.0, 16.0, 4.0],
+#		    ] );
+#  $kernel = $kernel / 273.0;
   my $blurred = $self->elastic_image->conv2d($kernel, {Boundary => 'Truncate'});
 
   my ($h,$w) = $self->elastic_image->dims;
@@ -626,6 +634,61 @@ sub gaussian_blur {
   $ret->message($str);
   return $ret;
 };
+
+
+sub fluo {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+  my $ei  = $self->elastic_image;
+  my ($w,$h) = $self->elastic_image->dims;
+
+  $args{emin}   ||= 0;
+  $args{level}  ||= 100;
+  $args{xstart} ||= 0;
+
+  # $args{fluo}   : file to use for shield
+  # $args{level}  : cutoff for shield
+  # $args{emin}   : first energy to start using shield
+  # $args{xstart} : x-value, to the left of this, set shield to 0
+
+  my $shield = $self->Read( File::Spec->catfile($self->tiffolder, $args{fluo}) );
+  my $kernel = pdl( [ [1.0,  4.0,  7.0,  4.0, 1.0],
+		      [4.0, 16.0, 26.0, 16.0, 4.0],
+		      [7.0, 26.0, 41.0, 26.0, 7.0],
+		      [1.0,  4.0,  7.0,  4.0, 1.0],
+		      [4.0, 16.0, 26.0, 16.0, 4.0],
+		    ] );
+  $kernel = $kernel / 273.0;
+  $shield = $shield->conv2d($kernel, {Boundary => 'Truncate'});
+  $shield->inplace->gt($args{level},0);
+
+  foreach my $col (0 .. $w-1) {
+    if ($col < $args{xstart}) {
+      $shield->($col,:) = 1;
+      next;
+    };
+    my $this = $shield->($col,:)->which;
+    next if not $this->dim(0);
+    $shield->($col,0:$this->(0)) .= 1;
+  };
+  $shield->inplace->eq(0,0);
+
+  my $on = $shield * $ei;
+  my $onval  = $on->sum;
+  my $offval = $h*$w-$onval;
+  $self->elastic_image($on);
+
+  my $text = $args{pass} ? " (pass ".$args{pass}.")" : q{};
+  my $str = $self->report("Fluorescence shield step$text", 'cyan');
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $onval, $offval, $onval+$offval;
+  $ret->status($onval);
+  $ret->message($str);
+  return $ret;
+
+};
+
 
 sub poly_fill {
   my ($self, $rargs) = @_;
@@ -716,8 +779,8 @@ sub poly_fill {
       splice(@x, $i-1, 1, $x[$i-1]+1); # by splicing in the missing number
     };
   };
-  #foreach my $i ($x[0]..$x[-1]) {  # remove Soller slit gaps
-  foreach my $i (@x) {		    # leave  Soller slit gaps
+  foreach my $i ($x[0]..$x[-1]) {  # remove Soller slit gaps
+  #foreach my $i (@x) {		    # leave  Soller slit gaps
     my $xpow = pdl( map {$i ** $_} (0 .. $order-1) ); # powers of X for polynomial
     my $y1 = $coeffs1 * $xpow;
     my $y2 = $coeffs2 * $xpow;

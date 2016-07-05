@@ -125,6 +125,10 @@ sub new {
   $app->mouseover($self->{fetch}, "Fetch all image files and populate the file lists below.");
   EVT_BUTTON($self, $self->{fetch}, sub{fetch(@_, $app)});
 
+  $self->{add} = Wx::Button->new($self, -1, "&Refresh images", wxDefaultPosition, [-1,-1]);
+  $hbox -> Add($self->{add}, 0, wxALL, 5);
+  $app->mouseover($self->{add}, "Add newly arrived image files.");
+  EVT_BUTTON($self, $self->{add}, sub{more(@_, $app)});
 
 
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
@@ -311,6 +315,31 @@ sub fetch {
   undef $busy;
 };
 
+sub more {
+  my ($self, $event, $app) = @_;
+  my $busy = Wx::BusyCursor->new();
+  my $stub = $app->{base}->stub;
+  my $image_folder = $app->{base}->tifffolder;
+
+  $self->{image_list}->Clear;
+  my @image_list = ();
+  if ($self->{image_template}->GetValue !~ m{\A\s*\z}) {
+    my $image_re   = $app->{base}->file_template($self->{image_template}->GetValue, {re=>1});
+    opendir(my $I, $image_folder);
+    @image_list = sort {$a cmp $b} grep {$_ =~ m{$image_re}} readdir $I;
+    closedir $I;
+    if ($#image_list == -1) {
+      $app->{main}->status("No image files for $image_re found in $image_folder.", 'alert');
+      return;
+    };
+    $self->{image_list}->InsertItems(\@image_list,0);
+  };
+
+  $app->{main}->status("Refreshed image file list for $stub");
+  undef $busy;
+};
+
+
 sub view {
   my ($self, $event, $app, $which) = @_;
   my $stub   = $self->{stub}->GetValue;
@@ -318,43 +347,44 @@ sub view {
   my $img    = $self->{$which."_list"} -> GetStringSelection;
   my $file   = File::Spec->catfile($folder, $img);
 
-  if ($which eq 'image') {
-    $app->{base}->plot_energy_point($file);
-    $app->{main}->status("Plotted energy point $file");
-    return;
-  };
+  #  if ($which eq 'image') {
+  $app->{base}->plot_energy_point($file);
+  $app->{main}->status("Plotted energy point $file");
+  return;
+  #  };
+}
+  
+#   my $elastic_re = $app->{base}->file_template($self->{elastic_template}->GetValue, {re=>1});
+#   my $spectrum;
+#   if ($img =~ m{$elastic_re}) {
+#     my $this = $+{e} || $+{c};
+#     $spectrum = $app->{bla_of}->{$this};
+#   } else {
+#     $app->{main}->status("Can't find the file you just clicked on...", 'error');
+#   };
 
-  my $elastic_re = $app->{base}->file_template($self->{elastic_template}->GetValue, {re=>1});
-  my $spectrum;
-  if ($img =~ m{$elastic_re}) {
-    my $this = $+{e} || $+{c};
-    $spectrum = $app->{bla_of}->{$this};
-  } else {
-    $app->{main}->status("Can't find the file you just clicked on...", 'error');
-  };
+#   $spectrum -> tifffolder($folder);
+#   $spectrum -> stub($stub);
+#   if ($file =~ m{$elastic_re}) {
+#     my $this = $+{e} || $+{c};
+#     $spectrum -> energy($this);
+#   } else {
+#     $app->{main}->status("Can't figure out energy...", 'alert');
+#     return;
+#   };
 
-  $spectrum -> tifffolder($folder);
-  $spectrum -> stub($stub);
-  if ($file =~ m{$elastic_re}) {
-    my $this = $+{e} || $+{c};
-    $spectrum -> energy($this);
-  } else {
-    $app->{main}->status("Can't figure out energy...", 'alert');
-    return;
-  };
+#   my $cbm = int($spectrum->elastic_image->max);
+#   if ($cbm < 1) {
+#     $cbm = 1;
+#   } elsif ($cbm > $spectrum->bad_pixel_value/$spectrum->imagescale) {
+#     $cbm = $spectrum->bad_pixel_value/$spectrum->imagescale;
+#   };
+#   $spectrum->cbmax($cbm);# if $step =~ m{social};
+#   $spectrum->plot_mask;
+#   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
+#   $app->{main}->status("Plotted ".$spectrum->elastic_file);
 
-  my $cbm = int($spectrum->elastic_image->max);
-  if ($cbm < 1) {
-    $cbm = 1;
-  } elsif ($cbm > $spectrum->bad_pixel_value/$spectrum->imagescale) {
-    $cbm = $spectrum->bad_pixel_value/$spectrum->imagescale;
-  };
-  $spectrum->cbmax($cbm);# if $step =~ m{social};
-  $spectrum->plot_mask;
-  $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
-  $app->{main}->status("Plotted ".$spectrum->elastic_file);
-
-};
+# };
 
 
 sub SelectFolder {

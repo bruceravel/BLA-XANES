@@ -144,7 +144,7 @@ sub SelectXDIFile {
   };
 
   my $file  = $fd->GetPath;
-  $app->{Config}->{xdi_filename}->SetLabel($file);
+  $app->{Config}->{xdi_filename}->SetValue($file);
   $app->{main}->status("Selected XDI metadata file: $file.");
 };
 

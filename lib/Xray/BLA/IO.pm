@@ -194,7 +194,8 @@ sub xdi_xes {
   print $O "# -------------------------\n";
   print $O '#  ' . join("      ", qw(energy xes npixels raw)), $/;
   foreach my $p (@$rdata) {
-    printf $O "  %.3f  %.7f  %.7f  %.7f\n", @$p;
+    $p->[0] /= 10 if $self->div10;
+    printf $O "  %.3f  %.7f  %6d  %.7f\n", @$p;
   };
 
   close $O;
@@ -210,7 +211,8 @@ sub dat_xes {
   print   $O "# -------------------------\n";
   print   $O "#   energy      xes    npixels    raw\n";
   foreach my $p (@$rdata) {
-    printf $O "  %.3f  %.7f  %.7f  %.7f\n", @$p;
+    $p->[0] /= 10 if $self->div10;
+    printf $O "  %.3f  %.7f  %6d  %.7f\n", @$p;
   };
   close   $O;
   return $outfile;

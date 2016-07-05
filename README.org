@@ -36,7 +36,7 @@ package from https://github.com/bruceravel/Graphics-Gnuplot-Palettes
 
 ** Usage
 
-~bla~, found in the ~bin/~ folder, is a wrapper script around the six
+~bla~, found in the ~bin/~ folder, is a wrapper script around the various
 bent Laue tasks:
 
  1. ~herfd~: make a single HERFD spectrum at a specific emission
@@ -47,12 +47,14 @@ bent Laue tasks:
 
  3. ~xes~: compute the emission spectrum for a specific incident energy
 
- 4. ~map~: convert a series of elastic images to an energy vs. pixel
+ 4. ~plane~: compute the resonant XES plane
+
+ 5. ~map~: convert a series of elastic images to an energy vs. pixel
     map
 
- 5. ~mask~: compute the mask file for a specific emission energy
+ 6. ~mask~: compute the mask file for a specific emission energy
 
- 6. ~point~: convert a specified BLA image to its HERFD value for a
+ 7. ~point~: convert a specified BLA image to its HERFD value for a
     specified emission energy
 
 *** The bla script
@@ -60,6 +62,7 @@ bent Laue tasks:
 :  bla herfd [cxespvnfqh]  <stub>
 :  bla rixs  [cxspvnfqh]   <stub>
 :  bla xes   [cipvnqh]     <stub>
+:  bla plane [cpvnqh]      <stub>
 :  bla map   [crpvnqh]     <stub>
 :  bla mask  [csvnfqh]     <stub>
 :  bla point [ceih]        <stub>
@@ -89,6 +92,7 @@ configuration file.
 :             bla rixs  -c=/path/to/config.ini Aufoil1
 :             bla map   -c=/path/to/config.ini Aufoil1
 :             bla xes   -c=/path/to/config.ini -i=11970 Aufoil1
+:             bla plane -c=/path/to/config.ini Aufoil1
 :             bla mask  -c=/path/to/config.ini -e=9713 Aufoil1
 :             bla point -c=/path/to/config.ini -e=9713 -p=10 Aufoil1
 

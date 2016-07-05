@@ -409,7 +409,8 @@ sub all_masks {
     $app->{bla_of}->{$key}->steps($rsteps);
     #$app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
     #				 aggregate=>$app->{bla_of}->{aggregate});
-    $app->{Mask}->SelectEnergy($event, $app, {energy=>$key, noplot=>1, quiet=>1}) if not $reuse;
+    $app->{Mask}->SelectEnergy($event, $app, {energy=>$key, noplot=>1, quiet=>1})
+      if ((not $reuse) or (not $app->{bla_of}->{$key}->npixels));
     $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
     $n = $app->{bla_of}->{$key}->npixels;
     $max = $n if ($n > $max);

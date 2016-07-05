@@ -22,11 +22,13 @@ my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
 		       do_polyfill
 		       do_social sociallabel socialvalue socialvertical
 		       do_lonely lonelylabel lonelyvalue
-		       do_multiply multiplyvalue
 		       do_areal arealtype areallabel arealvalue
-		       do_entire do_andmask savemask
+		       do_andmask savemask
 		       rangelabel rangemin rangeto rangemax
 		       stub plotshield reset energylabel energy undostep savesteps)); # animation rbox do_aggregate
+                       #do_multiply multiplyvalue do_entire
+		       #do_fluo fluolabel fluolevel fluoenergylabel fluoenergy
+
 my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue), @most_widgets);
 
 my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "up.png");
@@ -55,13 +57,26 @@ sub new {
   my $stepsboxsizer  = Wx::StaticBoxSizer->new( $stepsbox, wxVERTICAL );
 
   $self->{steps_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
-  $stepsboxsizer -> Add($self->{steps_list}, 1, wxGROW);
+  $stepsboxsizer -> Add($self->{steps_list}, 1, wxGROW|wxALL, 3);
+  $self->{undostep} = Wx::Button->new($self, -1, '&Undo last step');
+  $stepsboxsizer -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 3);
+  EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
+
   $hbox -> Add($sbox, 1, wxGROW|wxALL, 5);
   $sbox -> Add($stepsboxsizer, 1, wxGROW|wxALL, 5);
 
-  $self->{undostep} = Wx::Button->new($self, -1, '&Undo last step');
-  $sbox -> Add($self->{undostep}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
-  EVT_BUTTON($self, $self->{undostep}, sub{undo_last_step(@_, $app)});
+  my $spotsbox       = Wx::StaticBox->new($self, -1, 'Defined spots', wxDefaultPosition, wxDefaultSize);
+  my $spotsboxsizer  = Wx::StaticBoxSizer->new( $spotsbox, wxVERTICAL );
+
+  $self->{spots_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
+  $spotsboxsizer -> Add($self->{spots_list}, 1, wxGROW|wxALL, 3);
+  $sbox -> Add($spotsboxsizer, 1, wxGROW|wxALL, 5);
+  EVT_RIGHT_DOWN($self->{spots_list}, sub{SpotsMenu(@_, $app)});
+
+  $self->{pluck} = Wx::Button->new($self, -1, 'Pluck point from plot');
+  $spotsboxsizer -> Add($self->{pluck}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 3);
+  EVT_BUTTON($self, $self->{pluck}, sub{pluck(@_, $app)});
+
   $self->{restoresteps} = Wx::Button->new($self, -1, 'Restore steps');
   $sbox -> Add($self->{restoresteps}, 0, wxGROW|wxLEFT|wxRIGHT|wxBOTTOM, 5);
   EVT_BUTTON($self, $self->{restoresteps}, sub{restore_steps(@_, $app)});
@@ -69,18 +84,6 @@ sub new {
   $sbox -> Add($self->{savesteps}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
   EVT_BUTTON($self, $self->{savesteps}, sub{save_steps(@_, $app)});
 
-
-  my $spotsbox       = Wx::StaticBox->new($self, -1, 'Defined spots', wxDefaultPosition, wxDefaultSize);
-  my $spotsboxsizer  = Wx::StaticBoxSizer->new( $spotsbox, wxVERTICAL );
-
-  $self->{spots_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
-  $spotsboxsizer -> Add($self->{spots_list}, 1, wxGROW);
-  $sbox -> Add($spotsboxsizer, 1, wxGROW|wxALL, 5);
-  EVT_RIGHT_DOWN($self->{spots_list}, sub{SpotsMenu(@_, $app)});
-
-  $self->{pluck} = Wx::Button->new($self, -1, 'Pluck point from plot');
-  $sbox -> Add($self->{pluck}, 0, wxGROW|wxLEFT|wxRIGHT, 5);
-  EVT_BUTTON($self, $self->{pluck}, sub{pluck(@_, $app)});
 
 
   $self->{stub} = Wx::StaticText->new($self, -1, 'Stub is <undefined>');
@@ -112,7 +115,7 @@ sub new {
 
   $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxLEFT, 5);
-  $self->{rangelabel} = Wx::StaticText->new($self, -1, "Image range in pixels:");
+  $self->{rangelabel} = Wx::StaticText->new($self, -1, "Horizontal range (pixels):");
   $self->{rangemin}   = Wx::SpinCtrl->new($self, -1, $app->{base}->width_min, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 0, 487);
   $self->{rangeto}    = Wx::StaticText->new($self, -1, " to ");
   $self->{rangemax}   = Wx::SpinCtrl->new($self, -1, $app->{base}->width_max, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 0, 487);
@@ -168,6 +171,22 @@ sub new {
   $app->mouseover($self->{do_shield},   "Create and use a shield for suppressing fluorescence signal.");
   $app->mouseover($self->{shieldvalue}, "The trailing value for the shield -- add the N-1 mask to the previous shield.");
 
+  # ++$row;
+  # $self->{do_fluo}         = Wx::Button->new($self, -1, "Fluo shield", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  # $self->{fluolabel}       = Wx::StaticText->new($self, -1, 'Level:');
+  # $self->{fluolevel}       = Wx::TextCtrl->new($self, -1, $app->{base}->fluolevel,  wxDefaultPosition, [70,-1]);
+  # $self->{fluoenergylabel} = Wx::StaticText->new($self, -1, 'Emin:');
+  # $self->{fluoenergy}      = Wx::TextCtrl->new($self, -1, $app->{base}->fluoenergy, wxDefaultPosition, [70,-1]);
+  # $gbs ->Add($self->{do_fluo},         Wx::GBPosition->new($row,0));
+  # $gbs ->Add($self->{fluolabel},       Wx::GBPosition->new($row,1));
+  # $gbs ->Add($self->{fluolevel},       Wx::GBPosition->new($row,2));
+  # $gbs ->Add($self->{fluoenergylabel}, Wx::GBPosition->new($row,3));
+  # $gbs ->Add($self->{fluoenergy},      Wx::GBPosition->new($row,4));
+  # $app->mouseover($self->{do_fluo},   "Create and use a shield made from a fluorescence image.");
+  # $app->mouseover($self->{fluolevel},   "Cutoff value for the fluorescence shield");
+  # $app->mouseover($self->{fluoenergy},  "The energy at which to start using the fluorescence shield.");
+
+  
   ++$row;
   $self->{do_polyfill}   = Wx::Button->new($self, -1, "&Polyfill", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $gbs ->Add($self->{do_polyfill},   Wx::GBPosition->new($row,0));
@@ -216,22 +235,22 @@ sub new {
   $app->mouseover($self->{socialvalue}, "An unlit pixel is social and will be included if greater tan or equal to this number of neighbors are lit.");
   $app->mouseover($self->{socialvalue}, "Perform the social pixel step, but only considering pixels directly above and below.");
 
-  ++$row;
-  $self->{do_multiply} = Wx::Button->new($self, -1, "Multipl&y by", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
-  $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 2, 1000);
-  $gbs ->Add($self->{do_multiply},   Wx::GBPosition->new($row,0));
-  $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
-  $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
+  # ++$row;
+  # $self->{do_multiply} = Wx::Button->new($self, -1, "Multipl&y by", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  # $self->{multiplyvalue}  = Wx::SpinCtrl->new($self, -1, '5', wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 2, 1000);
+  # $gbs ->Add($self->{do_multiply},   Wx::GBPosition->new($row,0));
+  # $gbs ->Add($self->{multiplyvalue}, Wx::GBPosition->new($row,1));
+  # $app->mouseover($self->{do_multiply},   "Scale the entire mask by an integer value.");
 
-  #++$row;
-  #$self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
-  #$gbs ->Add($self->{do_aggregate},   Wx::GBPosition->new($row,2));
-  #$app->mouseover($self->{do_aggregate},   "Multiply the current mask by the aggregate mask.");
+  # #++$row;
+  # #$self->{do_aggregate} = Wx::Button->new($self, -1, "Use a&ggregate", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  # #$gbs ->Add($self->{do_aggregate},   Wx::GBPosition->new($row,2));
+  # #$app->mouseover($self->{do_aggregate},   "Multiply the current mask by the aggregate mask.");
 
-  #++$row;
-  $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
-  $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,3), Wx::GBSpan->new(1,2));
-  $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
+  # #++$row;
+  # $self->{do_entire} = Wx::Button->new($self, -1, "Entire image", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
+  # $gbs ->Add($self->{do_entire},   Wx::GBPosition->new($row,3), Wx::GBSpan->new(1,2));
+  # $app->mouseover($self->{do_areal},   "Set every pixel in the mask to 1 and generate (not-so) HERFD from the entire image.");
 
   ++$row;
   $self->{line2} = Wx::StaticLine->new($self, -1, wxDefaultPosition, [100, 2], wxLI_HORIZONTAL);
@@ -408,8 +427,8 @@ sub SelectEnergy {
       $self->{soacialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
       $self->{lonelyvalue}->SetValue($words[1]);
-    } elsif ($st =~ m{\Amultiply}) {
-      $self->{multiplyvalue}->SetValue($words[1]);
+    #} elsif ($st =~ m{\Amultiply}) {
+    #  $self->{multiplyvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Aareal}) {
       $self->{arealtype}->SetStringSelection($words[1]);
       $self->{arealvalue}->SetValue($words[1]);
@@ -421,6 +440,8 @@ sub SelectEnergy {
     $self->plot($app, $spectrum, 1);
     $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   };
+  $self->{energy}->SetFocus;
+  Demeter::UI::Metis::save_indicator($app, 0);
   undef $busy;
 };
 
@@ -461,6 +482,7 @@ sub Reset {
   $self->{reset}->Enable(0);
 
   $spectrum->aggregate if ($spectrum->masktype eq 'aggregate');
+  Demeter::UI::Metis::save_indicator($app, 0);
   $self->plot($app, $spectrum);
 };
 
@@ -575,6 +597,22 @@ sub do_step {
     #undef $busy;
     #return;
 
+  # } elsif ($which eq 'fluo') {
+  #   $args{level} = $self->{fluolevel}->GetValue;
+  #   $args{emin}  = $self->{fluoenergy}->GetValue;
+  #   ## validator and 1.2.3
+  #   $app->{Files}->{image_list}->SetSelection(0);
+  #   $args{fluo} = $app->{Files}->{image_list}->GetStringSelection;
+  #   $args{xstart} = 0;
+
+  #   $spectrum -> fluolevel($args{level});
+  #   $spectrum -> fluoenergy($args{emin});
+  #   $spectrum -> fluofile($args{fluo});
+  #   $spectrum -> fluoxstart($args{xstart});
+  #   $success = $spectrum -> do_step('fluo', %args);
+  #   $self->{steps_list}->Append(sprintf("fluo %.1f %.1f",
+  # 					$spectrum -> fluolevel, $spectrum -> fluoenergy)) if ($success and $append);
+
   } elsif ($which eq 'polyfill') {
     $success = $spectrum -> do_step('polyfill', %args);
     $self->{steps_list}->Append("polyfill") if ($success and $append);
@@ -593,11 +631,11 @@ sub do_step {
     $self->{steps_list}->Append(sprintf("lonely %d",
 					$spectrum -> lonely_pixel_value)) if ($success and $append);
 
-  } elsif ($which eq 'multiply') {
-    $spectrum -> scalemask($self->{multiplyvalue}->GetValue);
-    $success = $spectrum -> do_step('multiply', %args);
-    $self->{steps_list}->Append(sprintf("multiply by %d",
-					$spectrum -> scalemask)) if ($success and $append);
+  # } elsif ($which eq 'multiply') {
+  #   $spectrum -> scalemask($self->{multiplyvalue}->GetValue);
+  #   $success = $spectrum -> do_step('multiply', %args);
+  #   $self->{steps_list}->Append(sprintf("multiply by %d",
+  # 					$spectrum -> scalemask)) if ($success and $append);
 
   } elsif ($which eq 'areal') {
     $spectrum -> operation($self->{arealtype}->GetStringSelection);
@@ -645,8 +683,8 @@ sub do_step {
       $app->{main}->status("${tab}The $which step resulted in 0 illuminated pixels.  Returning to previous step.", 'alert');
     };
   };
+  Demeter::UI::Metis::save_indicator($app, 1);
   undef $busy if $busy;
-
 };
 
 
@@ -773,6 +811,7 @@ sub pluck {
   };
   my $line = join("  ",  $pp->{e}->GetValue, $pp->{x}->GetValue, $pp->{y}->GetValue, $pp->{r}->GetValue);
   $self->{spots_list}->Append($line);
+  Demeter::UI::Metis::save_indicator($app, 1);
 };
 
 
@@ -845,6 +884,7 @@ sub undo_last_step {
     $self->SelectEnergy(q{}, $app);
     #$self->replot($event, $app);
   };
+  Demeter::UI::Metis::save_indicator($app, 1);
 };
 
 sub save_steps {
@@ -893,6 +933,7 @@ sub save_steps {
   open(my $INI, '>', $file);
   print $INI $text;
   close $INI;
+  Demeter::UI::Metis::save_indicator($app, 0);
   $app->{main}->status("Saved ini file to $file.");
 };
 
@@ -912,9 +953,11 @@ sub restore_steps {
   my $spots = $ini{spots}{spots};
   $spots = [$spots] if ref($spots) !~ m{ARRAY};
   $self->{spots_list}->Clear;
-  foreach my $sp (@$spots) {
-    $self->{spots_list}->Append($sp);
-  }
+  if ($#{$spots}) {
+    foreach my $sp (@$spots) {
+      $self->{spots_list}->Append($sp);
+    }
+  };
   my $steps = $ini{steps}{steps};
   $self->Reset($event, $app);
   foreach my $st (@$steps) {
@@ -926,14 +969,15 @@ sub restore_steps {
       $self->{socialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
       $self->{lonelyvalue}->SetValue($words[1]);
-    } elsif ($st =~ m{\Amultiply}) {
-      $self->{multiplyvalue}->SetValue($words[1]);
+    #} elsif ($st =~ m{\Amultiply}) {
+    #  $self->{multiplyvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Aareal}) {
       $self->{arealtype}->SetStringSelection($words[1]);
       $self->{arealvalue}->SetValue($words[1]);
     };
     $self->do_step($event, $app, $words[0], 1, 0);
   };
+  Demeter::UI::Metis::save_indicator($app, 0);
 };
 1;
 

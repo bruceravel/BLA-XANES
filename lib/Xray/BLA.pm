@@ -128,6 +128,16 @@ has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'shield'             => (is => 'rw', isa => 'Int', default => 15,
 			     documentation => "Number of steps used to create a shield from lower-energy emission images for removing a fluorescence signal from the mask.");
+
+has 'fluolevel'          => (is => 'rw', isa => 'LaxNum', default => 100.0,
+			     documentation => "Cutoff level of fluorescence image used to make fluorescence shield.");
+has 'fluoxstart'         => (is => 'rw', isa => 'Int', default => 0,
+			     documentation => "Beginning x-value of fluorscence shield.");
+has 'fluofile'           => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "File containing fluorescence image used to make fluorescence shield.");
+has 'fluoenergy'         => (is => 'rw', isa => 'LaxNum', default => 0,
+			     documentation => "Energy to start using fluorescence shield.");
+
 has 'npixels'            => (is => 'rw', isa => 'Int', default => 0,
 			     documentation => "The number of illuminated pixels in the final mask.");
 has 'normpixels'         => (is => 'rw', isa => 'LaxNum', default => 0,

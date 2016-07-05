@@ -19,6 +19,7 @@ use Moose::Role;
 use PDL::Graphics::Simple;
 use PDL::Graphics::Gnuplot qw(gplot image gpwin);
 use File::Basename;
+use List::Util qw(min);
 use List::MoreUtils qw(all none any);
 use Math::Random;
 use Scalar::Util qw(looks_like_number);
@@ -166,10 +167,11 @@ sub plot_plane {
 sub plot_energy_point {
   my ($self, $file) = @_;
   my $point = $self->Read($file);
-  my $cbm = $self->bad_pixel_value/$self->imagescale;
+  my $cbm = min($point->max, 100);
+  #my $cbm = $self->bad_pixel_value/$self->imagescale;
   my $title = $self->escape_us(basename($file));
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
-  $self->pdlplot->image({cbrange=>[0,$cbm], palette=>$self->palette, title=>$title,
+  $self->pdlplot->image({cbrange=>[0, $cbm], palette=>$self->palette, title=>$title, # cbrange=>[0,$cbm],
 			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
 			$point);
   undef $point;

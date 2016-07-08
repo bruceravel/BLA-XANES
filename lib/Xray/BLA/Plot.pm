@@ -99,6 +99,8 @@ sub plot_mask {
   };
   $title = $self->escape_us($title);
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  my $point = $self->Read($self->elastic_file);
+
   $self->pdlplot->image({cbrange=>[0,$self->cbmax], palette=>$self->palette, title=>$title,
 			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
 			$self->elastic_image);	#                                                ^^ because imagej^^

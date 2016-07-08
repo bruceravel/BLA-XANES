@@ -124,6 +124,9 @@ has 'vertical'           => (is => 'rw', isa => 'Bool', default => 0,
 			     documentation => "A flag indicating the the social pixel step of mask creation should only consider pixels in the vertical direction.");
 has 'gaussian_blur_value'=> (is => 'rw', isa => 'LaxNum', default => 2,
 			     documentation => "The threshold value for leaving pixels in a mask after applying the Gaussian blur filter.");
+has 'gaussian_kernel'    => (is => 'rw', isa => 'Str', default => '3x3',
+			     documentation => "The size of the Gaussian kernel (3x3 or 5x5).");
+
 has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");
 has 'shield'             => (is => 'rw', isa => 'Int', default => 15,

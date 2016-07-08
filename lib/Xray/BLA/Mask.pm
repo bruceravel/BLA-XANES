@@ -608,16 +608,20 @@ sub gaussian_blur {
   my $gbv   = $self->gaussian_blur_value;
   my $onoff = $self->elastic_image->gt(0,0);
   my $before = $onoff->sum;
-  my $kernel = pdl( [ [1./16, 2./16, 1./16],
-  		      [2./16, 4./16, 2./16],
-  		      [1./16, 2./16, 1./16] ] );
-  #my $kernel = pdl( [ [1.0,  4.0,  7.0,  4.0, 1.0],
-#		      [4.0, 16.0, 26.0, 16.0, 4.0],
-#		      [7.0, 26.0, 41.0, 26.0, 7.0],
-#		      [1.0,  4.0,  7.0,  4.0, 1.0],
-#		      [4.0, 16.0, 26.0, 16.0, 4.0],
-#		    ] );
-#  $kernel = $kernel / 273.0;
+  my $kernel;
+  if ($self->gaussian_kernel eq '3x3') {
+    $kernel = pdl( [ [1./16, 2./16, 1./16],
+		     [2./16, 4./16, 2./16],
+		     [1./16, 2./16, 1./16] ] );
+  } else {
+    $kernel = pdl( [ [1.0,  4.0,  7.0,  4.0, 1.0],
+		     [4.0, 16.0, 26.0, 16.0, 4.0],
+		     [7.0, 26.0, 41.0, 26.0, 7.0],
+		     [1.0,  4.0,  7.0,  4.0, 1.0],
+		     [4.0, 16.0, 26.0, 16.0, 4.0],
+		   ] );
+    $kernel = $kernel / 273.0;
+  };
   my $blurred = $self->elastic_image->conv2d($kernel, {Boundary => 'Truncate'});
 
   my ($h,$w) = $self->elastic_image->dims;

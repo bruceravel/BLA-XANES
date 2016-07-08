@@ -82,7 +82,16 @@ sub new {
   $self->{outimage}->SetStringSelection($app->{base}->outimage);
   $app->mouseover($self->{outimage}, "The file format used for static mask images.");
 
+  ++$row;
+  $self->{kernel_label} = Wx::StaticText -> new($self, -1, "Gaussian kernel size");
+  $self->{kernel}       = Wx::Choice     -> new($self, -1, wxDefaultPosition, wxDefaultSize, [qw(3x3 5x5)]);
+  $gbs -> Add($self->{kernel_label},    Wx::GBPosition->new($row,3));
+  $gbs -> Add($self->{kernel},          Wx::GBPosition->new($row,4));
+  $self->{kernel}->SetStringSelection($app->{base}->gaussian_kernel);
+  $app->mouseover($self->{outimage}, "The size of the kernel for the Gaussian filter.");
 
+
+  
   ++$row;
   $self->{line} = Wx::StaticLine->new($self, -1, wxDefaultPosition, [100, 2], wxLI_HORIZONTAL);
   $gbs -> Add($self->{line}, Wx::GBPosition->new($row,0), Wx::GBSpan->new(1,4));

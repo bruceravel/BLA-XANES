@@ -12,7 +12,7 @@ use Scalar::Util qw(looks_like_number);
 
 use Wx qw( :everything );
 use base 'Wx::Panel';
-use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX EVT_RIGHT_DOWN EVT_MENU);
+use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX EVT_RIGHT_DOWN EVT_MENU EVT_TOGGLEBUTTON);
 use Wx::Perl::TextValidator;
 
 use Demeter::UI::Metis::PluckPoint;
@@ -264,32 +264,38 @@ sub new {
   $svbox->Add($self->{do_andmask}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
   $self->{savemask} = Wx::Button -> new($self, -1, 'Save mask');
   $svbox->Add($self->{savemask}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
-  $self->{animation} = Wx::Button -> new($self, -1, 'Save animation');
-  $svbox->Add($self->{animation}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
   EVT_BUTTON($self, $self->{savemask}, sub{savemask(@_, $app)});
-  EVT_BUTTON($self, $self->{animation}, sub{animation(@_, $app)});
   $app->mouseover($self->{do_andmask}, "Explicitly convert current mask to an AND mask (i.e. with only 0 and 1 values).");
   $app->mouseover($self->{savemask}, "Write the current mask to an image file.");
-  $app->mouseover($self->{animation}, "Save the mask processing steps as an animated gif.");
+  $self->{reset}      = Wx::Button -> new($self, -1, 'Rese&t');
+  $svbox->Add($self->{reset},      1, wxGROW|wxLEFT|wxRIGHT, 5);
+  $self->{reset}      -> Enable(0);
+  EVT_BUTTON($self, $self->{reset},      sub{Reset(@_, $app)});
+  $app->mouseover($self->{reset},      "Return to the measured elastic image and restart the mask");
+
+  #$self->{animation} = Wx::Button -> new($self, -1, 'Save animation');
+  #$svbox->Add($self->{animation}, 1, wxGROW|wxLEFT|wxRIGHT, 5);
+  #EVT_BUTTON($self, $self->{animation}, sub{animation(@_, $app)});
+  #$app->mouseover($self->{animation}, "Save the mask processing steps as an animated gif.");
 
 
   $svbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox->Add($svbox, 0, wxGROW|wxALL, 0);
   $self->{replot}     = Wx::Button -> new($self, -1, '&Replot');
   $self->{plotshield} = Wx::Button -> new($self, -1, 'Plot shield');
-  $self->{reset}      = Wx::Button -> new($self, -1, 'Rese&t');
+  $self->{toggle}     = Wx::ToggleButton -> new($self, -1, 'Image/mask');
   $svbox->Add($self->{replot},     1, wxGROW|wxALL, 5);
   $svbox->Add($self->{plotshield}, 1, wxGROW|wxALL, 5);
-  $svbox->Add($self->{reset},      1, wxGROW|wxALL, 5);
+  $svbox->Add($self->{toggle}, 1, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{replot},     sub{replot(@_, $app, 0)});
   EVT_BUTTON($self, $self->{plotshield}, sub{plot_shield(@_, $app, 0)});
-  EVT_BUTTON($self, $self->{reset},      sub{Reset(@_, $app)});
+  EVT_TOGGLEBUTTON($self, $self->{toggle},     sub{toggle(@_, $app)});
   $self->{replot}     -> Enable(0);
   $self->{plotshield} -> Enable(0);
-  $self->{reset}      -> Enable(0);
+  $self->{toggle} -> Enable(0);
   $app->mouseover($self->{replot},     "Replot the mask after rerunning the processing steps");
   $app->mouseover($self->{plotshield}, "Plot the shield for this mask");
-  $app->mouseover($self->{reset},      "Return to the measured elastic image and restart the mask");
+  $app->mouseover($self->{toggle},     "Toggle elastic image and mask for this energy");
 
   #$vbox ->  Add(1, 1, 2);
 
@@ -300,7 +306,7 @@ sub new {
 
   $self -> SetSizerAndFit( $hbox );
 
-  foreach my $k (@all_widgets, qw(animation)) {
+  foreach my $k (@all_widgets) { # , qw(animation)
     $self->{$k} -> Enable(0);
   };
 
@@ -544,6 +550,7 @@ sub do_step {
     #$self->{do_aggregate}->Enable(1) if ($spectrum->masktype eq 'single');
     $self->{savemask}->Enable(0) if ($spectrum->is_windows);
     $self->{replot}->Enable(1);
+    $self->{toggle}->Enable(1);
     $self->{reset}->Enable(1);
     $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
@@ -675,6 +682,7 @@ sub do_step {
   };
   $spectrum->remove_bad_pixels;
   my $tab = ($energy == $self->{energy}->GetStringSelection) ? q{} : q{    };
+  $self->{toggle}->SetValue(0);
   $self->plot($app, $spectrum, $quiet||$nostatus, $tab);
   if (not $nostatus) {
     if ($success) {
@@ -719,6 +727,18 @@ sub replot {
   my $np = $spectrum->elastic_image->gt(0,0)->sum;
   $app->{main}->status("Replotted mask for $energy.  $np illuminated pixels.");
   undef $busy;
+};
+
+sub toggle {
+  my ($self, $event, $app) = @_;
+  if ($self->{toggle}->GetValue) {
+    my $energy = $self->{energy}->GetStringSelection;
+    my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+    my $spectrum = $app->{bla_of}->{$key};
+    $spectrum->plot_energy_point($spectrum->elastic_file);
+  } else {
+    $self->replot($event, $app, 0);
+  };
 };
 
 sub plot_shield {

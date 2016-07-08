@@ -318,6 +318,7 @@ sub set_parameters {
   $app->{base} -> splot_palette_name($app->{Config}->{palette}->GetStringSelection);
   $app->{base} -> set_splot_palette($app->{base}->splot_palette_name);
   $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetValue);
+  $app->{base} -> gaussian_kernel($app->{Config}->{kernel}->GetStringSelection);
 
   my $val = $app->{Mask}->{gaussianvalue}->GetValue;
   if (not looks_like_number($val)) { # the only non-number the validator will pass
@@ -342,6 +343,7 @@ sub set_parameters {
   foreach my $k (qw(scanfolder tifffolder element line color palette splot_palette_name
 		    imagescale outimage terminal energycounterwidth tiffcounter
 		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
+		    gaussian_kernel
 		    bad_pixel_value gaussian_blur_value shield weak_pixel_value social_pixel_value
 		    lonely_pixel_value scalemask radius div10 shield width_min width_max
 		  )) {

@@ -253,11 +253,19 @@ sub plot_xes {
   } else {
     $legend =~ s{_}{\\\\_}g;
   };
-  $self->pdlplot->gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
-			with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
-			PDL->new(\@e), PDL->new(\@xes));
+  my $color = Demeter->co->default('gnuplot', 'col'.$args{replot}%10);
+  my $energypdl = PDL->new(\@e);
+  my $xespdl = PDL->new(\@xes);
+  if ($args{replot} == 0) {
+    $self->pdlplot->gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
+			  with=>'lines', lc=>'rgb '.$color, lt=>1, lw=>1, legend=>$legend,
+			  $energypdl, $xespdl);
+  } else {
+    $self->pdlplot->replot(with=>'lines', lc=>'rgb '.$color, lt=>1, lw=>1, legend=>$legend,
+			   $energypdl, $xespdl);
+  };
   #my $xesout = $self->xdi_xes($self->xdi_metadata_file, q{}, $args{xes});
-  return; # $xesout;
+  return [$energypdl, $xespdl];
 };
 
 
@@ -359,7 +367,7 @@ XANES (if it exists),
 
 Make a plot of the computed XES.
 
-  $spectrum -> plot_xanes(pause=>0, incident=>$incident, xes=>$self->{xesdata});
+  $spectrum -> plot_xes(pause=>0, incident=>$incident, xes=>$self->{xesdata});
 
 The arguments are whether to use Xray::BLA::Pause, aninteger
 identifying the incident energy, and a list reference containing the

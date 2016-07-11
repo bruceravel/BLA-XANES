@@ -83,14 +83,14 @@ description
 
 variable=splot_palette_name
 type=list
-options=parula moreland kindlemann blackbody jet pm3d lineargray
-default=parula
+options=AFMHot BentCoolWarm BlackBody C_grey C_mrybm C_mygbm C_wrwbw D_I_cjm D_I_cjo D_L_bjr D_L_bjy D_RB_bgymr D_bkr D_bky D_bwr D_cwm D_gwr D_gwv ExtendedBlackBody ExtendedKindlmann GRV Grey Hot I_cgo I_cm Jet Kindlmann L_bgyw L_blue L_bmw L_bmy L_gow L_green L_grey L_kry L_kryw L_ternary_blue L_ternary_green L_ternary_red Ocean Parula Pm3d RB_bgyr RB_bgyrm Rainbow SmoothCoolWarm
+default=Parula
 description
   The palette for the plot of the RXES plane type.
 
 variable=xdi_metadata_file
-type=string
-default= 
+type=file
+default=__METIS_BASE__/../share/bla.xdi.ini
 description
   Path to .ini file with beamline specific XDI metadata.
 

@@ -91,7 +91,7 @@ sub new {
   $xbox -> Add($self->{incident}, 0, wxGROW|wxALL, 5);
   $xbox -> Add($self->{reuse}, 0, wxGROW|wxALL, 5);
 #  $app->mouseover($self->{incident}, "Select the ".lc($lab)." for which to compute the XES.");
-  EVT_COMBOBOX($self, $self->{incident}, sub{ $self->{replot_xes}->Enable(0); $self->{save_xes} -> Enable(0); });
+  EVT_COMBOBOX($self, $self->{incident}, sub{ $self->{replot_xes}->Enable(0); $self->{save_xes} -> Enable(0); $self->{save_xes_all} -> Enable(0); });
 
   $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
@@ -117,6 +117,22 @@ sub new {
   $xbox -> Add($self->{showmasks}, 0, wxGROW|wxALL, 0);
   $self->{showmasks}->SetValue(1);
 
+  $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
+
+
+  $self->{xes_all} = Wx::Button->new($self, -1, 'Process each XES image', wxDefaultPosition, [1.5*$button_width,-1]);
+  $xbox -> Add($self->{xes_all}, 0, wxGROW|wxALL, 5);
+  $self->{save_xes_all} = Wx::Button->new($self, -1, 'Save all XES data', wxDefaultPosition, [1.5*$button_width,-1]);
+  $xbox -> Add($self->{save_xes_all}, 0, wxGROW|wxALL, 5);
+  EVT_BUTTON($self, $self->{xes_all}, sub{plot_xes_all(@_, $app)});
+  EVT_BUTTON($self, $self->{save_xes_all}, sub{save_xes_all(@_, $app)});
+
+  $app->mouseover($self->{xes_all},      "Process and plot all the XES images.");
+  $app->mouseover($self->{save_xes_all}, "Save all the XES data to a file.");
+  $self->{plotmerge} = Wx::CheckBox->new($self, -1, "Plot average of all XES data.");
+  $xbox -> Add($self->{plotmerge}, 0, wxGROW|wxALL, 0);
+  $self->{plotmerge}->SetValue(0);
 
   $vbox->Add(1,30,0);
 
@@ -174,6 +190,7 @@ sub new {
     $vbox->Hide($xesboxsizer, 1);
     $vbox->Hide($rixsboxsizer, 1);
     $self->{showmasks}->SetValue(0);
+    $self->{plotmerge}->SetValue(0);
     $self->{rshowmasks}->SetValue(0);
     $self->{xshowmasks}->SetValue(0);
     $vbox->Layout;
@@ -185,7 +202,7 @@ sub new {
 
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks reuse
 		    incident incident_label
-		    xes replot_xes save_xes
+		    xes replot_xes save_xes xes_all save_xes_all plotmerge
 		    rixs replot_rixs save_rixs rshowmasks
 		    rxes replot_rxes save_rxes xshowmasks
 		  )) { # xes_rixs 
@@ -202,7 +219,7 @@ sub restore {
   my ($self) = @_;
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks
 		    incident incident_label
-		    xes replot_xes save_xes
+		    xes replot_xes save_xes xes_all save_xes_all plotmerge
 		    rixs replot_rixs save_rixs rshowmasks
 		    rxes replot_rxes save_rxes xshowmasks
 		  )) { # xes_rixs 
@@ -323,12 +340,14 @@ sub select_incident {
   my ($self, $event, $app) = @_;
   $self->{xesout} = q{};
   unlink($self->{xesout}) if ($self->{xesout} and (-e $self->{xesout}));
-  $self->{replot_xes} -> Enable(0);
-  $self->{save_xes}   -> Enable(0);
+  $self->{replot_xes}   -> Enable(0);
+  $self->{save_xes}     -> Enable(0);
+  $self->{save_xes_all} -> Enable(0);
 };
 
 sub plot_xes {
-  my ($self, $event, $app) = @_;
+  my ($self, $event, $app, $replot) = @_;
+  $replot ||= 0;
   my $busy = Wx::BusyCursor->new();
   my $start = DateTime->now( time_zone => 'floating' );
 
@@ -366,12 +385,13 @@ sub plot_xes {
 
   my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $self->{reuse}->GetValue);
 
-  $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>$r_xes);
+  $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>$r_xes, replot=>$replot);
   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $self->{xesdata} = $r_xes;
 
-  $self->{replot_xes} -> Enable(1);
-  $self->{save_xes}   -> Enable(1);
+  $self->{replot_xes}   -> Enable(1);
+  $self->{save_xes}     -> Enable(1);
+  $self->{save_xes_all} -> Enable(1);
   #$self->{xes_rixs}   -> Enable(1);
   my $message = ($app->{tool} eq 'herfd') ? "Plotted XES with incident energy = " : "Plotted XES for measurement ";
   $app->{main}->status($message . $incident . Xray::BLA->howlong($start, '.  That'));
@@ -440,6 +460,36 @@ sub replot_xes {
   $app->{main}->status("Replotted XES with incident energy = ".$self->{incident}->GetValue);
 };
 
+sub plot_xes_all {
+  my ($self, $event, $app) = @_;
+  my @save = ($self->{incident}->GetSelection, $self->{reuse}->GetValue);
+  $self->{incident}->SetSelection(0);
+  my @accumulate = ();
+  $self->plot_xes($event, $app, 0);
+  push @accumulate, $self->{xesout}->[1];
+  my $energypdl = $self->{xesout}->[0];
+  foreach my $i (1 .. $self->{incident}->GetCount-1) {
+    $self->{reuse}->SetValue(1);
+    $self->{incident}->SetSelection($i);
+    $self->plot_xes($event, $app, $i);
+    push @accumulate, $self->{xesout}->[1];
+  };
+  $self->{incident}->SetSelection($save[0]);
+  $self->{reuse}->SetValue($save[1]);
+  if ($self->{plotmerge}->GetValue) {
+    my $sum = PDL::Core::zeros($accumulate[0]->dims);
+    foreach my $x (@accumulate) {
+      $sum = $sum + $x;
+    };
+    $sum = $sum / ($#accumulate+1);
+    $app->{bla_of}->{$self->{energy}}->pdlplot->replot(with=>'lines', lc=>'rgb black', lt=>1, lw=>1, legend=>"merge",
+						       $energypdl, $sum);
+    $app->{main}->status("Plotted each XES measurement and merge.");
+  } else {
+    $app->{main}->status("Plotted each XES measurement.");
+  };
+};
+
 sub save_xes {
   my ($self, $event, $app) = @_;
   my $spectrum = $app->{bla_of}->{$self->{energy}};
@@ -459,6 +509,11 @@ sub save_xes {
 				   $self->{xesdata});
   move($outfile, $file);
   $app->{main}->status("Saved XES to ".$file);
+};
+
+sub save_xes_all {
+  my ($self, $event, $app) = @_;
+  $app->{main}->status("Save all XES spectra", "alert");
 };
 
 sub xes_rixs {

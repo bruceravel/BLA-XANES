@@ -556,7 +556,7 @@ sub do_step {
     $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
     $app->{Data}->{energy} = $spectrum->energy;
     #if ($self->{rbox}->GetSelection == 0) {
-    foreach my $k (qw(stub energylabel herfd mue xes reuse showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
+    foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse plotmerge showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
       $app->{Data}->{$k}->Enable(1);
     };
     #};

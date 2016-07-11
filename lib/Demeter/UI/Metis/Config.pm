@@ -19,7 +19,7 @@ sub new {
   my $top = $page->GetParent;
   my $self = $class->SUPER::new($page, \&target, $top);
   $self->{echo} = $app->{main}->{statusbar};
-  $self->populate(['metis']);
+  $self->populate(['metis', 'gnuplot']);
   $self->{params}->Expand($self->{params}->GetRootItem);
 
   return $self;
@@ -27,8 +27,13 @@ sub new {
 
 sub target {
   my ($self, $parent, $param, $value, $save) = @_;
+
+  #foreach my $p (qw(polyfill_order imagescale xdi_metadata_file tiffcounter terminal
+  #		    energycounterwidth gaussian_kernel splot_palette_name color outimage
+  #		    image_file_template scan_file_template elastic_file_template)) {
+  $::app->set_parameters;
   ($save)
-    ? $self->{echo}->SetStatusText("Now using $value for $parent-->$param and an ini file was saved")
+    ? $self->{echo}->SetStatusText("Now using $value for $parent-->$param and configuration was saved")
       : $self->{echo}->SetStatusText("Now using $value for $parent-->$param");
 
 };

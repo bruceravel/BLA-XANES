@@ -755,7 +755,7 @@ sub poly_fill {
     $self->prompt($save);
   };
 
-  my $order = 6;
+  my $order = Demeter->co->default('metis', 'polyfill_order');
   my ($yfit1, $coeffs1) = fitpoly1d($xdata, $ydata(:,0), $order);
   my ($yfit2, $coeffs2) = fitpoly1d($xdata, $ydata(:,1), $order);
 

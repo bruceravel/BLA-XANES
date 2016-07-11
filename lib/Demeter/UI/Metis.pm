@@ -93,7 +93,14 @@ sub OnInit {
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
 
-  ## look for matic.<tool>.yaml or metis.yaml
+  foreach my $p (qw(polyfill_order imagescale xdi_metadata_file tiffcounter terminal
+		    energycounterwidth gaussian_kernel splot_palette_name color outimage
+		    image_file_template scan_file_template elastic_file_template)) {
+    $app->{base}->$p(Demeter->co->default('metis', $p));
+  };
+
+  
+  ## look for metis.<tool>.yaml or metis.yaml
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml'));
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'yaml')) if not -e $app->{yamlfile};
   if (-e $app->{yamlfile}) {
@@ -308,17 +315,18 @@ sub set_parameters {
   $app->{base} -> elastic_file_template($app->{Files}->{elastic_template}->GetValue);
   $app->{base} -> image_file_template($app->{Files}->{image_template}->GetValue);
 
-  $app->{base} -> imagescale($app->{Config}->{imagescale}->GetValue);
-  $app->{base} -> tiffcounter($app->{Config}->{tiffcounter}->GetValue);
-  $app->{base} -> energycounterwidth($app->{Config}->{energycounterwidth}->GetValue);
-  $app->{base} -> terminal($app->{Config}->{terminal}->GetStringSelection);
-  $app->{base} -> outimage($app->{Config}->{outimage}->GetStringSelection);
-  $app->{base} -> color($app->{Config}->{color}->GetStringSelection);
+  $app->{base} -> imagescale(Demeter->co->default('metis', 'imagescale'));
+  $app->{base} -> tiffcounter(Demeter->co->default('metis', 'tiffcounter'));
+  $app->{base} -> energycounterwidth(Demeter->co->default('metis', 'energycounterwidth'));
+  $app->{base} -> terminal(Demeter->co->default('metis', 'terminal'));
+  $app->{base} -> outimage(Demeter->co->default('metis', 'outimage'));
+  $app->{base} -> color(Demeter->co->default('metis', 'color'));
   $app->{base} -> set_palette($app->{base}->color);
-  $app->{base} -> splot_palette_name($app->{Config}->{palette}->GetStringSelection);
+  $app->{base} -> splot_palette_name(Demeter->co->default('metis', 'splot_palette_name'));
   $app->{base} -> set_splot_palette($app->{base}->splot_palette_name);
-  $app->{base} -> xdi_metadata_file($app->{Config}->{xdi_filename}->GetValue);
-  $app->{base} -> gaussian_kernel($app->{Config}->{kernel}->GetStringSelection);
+  $app->{base} -> xdi_metadata_file(Demeter->co->default('metis', 'xdi_metadata_file'));
+  $app->{base} -> gaussian_kernel(Demeter->co->default('metis', 'gaussian_kernel'));
+  $app->{base} -> polyfill_order(Demeter->co->default('metis', 'polyfill_order'));
 
   my $val = $app->{Mask}->{gaussianvalue}->GetValue;
   if (not looks_like_number($val)) { # the only non-number the validator will pass

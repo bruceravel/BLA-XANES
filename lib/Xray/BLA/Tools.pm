@@ -53,6 +53,8 @@ sub howlong {
   } else {
     if ($dur->seconds == 1) {
       $text = sprintf "%s took %d second.", $id, $dur->seconds;
+    } elsif ($dur->seconds == 0) {
+      $text = sprintf "%s took less than 1 second.", $id;
     } else {
       $text = sprintf "%s took %d seconds.", $id, $dur->seconds;
     };

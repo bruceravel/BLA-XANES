@@ -193,8 +193,8 @@ sub OnInit {
 
   $app->{main} -> SetSizerAndFit($vbox);
 
-  $app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
-  $app->{Config}->{xdi_filename}->SetSize((0.8*$app->{Config}->GetSizeWH)[0], 30);
+  #$app->{Config}->{line}->SetSize(($app->{Config}->GetSizeWH)[0], 2);
+  #$app->{Config}->{xdi_filename}->SetSize((0.8*$app->{Config}->GetSizeWH)[0], 30);
   $app->{Mask}->{line}->SetSize(int(2*($app->{Mask}->GetSizeWH)[0]/3), 2);
   $app->{Mask}->{line2}->SetSize(int(2*($app->{Mask}->GetSizeWH)[0]/3), 2);
   EVT_CLOSE( $app->{main},  \&on_close);

@@ -228,7 +228,11 @@ sub fetch {
   };
 
   $app->{main}->status("Setting up elastic files.  This may take some time....");
+  my $count = 0;
   foreach my $e (@elastic_list) {
+    ++$count;
+    $app->{main}->status(sprintf("Preparing %s (%d of %d)", $e, $count, $#elastic_list),
+			 'wait|nobuffer') if (not $count%5);
     $app->{base}->push_elastic_file_list($e);
     if ($e =~ m{$elastic_re}) {
       my $this = $+{e} || $+{c};
@@ -301,9 +305,7 @@ sub fetch {
   $app->set_parameters;
 
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
-  $app->{Mask}->{energy} -> Enable(1);
-  $app->{Mask}->{rangemin} -> Enable(1);
-  $app->{Mask}->{rangemax} -> Enable(1);
+  $app->{Mask}->{$_} -> Enable(1) foreach (qw(steps_list spots_list pluck restoresteps energy rangemin rangemax));
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
   my $start = ($app->{tool} eq 'herfd') ? int(($#{$app->{base}->elastic_energies}+1)/2) : 0;

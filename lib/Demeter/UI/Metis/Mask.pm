@@ -309,6 +309,7 @@ sub new {
   foreach my $k (@all_widgets) { # , qw(animation)
     $self->{$k} -> Enable(0);
   };
+  $self->{$_}->Enable(0) foreach (qw(steps_list spots_list pluck restoresteps));
 
   return $self;
 };
@@ -842,6 +843,7 @@ const my $DELETE_ALL => Wx::NewId();
 sub SpotsMenu {
   my ($self, $event, $app) = @_;
   my $id = $app->{Mask}->{spots_list}->HitTest($event->GetPosition);
+  return if ($id == -1);
   $app->{Mask}->{spots_list}->SetSelection($id);
   my $menu = Wx::Menu->new;
   $menu->Append($EDIT, "Edit this spot");

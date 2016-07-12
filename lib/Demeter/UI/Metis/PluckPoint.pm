@@ -53,7 +53,7 @@ sub new {
   $gbs->Add($this->{y}, Wx::GBPosition->new(1,2));
   $gbs->Add($this->{r}, Wx::GBPosition->new(1,3));
 
-
+  $this->{r}->SetFocus;
 
 
   $this->{ok} = Wx::Button->new($this, wxID_OK, "Add this spot", wxDefaultPosition, wxDefaultSize, 0, );

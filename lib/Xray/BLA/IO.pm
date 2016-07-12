@@ -162,7 +162,7 @@ sub xdi_xes_head {
     $text .= sprintf "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_setting};
     $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
     $text .= sprintf "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
-    $text .= sprintf "# %s.%s: %s\n", "BLA", "xesimage", $xesimage;
+    $text .= sprintf "# %s.%s: %s\n", "BLA", "xesimage", $xesimage if $xesimage;
   };
   $text .= "# /////////////////////////\n";
   return $text;
@@ -201,6 +201,52 @@ sub xdi_xes {
   close $O;
   return $outfile;
 };
+
+## $rdata is an arrayref of PDLS: [E, merged, N, x1, x2, .. xn]
+## so the derefencing is confusing
+##   $rdata->[0] is the energy PDL, $rdata->[1] is the merge PDL, etc
+##   $rdata->[0]->dim(0) is the length of each PDL, i.e. the number of elastic energy points
+##   $rdata->[0]->($i)->sclr is the energy at point $i, expressed as a scalar
+##   $rdata->[1]->($i)->sclr is the merge at point $i, expressed as a scalar, and so on
+sub xdi_xes_merged {
+  my ($self, $xdiini, $rdata) = @_;
+  my $fname;
+  if ($self->incident < 1000) {
+    $fname = join("_", $self->stub, 'xes', sprintf('%2.2d', $self->incident)) . '.xdi';
+  } else {
+    $fname = join("_", $self->stub, 'xes', $self->incident) . '.xdi';
+  };
+  my $outfile  = File::Spec->catfile($self->outfolder,  $fname);
+  open(my $O, '>', $outfile);
+
+  print $O $self->xdi_xes_head($xdiini, q{});
+  print $O "# Mask building steps:\n";
+  foreach my $st (@{$self->steps}) {
+    print $O "#   $st\n";
+  };
+  printf $O "# Excluded region: xrange = %d %d\n", $self->width_min, $self->width_max;
+  if (@{$self->spots}) {
+    print $O "# Spots:\n";
+    foreach my $sp (@{$self->spots}) {
+      print $O "#   " . join(" ", @$sp) . "\n";
+    };
+  };
+  print $O "# -------------------------\n";
+  print $O '#  ' . join("      ", qw(energy xes npixels)) . join("      ", (1 .. $#{$rdata}-2)), $/;
+  foreach my $i (0 .. $rdata->[0]->dim(0) - 1) {
+    #my $e = $rdata->[0]->($i)->sclr;
+    #$e /= 10 if $self->div10;
+    printf $O "  %.3f  %.7f  %6d", $rdata->[0]->($i)->sclr, $rdata->[1]->($i)->sclr, $rdata->[2]->($i)->sclr;
+    foreach my $j (3 .. $#{$rdata}) {
+      printf $O "  %.7f", $rdata->[$j]->($i)->sclr;
+    };
+    printf $O "\n";
+  };
+
+  close $O;
+  return $outfile;
+};
+
 sub dat_xes {
   my ($self, $rdata) = @_;
   my $fname = join("_", $self->stub, 'xes', $self->incident) . '.dat';

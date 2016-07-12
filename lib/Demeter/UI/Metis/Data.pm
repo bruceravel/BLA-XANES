@@ -130,9 +130,9 @@ sub new {
 
   $app->mouseover($self->{xes_all},      "Process and plot all the XES images.");
   $app->mouseover($self->{save_xes_all}, "Save all the XES data to a file.");
-  $self->{plotmerge} = Wx::CheckBox->new($self, -1, "Plot average of all XES data.");
-  $xbox -> Add($self->{plotmerge}, 0, wxGROW|wxALL, 0);
-  $self->{plotmerge}->SetValue(0);
+  #$self->{plotmerge} = Wx::CheckBox->new($self, -1, "Plot average of all XES data.");
+  #$xbox -> Add($self->{plotmerge}, 0, wxGROW|wxALL, 0);
+  #$self->{plotmerge}->SetValue(0);
 
   $vbox->Add(1,30,0);
 
@@ -190,7 +190,7 @@ sub new {
     $vbox->Hide($xesboxsizer, 1);
     $vbox->Hide($rixsboxsizer, 1);
     $self->{showmasks}->SetValue(0);
-    $self->{plotmerge}->SetValue(0);
+    #$self->{plotmerge}->SetValue(0);
     $self->{rshowmasks}->SetValue(0);
     $self->{xshowmasks}->SetValue(0);
     $vbox->Layout;
@@ -202,10 +202,10 @@ sub new {
 
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks reuse
 		    incident incident_label
-		    xes replot_xes save_xes xes_all save_xes_all plotmerge
+		    xes replot_xes save_xes xes_all save_xes_all
 		    rixs replot_rixs save_rixs rshowmasks
 		    rxes replot_rxes save_rxes xshowmasks
-		  )) { # xes_rixs 
+		  )) { # xes_rixs plotmerge
     $self->{$k}->Enable(0);
   };
 
@@ -219,10 +219,10 @@ sub restore {
   my ($self) = @_;
   foreach my $k (qw(stub energylabel herfd replot_herfd save_herfd mue showmasks
 		    incident incident_label
-		    xes replot_xes save_xes xes_all save_xes_all plotmerge
+		    xes replot_xes save_xes xes_all save_xes_all
 		    rixs replot_rixs save_rixs rshowmasks
 		    rxes replot_rxes save_rxes xshowmasks
-		  )) { # xes_rixs 
+		  )) { # xes_rixs plotmerge
     $self->{$k}->Enable(0);
   };
   $self->{herfdbox}->SetLabel(' HERFD');
@@ -391,7 +391,6 @@ sub plot_xes {
 
   $self->{replot_xes}   -> Enable(1);
   $self->{save_xes}     -> Enable(1);
-  $self->{save_xes_all} -> Enable(1);
   #$self->{xes_rixs}   -> Enable(1);
   my $message = ($app->{tool} eq 'herfd') ? "Plotted XES with incident energy = " : "Plotted XES for measurement ";
   $app->{main}->status($message . $incident . Xray::BLA->howlong($start, '.  That'));
@@ -466,8 +465,9 @@ sub plot_xes_all {
   $self->{incident}->SetSelection(0);
   my @accumulate = ();
   $self->plot_xes($event, $app, 0);
+  my $energypdl   = $self->{xesout}->[0];
   push @accumulate, $self->{xesout}->[1];
-  my $energypdl = $self->{xesout}->[0];
+  my $npdl        = $self->{xesout}->[2];
   foreach my $i (1 .. $self->{incident}->GetCount-1) {
     $self->{reuse}->SetValue(1);
     $self->{incident}->SetSelection($i);
@@ -476,18 +476,19 @@ sub plot_xes_all {
   };
   $self->{incident}->SetSelection($save[0]);
   $self->{reuse}->SetValue($save[1]);
-  if ($self->{plotmerge}->GetValue) {
-    my $sum = PDL::Core::zeros($accumulate[0]->dims);
-    foreach my $x (@accumulate) {
-      $sum = $sum + $x;
-    };
-    $sum = $sum / ($#accumulate+1);
-    $app->{bla_of}->{$self->{energy}}->pdlplot->replot(with=>'lines', lc=>'rgb black', lt=>1, lw=>1, legend=>"merge",
-						       $energypdl, $sum);
-    $app->{main}->status("Plotted each XES measurement and merge.");
-  } else {
-    $app->{main}->status("Plotted each XES measurement.");
+
+  my $sum = PDL::Core::zeros($accumulate[0]->dims);
+  foreach my $x (@accumulate) {
+    $sum = $sum + $x;
   };
+  $sum = $sum / ($#accumulate+1);
+  unshift @accumulate, $energypdl, $sum, $npdl;
+  $self->{xesmerge} = \@accumulate;
+  $app->{bla_of}->{$self->{energy}}->pdlplot->replot(with=>'lines', lc=>'rgb black', lt=>1, lw=>1, legend=>"merge",
+						     $energypdl, $sum);
+  $app->{main}->status("Plotted each XES measurement and merge.");
+
+  $self->{save_xes_all} -> Enable(1);
 };
 
 sub save_xes {
@@ -513,7 +514,21 @@ sub save_xes {
 
 sub save_xes_all {
   my ($self, $event, $app) = @_;
-  $app->{main}->status("Save all XES spectra", "alert");
+  my $spectrum = $app->{bla_of}->{$self->{energy}};
+  my $fname = sprintf("%s.xes", $spectrum->stub);
+  my $fd = Wx::FileDialog->new( $app->{main}, "Save merged XES data file", cwd, $fname,
+				"XES (*.xes)|*.xes|All files (*)|*",
+				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $app->{main}->status("Saving data file canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  my $outfile = $spectrum->xdi_xes_merged($app->{base}->xdi_metadata_file,
+					  $self->{xesmerge});
+  move($outfile, $file);
+  $app->{main}->status("Saved merged XES to ".$file);
 };
 
 sub xes_rixs {

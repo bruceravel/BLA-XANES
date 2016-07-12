@@ -241,11 +241,12 @@ sub plot_xes {
   my %args = @args;
   $args{incident} ||= 0;
   $args{pause}      = q{-1} if not defined $args{pause};
-  my (@e, @xes);
+  my (@e, @xes, @n);
   my $denom = ($self->div10) ? 10 : 1;
   foreach my $p (@{$args{xes}}) {
     push @e, $p->[0]/$denom;
     push @xes, $p->[1];
+    push @n, $p->[2];
   };
   my $legend = $args{incident};
   if (looks_like_number($legend)) {
@@ -265,7 +266,7 @@ sub plot_xes {
 			   $energypdl, $xespdl);
   };
   #my $xesout = $self->xdi_xes($self->xdi_metadata_file, q{}, $args{xes});
-  return [$energypdl, $xespdl];
+  return [$energypdl, $xespdl, PDL->new(\@n)];
 };
 
 

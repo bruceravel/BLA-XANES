@@ -344,6 +344,109 @@ against your actual elastic images.
 Defining spots in images
 ------------------------
 
+In the measurement at 18960 eV, there are a couple of bright spots in
+the fuzzy bit on the left due to the early appearance of the
+fluorescence signal.  These two spots are at (60,12) and (60,158).
+
+Processing to the point of the Gaussian blur filter leaves spots in
+the image that are obviously removed from the elastic signal.
+
+.. subfigstart::
+
+.. figure:: ../_images/nbf5_18960.png
+   :target: ../_images/nbf5_18960.png
+   :align: center
+
+   The measured elastic image at 18960 eV.
+
+.. figure:: ../_images/nbf5_18960_mask.png
+   :target: ../_images/nbf5_18960_mask.png
+   :align: center
+
+   The mask after application of the bad/weak and Gaussian blur steps.
+
+.. subfigend::
+   :width: 0.4
+   :label: _fig-nbf5spots
+
+There are two problems with these spurious spots.  First, they will
+add signal to the measured XES at 19860 that should not be there.
+Also these spots will have a profound impact on the polyfill step.
+Here is what the polyfill step looks like on these data:
+
+.. figure:: ../_images/nbf5_18960_bad.png
+   :target: ../_images/nbf5_18960_bad.png
+   :align: center
+
+   The effect of outlier points on the polyfill mask creation step.
+
+This is obviously wrong.
+
+There are several ways of dealing with spurious spots like this.  
+
+* In this case, since the spots arise from fluorescence, the shield
+  step will be effective at removing them.  However, spots are often
+  due to diffraction from the sample, in which case the shield is not
+  guaranteed to be effective.
+
+* Raising the Gaussian blur threshold also might work.  Indeed, in
+  this case, raising the threshold to 1.2 is sufficient for removing
+  those two spots.  Again, diffraction peaks are not amenable to
+  removal by the Gaussian blur filter as they are often quite strong
+  compared to the level of the elastic signal.
+
+* Also the lonely pixels step with a value of 2 is sufficient to
+  remove these spots.
+
+With those spots removed, the polyfill step works as expected.
+
+If you have tried all those tricks and you are unable to remove the
+spots while retaining significant area in the mask, it is time for a
+more hands-on approach.  For situations where other mask creation
+steps don't work well, :demeter:`metis` allows you to select a
+specific point in a specific elastic image and remove it from the
+mask.
+
+When you click on the :button:`Pluck point from plot,light` button,
+you are prompted to double click on a spot in the image.  When you do
+so, the point plucking dialog is posted.
+
+
+.. figure:: ../_images/metis_pluckpoint.png
+   :target: ../_images/metis_pluckpoint.png
+   :align: center
+
+   The point plucking dialog.
+
+In this example, the point (58,10) is selected for energy 18960.0 eV.
+Because it can be hard to hit the exact right point and because these
+spots might be much larger than a single pixel, you are prompted for a
+radius.  3 is the default and is often is quite big enough to fully
+cover a spot.  In the example below, a radius of 10 was used along
+with a weak pixel value of 10 so that the effect of defining a point
+is clearly demonstrated.
+
+.. figure:: ../_images/nbf5_18960_plucked.png
+   :target: ../_images/nbf5_18960_plucked.png
+   :align: center
+
+   The elastic image at 18960 eV with a large spot centered at (58,10)
+   plucked out.
+
+When the bad/weak step is processed along with the horizontal range,
+the list of spots is examined and any spots defined for the current
+elastic energy are also set to zero in the image, as seen above in the
+upper right part of the plot.
+
+While this method of removing spurious spots can be quite tedious, it
+gives very fine-grained control over spot removal in an ensemble of
+data.
+
+Right clicking on the defined spots list posts a context menu which
+can be used to edit or remove individual points from the list or to
+clear the list entirely.
+
+
 
 All the rest of the button
 --------------------------

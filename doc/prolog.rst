@@ -33,3 +33,4 @@
 .. |cdot|    unicode:: U+00B7  .. MIDDLE DOT
 .. |therefore| unicode:: U+2234  .. THEREFORE
 .. |ge|      unicode:: U+2265 ..  GREATER-THAN OR EQUAL TO
+.. |dprime|  unicode:: U+2033 .. DOUBLE PRIME

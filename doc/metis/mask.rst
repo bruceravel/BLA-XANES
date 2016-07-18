@@ -57,7 +57,7 @@ direction of one of those pixels on the detector.
 
 The XES image will be multiplied pixel-by-pixel by the mask.  The
 pixels outside the mask will be set to 0.  The pixels within the mask
-are summed and will represent the NB XES signal measured at that
+are summed and will represent the Nb XES signal measured at that
 energy.
 
 
@@ -180,7 +180,7 @@ experiment is *very* close to the absorption edge.  Towards the end of
 the sequence of elastic energies, the elastic signal is being measured
 very close to the absorption edge energy.  Because Nb has a large
 core-hole broadening, a significant amount of fluorescence from the K\
-|beta|\ :sub:`2,4` lines themselves begin showing up in the elastic
+|beta|\ :sub:`2,4` lines themselves begins showing up in the elastic
 measurements.  Here is an example at 18986.5 eV (as compared to the
 Nb\ :sup:`0+` edge energy of 18986 |nd| the edge for Nb\ :sup:`5+`
 would be a few volts higher).
@@ -364,6 +364,7 @@ the image that are obviously removed from the elastic signal.
    :align: center
 
    The mask after application of the bad/weak and Gaussian blur steps.
+   The two spurious points are indicated by the blue circles.
 
 .. subfigend::
    :width: 0.4
@@ -423,8 +424,8 @@ Because it can be hard to hit the exact right point and because these
 spots might be much larger than a single pixel, you are prompted for a
 radius.  3 is the default and is often is quite big enough to fully
 cover a spot.  In the example below, a radius of 10 was used along
-with a weak pixel value of 10 so that the effect of defining a point
-is clearly demonstrated.
+with a weak pixel value of only 1 so that the effect of defining a
+point is clearly demonstrated.
 
 .. figure:: ../_images/nbf5_18960_plucked.png
    :target: ../_images/nbf5_18960_plucked.png
@@ -440,7 +441,8 @@ upper right part of the plot.
 
 While this method of removing spurious spots can be quite tedious, it
 gives very fine-grained control over spot removal in an ensemble of
-data.
+data.  For a situation where the elastic signal is not much bigger
+than the background, manual spot removal might be your only choice.
 
 Right clicking on the defined spots list posts a context menu which
 can be used to edit or remove individual points from the list or to
@@ -455,7 +457,8 @@ All the rest of the button
 
    Some mask creation steps may leave pixels with values other than 0
    or 1.  This step is a final pass to verify that any non-zero pixels
-   are set to unity.
+   are set to unity.  This will be added automatically to the recipe
+   in the steps list before data are processed in the Data tool.
 
 :button:`Save mask,light`
 

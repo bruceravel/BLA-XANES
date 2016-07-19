@@ -181,6 +181,8 @@ sub new {
 
   if ($app->{tool} eq 'herfd') {
     $vbox->Hide($planeboxsizer, 1);
+    $vbox->Hide($self->{xes_all}, 1);
+    $vbox->Hide($self->{save_xes_all}, 1);
     $vbox->Layout;
   } elsif ($app->{tool} eq 'xes') {
     $vbox->Hide($rixsboxsizer, 1);

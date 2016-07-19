@@ -101,8 +101,8 @@ Other pixels illuminated by stray photons are unlikely to have more
 than one or two counts.  
 
 Here is how the mask appears after applying the bad/weak step.  It
-does a pretty good, but leaves a lot of spurious pixels that obviously
-are not part of the mask.
+does a pretty good job, but leaves a lot of spurious pixels that
+obviously are not part of the mask.
 
 .. figure:: ../_images/nbf5_18951_badweak.png
    :target: ../_images/nbf5_18951_badweak.png
@@ -293,6 +293,12 @@ sparse.  It will add many more pixels to the evaluation of the emission
 image.  However, the curvature of the polynomial is might add
 additional pixels to the mask.  Also any spurious points remaining in
 the mask will severely impact the quality of the fitted polynomials.
+
+The polyfill algorithm presumes that the polynomials will be
+analytic functions.  If the elastic signal :quoted:`loops` on itself
+such that for a given column in the image, there are two distinct,
+vertically displaced regions of the mask, then the polyfill will fail
+rather dramatically.
 
 When using the polyfill step, it is prudent to examine each mask
 individually and use the step removal algorithm described below
@@ -491,3 +497,72 @@ All the rest of the button
 :button:`Save steps,light`
 
    Save the current recipe of steps and spots to a save file.
+
+
+
+RXES measurements
+-----------------
+
+The RXES measurement uses a single set of images both for making masks
+and as the measured data.  The trick is to distinguish the elastic
+portion of the image from the fluorescence portion.
+
+The shield step in the mask creation process is key to this.  Here are
+the masks generated from the example images shown in the explanation
+of `the Files tool <files.html>`_.
+
+.. subfigstart::
+
+.. figure:: ../_images/pt_rxes_1.png
+   :target: ../_images/pt_rxes_1.png
+   :align: center
+
+   A Pt RXES image at a low energy.
+
+.. figure:: ../_images/pt_rxes_2.png
+   :target: ../_images/pt_rxes_2.png
+   :align: center
+
+   A Pt RXES image in the middle of the image sequence.
+
+.. figure:: ../_images/pt_rxes_3.png
+   :target: ../_images/pt_rxes_3.png
+   :align: center
+
+   A Pt RXES image at the end of the image sequence.
+   
+.. figure:: ../_images/pt_rxes_mask1.png
+   :target: ../_images/pt_rxes_mask1.png
+   :align: center
+
+   The corresponding mask for the Pt RXES image at a low energy.
+
+.. figure:: ../_images/pt_rxes_mask2.png
+   :target: ../_images/pt_rxes_mask2.png
+   :align: center
+
+   The corresponding mask for the Pt RXES image in the middle of the image sequence.
+
+.. figure:: ../_images/pt_rxes_mask3.png
+   :target: ../_images/pt_rxes_mask3.png
+   :align: center
+
+   The corresponding mask for the Pt RXES image at the end of the image sequence.
+   
+
+.. subfigend::
+   :width: 0.3
+   :label: _fig-ptrxes
+
+The recipe for these masks is bad/weak with parameters 400/1, a
+Gaussian blur filter with a threshold of 6.0, and a shield step with a
+parameter of 5.  That is, the masks from 5 steps back and prior are
+used to construct the shield which removes the fluorescence signal
+from the mask.  The part that remains is a reasonable extraction of
+the elastic signal.  The reason the shield step with a parameter of 5
+can be trusted is that the mask from the end of the image sequence is
+a fair representation of the stripe that corresponds to the elastic
+signal.
+
+This sequence of masks will then be applied to the same sequence of
+images to extract the resonant XES signal at each energy.

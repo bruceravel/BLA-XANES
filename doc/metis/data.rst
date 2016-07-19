@@ -88,13 +88,14 @@ followed by one column for each individual XES measurement.
 Scaling the XES measurement
 ---------------------------
 
-The reported XES spectrum is scaled by the number of illuminate pixels
-in the mask.  The mask is multiplied by the XES image and this product
-is summed.  That yields the photon count in those pixels falling under
-the mask at each energy.  However, there is a significant discrepancy
-in the number of pixels actually illuminated at each energy.  This has
-to do with the details of the geometry of the spectrometer and how
-each energy interacts with the analyzer crystal.
+The reported XES spectrum is scaled by the number of illuminated
+pixels in the mask.  The mask is multiplied by the XES image and this
+product is summed.  That yields the photon count in those pixels
+falling under the mask at each energy.  However, there is a
+significant discrepancy in the number of pixels actually illuminated
+at each energy.  This has to do with the details of the geometry of
+the spectrometer and how each energy interacts with the analyzer
+crystal.
 
 To approximate this geometry effect, each raw photon count is scaled
 by the number of pixels involved in the measurement.  The elastic mask
@@ -142,8 +143,12 @@ peak, including the top of the measured emission line.
    :label: _fig-ptla
 
 The actual HERFD measurement involves measuring XES images at a range
-of energies corresponding to a conventional XANES scan.  This results
-in images like the following:
+of energies corresponding to a conventional XANES scan.   Below the
+edge (left image below) there is very little fluorescence in the
+image.  As the scan goes through the edge and into the EXAFS, the
+fluorescence signal in the images grows, becoming quite bright with
+the brightness oscillating through the EXAFS wiggles.
+
 
 .. subfigstart::
 
@@ -234,3 +239,87 @@ summing up the spectra from the project file in :demeter:`athena` and
 comparing with a conventional measurement.  They won't be identical,
 but they will be close.
 
+
+RXES measurements
+-----------------
+
+When starting :demeter:`metis` in RXES mode, the Data tool displays
+controls for computing the RIXS plane.
+
+
+.. figure:: ../_images/metis_data_rxes.png
+   :target: ../_images/metis_data_rxes.png
+   :align: center
+
+   :demeter:`metis`'s data processing tool in RXES mode.
+
+This calculation is, in a certain sense, much like the RIXS
+calculation in HERFD mode, but the result is organized in a different
+way.  In the HERFD-mode RIXS calculation, the intent is to examine the
+HERFD with the spectrometer set to different emission energies.  In
+RXES-mode, the intent is to make a surface plot of the RIXS plane.
+Here is  the result of the RXES-mode calculation.
+
+.. figure:: ../_images/pt_rixs_plane.png
+   :target: ../_images/pt_rixs_plane.png
+   :align: center
+
+   The result of the RXES calculation for the valence band emission
+   near the Pt L\ :sub:`3` edge.
+
+This is a visualization format that is common in the RIXS literature,
+plotting energy transfer as a function of incident energy.  Energy
+transfer is ``E_incident - E_emission``.  The stripe at 0 on the
+y-axis, then, is the elastic signal.  The RIXS signal is the diagonal
+stripe.
+
+The :button:`Replot RXES,light` button redisplays this surface plot.  The
+:button:`Save RXES,light`, saves the surface plot data as a
+`Gnuplot block data file
+<http://gnuplot.sourceforge.net/docs_4.2/node331.html>`_.
+
+The color scheme is controlled by the
+:configparam:`metis,splot_palette_name` `configuration parameter
+<config.html>`_.  There are over 45 options for this color palette.
+Many of them are perceptually improved colormaps, but some widely
+popular (but truly horrible) options exist |nd| like the common
+`Jet (aka rainbow) colormap
+<http://cresspahl.blogspot.com/2012/03/expanded-control-of-octaves-colormap.html>`_.
+But honestly, just because :quoted:`Jet` is a choice doesn't mean that
+you have to choose it....
+
+Here are a few useful colormaps. 
+
+.. subfigstart::
+
+.. figure:: ../_images/cmap_kindlmann.png
+   :target: ../_images/cmap_kindlmann.png
+   :align: center
+
+   The Kindlmann color map
+
+.. figure:: ../_images/cmap_bentcoolwarm.png
+   :target: ../_images/cmap_bentcoolwarm.png
+   :align: center
+
+   The BentCoolWarm color map
+
+.. figure:: ../_images/cmap_lkry.png
+   :target: ../_images/cmap_lkry.png
+   :align: center
+
+   The linear black-red-yellow (L_kry) color map
+
+.. figure:: ../_images/cmap_pm3d.png
+   :target: ../_images/cmap_pm3d.png
+   :align: center
+
+   The PM3D color map (the default Gnuplot color map)
+
+.. subfigend::
+   :width: 0.23
+   :label: _fig-colormaps
+
+Here's `more information about the color map options
+<https://github.com/bruceravel/Graphics-Gnuplot-Palettes>`_ in
+:demeter:`metis`.

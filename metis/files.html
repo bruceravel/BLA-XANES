@@ -1,0 +1,307 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Files tool &mdash; Xray::BLA and Metis 4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../index.html" />
+    <link rel="up" title="The Metis program" href="index.html" />
+    <link rel="next" title="The Mask tool" href="mask.html" />
+    <link rel="prev" title="The Metis program" href="index.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="mask.html" title="The Mask tool"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="The Metis program"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The Metis program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-files-tool">
+<h1>The Files tool<a class="headerlink" href="#the-files-tool" title="Permalink to this headline">¶</a></h1>
+<p>To begin with <font size=-1 color="#8C4112">METIS</font>, fill in the box with the file stub.
+Then click the <kbd class="light">Pick image folder</kbd> button.  This will
+post the file selection dialog.  Use that to select the folder
+containing the sequence of images measured at elastic and
+(non-)resonant incidence energies.</p>
+<p>Make sure the boxes containing file name templates are filled in
+correctly.  These are used to specify the patterns used for the
+various files written during the measurement.  Getting these right is
+an important part of organizing the entire data ensemble in an
+interpretable way.</p>
+<p>Finally, click the <kbd class="light">Fetch file lists</kbd> button.  This will
+fill up the lists of elastic energy and measurement images.
+Eventually, the lists will be filled in and <font size=-1 color="#8C4112">METIS</font> will be
+ready to go.</p>
+<div class="figure align-center" id="id1">
+<a class="reference external image-reference" href="../_images/metis_files.png"><img alt="../_images/metis_files.png" src="../_images/metis_files.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>, after fetching all the image files.</span></p>
+</div>
+<p>To aid in data visualization, the three controls at the top of the
+Files page should be set correctly.  The two drop-down menus are used
+to indicate the element and edge of the absorber.  You will be
+prompted for this based on information gleaned from the elastic energy
+file names</p>
+<div class="figure align-center" id="id2">
+<a class="reference external image-reference" href="../_images/metis_chooseline.png"><img alt="../_images/metis_chooseline.png" src="../_images/metis_chooseline.png" /></a>
+<p class="caption"><span class="caption-text">The element and edge selection dialog.</span></p>
+</div>
+<p>Finally, the <span class="guilabel">Divide by 10</span> button is used to indicate how
+to interpret the energy value part of the image files names.  In this
+example, the elastic energies are indicated by <code class="docutils literal"><span class="pre">189280</span></code>, <code class="docutils literal"><span class="pre">189285</span></code>,
+and so on.  These integers are the incident energy multiplied by 10,
+i.e. 18928.0, 19828.5, and so on.  Clicking this button to the correct
+state helps <font size=-1 color="#8C4112">METIS</font> interpret the file names correctly.</p>
+<p>The templates used to recognize elastic and measurement images (as
+well as the scan file name for <code class="docutils literal"><span class="pre">herfd</span></code> and <code class="docutils literal"><span class="pre">rxes</span></code> modes) are
+simple substitution templates.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="51%" />
+<col width="38%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">token</th>
+<th class="head">Replacement</th>
+<th class="head">Configuration parameter</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">%s</span></code></td>
+<td>file stub,  <code class="docutils literal"><span class="pre">NbF5_Kb2</span></code> in this example</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">%e</span></code></td>
+<td>elastic energy value</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">%i</span></code></td>
+<td>incident energy value (<code class="docutils literal"><span class="pre">rxes</span></code> and <code class="docutils literal"><span class="pre">herfd</span></code> modes)</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">%t</span></code></td>
+<td>tiff counter string</td>
+<td><font color="#636A24">♦metis→tiffcounter</font></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">%c</span></code></td>
+<td>energy counter</td>
+<td><font color="#636A24">♦metis→energycounterwidth</font></td>
+</tr>
+</tbody>
+</table>
+<p>Use the <a class="reference external" href="config.html">Configuration tool</a> to set the parameters
+governing the <code class="docutils literal"><span class="pre">%t</span></code> and <code class="docutils literal"><span class="pre">%c</span></code> tokens.  If set incorrectly, the
+<kbd class="light">Fetch file lists</kbd> button will return with an error
+about not being able to find files matching the templates.</p>
+<p>Having these file naming templates allows the user to store images
+from multiple measurements in the same folder on disk.</p>
+<p>The <code class="docutils literal"><span class="pre">%t</span></code> is, in practice, usually something like <cite>0001</cite> – it is a
+counter that is used by EPICS <strong class="program">areaDetector</strong> to number
+repeated exposures of the camera.  The way the BLA spectrometer is
+used, this is rarely incremented, although the number of leading zeros
+might be changed.  The <code class="docutils literal"><span class="pre">%c</span></code> token is used in <code class="docutils literal"><span class="pre">rxes</span></code> and <code class="docutils literal"><span class="pre">herfd</span></code>
+modes to relate an exposure during the energy scan to the index of
+that energy point in the scan file.  For <code class="docutils literal"><span class="pre">xes</span></code> mode, this is the
+counter used for repeated exposures of the non-resonant XES image.</p>
+<p>Once all the files have been loaded into <font size=-1 color="#8C4112">METIS</font>, click on
+the Mask icon in the side bar to go to <a class="reference external" href="mask.html">the mask creation tool</a>.</p>
+<div class="section" id="visualizing-individual-images">
+<h2>Visualizing individual images<a class="headerlink" href="#visualizing-individual-images" title="Permalink to this headline">¶</a></h2>
+<p>Individual image files can be plotted by double clicking on a file
+name in either the elastic or image file list.</p>
+<div class="figure align-center" id="id3">
+<a class="reference external image-reference" href="../_images/metis_dclick.png"><img alt="../_images/metis_dclick.png" src="../_images/metis_dclick.png" /></a>
+<p class="caption"><span class="caption-text">Double click on items in the lists to display the measured images.</span></p>
+</div>
+<div class="figure compound align-center" id="_fig-dclick">
+<div style="width: 40%" class="subfigure align-center" id="id4">
+<a class="reference external image-reference" href="../_images/metis_dclick_elastic.png"><img alt="../_images/metis_dclick_elastic.png" src="../_images/metis_dclick_elastic.png" /></a>
+<p class="caption"><span class="caption-text">Double clicking on an item in the elastic file list displays the
+raw image for that elastic measurement.</span></p>
+</div>
+<div style="width: 40%" class="subfigure align-center" id="id5">
+<a class="reference external image-reference" href="../_images/metis_dclick_image.png"><img alt="../_images/metis_dclick_image.png" src="../_images/metis_dclick_image.png" /></a>
+<p class="caption"><span class="caption-text">Double clicking on an item in the image file list displays the
+raw image for that XES measurement.</span></p>
+</div>
+</div></div>
+<div class="section" id="herfd-measurements">
+<span id="_fig-dclick"></span><h2>HERFD measurements<a class="headerlink" href="#herfd-measurements" title="Permalink to this headline">¶</a></h2>
+<p>A HERFD measurement uses a scan file as well as a complete set of
+elastic and image files.  Thus none of the controls for folders or
+templates are disabled in HERFD mode.</p>
+<div class="figure align-center" id="id6">
+<a class="reference external image-reference" href="../_images/metis_files_herfd.png"><img alt="../_images/metis_files_herfd.png" src="../_images/metis_files_herfd.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>'s files tool in HERFD mode.</span></p>
+</div>
+<p>In a HERFD measurement, the image file list is typically longer than
+the elastic file list.  An image file must be collected at each point
+in a XANES scan – typically 100 or so points.  In this example,
+elastic images are measured every eV from 9429 to 9454 eV, a range
+that surrounds the Lα<sub>1</sub> peak at 9442 eV.</p>
+</div>
+<div class="section" id="rxes-measurements">
+<h2>RXES measurements<a class="headerlink" href="#rxes-measurements" title="Permalink to this headline">¶</a></h2>
+<p>An RXES measurement is structured a little differently from the other
+measurement types.  In the case of RXES, the sequence of masks is the
+same set of files as the sequence of emission measurements.  That is,
+the elastic part of each image will be processed into a mask then
+applied to the same sequence of images.</p>
+<div class="figure align-center" id="id7">
+<a class="reference external image-reference" href="../_images/metis_files_rxes.png"><img alt="../_images/metis_files_rxes.png" src="../_images/metis_files_rxes.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>'s files tool in RXES mode.</span></p>
+</div>
+<p>In this case, a scan file is used to correlate image numbers with
+energies.  There is a list of elastic files, but no separate list of
+image files.</p>
+<div class="figure compound align-center" id="_fig-ptrxes">
+<div style="width: 30%" class="subfigure align-center" id="id8">
+<a class="reference external image-reference" href="../_images/pt_rxes_1.png"><img alt="../_images/pt_rxes_1.png" src="../_images/pt_rxes_1.png" /></a>
+<p class="caption"><span class="caption-text">A Pt RXES image at a low energy.  This looks much like a normal
+elastic image.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id9">
+<a class="reference external image-reference" href="../_images/pt_rxes_2.png"><img alt="../_images/pt_rxes_2.png" src="../_images/pt_rxes_2.png" /></a>
+<p class="caption"><span class="caption-text">A Pt RXES image in the middle of the image sequence.  Here the
+fluorescence and the elastic line are quite close in energy.  The
+processing must somehow distinguish between the elastic and
+fluorescence portions of the signal.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id10">
+<a class="reference external image-reference" href="../_images/pt_rxes_3.png"><img alt="../_images/pt_rxes_3.png" src="../_images/pt_rxes_3.png" /></a>
+<p class="caption"><span class="caption-text">A Pt RXES image at the end of the image sequence.  Here the elastic
+signal is again easily distinguished form the fluorescence signal.
+The mask processing chore is to reject the fluorescence portion and
+retain the elastic portion.</span></p>
+</div>
+<span class="target" id="_fig-ptrxes"></span></div>
+<br>
+
+<br>
+<hr class="docutils" />
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>4</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/metis/files.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="mask.html" title="The Mask tool"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="The Metis program"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Metis program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

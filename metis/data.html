@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Data tool &mdash; Xray::BLA and Metis 4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../index.html" />
+    <link rel="up" title="The Metis program" href="index.html" />
+    <link rel="next" title="The Configuration tool" href="config.html" />
+    <link rel="prev" title="The Mask tool" href="mask.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="config.html" title="The Configuration tool"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mask.html" title="The Mask tool"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The Metis program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-data-tool">
+<h1>The Data tool<a class="headerlink" href="#the-data-tool" title="Permalink to this headline">¶</a></h1>
+<p>Once you have established a recipe for mask creation, you are ready to
+begin processing your resonant or non-resonant XES images.  Clicking
+on the Data icon in the tool bar shows this page.</p>
+<div class="figure align-center" id="id3">
+<a class="reference external image-reference" href="../_images/metis_data.png"><img alt="../_images/metis_data.png" src="../_images/metis_data.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>'s data processing tool.</span></p>
+</div>
+<p>Note that the Data icon has the same label as the mode in which
+<font size=-1 color="#8C4112">METIS</font> was invoked.  In this case, it was involked in XES
+mode, so the label says <span class="guilabel">XES</span>.</p>
+<p>In XES mode, the only set of controls shown are those related to
+computing and displaying XES spectra.  See below for examples of
+<font size=-1 color="#8C4112">METIS</font> in HERFD or XES mode.</p>
+<p>The drop down menu at the top of the XES box is filled with the
+contents of the <span class="guilabel">Image files</span> list from the <a class="reference external" href="files.html">Files page</a>.  Clicking the <kbd class="light">Process XES</kbd> button
+processes the XES images one at a time using the mask recipe from the
+<a class="reference external" href="mask.htmls">Mask page</a>.</p>
+<p>When clicked on, the <span class="guilabel">Reuse masks</span> button tells
+<font size=-1 color="#8C4112">METIS</font> to reuse the set of masks calculated at each elastic
+energy when processing the current image file.  It takes a few 10s of
+seconds to work through the entire list of elastic energies.  However,
+reapplying a set of calculated masks to a new image takes only a
+fraction of a second.  Clicking this button off will force a
+recalculation of the entire set of masks.</p>
+<div class="figure compound align-center" id="_fig-nbf5xes">
+<div style="width: 40%" class="subfigure align-center" id="id4">
+<a class="reference external image-reference" href="../_images/nbf5_image.png"><img alt="../_images/nbf5_image.png" src="../_images/nbf5_image.png" /></a>
+<p class="caption"><span class="caption-text">The XES image measure on NbF<sub>5</sub>.  The Kβ<sub>1,3</sub>
+is the bright stripe in  the image.  The distinct, but much dimmer
+stripe to the bottom and right of the image is the Kβ<sub>2,5</sub>.  The Kβ″ signal is in the broad, diffuse
+signal between the two peaks.  The vertical stripes are from the
+Soller slits used to help suppress scattering from elsewhere in the
+beam path, thus reducing the background signal.</span></p>
+</div>
+<div style="width: 40%" class="subfigure align-center" id="id5">
+<a class="reference external image-reference" href="../_images/nbf5_xes.png"><img alt="../_images/nbf5_xes.png" src="../_images/nbf5_xes.png" /></a>
+<p class="caption"><span class="caption-text">The XES spectrum computed for NbF<sub>5</sub>.  The Kβ<sub>1,3</sub> is the large peak at 18952 eV, the The Kβ<sub>2,5</sub> is the smaller peak at 18980 eV.  The Kβ″ is the sort-of-shoulder above 18960 eV.</span></p>
+</div>
+</div><p id="_fig-nbf5xes">The <kbd class="light">Replot XES</kbd> button will replot the current image
+file, reapplying the masks if required.  The <kbd class="light">Save XES
+data</kbd> button will prompt for a file name, then write the XES
+data from the current image as an <a class="reference external" href="https://github.com/XraySpectroscopy/XASDataLibrary">XDI file</a>.  The columns
+of that file are energy, computed XES, number of illuminated pixels in
+each mask, and the unscaled signal at each energy.</p>
+<p>The <kbd class="light">Process each XES image</kbd> button will calculate the
+set of masks then apply them to each of the measured images.  It will
+also compute the average of the XES spectra then plot each measurement
+along with the average.  The <kbd class="light">Save all XES data</kbd> button
+will write out the entire set of XES data to an <a class="reference external" href="https://github.com/XraySpectroscopy/XASDataLibrary">XDI file</a>.  The columns
+are energy, average XES, number of illuminated pixels in each mask,
+followed by one column for each individual XES measurement.</p>
+<div class="section" id="scaling-the-xes-measurement">
+<h2>Scaling the XES measurement<a class="headerlink" href="#scaling-the-xes-measurement" title="Permalink to this headline">¶</a></h2>
+<p>The reported XES spectrum is scaled by the number of illuminated
+pixels in the mask.  The mask is multiplied by the XES image and this
+product is summed.  That yields the photon count in those pixels
+falling under the mask at each energy.  However, there is a
+significant discrepancy in the number of pixels actually illuminated
+at each energy.  This has to do with the details of the geometry of
+the spectrometer and how each energy interacts with the analyzer
+crystal.</p>
+<p>To approximate this geometry effect, each raw photon count is scaled
+by the number of pixels involved in the measurement.  The elastic mask
+with the largest number of illuminate pixels has a scaling factor
+of 1.  All other masks are scaled by <code class="docutils literal"><span class="pre">N_pixels</span> <span class="pre">/</span> <span class="pre">N_largest</span></code>.
+Elastic energies with relatively small illuminated pixel counts are
+scaled up to approximately remove the effect of geometry.</p>
+</div>
+<div class="section" id="herfd-measurements">
+<h2>HERFD measurements<a class="headerlink" href="#herfd-measurements" title="Permalink to this headline">¶</a></h2>
+<p>When starting <font size=-1 color="#8C4112">METIS</font> in HERFD mode, the Data tool displays
+several more controls.</p>
+<div class="figure align-center" id="id6">
+<a class="reference external image-reference" href="../_images/metis_data_herfd.png"><img alt="../_images/metis_data_herfd.png" src="../_images/metis_data_herfd.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>'s data processing tool in HERFD mode.</span></p>
+</div>
+<p>A HERFD data set includes elastic images measured over a range of
+energies surrounding a Kα, Kβ, Lα, or Lβ
+peak, including the top of the measured emission line.</p>
+<div class="figure compound align-center" id="_fig-ptla">
+<div style="width: 40%" class="subfigure align-center" id="id7">
+<a class="reference external image-reference" href="../_images/pt_la_image.png"><img alt="../_images/pt_la_image.png" src="../_images/pt_la_image.png" /></a>
+<p class="caption"><span class="caption-text">The image for 9442 eV, the top of the Pt Lα<sub>1</sub> line
+in a HERFD measurement on a Pt nanoparticle.</span></p>
+</div>
+<div style="width: 40%" class="subfigure align-center" id="id8">
+<a class="reference external image-reference" href="../_images/pt_la_mask.png"><img alt="../_images/pt_la_mask.png" src="../_images/pt_la_mask.png" /></a>
+<p class="caption"><span class="caption-text">The mask for the 9442 eV image, processed with a bad/weak step with
+parameters 400/1 and a Gaussian blur with a threshold of 1.4.</span></p>
+</div>
+</div><p id="_fig-ptla">The actual HERFD measurement involves measuring XES images at a range
+of energies corresponding to a conventional XANES scan.   Below the
+edge (left image below) there is very little fluorescence in the
+image.  As the scan goes through the edge and into the EXAFS, the
+fluorescence signal in the images grows, becoming quite bright with
+the brightness oscillating through the EXAFS wiggles.</p>
+<div class="figure compound align-center" id="_fig-ptxes">
+<div style="width: 30%" class="subfigure align-center" id="id9">
+<a class="reference external image-reference" href="../_images/pt_herfd_1.png"><img alt="../_images/pt_herfd_1.png" src="../_images/pt_herfd_1.png" /></a>
+<p class="caption"><span class="caption-text">The Pt XES image at an energy in the XANES pre-edge.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id10">
+<a class="reference external image-reference" href="../_images/pt_herfd_2.png"><img alt="../_images/pt_herfd_2.png" src="../_images/pt_herfd_2.png" /></a>
+<p class="caption"><span class="caption-text">The Pt XES image at an energy somewhere in the middle of the XANES edge.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id11">
+<a class="reference external image-reference" href="../_images/pt_herfd_3.png"><img alt="../_images/pt_herfd_3.png" src="../_images/pt_herfd_3.png" /></a>
+<p class="caption"><span class="caption-text">The Pt XES image at an energy above the Pt L<sub>3</sub> edge.</span></p>
+</div>
+</div><p id="_fig-ptxes">When the <kbd class="light">Process HERFD</kbd> button is pressed, the mask is
+applied to each of the XES images over the XANES range.  The signal
+under the mask is the HERFD signal at each energy.</p>
+<div class="figure align-center" id="id12">
+<a class="reference external image-reference" href="../_images/pt_herfd.png"><img alt="../_images/pt_herfd.png" src="../_images/pt_herfd.png" /></a>
+<p class="caption"><span class="caption-text">The Pt HERFD computed from the sequence of XES images using the
+9442 eV mask.</span></p>
+</div>
+<p>If the scan file contains an obvious column for a conventionally
+measured spectrum (either transmission or fluorescence with, say, a
+silicon drift detector), the conventional spectrum will be overplotted
+if the <span class="guilabel">Include conventional mu(E) in plot</span> button is
+checked.</p>
+<p>The HERFD data can be replotted by clicking on the <kbd class="light">Replot
+HERFD</kbd> button.  Clicking on the <kbd class="light">Save HERFD</kbd>
+button will prompt for a file name, then save the HERFD data as an
+<a class="reference external" href="https://github.com/XraySpectroscopy/XASDataLibrary">XDI file</a>.</p>
+<p>The XES controls work much the same as when <font size=-1 color="#8C4112">METIS</font> is in XES
+mode.  However, the XES spectra are unlikely to be all that
+interesting.  For one thing, a typical HERFD measurement uses a rather
+sparse grid through the emission line.  In the case of the Lα<sub>1</sub> line shown here, the emission line is so far below the Fermi
+energy, that the XES is unlikely to show anything of chemical
+interest.  In the case of HERFD from a valence band or a Kβ<sub>1,3</sub> line, examining the XES at one or more energies might be a
+lot more interesting.</p>
+<p>The RIXS controls work differently in HERFD mode than in RXES mode.
+In the case of HERFD, measuring the “RIXS” means to compute
+the HERFD spectrum at each measured elastic energy.  The
+<kbd class="light">Process RIXS</kbd> button will compute the mask at each
+elastic energy and apply it to the sequence of XES images throughout
+the XANES energy range.</p>
+<div class="figure align-center" id="id13">
+<a class="reference external image-reference" href="../_images/pt_rixs.png"><img alt="../_images/pt_rixs.png" src="../_images/pt_rixs.png" /></a>
+<p class="caption"><span class="caption-text">The Pt HERFD computed from the sequence of XES images using the
+each mask.</span></p>
+</div>
+<p>Here we see the dispersion of the edge of the HERFD spectrum as we
+scan through the Lα<sub>1</sub> line using the sequence of
+masks.  The signal is largest at 9442, the top of the Lα<sub>1</sub> line, and is quite weak in the tails of the line.</p>
+<p>The <kbd class="light">Replot RIXS</kbd> button redisplays this image.  The
+<kbd class="light">Save RIXS</kbd>, saves this ensemble of spectra as an
+<font size=-1 color="#8C4112">ATHENA</font> project file.</p>
+<p>Summing these HERFD spectra, weighted by the number of illuminate
+pixels in each mask, results in a spectrum that resembles a
+conventional XANES spectrum.  In essence, making this sum introduces
+the core-hole broadening associated with the emission line.  Try
+summing up the spectra from the project file in <font size=-1 color="#8C4112">ATHENA</font> and
+comparing with a conventional measurement.  They won't be identical,
+but they will be close.</p>
+</div>
+<div class="section" id="rxes-measurements">
+<h2>RXES measurements<a class="headerlink" href="#rxes-measurements" title="Permalink to this headline">¶</a></h2>
+<p>When starting <font size=-1 color="#8C4112">METIS</font> in RXES mode, the Data tool displays
+controls for computing the RIXS plane.</p>
+<div class="figure align-center" id="id14">
+<a class="reference external image-reference" href="../_images/metis_data_rxes.png"><img alt="../_images/metis_data_rxes.png" src="../_images/metis_data_rxes.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>'s data processing tool in RXES mode.</span></p>
+</div>
+<p>This calculation is, in a certain sense, much like the RIXS
+calculation in HERFD mode, but the result is organized in a different
+way.  In the HERFD-mode RIXS calculation, the intent is to examine the
+HERFD with the spectrometer set to different emission energies.  In
+RXES-mode, the intent is to make a surface plot of the RIXS plane.
+Here is  the result of the RXES-mode calculation.</p>
+<div class="figure align-center" id="id15">
+<a class="reference external image-reference" href="../_images/pt_rixs_plane.png"><img alt="../_images/pt_rixs_plane.png" src="../_images/pt_rixs_plane.png" /></a>
+<p class="caption"><span class="caption-text">The result of the RXES calculation for the valence band emission
+near the Pt L<sub>3</sub> edge.</span></p>
+</div>
+<p>This is a visualization format that is common in the RIXS literature,
+plotting energy transfer as a function of incident energy.  Energy
+transfer is <code class="docutils literal"><span class="pre">E_incident</span> <span class="pre">-</span> <span class="pre">E_emission</span></code>.  The stripe at 0 on the
+y-axis, then, is the elastic signal.  The RIXS signal is the diagonal
+stripe.</p>
+<p>The <kbd class="light">Replot RXES</kbd> button redisplays this surface plot.  The
+<kbd class="light">Save RXES</kbd>, saves the surface plot data as a
+<a class="reference external" href="http://gnuplot.sourceforge.net/docs_4.2/node331.html">Gnuplot block data file</a>.</p>
+<p>The color scheme is controlled by the
+<font color="#636A24">♦metis→splot_palette_name</font> <a class="reference external" href="config.html">configuration parameter</a>.  There are over 45 options for this color palette.
+Many of them are perceptually improved colormaps, but some widely
+popular (but truly horrible) options exist – like the common
+<a class="reference external" href="http://cresspahl.blogspot.com/2012/03/expanded-control-of-octaves-colormap.html">Jet (aka rainbow) colormap</a>.
+But honestly, just because “Jet” is a choice doesn't mean that
+you have to choose it....</p>
+<p>Here are a few useful colormaps.</p>
+<div class="figure compound align-center" id="_fig-colormaps">
+<div style="width: 23%" class="subfigure align-center" id="id16">
+<a class="reference external image-reference" href="../_images/cmap_kindlmann.png"><img alt="../_images/cmap_kindlmann.png" src="../_images/cmap_kindlmann.png" /></a>
+<p class="caption"><span class="caption-text">The Kindlmann color map</span></p>
+</div>
+<div style="width: 23%" class="subfigure align-center" id="id17">
+<a class="reference external image-reference" href="../_images/cmap_bentcoolwarm.png"><img alt="../_images/cmap_bentcoolwarm.png" src="../_images/cmap_bentcoolwarm.png" /></a>
+<p class="caption"><span class="caption-text">The BentCoolWarm color map</span></p>
+</div>
+<div style="width: 23%" class="subfigure align-center" id="id18">
+<a class="reference external image-reference" href="../_images/cmap_lkry.png"><img alt="../_images/cmap_lkry.png" src="../_images/cmap_lkry.png" /></a>
+<p class="caption"><span class="caption-text">The linear black-red-yellow (L_kry) color map</span></p>
+</div>
+<div style="width: 23%" class="subfigure align-center" id="id19">
+<a class="reference external image-reference" href="../_images/cmap_pm3d.png"><img alt="../_images/cmap_pm3d.png" src="../_images/cmap_pm3d.png" /></a>
+<p class="caption"><span class="caption-text">The PM3D color map (the default Gnuplot color map)</span></p>
+</div>
+</div><p id="_fig-colormaps">Here's <a class="reference external" href="https://github.com/bruceravel/Graphics-Gnuplot-Palettes">more information about the color map options</a> in
+<font size=-1 color="#8C4112">METIS</font>.</p>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Metis program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>4</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/metis/data.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="config.html" title="The Configuration tool"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mask.html" title="The Mask tool"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Metis program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

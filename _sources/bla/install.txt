@@ -33,6 +33,12 @@ three programs into your execution path:
 #. :program:`pilplot`, a tool for quick-and-dirty visualization of the
    tiff files from the Pilatus.
 
+.. Note:: The requisite package ``Graphics::Gnuplot::Palettes`` is not
+   on CPAN and will not be installed at the ``Build installdeps``
+   step.  Download this package from
+   https://github.com/bruceravel/Graphics-Gnuplot-Palettes and follow
+   its build instructions.
+
 
 Windows package
 ---------------

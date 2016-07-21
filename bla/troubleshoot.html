@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Troubleshooting &mdash; Xray::BLA and Metis 3 documentation</title>
+    <title>Troubleshooting &mdash; Xray::BLA and Metis 4 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3',
+        VERSION:     '4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../index.html" />
     <link rel="up" title="The bla program" href="index.html" />
     <link rel="next" title="The Metis program" href="../metis/index.html" />
     <link rel="prev" title="Tasks of the bla program" href="tasks.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="tasks.html" title="Tasks of the bla program"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The bla program</a> &raquo;</li> 
       </ul>
     </div>  
@@ -88,20 +88,26 @@ another way, it's up to you to do file management sensibly.</p>
 </div>
 <div class="section" id="pdl-and-gnuplot">
 <h2>PDL and Gnuplot<a class="headerlink" href="#pdl-and-gnuplot" title="Permalink to this headline">¶</a></h2>
-<p>Apply <code class="docutils literal"><span class="pre">share/PGG/PGG.patch</span></code> to
-<code class="docutils literal"><span class="pre">/usr/local/share/perl/5.20.2/PDL/Graphics/Gnuplot.pm</span></code> to suppress the
-<code class="docutils literal"><span class="pre">Reading</span> <span class="pre">ras</span> <span class="pre">files</span> <span class="pre">from</span> <span class="pre">sequential</span> <span class="pre">devices</span> <span class="pre">not</span> <span class="pre">supported</span></code> warning when
-using the qt terminal. This is a qt issue and appears to be of no
-consequence.</p>
-<p>Around line 3116 of <code class="docutils literal"><span class="pre">PDL::Graphics::Gnuplot</span></code>, add the following line:</p>
-<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$optionsWarnings</span> <span class="o">=-</span> <span class="sr">s/^Reading ras files from sequential devices not supported.*$//mg</span><span class="p">;</span>
-<span class="nv">$optionsWarnings</span> <span class="o">=</span> <span class="s">&#39;&#39;</span> <span class="k">if</span><span class="p">(</span><span class="nv">$optionsWarnings</span> <span class="o">=-</span> <span class="sr">m/^\s+$/s</span><span class="p">);</span>
+<p>Developing <font size=-1 color="#8C4112">METIS</font> uncovered some shortcomings of
+<a class="reference external" href="https://metacpan.org/pod/PDL::Graphics::Gnuplot">PDL::Graphics::Gnuplot</a>.  I made a <a class="reference external" href="https://github.com/drzowie/PDL-Graphics-Gnuplot/pull/49">pull
+request</a>
+that addressed most of my concerns.  Eventually, the modified version
+of P::G::G will be a prerequisite.</p>
+<p>In a nutshell, the problem is that <strong class="program">Gnuplot</strong> puts up a lot of
+chatter on STDOUT and STDERR.  P::G::G has trouble recognizing when
+that chatter indicates a real problem and when it is something benign
+that can be ignored.  For example, when using the qt terminal in
+<strong class="program">Gnuplot</strong>, this line gets written frequently to the screen
+and often triggers an exception:</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>Reading ras files from sequential devices not supported
 </pre></div>
 </div>
-<p>Similar near lines 3256, 3301.</p>
-<p>Another solution is to replace <code class="docutils literal"><span class="pre">print</span> <span class="pre">STDERR</span></code> with <code class="docutils literal"><span class="pre">carp</span></code> at line
-3116 and elsewhere.  If that is done, then Metis is instrumented to
-handle terminal-related chatter a bit more gracefully.</p>
+<p>It is, however, a completely harmless warning.</p>
+<p>In any case, <font size=-1 color="#8C4112">METIS</font> is instrumented to handle that and a few
+other common warnings without any reaction.  Other unexpected warnings
+will be displayed in a Wx dialog box rather than sent to the screen or
+triggering an exception.  That provides enough feedback to investigate
+the problem without causing the program to terminate.</p>
 
 <br>
 
@@ -133,7 +139,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>3</b></p>
+<p>Current version: <b>4</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -182,7 +188,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="tasks.html" title="Tasks of the bla program"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >The bla program</a> &raquo;</li> 
       </ul>
     </div>

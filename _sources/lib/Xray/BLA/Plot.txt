@@ -48,7 +48,16 @@ This role add these attributes to the Xray::BLA object.
 
 \ ``palette``\ 
  
- This contains the Gnuplot palette definition for the choise of \ ``color``\ .
+ This contains the Gnuplot palette definition for the choice of
+ \ ``color``\ .  This is the palette used for elastic and measurement
+ images and is monotone.
+ 
+
+
+\ ``palette``\ 
+ 
+ This contains the Gnuplot palette definition for surface plots such as
+ the RXES plane.  This multi-tone palette.
  
 
 
@@ -193,9 +202,9 @@ Bruce Ravel (bravel AT bnl DOT gov)
 
 The palettes were taken from gnuplot-colorbrewer at
 `https://github.com/Gnuplotting/gnuplot-palettes <https://github.com/Gnuplotting/gnuplot-palettes>`_, which is written
-and maintained by Anna Schneider <annarschneider AT gmail DOT com> and
-released under the Apache License 2.0.  ColorBrewer is a project of
-Cynthia Brewer, Mark Harrower, and The Pennsylvania State University.
+and maintained by Anna Schneider and released under the Apache License
+2.0.  ColorBrewer is a project of Cynthia Brewer, Mark Harrower, and
+The Pennsylvania State University.
 
 
 *********************

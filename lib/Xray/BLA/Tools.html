@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Xray::BLA::Tools &mdash; Xray::BLA and Metis 3 documentation</title>
+    <title>Xray::BLA::Tools &mdash; Xray::BLA and Metis 4 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '3',
+        VERSION:     '4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../../../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../../../index.html" />
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../../../index.html" />
     <link rel="up" title="Programming documentation" href="../../index.html" />
     <link rel="next" title="Demeter::UI::Metis" href="../../Demeter/UI/Metis.html" />
     <link rel="prev" title="Xray::BLA::Return" href="Return.html" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Return.html" title="Xray::BLA::Return"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -87,6 +87,13 @@
 </pre></div>
 </div>
 <p>might evaluate to <em>Aufoil1_elastic_9711_00001.tif</em>.</p>
+<p>Optional arguments:</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="nv">$bla</span><span class="o">-&gt;</span><span class="n">file_template</span><span class="p">(</span><span class="s">&#39;%s_elastic_%e_%t.tif&#39;</span><span class="p">,</span> <span class="p">{</span><span class="n">counter</span><span class="o">=&gt;</span><span class="nv">$n</span><span class="p">,</span> <span class="n">re</span><span class="o">=&gt;</span><span class="mi">1</span><span class="p">})</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">counter</span></code> is used to increment a file name counter.  <code class="docutils literal"><span class="pre">re</span></code> indicates
+that the template should return a suitable regular expression for
+<code class="docutils literal"><span class="pre">%e</span></code> and <code class="docutils literal"><span class="pre">%c</span></code>.</p>
 </div></blockquote>
 <p><code class="docutils literal"><span class="pre">howlong</span></code></p>
 <blockquote>
@@ -161,7 +168,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>3</b></p>
+<p>Current version: <b>4</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -210,7 +217,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
         <li class="right" >
           <a href="Return.html" title="Xray::BLA::Return"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Programming documentation</a> &raquo;</li> 
       </ul>
     </div>

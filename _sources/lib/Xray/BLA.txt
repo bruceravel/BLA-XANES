@@ -570,6 +570,12 @@ Mask recipe attribues
  
 
 
+\ ``elastic_image``\ 
+ 
+ This contains the PDL of the shield image.
+ 
+
+
 \ ``npixels``\ 
  
  The number of illuminated pixels in the mask.  That is, the number of

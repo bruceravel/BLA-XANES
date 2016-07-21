@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Xray::BLA::SplotPalette &mdash; Xray::BLA and Metis 4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../../../index.html" />
+    <link rel="up" title="Programming documentation" href="../../index.html" />
+    <link rel="next" title="Demeter::UI::Metis" href="../../Demeter/UI/Metis.html" />
+    <link rel="prev" title="Xray::BLA::Tools" href="Tools.html" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../Demeter/UI/Metis.html" title="Demeter::UI::Metis"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Tools.html" title="Xray::BLA::Tools"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Programming documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="xray-bla-splotpalette">
+<h1>Xray::BLA::SplotPalette<a class="headerlink" href="#xray-bla-splotpalette" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="name">
+<h2>NAME<a class="headerlink" href="#name" title="Permalink to this headline">¶</a></h2>
+<p>Xray::BLA::SplotPalette - A repository of gnuplot surface plot palette definitions</p>
+</div>
+<div class="section" id="version">
+<h2>VERSION<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h2>
+<p>See Xray::BLA</p>
+</div>
+<div class="section" id="stnopsis">
+<h2>STNOPSIS<a class="headerlink" href="#stnopsis" title="Permalink to this headline">¶</a></h2>
+<p>This exports several constants containing strings which define useful
+Gnuplot palettes.</p>
+<div class="highlight-perl"><div class="highlight"><pre><span></span><span class="k">use</span> <span class="nn">Xray::BLA::</span><span class="n">SplotPalette</span> <span class="sx">qw($moreland $parula $kindlemann $blackbody $jet $pm3d)</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="palettes">
+<h2>PALETTES<a class="headerlink" href="#palettes" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">parula</span></code></p>
+<blockquote>
+<div><p>The default palette.  This implements the Matlab parula colormap.  See
+<a class="reference external" href="http://www.gnuplotting.org/matlab-colorbar-parula-with-gnuplot/">http://www.gnuplotting.org/matlab-colorbar-parula-with-gnuplot/</a></p>
+<p>This is a blue to yellow colormap with fairly uniform intensity
+variation over the scale.</p>
+</div></blockquote>
+<p><code class="docutils literal"><span class="pre">moreland</span></code></p>
+<blockquote>
+<div>This is Kenneth Moreland's &quot;smooth cool warm&quot; colormap.  See
+<a class="reference external" href="http://www.kennethmoreland.com/color-advice/">http://www.kennethmoreland.com/color-advice/</a></div></blockquote>
+<p><code class="docutils literal"><span class="pre">kindlemann</span></code></p>
+<blockquote>
+<div>This is Kenneth Moreland's implementation of the Kindlemann color map,
+a rainbow color map with the luminance adjusted such that it
+monotonically changes over the full scale.  See
+<a class="reference external" href="http://www.kennethmoreland.com/color-advice/">http://www.kennethmoreland.com/color-advice/</a> and
+<a class="reference external" href="http://www.cs.utah.edu/~gk/papers/vis02/">http://www.cs.utah.edu/&nbsp;gk/papers/vis02/</a></div></blockquote>
+<p><code class="docutils literal"><span class="pre">blackbody</span></code></p>
+<blockquote>
+<div>This is Kenneth Moreland's colormap based on the colors of black body
+radiation.  See <a class="reference external" href="http://www.kennethmoreland.com/color-advice/">http://www.kennethmoreland.com/color-advice/</a></div></blockquote>
+<p><code class="docutils literal"><span class="pre">jet</span></code></p>
+<blockquote>
+<div>This is the Matlab rainbow colormap.  Your humble author dislikes this
+colormap, but it's a popular one.</div></blockquote>
+<p><code class="docutils literal"><span class="pre">pm3d</span></code></p>
+<blockquote>
+<div>This is Gnuplot default color map.</div></blockquote>
+</div>
+<div class="section" id="author">
+<h2>AUTHOR<a class="headerlink" href="#author" title="Permalink to this headline">¶</a></h2>
+<p>Bruce Ravel (bravel AT bnl DOT gov)</p>
+<p><a class="reference external" href="http://github.com/bruceravel/BLA-XANES">http://github.com/bruceravel/BLA-XANES</a></p>
+</div>
+<div class="section" id="licence-and-copyright">
+<h2>LICENCE AND COPYRIGHT<a class="headerlink" href="#licence-and-copyright" title="Permalink to this headline">¶</a></h2>
+<p>Copyright (c) 2011-2014,2016 Bruce Ravel, Jeremy Kropf. All
+rights reserved.</p>
+<p>This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. See <a class="reference external" href="http://perldoc.perl.org/perlgpl.html">perlgpl</a>.</p>
+<p>This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
+
+<br>
+
+<br>
+<hr class="docutils" />
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../../../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../bla/index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metis/index.html">The Metis program</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>4</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../../_sources/lib/Xray/BLA/SplotPalette.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../Demeter/UI/Metis.html" title="Demeter::UI::Metis"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Tools.html" title="Xray::BLA::Tools"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Programming documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

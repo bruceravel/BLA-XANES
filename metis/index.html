@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Metis program &mdash; Xray::BLA and Metis 3 documentation</title>
+    <title>The Metis program &mdash; Xray::BLA and Metis 4 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '3',
+        VERSION:     '4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
-    <link rel="top" title="Xray::BLA and Metis 3 documentation" href="../index.html" />
-    <link rel="next" title="Programming documentation" href="../lib/index.html" />
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../index.html" />
+    <link rel="next" title="The Files tool" href="files.html" />
     <link rel="prev" title="Troubleshooting" href="../bla/troubleshoot.html" />
 
     <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
@@ -41,12 +41,12 @@
           <a href="../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="../lib/index.html" title="Programming documentation"
+          <a href="files.html" title="The Files tool"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../bla/troubleshoot.html" title="Troubleshooting"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,7 +57,35 @@
             
   <div class="section" id="the-metis-program">
 <h1>The Metis program<a class="headerlink" href="#the-metis-program" title="Permalink to this headline">¶</a></h1>
-<p>blah blah blah</p>
+<p>The <font size=-1 color="#8C4112">METIS</font> program is modal, providing slightly different
+functionality for HERFD, XES, and RXES data sets.  At the command
+line, it is invoked with a command line argument to put it into the
+correct mode.</p>
+<p>To start <font size=-1 color="#8C4112">METIS</font> in XES mode, provide the <code class="docutils literal"><span class="pre">xes</span></code> argument:</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>metis xes
+</pre></div>
+</div>
+<div class="figure align-center" id="id1">
+<a class="reference external image-reference" href="../_images/metis_startup.png"><img alt="../_images/metis_startup.png" src="../_images/metis_startup.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>, at startup, invoked in XES mode</span></p>
+</div>
+<p>Similarly, to begin <font size=-1 color="#8C4112">METIS</font> in <code class="docutils literal"><span class="pre">hrfd</span></code> or <code class="docutils literal"><span class="pre">rxes</span></code> mode, do</p>
+<div class="highlight-shell"><div class="highlight"><pre><span></span>metis herfd
+metis rxes
+</pre></div>
+</div>
+<p>The state of your data analysis is maintained separately for the three
+experimental modes.  Along with providing functionality specific to
+the three experimental data sets, you can recover parameters
+appropriate to your analysis of that data.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="files.html">The Files tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">The Mask tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">The Data tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">The Configuration tool</a></li>
+</ul>
+</div>
 
 <br>
 
@@ -88,7 +116,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>
-<p>Current version: <b>3</b></p>
+<p>Current version: <b>4</b></p>
 
 <ul>
   <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
@@ -132,12 +160,12 @@ consider <a class="reference external" href="http://creativecommons.org/support/
           <a href="../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="../lib/index.html" title="Programming documentation"
+          <a href="files.html" title="The Files tool"
              >next</a> |</li>
         <li class="right" >
           <a href="../bla/troubleshoot.html" title="Troubleshooting"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 3 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

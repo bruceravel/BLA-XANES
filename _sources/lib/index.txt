@@ -22,4 +22,5 @@ Contents:
    Demeter/UI/Metis/Config.rst
    Demeter/UI/Metis/Cursor.rst
    Demeter/UI/Metis/PluckPoint.rst
+   Demeter/UI/Metis/LastPlot.rst
 

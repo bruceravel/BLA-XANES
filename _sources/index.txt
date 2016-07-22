@@ -29,11 +29,12 @@ Contents:
 ---------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    exp/index.rst
    bla/index.rst
    metis/index.rst
+   plotting.rst
    lib/index.rst
 
 .. todo:: page for pilplot

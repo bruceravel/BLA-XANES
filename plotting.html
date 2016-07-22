@@ -1,0 +1,561 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Plotting and visualization &mdash; Xray::BLA and Metis 4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="shortcut icon" href="_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="index.html" />
+    <link rel="next" title="Programming documentation" href="lib/index.html" />
+    <link rel="prev" title="The Configuration tool" href="metis/config.html" />
+
+    <link rel="stylesheet" type="text/css" href="_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="lib/index.html" title="Programming documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="metis/config.html" title="The Configuration tool"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="plotting-and-visualization">
+<h1>Plotting and visualization<a class="headerlink" href="#plotting-and-visualization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="plotting-raw-images-and-masks">
+<h2>Plotting raw images and masks<a class="headerlink" href="#plotting-raw-images-and-masks" title="Permalink to this headline">¶</a></h2>
+<p><font size=-1 color="#8C4112">METIS</font> only uses single tone color palettes for plotting raw
+images and masks.  Given that the raw images depict photon counts and
+in masks all the pixels are either 1 or 0, there is not a lot of need
+for fancy color options.  It is easiest to interpret these images with
+monotone palettes.</p>
+<p>The color scheme for raw image and mask plots is set using the
+<font color="#636A24">♦metis→color</font> configuration parameter.  If you set
+<font color="#636A24">♦metis→color</font> to “surprise”, <font size=-1 color="#8C4112">METIS</font>
+will pick a color at random when you start the program.</p>
+<p>Here are your color choices:</p>
+<div class="figure compound align-center" id="_fig-grey">
+<div style="width: 30%" class="subfigure align-center" id="id1">
+<a class="reference external image-reference" href="_images/color_grey_raw.png"><img alt="_images/color_grey_raw.png" src="_images/color_grey_raw.png" /></a>
+<p class="caption"><span class="caption-text">A raw image in grey.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id2">
+<a class="reference external image-reference" href="_images/color_grey_mask.png"><img alt="_images/color_grey_mask.png" src="_images/color_grey_mask.png" /></a>
+<p class="caption"><span class="caption-text">A mask in grey.</span></p>
+</div>
+</div><div class="figure compound align-center" id="_fig-green">
+<div style="width: 30%" class="subfigure align-center" id="id3">
+<a class="reference external image-reference" href="_images/color_green_raw.png"><img alt="_images/color_green_raw.png" src="_images/color_green_raw.png" /></a>
+<p class="caption"><span class="caption-text">A raw image in green.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id4">
+<a class="reference external image-reference" href="_images/color_green_mask.png"><img alt="_images/color_green_mask.png" src="_images/color_green_mask.png" /></a>
+<p class="caption"><span class="caption-text">A mask in green.</span></p>
+</div>
+</div><div class="figure compound align-center" id="_fig-blue">
+<div style="width: 30%" class="subfigure align-center" id="id5">
+<a class="reference external image-reference" href="_images/color_blue_raw.png"><img alt="_images/color_blue_raw.png" src="_images/color_blue_raw.png" /></a>
+<p class="caption"><span class="caption-text">A raw image in blue.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id6">
+<a class="reference external image-reference" href="_images/color_blue_mask.png"><img alt="_images/color_blue_mask.png" src="_images/color_blue_mask.png" /></a>
+<p class="caption"><span class="caption-text">A mask in blue.</span></p>
+</div>
+</div><div class="figure compound align-center" id="_fig-orange">
+<div style="width: 30%" class="subfigure align-center" id="id7">
+<a class="reference external image-reference" href="_images/color_orange_raw.png"><img alt="_images/color_orange_raw.png" src="_images/color_orange_raw.png" /></a>
+<p class="caption"><span class="caption-text">A raw image in orange.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id8">
+<a class="reference external image-reference" href="_images/color_orange_mask.png"><img alt="_images/color_orange_mask.png" src="_images/color_orange_mask.png" /></a>
+<p class="caption"><span class="caption-text">A mask in orange.</span></p>
+</div>
+</div><div class="figure compound align-center" id="_fig-purple">
+<div style="width: 30%" class="subfigure align-center" id="id9">
+<a class="reference external image-reference" href="_images/color_purple_raw.png"><img alt="_images/color_purple_raw.png" src="_images/color_purple_raw.png" /></a>
+<p class="caption"><span class="caption-text">A raw image in purple.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id10">
+<a class="reference external image-reference" href="_images/color_purple_mask.png"><img alt="_images/color_purple_mask.png" src="_images/color_purple_mask.png" /></a>
+<p class="caption"><span class="caption-text">A mask in purple.</span></p>
+</div>
+</div><div class="figure compound align-center" id="_fig-red">
+<div style="width: 30%" class="subfigure align-center" id="id11">
+<a class="reference external image-reference" href="_images/color_red_raw.png"><img alt="_images/color_red_raw.png" src="_images/color_red_raw.png" /></a>
+<p class="caption"><span class="caption-text">A raw image in red.</span></p>
+</div>
+<div style="width: 30%" class="subfigure align-center" id="id12">
+<a class="reference external image-reference" href="_images/color_red_mask.png"><img alt="_images/color_red_mask.png" src="_images/color_red_mask.png" /></a>
+<p class="caption"><span class="caption-text">A mask in red.</span></p>
+</div>
+</div></div>
+<div class="section" id="surface-plots-of-rxes">
+<span id="_fig-red"></span><h2>Surface plots of RXES<a class="headerlink" href="#surface-plots-of-rxes" title="Permalink to this headline">¶</a></h2>
+<p>Here is a summary of all the options for visualizing the RXES surface
+plot.  <font size=-1 color="#8C4112">METIS</font> does not provide tools for fine tuning the
+color distribution, but there are an awful lot of built-in options.
+The palette name is the value of the
+<font color="#636A24">♦metis→splot_palette_name</font> configuration parameter.</p>
+<p>There is more information about the palettes, where they come from,
+and what the names mean at <a class="reference external" href="https://github.com/bruceravel/Graphics-Gnuplot-Palettes">the Graphics::Gnuplot::Palettes github
+page</a>.</p>
+<p>These figures are all of an XES image rather than an RXES plane, but
+serve well enough to show off each of the color palettes.</p>
+<p>Some of these palettes are completely inappropriate for RXES surface
+plots.  The “Qualitative” and “cyclical” palettes and
+the various kinds of “rainbow” are all poor choices for this
+kind of data.  They are shown here for the sake of completeness.</p>
+<div class="figure compound align-center" id="_fig-palettes">
+<div style="width: 15%" class="subfigure align-center" id="id13">
+<a class="reference external image-reference" href="_images/AFMHot.png"><img alt="_images/AFMHot.png" src="_images/AFMHot.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">AFMHot</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id14">
+<a class="reference external image-reference" href="_images/BentCoolWarm.png"><img alt="_images/BentCoolWarm.png" src="_images/BentCoolWarm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">BentCoolWarm</span></code> palette from the Moreland palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id15">
+<a class="reference external image-reference" href="_images/BlackBody.png"><img alt="_images/BlackBody.png" src="_images/BlackBody.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">BlackBody</span></code> palette from the Moreland palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id16">
+<a class="reference external image-reference" href="_images/C_grey.png"><img alt="_images/C_grey.png" src="_images/C_grey.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">C_grey</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id17">
+<a class="reference external image-reference" href="_images/C_mrybm.png"><img alt="_images/C_mrybm.png" src="_images/C_mrybm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">C_mrybm</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id18">
+<a class="reference external image-reference" href="_images/C_mygbm.png"><img alt="_images/C_mygbm.png" src="_images/C_mygbm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">C_mygbm</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id19">
+<a class="reference external image-reference" href="_images/C_wrwbw.png"><img alt="_images/C_wrwbw.png" src="_images/C_wrwbw.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">C_wrwbw</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id20">
+<a class="reference external image-reference" href="_images/D_I_cjm.png"><img alt="_images/D_I_cjm.png" src="_images/D_I_cjm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_I_cjm</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id21">
+<a class="reference external image-reference" href="_images/D_I_cjo.png"><img alt="_images/D_I_cjo.png" src="_images/D_I_cjo.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_I_cjo</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id22">
+<a class="reference external image-reference" href="_images/D_L_bjr.png"><img alt="_images/D_L_bjr.png" src="_images/D_L_bjr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_L_bjr</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id23">
+<a class="reference external image-reference" href="_images/D_L_bjy.png"><img alt="_images/D_L_bjy.png" src="_images/D_L_bjy.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_L_bjy</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id24">
+<a class="reference external image-reference" href="_images/D_RB_bgymr.png"><img alt="_images/D_RB_bgymr.png" src="_images/D_RB_bgymr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_RB_bgymr</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id25">
+<a class="reference external image-reference" href="_images/D_bkr.png"><img alt="_images/D_bkr.png" src="_images/D_bkr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_bkr</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id26">
+<a class="reference external image-reference" href="_images/D_bky.png"><img alt="_images/D_bky.png" src="_images/D_bky.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_bky</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id27">
+<a class="reference external image-reference" href="_images/D_bwr.png"><img alt="_images/D_bwr.png" src="_images/D_bwr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_bwr</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id28">
+<a class="reference external image-reference" href="_images/D_cwm.png"><img alt="_images/D_cwm.png" src="_images/D_cwm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_cwm</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id29">
+<a class="reference external image-reference" href="_images/D_gwr.png"><img alt="_images/D_gwr.png" src="_images/D_gwr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_gwr</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id30">
+<a class="reference external image-reference" href="_images/D_gwv.png"><img alt="_images/D_gwv.png" src="_images/D_gwv.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">D_gwv</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id31">
+<a class="reference external image-reference" href="_images/Diverging_BrBG.png"><img alt="_images/Diverging_BrBG.png" src="_images/Diverging_BrBG.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_BrBG</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id32">
+<a class="reference external image-reference" href="_images/Diverging_PRGn.png"><img alt="_images/Diverging_PRGn.png" src="_images/Diverging_PRGn.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_PRGn</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id33">
+<a class="reference external image-reference" href="_images/Diverging_PiYG.png"><img alt="_images/Diverging_PiYG.png" src="_images/Diverging_PiYG.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_PiYG</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id34">
+<a class="reference external image-reference" href="_images/Diverging_PuOr.png"><img alt="_images/Diverging_PuOr.png" src="_images/Diverging_PuOr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_PuOr</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id35">
+<a class="reference external image-reference" href="_images/Diverging_RdBu.png"><img alt="_images/Diverging_RdBu.png" src="_images/Diverging_RdBu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_RdBu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id36">
+<a class="reference external image-reference" href="_images/Diverging_RdGy.png"><img alt="_images/Diverging_RdGy.png" src="_images/Diverging_RdGy.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_RdGy</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id37">
+<a class="reference external image-reference" href="_images/Diverging_RdYlBu.png"><img alt="_images/Diverging_RdYlBu.png" src="_images/Diverging_RdYlBu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_RdYlBu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id38">
+<a class="reference external image-reference" href="_images/Diverging_RdYlGn.png"><img alt="_images/Diverging_RdYlGn.png" src="_images/Diverging_RdYlGn.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_RdYlGn</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id39">
+<a class="reference external image-reference" href="_images/Diverging_Spectral.png"><img alt="_images/Diverging_Spectral.png" src="_images/Diverging_Spectral.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Diverging_Spectral</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id40">
+<a class="reference external image-reference" href="_images/ExtendedBlackBody.png"><img alt="_images/ExtendedBlackBody.png" src="_images/ExtendedBlackBody.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">ExtendedBlackBody</span></code> palette from the Moreland palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id41">
+<a class="reference external image-reference" href="_images/ExtendedKindlmann.png"><img alt="_images/ExtendedKindlmann.png" src="_images/ExtendedKindlmann.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">ExtendedKindlmann</span></code> palette from the Moreland palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id42">
+<a class="reference external image-reference" href="_images/GRV.png"><img alt="_images/GRV.png" src="_images/GRV.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">GRV</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id43">
+<a class="reference external image-reference" href="_images/Grey.png"><img alt="_images/Grey.png" src="_images/Grey.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Grey</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id44">
+<a class="reference external image-reference" href="_images/Hot.png"><img alt="_images/Hot.png" src="_images/Hot.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Hot</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id45">
+<a class="reference external image-reference" href="_images/I_cgo.png"><img alt="_images/I_cgo.png" src="_images/I_cgo.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">I_cgo</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id46">
+<a class="reference external image-reference" href="_images/I_cm.png"><img alt="_images/I_cm.png" src="_images/I_cm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">I_cm</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id47">
+<a class="reference external image-reference" href="_images/Jet.png"><img alt="_images/Jet.png" src="_images/Jet.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Jet</span></code> palette from the Matlab palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id48">
+<a class="reference external image-reference" href="_images/Kindlmann.png"><img alt="_images/Kindlmann.png" src="_images/Kindlmann.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Kindlmann</span></code> palette from the Moreland palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id49">
+<a class="reference external image-reference" href="_images/L_bgyw.png"><img alt="_images/L_bgyw.png" src="_images/L_bgyw.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_bgyw</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id50">
+<a class="reference external image-reference" href="_images/L_blue.png"><img alt="_images/L_blue.png" src="_images/L_blue.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_blue</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id51">
+<a class="reference external image-reference" href="_images/L_bmw.png"><img alt="_images/L_bmw.png" src="_images/L_bmw.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_bmw</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id52">
+<a class="reference external image-reference" href="_images/L_bmy.png"><img alt="_images/L_bmy.png" src="_images/L_bmy.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_bmy</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id53">
+<a class="reference external image-reference" href="_images/L_gow.png"><img alt="_images/L_gow.png" src="_images/L_gow.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_gow</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id54">
+<a class="reference external image-reference" href="_images/L_green.png"><img alt="_images/L_green.png" src="_images/L_green.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_green</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id55">
+<a class="reference external image-reference" href="_images/L_grey.png"><img alt="_images/L_grey.png" src="_images/L_grey.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_grey</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id56">
+<a class="reference external image-reference" href="_images/L_kry.png"><img alt="_images/L_kry.png" src="_images/L_kry.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_kry</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id57">
+<a class="reference external image-reference" href="_images/L_kryw.png"><img alt="_images/L_kryw.png" src="_images/L_kryw.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_kryw</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id58">
+<a class="reference external image-reference" href="_images/L_ternary_blue.png"><img alt="_images/L_ternary_blue.png" src="_images/L_ternary_blue.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_ternary_blue</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id59">
+<a class="reference external image-reference" href="_images/L_ternary_green.png"><img alt="_images/L_ternary_green.png" src="_images/L_ternary_green.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_ternary_green</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id60">
+<a class="reference external image-reference" href="_images/L_ternary_red.png"><img alt="_images/L_ternary_red.png" src="_images/L_ternary_red.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">L_ternary_red</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id61">
+<a class="reference external image-reference" href="_images/Ocean.png"><img alt="_images/Ocean.png" src="_images/Ocean.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Ocean</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id62">
+<a class="reference external image-reference" href="_images/Parula.png"><img alt="_images/Parula.png" src="_images/Parula.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Parula</span></code> palette from the Matlab palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id63">
+<a class="reference external image-reference" href="_images/Pm3d.png"><img alt="_images/Pm3d.png" src="_images/Pm3d.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Pm3d</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id64">
+<a class="reference external image-reference" href="_images/Qualitative_Accent.png"><img alt="_images/Qualitative_Accent.png" src="_images/Qualitative_Accent.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Accent</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id65">
+<a class="reference external image-reference" href="_images/Qualitative_Dark2.png"><img alt="_images/Qualitative_Dark2.png" src="_images/Qualitative_Dark2.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Dark2</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id66">
+<a class="reference external image-reference" href="_images/Qualitative_Paired.png"><img alt="_images/Qualitative_Paired.png" src="_images/Qualitative_Paired.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Paired</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id67">
+<a class="reference external image-reference" href="_images/Qualitative_Pastel1.png"><img alt="_images/Qualitative_Pastel1.png" src="_images/Qualitative_Pastel1.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Pastel1</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id68">
+<a class="reference external image-reference" href="_images/Qualitative_Pastel2.png"><img alt="_images/Qualitative_Pastel2.png" src="_images/Qualitative_Pastel2.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Pastel2</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id69">
+<a class="reference external image-reference" href="_images/Qualitative_Set1.png"><img alt="_images/Qualitative_Set1.png" src="_images/Qualitative_Set1.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Set1</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id70">
+<a class="reference external image-reference" href="_images/Qualitative_Set2.png"><img alt="_images/Qualitative_Set2.png" src="_images/Qualitative_Set2.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Set2</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id71">
+<a class="reference external image-reference" href="_images/Qualitative_Set3.png"><img alt="_images/Qualitative_Set3.png" src="_images/Qualitative_Set3.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Qualitative_Set3</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id72">
+<a class="reference external image-reference" href="_images/RB_bgyr.png"><img alt="_images/RB_bgyr.png" src="_images/RB_bgyr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">RB_bgyr</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id73">
+<a class="reference external image-reference" href="_images/RB_bgyrm.png"><img alt="_images/RB_bgyrm.png" src="_images/RB_bgyrm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">RB_bgyrm</span></code> palette from the CET palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id74">
+<a class="reference external image-reference" href="_images/Rainbow.png"><img alt="_images/Rainbow.png" src="_images/Rainbow.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Rainbow</span></code> palette from the Gnuplot palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id75">
+<a class="reference external image-reference" href="_images/Sequential_Blues.png"><img alt="_images/Sequential_Blues.png" src="_images/Sequential_Blues.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_Blues</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id76">
+<a class="reference external image-reference" href="_images/Sequential_BuGn.png"><img alt="_images/Sequential_BuGn.png" src="_images/Sequential_BuGn.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_BuGn</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id77">
+<a class="reference external image-reference" href="_images/Sequential_BuPu.png"><img alt="_images/Sequential_BuPu.png" src="_images/Sequential_BuPu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_BuPu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id78">
+<a class="reference external image-reference" href="_images/Sequential_GnBu.png"><img alt="_images/Sequential_GnBu.png" src="_images/Sequential_GnBu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_GnBu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id79">
+<a class="reference external image-reference" href="_images/Sequential_Greens.png"><img alt="_images/Sequential_Greens.png" src="_images/Sequential_Greens.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_Greens</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id80">
+<a class="reference external image-reference" href="_images/Sequential_Greys.png"><img alt="_images/Sequential_Greys.png" src="_images/Sequential_Greys.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_Greys</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id81">
+<a class="reference external image-reference" href="_images/Sequential_OrRd.png"><img alt="_images/Sequential_OrRd.png" src="_images/Sequential_OrRd.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_OrRd</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id82">
+<a class="reference external image-reference" href="_images/Sequential_Oranges.png"><img alt="_images/Sequential_Oranges.png" src="_images/Sequential_Oranges.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_Oranges</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id83">
+<a class="reference external image-reference" href="_images/Sequential_PuBu.png"><img alt="_images/Sequential_PuBu.png" src="_images/Sequential_PuBu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_PuBu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id84">
+<a class="reference external image-reference" href="_images/Sequential_PuBuGn.png"><img alt="_images/Sequential_PuBuGn.png" src="_images/Sequential_PuBuGn.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_PuBuGn</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id85">
+<a class="reference external image-reference" href="_images/Sequential_PuRd.png"><img alt="_images/Sequential_PuRd.png" src="_images/Sequential_PuRd.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_PuRd</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id86">
+<a class="reference external image-reference" href="_images/Sequential_Purples.png"><img alt="_images/Sequential_Purples.png" src="_images/Sequential_Purples.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_Purples</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id87">
+<a class="reference external image-reference" href="_images/Sequential_RdPu.png"><img alt="_images/Sequential_RdPu.png" src="_images/Sequential_RdPu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_RdPu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id88">
+<a class="reference external image-reference" href="_images/Sequential_Reds.png"><img alt="_images/Sequential_Reds.png" src="_images/Sequential_Reds.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_Reds</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id89">
+<a class="reference external image-reference" href="_images/Sequential_YlGn.png"><img alt="_images/Sequential_YlGn.png" src="_images/Sequential_YlGn.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_YlGn</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id90">
+<a class="reference external image-reference" href="_images/Sequential_YlGnBu.png"><img alt="_images/Sequential_YlGnBu.png" src="_images/Sequential_YlGnBu.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_YlGnBu</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id91">
+<a class="reference external image-reference" href="_images/Sequential_YlOrBr.png"><img alt="_images/Sequential_YlOrBr.png" src="_images/Sequential_YlOrBr.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_YlOrBr</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id92">
+<a class="reference external image-reference" href="_images/Sequential_YlOrRd.png"><img alt="_images/Sequential_YlOrRd.png" src="_images/Sequential_YlOrRd.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">Sequential_YlOrRd</span></code> palette from the Brewer palette group.</span></p>
+</div>
+<div style="width: 15%" class="subfigure align-center" id="id93">
+<a class="reference external image-reference" href="_images/SmoothCoolWarm.png"><img alt="_images/SmoothCoolWarm.png" src="_images/SmoothCoolWarm.png" /></a>
+<p class="caption"><span class="caption-text">The <code class="docutils literal"><span class="pre">SmoothCoolWarm</span></code> palette from the Moreland palette group.</span></p>
+</div>
+<span class="target" id="_fig-palettes"></span></div>
+<br>
+
+<br>
+<hr class="docutils" />
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bla/index.html">The bla program</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metis/index.html">The Metis program</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Plotting and visualization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-raw-images-and-masks">Plotting raw images and masks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#surface-plots-of-rxes">Surface plots of RXES</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>4</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/plotting.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="lib/index.html" title="Programming documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="metis/config.html" title="The Configuration tool"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

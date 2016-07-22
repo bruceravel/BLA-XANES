@@ -30,3 +30,8 @@ The configuration parameters will be saved in the same
 :file:`demeter.ini` file that is used by the other :demeter:`demeter`
 programs.  On linux (and other unixes) this is in ``$HOME/.horae/``. On
 Windows this is in ``%APPDATA%\\demeter``.
+
+Not all of the Gnuplot options are used by :demeter:`metis`.  However,
+the parameters :configparam:`gnuplot,col0` through
+:configparam:`gnuplot,col9` are used as the colors for line plots.
+

@@ -95,7 +95,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'prolog.rst', 'epilog.rst', 'bla.rst']
+exclude_patterns = ['_build', 'prolog.rst', 'epilog.rst', 'bla.rst', 'contents.rst']
 
 #sphinxtr
 # Ideally, we wouldn't have to do this, but sphinx seems to have trouble with

@@ -84,7 +84,9 @@ sub set_splot_palette {
   $pal ||= $self->splot_palette_name;
   $pal = "Parula" if (none {$_ eq $pal} palette_names);
   $self->splot_palette_name($pal);
-  $self->splot_palette(palette($pal));
+  my $posneg = "positive ";
+  $posneg = "negative " if ($pal =~ m{Sequential});
+  $self->splot_palette($posneg.palette($pal));
   return $self;
 };
 

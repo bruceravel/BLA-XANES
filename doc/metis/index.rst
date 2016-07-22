@@ -39,7 +39,7 @@ the three experimental data sets, you can recover parameters
 appropriate to your analysis of that data.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    files.rst
    mask.rst

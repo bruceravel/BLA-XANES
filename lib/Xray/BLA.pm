@@ -184,7 +184,7 @@ has 'elastic_file_template' => (is => 'rw', isa => 'Str', default => q{%s_elasti
 has 'image_file_template' => (is => 'rw', isa => 'Str', default => q{%s_%c.tif},
 			      documentation => "Template for constructing the image file name.");
 #print dirname($INC{"Xray/BLA.pm"}).'../../Demeter/share/bla.xdi.ini', $/;
-has 'xdi_metadata_file'   =>  (is => 'rw', isa => 'Str', default => sub{abs_path(File::Spec->canonpath(dirname($INC{"Xray/BLA.pm"}).'/../Demeter/share/bla.xdi.ini'))},
+has 'xdi_metadata_file'   =>  (is => 'rw', isa => 'Str', default => sub{abs_path(File::Spec->canonpath(dirname($INC{"Xray/BLA.pm"}).'/../Demeter/share/bla.xdi.ini')) || q{}},
 			       documentation => "Path to .ini file with beamline specific XDI metadata.");
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},

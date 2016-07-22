@@ -3,24 +3,23 @@
    released under The Creative Commons Attribution-ShareAlike License
    http://creativecommons.org/licenses/by-sa/3.0/
 
-Options for plotting and visualization
-======================================
+Plotting and visualization
+==========================
 
 
 Plotting raw images and masks
 -----------------------------
 
-:demeter:`metis` only uses single tone color palettes for plotting raw
+:demeter:`metis` only uses single-tone color palettes for plotting raw
 images and masks.  Given that the raw images depict photon counts and
-in masks all the pixels are either 1 or 0, there is not a lot of need
-for fancy color options.  It is easiest to interpret these images with
-monotone palettes.
+that, in masks, all the pixels are either 1 or 0, there is not a lot
+of need for fancy color options.  It is easiest to interpret these
+images with monotone palettes.
 
 The color scheme for raw image and mask plots is set using the
-:configparam:`metis,color` configuration parameter.  If you set 
-:configparam:`metis,color` to ``surprise``, :demeter:`metis` will pick
-a color at random when you start the program.
-
+:configparam:`metis,color` configuration parameter.  If you set
+:configparam:`metis,color` to :quoted:`surprise`, :demeter:`metis`
+will pick a color at random when you start the program.
 
 Here are your color choices:
 
@@ -30,17 +29,17 @@ Here are your color choices:
    :target: _images/color_grey_raw.png
    :align: center
 
-   A raw image in grey.
+   A raw image in gray.
 
 .. figure:: _images/color_grey_mask.png
    :target: _images/color_grey_mask.png
    :align: center
 
-   A mask in grey.
+   A mask in gray.
 
 .. subfigend::
    :width: 0.3
-   :label: _fig-grey
+   :label: _fig-gray
 
 .. subfigstart::
 
@@ -149,9 +148,15 @@ There is more information about the palettes, where they come from,
 and what the names mean at `the Graphics::Gnuplot::Palettes github
 page <https://github.com/bruceravel/Graphics-Gnuplot-Palettes>`_.
 
+These figures are all of an XES image rather than an RXES plane, but
+serve well enough to show off each of the color palettes.
+
+Some of these palettes are completely inappropriate for RXES surface
+plots.  The :quoted:`Qualitative` and :quoted:`cyclical` palettes and
+the various kinds of :quoted:`rainbow` are all poor choices for this
+kind of data.  They are shown here for the sake of completeness.
 
 .. subfigstart::
-
 
 .. figure:: _images/palettes/AFMHot.png
    :target: _images/AFMHot.png
@@ -638,7 +643,6 @@ page <https://github.com/bruceravel/Graphics-Gnuplot-Palettes>`_.
    :align: center
 
    The ``SmoothCoolWarm`` palette from the Moreland palette group.
-
 
 .. subfigend::
    :width: 0.15

@@ -280,7 +280,7 @@ The :button:`Replot RXES,light` button redisplays this surface plot.  The
 
 The color scheme is controlled by the
 :configparam:`metis,splot_palette_name` `configuration parameter
-<config.html>`_.  There are over 45 options for this color palette.
+<config.html>`_.  There are about 80 options for this color palette.
 Many of them are perceptually improved colormaps, but some widely
 popular (but truly horrible) options exist |nd| like the common
 `Jet (aka rainbow) colormap

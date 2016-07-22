@@ -288,38 +288,6 @@ popular (but truly horrible) options exist |nd| like the common
 But honestly, just because :quoted:`Jet` is a choice doesn't mean that
 you have to choose it....
 
-Here are a few useful colormaps. 
-
-.. subfigstart::
-
-.. figure:: ../_images/cmap_kindlmann.png
-   :target: ../_images/cmap_kindlmann.png
-   :align: center
-
-   The Kindlmann color map
-
-.. figure:: ../_images/cmap_bentcoolwarm.png
-   :target: ../_images/cmap_bentcoolwarm.png
-   :align: center
-
-   The BentCoolWarm color map
-
-.. figure:: ../_images/cmap_lkry.png
-   :target: ../_images/cmap_lkry.png
-   :align: center
-
-   The linear black-red-yellow (L_kry) color map
-
-.. figure:: ../_images/cmap_pm3d.png
-   :target: ../_images/cmap_pm3d.png
-   :align: center
-
-   The PM3D color map (the default Gnuplot color map)
-
-.. subfigend::
-   :width: 0.23
-   :label: _fig-colormaps
-
-Here's `more information about the color map options
-<https://github.com/bruceravel/Graphics-Gnuplot-Palettes>`_ in
-:demeter:`metis`.
+See `the chapter on data visualization
+<../plotting.html#surface-plots-of-rxes>`_ for a complete listing of
+colormap options.

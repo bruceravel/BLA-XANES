@@ -783,8 +783,11 @@ sub poly_fill {
       splice(@x, $i-1, 1, $x[$i-1]+1); # by splicing in the missing number
     };
   };
-  foreach my $i ($x[0]..$x[-1]) {  # remove Soller slit gaps
-  #foreach my $i (@x) {		    # leave  Soller slit gaps
+  ##                                                               fill in      leave Soller slit gaps
+  ##                                                                   |           |
+  ##                                                                   v           v
+  my @list = (Demeter->co->default('metis', 'polyfill_gaps')) ? ($x[0]..$x[-1]) : @x;
+  foreach my $i (@list) {
     my $xpow = pdl( map {$i ** $_} (0 .. $order-1) ); # powers of X for polynomial
     my $y1 = $coeffs1 * $xpow;
     my $y2 = $coeffs2 * $xpow;

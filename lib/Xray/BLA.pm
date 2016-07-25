@@ -128,8 +128,10 @@ has 'gaussian_blur_value'=> (is => 'rw', isa => 'LaxNum', default => 2,
 			     documentation => "The threshold value for leaving pixels in a mask after applying the Gaussian blur filter.");
 has 'gaussian_kernel'    => (is => 'rw', isa => 'Str', default => '3x3',
 			     documentation => "The size of the Gaussian kernel (3x3 or 5x5).");
-has 'polyfill_order'     => (is => 'rw', isa => 'Int', default => '6',
+has 'polyfill_order'     => (is => 'rw', isa => 'Int', default => 6,
 			     documentation => "The order of the polynomial used in the polyfill step.");
+has 'polyfill_gaps'      => (is => 'rw', isa => 'Bool', default => 1,
+			     documentation => "When true, fill gaps in a mask due to Soller slits.");
 
 has 'deltae'	         => (is => 'rw', isa => 'LaxNum', default => 1,
 			     documentation => "The width in eV about the emission energy for creating a mask from the energy map.");

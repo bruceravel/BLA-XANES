@@ -141,3 +141,13 @@ minint=3
 maxint=10
 description
   The order of the polynomial used in the polyfill mask creation step.
+
+variable=polyfill_gaps
+type=boolean
+default=1
+onvalue=1
+offvalue=0
+description
+  When true, fill gaps in the fitted polynomial functions, making the
+  mask continuous.  The gaps are usually due either to Soller slits or
+  the processing of a section with weak signal.

@@ -22,7 +22,6 @@ sub new {
   Demeter->co->set_options('metis', 'splot_palette_name', [palette_names()], 1);
   $self->populate(['metis', 'gnuplot']);
   $self->{params}->Expand($self->{params}->GetRootItem);
-
   return $self;
 };
 

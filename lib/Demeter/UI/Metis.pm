@@ -52,6 +52,7 @@ const my $Files    => Wx::NewId();
 const my $Mask     => Wx::NewId();
 const my $Data     => Wx::NewId();
 const my $Config   => Wx::NewId();
+const my $XDI      => Wx::NewId();
 const my $Import   => Wx::NewId();
 const my $Object   => Wx::NewId();
 const my $About    => Wx::NewId();
@@ -67,11 +68,11 @@ sub OnInit {
   $app->{save} = 0;
   my @utilities = ();
   if ($app->{tool} eq 'herfd') {
-    @utilities = qw(Files Mask Data Config);
+    @utilities = qw(Files Mask Data Config XDI);
   } elsif ($app->{tool} eq 'xes') {
-    @utilities = qw(Files Mask Data Config);
+    @utilities = qw(Files Mask Data Config XDI);
   } elsif ($app->{tool} eq 'rxes') {
-    @utilities = qw(Files Mask Data Config);
+    @utilities = qw(Files Mask Data Config XDI);
   };
 
   $app->{main} = Wx::Frame->new(undef, -1, 'Metis for '.uc($app->{tool}).' [BLA data processing]', wxDefaultPosition, [850,550],);
@@ -168,6 +169,7 @@ sub OnInit {
   $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
   $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3");
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4");
+  $filemenu->Append($XDI,      "Show XDI (metadata) tool\tCtrl+5");
   $filemenu->AppendSeparator;
   $filemenu->Append($Import,   "Import configuration\tCtrl+i");
   $filemenu->AppendSeparator;
@@ -184,6 +186,8 @@ sub OnInit {
   $bar->Append( $helpmenu,     "&Help" );
   $app->{main}->SetMenuBar( $bar );
   EVT_MENU($app->{main}, -1, sub{my ($frame,  $event) = @_; OnMenuClick($frame, $event, $app)} );
+
+  Wx::ToolTip::Enable(0);
 
   my $accelerator = Wx::AcceleratorTable->new(
    					      [wxACCEL_CTRL, 107, $INCREMENT_ENERGY],

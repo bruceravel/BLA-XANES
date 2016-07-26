@@ -118,6 +118,9 @@ has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400,
 			     documentation => "The value above which a pixel is considered to be a bad pixel.");
 has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3,
 			     documentation => "The value below which a pixel is considered to contain a spurious signal.");
+has 'exponent'    	 => (is => 'rw', isa => 'Int', default => 1,
+			     documentation => "The exponent by which to raise the elastic image before processing.");
+
 has 'lonely_pixel_value' => (is => 'rw', isa => 'Int', default => 3,
 			     documentation => "The number of illuminated neighbors below which a pixel is considered isolated and should be removed from the mask.");
 has 'social_pixel_value' => (is => 'rw', isa => 'Int', default => 2,

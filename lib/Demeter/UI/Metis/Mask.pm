@@ -29,7 +29,7 @@ my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
                        #do_multiply multiplyvalue do_entire
 		       #do_fluo fluolabel fluolevel fluoenergylabel fluoenergy
 
-my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue), @most_widgets);
+my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue), @most_widgets);
 
 my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "up.png");
 my $up   = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
@@ -149,6 +149,14 @@ sub new {
   $app->mouseover($self->{badvalue},  "Pixels above this value are considered bad.");
   $app->mouseover($self->{weakvalue}, "Pixels below this value are considered weak.");
 
+  ++$row;
+  $self->{exponentlabel} = Wx::StaticText->new($self, -1, 'Exponent:');
+  $self->{exponentvalue} = Wx::SpinCtrl->new($self, -1, $app->{base}->exponent, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 1, 6);
+  $gbs ->Add($self->{exponentlabel}, Wx::GBPosition->new($row,1));
+  $gbs ->Add($self->{exponentvalue}, Wx::GBPosition->new($row,2));
+  $app->mouseover($self->{exponentvalue}, "The power by which to raise the elastic image before processing.");
+  
+  
   ++$row;
   $self->{do_gaussian}   = Wx::Button->new($self, -1, "&Gaussian blur", wxDefaultPosition, [$buttonwidth,-1], wxBU_EXACTFIT);
   $self->{gaussianlabel} = Wx::StaticText->new($self, -1, 'Threshold:');
@@ -317,7 +325,7 @@ sub new {
 sub restore {
   my ($self, $app) = @_;
   $self->{steps_list}->Clear;
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue energylabel
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue energylabel
 		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
     $self->{$k}->Enable(1);
   };
@@ -347,7 +355,7 @@ sub MaskType {
     undef $busy;
   };
 
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue)) {
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue)) {
     $self->{$k}->Enable(1);
   };
   foreach my $k (@most_widgets) {
@@ -393,7 +401,7 @@ sub SelectEnergy {
     foreach my $k (@most_widgets) {
       $self->{$k}->Enable(0);
     };
-    foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue stub
+    foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue  exponentlabel exponentvalue stub
 		      energylabel energy energy_up energy_down
 		      rangelabel rangemin rangeto rangemax)) {
       $self->{$k}->Enable(1);
@@ -407,6 +415,7 @@ sub SelectEnergy {
     if ($st =~ m{\Abad}) {
       $self->{badvalue}->SetValue($words[1]);
       $self->{weakvalue}->SetValue($words[3]);
+      $self->{exponentvalue}->SetValue($words[5] || 1);
     } elsif ($st =~ m{\Agaussian}) {
       $self->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Auseshield}) {
@@ -474,7 +483,7 @@ sub Reset {
   foreach my $k (@most_widgets) {
     $self->{$k}->Enable(0);
   };
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue energylabel
+  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue  exponentlabel exponentvalue energylabel
 		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
     $self->{$k}->Enable(1);
   };
@@ -537,15 +546,17 @@ sub do_step {
     $spectrum -> width_max($self->{rangemax}->GetValue);
     $spectrum -> bad_pixel_value($self->{badvalue}->GetValue);
     $spectrum -> weak_pixel_value($self->{weakvalue}->GetValue);
-    $spectrum->clear_spots;
+    $spectrum -> exponent($self->{exponentvalue}->GetValue);
+    $spectrum -> clear_spots;
     foreach my $i (0 .. $self->{spots_list}->GetCount-1) {
       my $string = $self->{spots_list}->GetString($i);
       $spectrum->push_spots([split(" ",$string)]);
     };
     $success = $spectrum -> do_step('bad_pixels', %args);
-    $self->{steps_list}->Append(sprintf("bad %d weak %d",
+    $self->{steps_list}->Append(sprintf("bad %d weak %d power %d",
 					$spectrum -> bad_pixel_value,
-					$spectrum -> weak_pixel_value)) if ($success and $append);
+					$spectrum -> weak_pixel_value,
+					$spectrum -> exponent)) if ($success and $append);
     foreach my $k (@most_widgets) { # animation
       $self->{$k}->Enable(1);
       $self->{plotshield}->Enable(0);
@@ -994,6 +1005,7 @@ sub restore_steps {
     if ($st =~ m{\Abad}) {
       $self->{badvalue}->SetValue($words[1]);
       $self->{weakvalue}->SetValue($words[3]);
+      $self->{exponentvalue}->SetValue($words[5] || 1);
     } elsif ($st =~ m{\Asocial}) {
       $self->{socialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {

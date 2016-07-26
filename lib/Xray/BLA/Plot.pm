@@ -243,6 +243,7 @@ sub plot_xes {
   my %args = @args;
   $args{incident} ||= 0;
   $args{pause}      = q{-1} if not defined $args{pause};
+  $args{replot}   ||= 0;
   my (@e, @xes, @n);
   my $denom = ($self->div10) ? 10 : 1;
   foreach my $p (@{$args{xes}}) {

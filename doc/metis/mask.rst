@@ -121,6 +121,16 @@ to the right of the upper value will be set to zero, thus eliminating
 any spurious points from any mask that might make it through any of
 the mask creation steps.
 
+Finally, the :guilabel:`Exponent` control is used to set the value for
+the exponent used to raise the elastic image to some power.  This is
+done after the bad and weak pixels are removed.  The point of this is
+to enhance the contrast in the case of weak elastic scattering.  When
+you have a strong elastic signal, an exponent of 1 should suffice.
+Note that changing the changing the exponent value will have an effect
+on the appropriate value of the Gaussian threshold, described below.
+
+
+
 The Gaussian blur step
 ----------------------
 
@@ -554,7 +564,7 @@ of `the Files tool <files.html>`_.
    :width: 0.3
    :label: _fig-ptrxes
 
-The recipe for these masks is bad/weak with parameters 400/1, a
+The recipe for these masks is bad/weak with parameters 400/1/1, a
 Gaussian blur filter with a threshold of 6.0, and a shield step with a
 parameter of 5.  That is, the masks from 5 steps back and prior are
 used to construct the shield which removes the fluorescence signal

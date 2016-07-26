@@ -360,6 +360,7 @@ sub bad_pixels {
   $ei  = $ei * (1-$bad) * (1-$weak); # remove bad and weak pixels
   $on  = $ei->gt(0,0)->sum;
   $off = $ei->eq(0,0)->sum;
+  $ei -> inplace -> power($self->exponent,0) if ($self->exponent > 1);
   $self->elastic_image($ei);
   $self->bad_pixel_mask($bad);
 

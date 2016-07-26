@@ -116,7 +116,7 @@ sub OnInit {
 		      xdi_metadata_file)) {
       $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
-    foreach my $m (qw(bad_pixel_value weak_pixel_value social_pixel_value
+    foreach my $m (qw(bad_pixel_value weak_pixel_value exponent social_pixel_value
 		      lonely_pixel_value scalemask radius gaussian_blur_value shield)) {
       $app->{base}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
     };
@@ -350,6 +350,7 @@ sub set_parameters {
   $app->{base} -> width_max($app->{Mask}->{rangemax}->GetValue);
   $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
   $app->{base} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
+  $app->{base} -> exponent($app->{Mask}->{exponentvalue}->GetValue);
   $app->{base} -> gaussian_blur_value($val);
   $app->{base} -> shield($app->{Mask}->{shieldvalue}->GetValue);
   $app->{base} -> social_pixel_value($app->{Mask}->{socialvalue}->GetValue);
@@ -364,7 +365,7 @@ sub set_parameters {
 		    imagescale outimage terminal energycounterwidth tiffcounter
 		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
 		    gaussian_kernel
-		    bad_pixel_value gaussian_blur_value shield weak_pixel_value social_pixel_value
+		    bad_pixel_value gaussian_blur_value shield weak_pixel_value exponent social_pixel_value
 		    lonely_pixel_value scalemask radius div10 shield width_min width_max
 		  )) {
     ## push values into yaml
@@ -429,6 +430,7 @@ sub restore_config {
     if ($st =~ m{\Abad}) {
       $app->{Mask}->{badvalue}->SetValue($words[1]);
       $app->{Mask}->{weakvalue}->SetValue($words[3]);
+      $app->{Mask}->{exponentvalue}->SetValue($words[5] || 1);
     } elsif ($st =~ m{\Agaussian}) {
       $app->{Mask}->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\A(?:use)?shield}) {

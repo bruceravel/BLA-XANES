@@ -282,7 +282,8 @@ sub plot_herfd {
     $spectrum->push_scan_file_list(File::Spec->catfile($spectrum->tifffolder, $image_list->GetString($i)));
   };
 
-  my $ret = $spectrum -> scan(verbose=>0, xdiini=>$spectrum->xdi_metadata_file);
+  my $metadata = $app->{XDI}->fetch;
+  my $ret = $spectrum -> scan(verbose=>0, xdiini=>$metadata); #xdiini=>$spectrum->xdi_metadata_file);
   $self->{herfd_file} = $ret->message;
   my $title = $spectrum->stub . ' at ' . $spectrum->energy;
 
@@ -356,31 +357,7 @@ sub plot_xes {
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
   my $incident  = $self->{incident}->GetValue;
 
-  my $file;
-  my $nincident = 0;
-
-  ## get the image file to process
-  if ($app->{tool} eq 'herfd') { # figure out which file corresponds to  this energy in the HERFD scan
-    my $diff = 999999;
-    my $ni = 0;
-    foreach my $in (@{$spectrum->incident_energies}) {
-      if (abs($incident - $in) < $diff) {
-	$diff = abs($incident - $in);
-	$nincident = $ni;
-      };
-      ++$ni;
-    };
-    $incident = $spectrum->incident_energies->[$nincident];
-    return if (not $incident);
-    $spectrum->incident($incident);
-    $spectrum->nincident($nincident);
-    $self->{incident}->SetValue($incident);
-    $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder,
-				$app->{Files}->{image_list}->GetString($nincident));
-
-  } else {			# for XES, the incident list contains the file names directly
-    $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder, $incident);
-  };
+  my $file = $self->determine_xes_image($app);
   my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
 
   $self->{showmasks}->SetValue(0) if $self->{reuse}->GetValue;
@@ -506,12 +483,48 @@ sub save_xes {
     $app->{main}->status("Saving data file canceled.");
     return;
   };
+  my $metadata = $app->{XDI}->fetch;
   my $file = $fd->GetPath;
-  my $outfile = $spectrum->xdi_xes($app->{base}->xdi_metadata_file,
-				   File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder, $self->{incident}->GetStringSelection),
+  #my $xesimage = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder, $self->{incident}->GetStringSelection);
+  my $outfile = $spectrum->xdi_xes($metadata, #$app->{base}->xdi_metadata_file,
+				   $self->determine_xes_image($app),
 				   $self->{xesdata});
   move($outfile, $file);
   $app->{main}->status("Saved XES to ".$file);
+};
+
+
+sub determine_xes_image {
+  my ($self, $app) = @_;
+  my $incident  = $self->{incident}->GetValue;
+  my $spectrum = $app->{bla_of}->{$self->{energy}};
+
+  my $file;
+  my $nincident = 0;
+
+  ## get the image file to process
+  if ($app->{tool} eq 'herfd') { # figure out which file corresponds to  this energy in the HERFD scan
+    my $diff = 999999;
+    my $ni = 0;
+    foreach my $in (@{$spectrum->incident_energies}) {
+      if (abs($incident - $in) < $diff) {
+	$diff = abs($incident - $in);
+	$nincident = $ni;
+      };
+      ++$ni;
+    };
+    $incident = $spectrum->incident_energies->[$nincident];
+    return if (not $incident);
+    $spectrum->incident($incident);
+    $spectrum->nincident($nincident);
+    $self->{incident}->SetValue($incident);
+    $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder,
+				$app->{Files}->{image_list}->GetString($nincident));
+
+  } else {			# for XES, the incident list contains the file names directly
+    $file = File::Spec->catfile($app->{bla_of}->{$self->{energy}}->tifffolder, $incident);
+  };
+  return $file;
 };
 
 sub save_xes_all {
@@ -526,8 +539,9 @@ sub save_xes_all {
     $app->{main}->status("Saving data file canceled.");
     return;
   };
+  my $metadata = $app->{XDI}->fetch;
   my $file = $fd->GetPath;
-  my $outfile = $spectrum->xdi_xes_merged($app->{base}->xdi_metadata_file,
+  my $outfile = $spectrum->xdi_xes_merged($metadata, #$app->{base}->xdi_metadata_file,
 					  $self->{xesmerge});
   move($outfile, $file);
   $app->{main}->status("Saved merged XES to ".$file);
@@ -746,7 +760,8 @@ sub plot_plane {
     $reuse = 1;
     $app->{main}->status(sprintf("Incident energy = %.1f (%d of %d)", $energy/$denom, $count, $nemission), 'wait') if not $count%5;
   };
-  my $ret = $spectrum->rixs_plane($holol, xdiini=>$app->{base}->xdi_metadata_file); # returns BLA::Return object with output file name and max intensity
+  my $metadata = $app->{XDI}->fetch;
+  my $ret = $spectrum->rixs_plane($holol, xdiini=>$metadata); # returns BLA::Return object with output file name and max intensity
   $app->{holol} = $holol;
   $app->{base}->plot_plane($holol);
   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);

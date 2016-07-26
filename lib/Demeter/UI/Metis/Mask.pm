@@ -431,7 +431,7 @@ sub SelectEnergy {
       };
       $self->{shieldvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Asocial}) {
-      $self->{soacialvalue}->SetValue($words[1]);
+      $self->{socialvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Alonely}) {
       $self->{lonelyvalue}->SetValue($words[1]);
     #} elsif ($st =~ m{\Amultiply}) {
@@ -478,11 +478,13 @@ sub Reset {
 		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
     $self->{$k}->Enable(1);
   };
-  $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
-  $app->{Data}->{energylabel}->SetLabel("Current mask energy is <undefined>");
-  $app->{Data}->{energy} = 0;
-  foreach my $k (qw(stub energylabel herfd save_herfd mue)) {
-    $app->{Data}->{$k}->Enable(0);
+  if ($app->{tool} ne 'mask') {
+    $app->{Data}->{stub}->SetLabel("Stub is <undefined>");
+    $app->{Data}->{energylabel}->SetLabel("Current mask energy is <undefined>");
+    $app->{Data}->{energy} = 0;
+    foreach my $k (qw(stub energylabel herfd save_herfd mue)) {
+      $app->{Data}->{$k}->Enable(0);
+    };
   };
   $self->{replot}->Enable(0);
   $self->{plotshield}->Enable(0);
@@ -548,22 +550,27 @@ sub do_step {
       $self->{$k}->Enable(1);
       $self->{plotshield}->Enable(0);
     };
+    if ($app->{tool} eq 'mask') {
+      $self->{$_}->Enable(0) foreach (qw(do_shield shieldlabel shieldvalue));
+    };
     #$self->{do_aggregate}->Enable(1) if ($spectrum->masktype eq 'single');
     $self->{savemask}->Enable(0) if ($spectrum->is_windows);
     $self->{replot}->Enable(1);
     $self->{toggle}->Enable(1);
     $self->{reset}->Enable(1);
-    $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
-    $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
-    $app->{Data}->{energy} = $spectrum->energy;
-    #if ($self->{rbox}->GetSelection == 0) {
-    foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
-      $app->{Data}->{$k}->Enable(1);
+    if ($app->{tool} ne 'mask') {
+      $app->{Data}->{stub}->SetLabel("Stub is ".$spectrum->stub);
+      $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
+      $app->{Data}->{energy} = $spectrum->energy;
+      #if ($self->{rbox}->GetSelection == 0) {
+      foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
+	$app->{Data}->{$k}->Enable(1);
+      };
+      #};
+      #if ($app->{tool} eq 'herfd') {
+      #  $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
+      #};
     };
-    #};
-    #if ($app->{tool} eq 'herfd') {
-    #  $app->{Data}->{incident}->SetValue($rlist->[int($#{$rlist}/2)]);
-    #};
     $quiet = 0;
 
   } elsif ($which eq 'gaussian') {

@@ -8,9 +8,9 @@ The Metis program
 =================
 
 The :demeter:`metis` program is modal, providing slightly different
-functionality for HERFD, XES, and RXES data sets.  At the command
-line, it is invoked with a command line argument to put it into the
-correct mode.
+functionality for HERFD, XES, and RXES data sets or for individual
+images.  At the command line, it is invoked with a command line
+argument to put it into the correct mode.
 
 
 To start :demeter:`metis` in XES mode, provide the ``xes`` argument:
@@ -26,12 +26,17 @@ To start :demeter:`metis` in XES mode, provide the ``xes`` argument:
 
    :demeter:`metis`, at startup, invoked in XES mode
 
-Similarly, to begin :demeter:`metis` in ``hrfd`` or ``rxes`` mode, do
+.. attention:: Many of the screenshots in this document were made
+   before the addition of the XDI button in the sidebar.
+
+Similarly, to begin :demeter:`metis` in ``hrfd``, ``rxes``, or
+``mask`` mode, do
 
 .. code-block:: shell
 
    metis herfd
    metis rxes
+   metis mask
 
 The state of your data analysis is maintained separately for the three
 experimental modes.  Along with providing functionality specific to
@@ -45,5 +50,6 @@ appropriate to your analysis of that data.
    mask.rst
    data.rst
    config.rst
+   xdi.rst
 
 

@@ -77,19 +77,25 @@ sub xdi_out {
 
   my @labels = ();
   my @units  = ();
-  if ($self->xdi_metadata_file and -e $self->xdi_metadata_file) {
-    tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
-    foreach my $fam (sort keys %beamline) {
-      next if $fam eq 'xescolumn';
-      foreach my $item (sort keys %{$beamline{$fam}}) {
-	printf $O "# %s.%s: %s\n", ucfirst($fam), $item, $beamline{$fam}->{$item};
-      };
+  my %beamline;
+  if (ref($xdiini) eq q{HASH}) {
+    %beamline = %$xdiini;
+  } elsif ($xdiini and -e $xdiini) {
+    tie %beamline, 'Config::IniFiles', ( -file => $xdiini );
+  } elsif (-e $self->xdi_metadata_file) {
+    tie %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
+  };
+
+  foreach my $fam (sort keys %beamline) {
+    next if $fam eq 'xescolumn';
+    foreach my $item (sort keys %{$beamline{$fam}}) {
+      printf $O "# %s.%s: %s\n", ucfirst($fam), $item, $beamline{$fam}->{$item};
     };
-    foreach my $lab (sort keys %{$beamline{column}}) {
-      my @this = split(" ", $beamline{column}->{$lab});
-      push @labels, $this[0];
-      push @units,  $this[1] || q{};
-    };
+  };
+  foreach my $lab (sort keys %{$beamline{column}}) {
+    my @this = split(" ", $beamline{column}->{$lab});
+    push @labels, $this[0];
+    push @units,  $this[1] || q{};
   };
 
   printf $O "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model}                       if $pilatus->{Model};
@@ -144,14 +150,19 @@ sub dat_out {
 sub xdi_xes_head {
   my ($self, $xdiini, $xesimage) = @_;
   my $text = "# XDI/1.0 PILATUS/100K BLA/" . $Xray::BLA::VERSION . $/;
-  if (-e $self->xdi_metadata_file) {
-    tie my %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
-    foreach my $fam (sort keys %beamline) {
-      next if $fam eq 'column';
-      my $this = ($fam eq 'xescolumn') ? 'column' : $fam;
-      foreach my $item (sort keys %{$beamline{$fam}}) {
-	$text .= sprintf "# %s.%s: %s\n", ucfirst($this), $item, $beamline{$fam}->{$item};
-      };
+  my %beamline;
+  if (ref($xdiini) eq q{HASH}) {
+    %beamline = %$xdiini;
+  } elsif ($xdiini and -e $xdiini) {
+    tie %beamline, 'Config::IniFiles', ( -file => $xdiini );
+  } elsif (-e $self->xdi_metadata_file) {
+    tie %beamline, 'Config::IniFiles', ( -file => $self->xdi_metadata_file );
+  };
+  foreach my $fam (sort keys %beamline) {
+    next if $fam eq 'column';
+    my $this = ($fam eq 'xescolumn') ? 'column' : $fam;
+    foreach my $item (sort keys %{$beamline{$fam}}) {
+      $text .= sprintf "# %s.%s: %s\n", ucfirst($this), $item, $beamline{$fam}->{$item};
     };
   };
   $text .= sprintf "# %s.%s: %s\n", "Element", "element", $self->element;
@@ -197,7 +208,6 @@ sub xdi_xes {
     $p->[0] /= 10 if $self->div10;
     printf $O "  %.3f  %.7f  %6d  %.7f\n", @$p;
   };
-
   close $O;
   return $outfile;
 };
@@ -510,6 +520,13 @@ data.
 
    $outfile = $self->xdi_out($xdiini, \@data);
 
+C<$xdiini> can be a string with the fully resolved path to an
+INI-style file containing the meatdata for the measurement.  It can
+also be a hash reference containing the metadata as a hash or hashes
+where the outer hash contains the metadata families and the inner
+hashes contain the items in each family.  See
+L<https://github.com/XraySpectroscopy/XAS-Data-Interchange>.
+
 =item C<xdi_xes>
 
 Write XES data to an XDI file.  Return the name of the computed output
@@ -518,6 +535,13 @@ the name of the XES image file, and a reference to the hash containing
 the calculated XES data.
 
    my $outfile = $self->xdi_xes($xdiini, $xesimage, \@xes);
+
+C<$xdiini> can be a string with the fully resolved path to an
+INI-style file containing the meatdata for the measurement.  It can
+also be a hash reference containing the metadata as a hash or hashes
+where the outer hash contains the metadata families and the inner
+hashes contain the items in each family.  See
+L<https://github.com/XraySpectroscopy/XAS-Data-Interchange>.
 
 =item C<energy_map>
 

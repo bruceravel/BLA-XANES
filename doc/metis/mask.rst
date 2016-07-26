@@ -456,8 +456,8 @@ clear the list entirely.
 
 
 
-All the rest of the button
---------------------------
+All the rest of the buttons
+---------------------------
 
 :button:`Finish mask,light`
 
@@ -566,3 +566,19 @@ signal.
 
 This sequence of masks will then be applied to the same sequence of
 images to extract the resonant XES signal at each energy.
+
+
+Examining a single file
+-----------------------
+
+When started in ``mask`` mode, the Mask tool is mostly the same as in
+other modes.
+
+.. figure:: ../_images/metis_maskmask.png
+   :target: ../_images/metis_maskmask.png
+   :align: center
+
+   :demeter:`metis`'s mask creation tool in ``mask`` mode.
+
+The :guilabel:`Emission energy` list has only a single entry and the
+shield step is disabled.  Otherwise, everything works the same.

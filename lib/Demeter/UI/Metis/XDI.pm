@@ -35,15 +35,44 @@ sub new {
   $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
 
   $self->{additem} = Wx::Button->new($self, -1, "Add item");
+  $self->{clear}   = Wx::Button->new($self, -1, "Delete all");
+  $self->{import}  = Wx::Button->new($self, -1, "Import metadata");
   $self->{save}    = Wx::Button->new($self, -1, "Save metadata");
   $hbox ->  Add($self->{additem}, 1, wxGROW|wxALL, 5);
-  $hbox ->  Add($self->{save}, 1, wxGROW|wxALL, 5);
+  $hbox ->  Add($self->{clear},   1, wxGROW|wxALL, 5);
+  $hbox ->  Add($self->{import},  1, wxGROW|wxALL, 5);
+  $hbox ->  Add($self->{save},    1, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{additem}, sub{$_[0]->edit_item(q{}, q{}, q{})});
-  EVT_BUTTON($self, $self->{save}, sub{$_[0]->save});
+  EVT_BUTTON($self, $self->{clear},   sub{$_[0]->clear});
+  EVT_BUTTON($self, $self->{import},  sub{$_[0]->Import});
+  EVT_BUTTON($self, $self->{save},    sub{$_[0]->save});
 
-  
-  if (Demeter->co->default('metis', 'xdi_metadata_file') and (-e Demeter->co->default('metis', 'xdi_metadata_file'))) {
-    tie my %metadata, 'Config::IniFiles', ( -file => Demeter->co->default('metis', 'xdi_metadata_file') );
+  $self->read_metadata(Demeter->co->default('metis', 'xdi_metadata_file'));
+
+  $self -> SetSizerAndFit( $vbox );
+  return $self;
+};
+
+sub Import {
+  my ($self, $event) = @_;
+  my $fd = Wx::FileDialog->new($::app->{main}, "Import metadata file", cwd, q{},
+			       "INI (*.ini)|*.ini|All files (*)|*",
+			       wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_CHANGE_DIR,
+			       wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $::app->{main}->status("Importing metadata file canceled.");
+    return;
+  };
+  my $file = $fd->GetPath;
+  $self->read_metadata($file);
+};
+
+
+sub read_metadata {
+  my ($self, $file) = @_;
+  $self->{tree}->DeleteChildren($self->{root});
+  if ($file and (-e $file)) {
+    tie my %metadata, 'Config::IniFiles', ( -file => $file );
     foreach my $k (sort keys %metadata) {
       my $leaf = $self->{tree}->AppendItem($self->{root}, $k);
       $self->{tree} -> SetItemTextColour($leaf, wxWHITE );
@@ -58,12 +87,8 @@ sub new {
       $self->{tree}->Expand($leaf);
     };
   };
-
-
-
-  $self -> SetSizerAndFit( $vbox );
-  return $self;
 };
+
 
 const my $EDIT   => Wx::NewId();
 const my $ADD    => Wx::NewId();
@@ -71,18 +96,19 @@ const my $DELETE => Wx::NewId();
 
 sub OnRightClick {
   my ($self, $event) = @_;
-  my $family = $self->{tree}->GetItemText($self->{tree}->GetItemParent($event->GetItem));
+  my $item = $event->GetItem;
+  my $family = $self->{tree}->GetItemText($self->{tree}->GetItemParent($item));
   $family =~ s{\s+\z}{};
   return if ($family eq 'Root');
-  my ($name, $value) = split(/\s+=\s+/, $self->{tree}->GetItemText($event->GetItem));
+  my ($name, $value) = split(/\s+=\s+/, $self->{tree}->GetItemText($item));
 
   my $menu  = Wx::Menu->new(q{});
   $menu->Append($EDIT,   "Edit ".ucfirst($family).".$name");
   $menu->Append($ADD,    "Add a parameter to ".ucfirst($family)." namespace");
   $menu->Append($DELETE, "Delete ".ucfirst($family).".$name");
-  EVT_MENU($menu, -1, sub{ $self->DoContextMenu(@_, $family, $name, $value) });
+  EVT_MENU($menu, -1, sub{ $self->DoContextMenu(@_, $family, $name, $value, $item) });
 #  my $here = ($event =~ m{Mouse}) ? $event->GetPosition : Wx::Point->new(10,10);
-  my $where = Wx::Point->new($event->GetPoint->x, $event->GetPoint->y+80);
+  my $where = Wx::Point->new($event->GetPoint->x, $event->GetPoint->y+0);
   $self -> PopupMenu($menu, $where);
 
   $event->Skip(1);
@@ -90,7 +116,7 @@ sub OnRightClick {
 
 
 sub DoContextMenu {
-  my ($self, $menu, $event, $namespace, $parameter, $value) = @_;
+  my ($self, $menu, $event, $namespace, $parameter, $value, $item) = @_;
   $namespace =~ s{\A\s+}{}; # trim leading and trailing whitespace
   $parameter =~ s{\A\s+}{};
   $value     =~ s{\A\s+}{};
@@ -101,9 +127,9 @@ sub DoContextMenu {
   if ($event->GetId == $EDIT) {
     $self->edit_item($namespace, $parameter, $value);
   } elsif ($event->GetId == $ADD) {
-    $action = 'Add';
+    $self->edit_item($namespace, q{}, q{});
   } elsif ($event->GetId == $DELETE) {
-    $action = 'Delete';
+    $self->remove($namespace, $parameter, $item);
   };
   #print join("|", $action, $namespace, $parameter, $value), $/;
 };
@@ -134,6 +160,7 @@ sub edit_item {
   $gbs->Add($dialog->{v}, Wx::GBPosition->new(1,2));
 
   $dialog->{v}->SetFocus;
+  $dialog->{p}->SetFocus if ($parameter eq q{});
   $dialog->{n}->SetFocus if ($namespace eq q{});
 
   $dialog->{ok} = Wx::Button->new($dialog, wxID_OK, "Add metadata", wxDefaultPosition, wxDefaultSize, 0, );
@@ -198,6 +225,29 @@ sub edit_item {
   $self->{tree}->Expand($branch);
 };
 
+sub remove {
+  my ($self, $namespace, $parameter, $item) = @_;
+  my $md = Wx::MessageDialog->new($self->{tree}, "Really delete \"$namespace.$parameter\"?", "Confirm deletion",
+				  wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+  if ($md->ShowModal == wxID_NO) {
+    $::app->{main}->status("Not deleting item.");
+    return;
+  };
+  $self->{tree}->Delete($item);
+  $::app->{main}->status("Removed $namespace.$parameter");
+};
+
+sub clear {
+  my ($self, $event) = @_;
+  my $md = Wx::MessageDialog->new($self->{tree}, "Really delete ALL metadata?", "Confirm deletion",
+				  wxYES_NO|wxNO_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+  if ($md->ShowModal == wxID_NO) {
+    $::app->{main}->status("Not deleting metadata.");
+    return;
+  };
+  $self->{tree}->DeleteChildren($self->{root});
+  $::app->{main}->status("Removed all metadata.");
+};
 
 sub save {
   my ($self, $menu, $event) = @_;
@@ -236,7 +286,28 @@ sub save {
 
   Config::INI::Writer->write_file(\%metadata, $file);
   $::app->{main}->status("Wrote metadata to $file.");
+};
 
+sub fetch {
+  my ($self) = @_;
+  my %metadata;
+  my ($famitem, $cookie) = $self->{tree}->GetFirstChild($self->{root});
+  while ($famitem->IsOk) {
+    my $family = $self->{tree}->GetItemText($famitem);
+    $family =~ s{\s+\z}{}; # trim trailing whitespace
+    my ($nameitem, $cookie2) = $self->{tree}->GetFirstChild($famitem);
+    while ($nameitem->IsOk) {
+      my ($name, $value) = split(/\s*=\s*/, $self->{tree}->GetItemText($nameitem));
+      $name  =~ s{\A\s+}{};
+      $name  =~ s{\s+\z}{};
+      $value =~ s{\A\s+}{};
+      $value =~ s{\s+\z}{};
+      $metadata{$family}->{$name} = sprintf("%s", $value);
+      ($nameitem, $cookie2) = $self->{tree}->GetNextChild($famitem, $cookie2);
+    };
+    ($famitem, $cookie) = $self->{tree}->GetNextChild($self->{root}, $cookie);
+  };
+  return \%metadata;
 };
 
 

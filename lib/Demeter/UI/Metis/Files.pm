@@ -163,6 +163,16 @@ sub new {
     $app->{base}->image_file_template(q{});
     $self->{image_template}->SetValue(q{});
     $self->{$_}->Enable(0) foreach (qw(image_template image_template_label));
+  } elsif ($app->{tool} eq 'mask') {
+    $app->{base}->noscan(1);
+    $app->{base}->scanfolder(q{});
+    $self->{scan_dir}->SetValue(q{});
+    $self->{$_}->Enable(0) foreach (qw(scan scan_dir scan_template scan_template_label
+				       elastic_template elastic_template_label
+				       image_template image_template_label image image_dir
+				       div10 stub stub_label element element_label line line_label add));
+    $self->{fetch}->SetLabel("Import image");
+    EVT_BUTTON($self, $self->{fetch}, sub{single(@_, $app)});
   };
 
   $self -> SetSizerAndFit( $vbox );
@@ -341,6 +351,49 @@ sub more {
   undef $busy;
 };
 
+
+sub single {
+  my ($self, $event, $app) = @_;
+  my $fd = Wx::FileDialog->new($::app->{main}, "Import a Pilatus image", cwd, q{},
+			       "TIF (*.tif)|*.tif|All files (*)|*",
+			       wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_CHANGE_DIR,
+			       wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $::app->{main}->status("Importing image canceled.");
+    return;
+  };
+
+  $self->{elastic_list}->Clear;
+
+  my $dir = $fd->GetDirectory;
+  my $file = $fd->GetFilename;
+  $self->{image_dir}->Enable(1);
+  $self->{image_dir}->SetValue($dir);
+  $app->{base}->tifffolder($dir);
+  $self->{image_dir}->Enable(0);
+  $self->{elastic_list}->InsertItems([$file],0);
+
+  $app->{base}->push_elastic_file_list($file);
+  #if ($e =~ m{$elastic_re}) {
+  #  my $this = $+{e} || $+{c};
+
+  $app->{base}->push_elastic_energies('0001');
+  $app->{bla_of}->{'0001'} = $app->{base}->clone;
+  $app->{bla_of}->{'0001'}->elastic_file($fd->GetPath);
+  $app->{bla_of}->{'0001'}->energy('0001');
+  #my $ret = $app->{bla_of}->{$this}->check($e);
+
+  $app->{base}->push_elastic_energies('0001');
+
+  $app->{Mask}->{$_} -> Enable(1) foreach (qw(steps_list spots_list pluck restoresteps energy rangemin rangemax));
+  $app->{Mask}->{energy} -> Clear;
+  $app->{Mask}->{energy} -> Append('0001');
+  $app->{Mask}->{energy} -> SetStringSelection('0001');
+  $app->{Mask}->restore($app);
+
+  $app->{book}->SetSelection(1);
+
+};
 
 sub view {
   my ($self, $event, $app, $which) = @_;

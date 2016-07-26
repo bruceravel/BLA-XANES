@@ -27,6 +27,6 @@ Wx::InitAllImageHandlers();
 use Demeter::UI::Metis;
 use vars qw($app);
 our $tool = $ARGV[0] || 'herfd';
-$tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes);
+$tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes mask);
 $app  = Demeter::UI::Metis->new;
 $app -> MainLoop;

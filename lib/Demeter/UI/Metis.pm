@@ -73,6 +73,8 @@ sub OnInit {
     @utilities = qw(Files Mask Data Config XDI);
   } elsif ($app->{tool} eq 'rxes') {
     @utilities = qw(Files Mask Data Config XDI);
+  } elsif ($app->{tool} eq 'mask') {
+    @utilities = qw(Files Mask Config XDI);
   };
 
   $app->{main} = Wx::Frame->new(undef, -1, 'Metis for '.uc($app->{tool}).' [BLA data processing]', wxDefaultPosition, [850,550],);
@@ -167,7 +169,7 @@ sub OnInit {
   my $filemenu   = Wx::Menu->new;
   $filemenu->Append($Files,    "Show Files tool\tCtrl+1");
   $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
-  $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3");
+  $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3") if $app->{tool} ne q{mask};
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4");
   $filemenu->Append($XDI,      "Show XDI (metadata) tool\tCtrl+5");
   $filemenu->AppendSeparator;
@@ -257,7 +259,13 @@ sub OnMenuClick {
       return;
     };
     ($id == $Config)   and do {
-      $app->{book}->SetSelection(3);
+      my $n = ($app->{tool} eq q{mask}) ? 2 : 3;
+      $app->{book}->SetSelection($n);
+      return;
+    };
+    ($id == $XDI)   and do {
+      my $n = ($app->{tool} eq q{mask}) ? 3 : 4;
+      $app->{book}->SetSelection($n);
       return;
     };
     ($id == $Object)   and do {

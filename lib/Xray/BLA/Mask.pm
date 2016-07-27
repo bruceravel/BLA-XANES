@@ -516,7 +516,12 @@ sub useshield_from_pdls {
   };
   ##print $rargs->{use}->[0]->energy, " ", $rargs->{use}->[1]->energy, $/;
 
+  my $noshield = 0;
   $prevshield = $rargs->{use}->[0]->shield_image;
+  if ($prevshield->isnull or $prevshield->isempty) {
+    $prevshield = zeros($self->elastic_image->dims);
+    $noshield = 1;
+  };
   $oldmask    = $rargs->{use}->[1]->elastic_image;
 
   my $pdl = $prevshield + $oldmask;
@@ -530,6 +535,7 @@ sub useshield_from_pdls {
   my $on = $self->elastic_image->sum;
   $str .= "\t$on illuminated pixels\n";
   $ret->status($self->npixels);
+  $str .= "  *** Shield was not calculated for this mask!" if $noshield;
   $ret->message($str);
   return $ret;
 };
@@ -762,7 +768,7 @@ sub poly_fill {
 
   if ($args{plot}) {
     $on = zeros($ei->dims);
-    foreach my $i (@x) {		    # leave  Soller slit gaps
+    foreach my $i (@x) {
       my $xpow = pdl( map {$i ** $_} (0 .. $order-1) ); # powers of X for polynomial
       my $y1 = $coeffs1 * $xpow;
       my $y2 = $coeffs2 * $xpow;
@@ -1032,9 +1038,13 @@ Remove pixels that are larger than the value of the C<bad_pixel_value>
 attribute and smaller than the C<weak_pixel_value> attribute.  This
 must be the first step in mask processing.  This also sets the
 C<bad_pixel_mask> attribute, which identifies the pixels marked as bad
-pixels.
+pixels.  After removing the bad and weak pixels, the image can be
+raised to the power of C<exponential>.  For a strong elastic signal, a
+value of 1 is adequate.  For a weak signal, this can help increase the
+contrast between the signal and background.
 
-Controlling attributes: C<bad_pixel_value>, C<weak_pixel_value>
+Controlling attributes: C<bad_pixel_value>, C<weak_pixel_value>,
+C<exponential>
 
 =item C<gaussian_blur>
 
@@ -1046,11 +1056,14 @@ pixels above a threshold value to 1, setting all below that value to
   ---- (  2 4 2  )
    16   \ 1 2 1 /
 
+or an equivalent 5x5 kernel (depending on the value of the
+C<gaussian_kernel> parameter).
+
 The size of the threshold depends on the intensity of the relevant
-part of the image.  Very bright, spurious spots will pass through this
+part of the image.  Very bright, spurious spots may pass through this
 filter.
 
-Controlling attribute: C<gaussian_blur_value>
+Controlling attributes: C<gaussian_blur_value>, C<gaussian_kernel>
 
 =item C<useshield>
 
@@ -1076,7 +1089,7 @@ are noted.  Two polynomials are fit to this collection of points, one
 to the top set and one to the bottom set.  The pixels between the two
 polynomials are turned on, yielding the final mask.
 
-Controlling attributes: none.
+Controlling attributes: C<polyfill_order>, C<polyfill_gaps>
 
 =item C<lonely_pixels>
 

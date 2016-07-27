@@ -322,8 +322,9 @@ creation recipe.  Each of them is similar to the Gaussian blur, but
 with certain differences.
 
 #. The **areal mean step** takes a :quoted:`radius` parameter.  It
-   uses an n-by-n (where n twice the parameter value +1, thus radius 2
-   is a 5x5 kernel) uniform kernel to make a convolution of the image.
+   uses an n-by-n (where n is twice the parameter value +1, thus
+   radius 2 is a 5x5 kernel) uniform kernel to make a convolution of
+   the image.
 
 #. The **lonely pixel step** removes any pixels from the mask that do
    not have enough illuminated neighbors.

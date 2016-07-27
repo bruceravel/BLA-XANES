@@ -850,6 +850,7 @@ sub pluck {
   };
   my $line = join("  ",  $pp->{e}->GetValue, $pp->{x}->GetValue, $pp->{y}->GetValue, $pp->{r}->GetValue);
   $self->{spots_list}->Append($line);
+  $self->{spots_list}->SetStringSelection($line);
   Demeter::UI::Metis::save_indicator($app, 1);
 };
 

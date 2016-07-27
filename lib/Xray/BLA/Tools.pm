@@ -21,9 +21,11 @@ sub file_template {
 	       c   => $counter,
 	       '%' => '%'
 	      );
-  if ($return_re) {		# use named captures groups, see
+  if ($return_re) {		# use named capture groups, see
     $table{e} = q{(?<e>\d+)};   # http://perldoc.perl.org/perlre.html#Capture-groups
     $table{c} = q{(?<c>\d+)};
+    $table{i} = q{(?<i>\d+)};
+    $table{t} = q{(?<t>\d+)};
     $table{T} = q{(?<T>\d+)};
   };
 

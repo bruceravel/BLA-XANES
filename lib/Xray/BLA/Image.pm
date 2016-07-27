@@ -35,7 +35,7 @@ sub Read {
   $self->columns($c);
   $self->rows($r);
   #$self->fetch_metadata;
-  return $im2d;
+  return $im2d->short;
 };
 
 sub fetch_metadata {

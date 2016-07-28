@@ -90,8 +90,10 @@ is set to the fully resolved filename of the tiff file.
 
      A [label = "elastic group"];
      B [label = "image", stacked];
+     BP [style = "dotted", label = "195x487 arrays of shorts", shape = "note"];
 
      A -> B;
+     B -- BP [style = dotted];
 
      group {
        label = "datasets";
@@ -142,8 +144,10 @@ resulting XES spectra.
 
      A [label = "image group"];
      B [label = "image", stacked];
+     BP [style = "dotted", label = "195x487 arrays of shorts", shape = "note"];
 
      A -> B;
+     B -- BP [style = dotted];
 
      group {
        label = "datasets";
@@ -186,22 +190,34 @@ contents of `the Configuration page <config.html>`_.
 
      A [label = "configuration group"];
      B [label = "mode"];
-     MODE [style = "dotted", label = "(XES|HERFD|RXES|MASK)"];
+     MODE [style = "dotted", label = "(XES|HERFD|RXES|MASK)", shape = "note"];
      C [label = "files, folders, templates", stacked];
      D [label = "mask building parameters", stacked];
      E [label = "configuration parameters", stacked];
      F [label = "plotting parameters", stacked];
+     G [label = "Mask recipe"];
+     GP [style = "dotted", label = "list of strings", shape = "note"];
+     H [label = "Mask spots list"];
+     HP [style = "dotted", label = "list of strings", shape = "note"];
 
      A -> B;
-     B -> MODE [style = "dotted"];
+     B -- MODE [style = "dotted"];
      A -> C;
      A -> D;
      A -> E;
-     A -> F;
+     A -> G;
+     A -> H;
+     G -- GP [style = "dotted"];
+     H -- HP [style = "dotted"];
 
      group {
        label = "attributes";
        B, C, D, E, F;
+     }
+     group {
+       label = "datasets";
+       color = "#FF3377";
+       G, H;
      }
 
    }
@@ -285,7 +301,7 @@ The application group
 
 This groups contains attributes explaining the state of the program,
 including a timestamp, the platform on which it was run, and the
-version numbers of many of the software components.  Thus is mostly
+version numbers of many of the software components.  This is mostly
 useful for diagnostic purposes.
 
 .. blockdiag::
@@ -297,21 +313,21 @@ useful for diagnostic purposes.
 
      A [label = "application group"];
      B [label = "timestamp"];
-     BP [style = "dotted", label = "HDF5 file creation time"];
+     BP [style = "dotted", label = "HDF5 file creation time", shape = "note"];
      C [label = "platform"];
-     CP [style = "dotted", label = "(linux|windows|mac)"];
+     CP [style = "dotted", label = "(linux|windows|mac)", shape = "note"];
      D [label = "perl version"];
-     DP [style = "dotted", label = "perl's $] variable"];
+     DP [style = "dotted", label = "perl's $] variable", shape = "note"];
      E [label = "Xray::BLA version"];
      F [label = "Demeter version"];
      G [label = "perl module versions", stacked];
 
      A -> B;
-     B -> BP [style = "dotted"];
+     B -- BP [style = "dotted"];
      A -> C;
-     C -> CP [style = "dotted"];
+     C -- CP [style = "dotted"];
      A -> D;
-     D -> DP [style = "dotted"];
+     D -- DP [style = "dotted"];
      A -> E;
      A -> F;
      A -> G;

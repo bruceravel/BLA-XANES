@@ -8,6 +8,7 @@ BEGIN {
   #use Wx::Perl::SplashFast Demeter::Here->here.'UI/Athena/share/logo.jpg', 4000;
   ## munge the PATH list on Windows so that Demeter's MinGW gets found first
   if (($^O eq 'MSWin32') or ($^O eq 'cygwin')) {
+    require Win32;
     use File::Basename;
     use File::Spec;
     my @list = split(/\/|\\/, $0);

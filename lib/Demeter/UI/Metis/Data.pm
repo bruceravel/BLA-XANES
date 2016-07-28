@@ -302,7 +302,7 @@ sub plot_herfd {
   $self->{$_} -> Enable(1) foreach (qw(replot_herfd save_herfd));
   $self->{herfdbox}->SetLabel(' HERFD ('.$spectrum->energy.')');
   $self->{current} = $spectrum->energy;
-  $app->set_parameters;	    # save config file becasue, presumably, we like the current mask creation values
+  $app->set_parameters;	    # save config file because, presumably, we like the current mask creation values
   $app->{main}->status("Plotted HERFD with emission energy = " .
 		       $spectrum->energy .
 		       $spectrum->howlong($start, '.  That'));

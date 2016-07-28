@@ -16,6 +16,9 @@ use Scalar::Util qw(looks_like_number);
 use Text::Wrap;
 use YAML::Tiny;
 
+use PDL::IO::HDF5;
+use PDL::Char;
+
 use Wx qw(:everything);
 use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 		 EVT_ENTER_WINDOW EVT_LEAVE_WINDOW
@@ -131,6 +134,32 @@ sub OnInit {
   $app->{bla_of}->{aggregate} -> cleanup(1);
   $app->{bla_of}->{aggregate} -> masktype('aggregate');
 
+  ## --- make an HDF5 file and begin to populate it
+  unlink("metis.hdf") if -e "metis.hdf";
+  $app->{hdf5}          = new PDL::IO::HDF5("metis.hdf");
+  $app->{elastic_group} = $app->{hdf5}->group("/elastic");
+  $app->{image_group}   = $app->{hdf5}->group("/images");
+  $app->{scan}          = $app->{hdf5}->group("/scan");
+  $app->{metadata}      = $app->{hdf5}->group("/metadata");
+  $app->{configuration} = $app->{hdf5}->group("/configuration");
+  $app->{application}   = $app->{hdf5}->group("/application");
+  $app->{hdf5}         -> attrSet(name     => 'Metis');
+  $app->{configuration}-> attrSet(mode     => $app->{tool});
+  $app->{application}  -> attrSet(created  => DateTime->now);
+  $app->{application}  -> attrSet(platform => $^O);
+  if (($^O eq 'MSWin32') or ($^O eq 'cygwin')) {
+    $app->{application} -> attrSet(platform => join(', ', Win32::GetOSName(), Win32::GetOSVersion()));
+  };
+  $app->{application}  -> attrSet(Moose		   => $Moose::VERSION);
+  $app->{application}  -> attrSet(PDL		   => $PDL::VERSION);
+  $app->{application}  -> attrSet('PDL::IO::HDF5'  => $PDL::IO::HDF5::VERSION);
+  $app->{application}  -> attrSet(Wx		   => $Wx::VERSION);
+  $app->{application}  -> attrSet(wxWidgets	   => $Wx::wxVERSION_STRING);
+  $app->{application}  -> attrSet(Perl		   => $]);
+  $app->{application}  -> attrSet(Demeter	   => $Demeter::VERSION);
+  $app->{application}  -> attrSet('Xray::BLA'	   => $Xray::BLA::VERSION);
+
+
   ## -------- status bar
   $app->{main}->{statusbar} = $app->{main}->CreateStatusBar;
 
@@ -211,6 +240,11 @@ sub OnInit {
   $app->{Mask}->{line}->SetSize(int(2*($app->{Mask}->GetSizeWH)[0]/3), 2);
   $app->{Mask}->{line2}->SetSize(int(2*($app->{Mask}->GetSizeWH)[0]/3), 2);
   EVT_CLOSE( $app->{main},  \&on_close);
+
+  ## --- finally, put some more configuration in the HDF5 file
+  $app->{configuration}->attrSet($_ => $app->{base}->$_) foreach (qw(color energycounterwidth gaussian_kernel imagescale outimage
+								     polyfill_gaps polyfill_order splot_palette_name terminal
+								     tiffcounter xdi_metadata_file));
   return 1;
 };
 
@@ -378,6 +412,44 @@ sub set_parameters {
   };
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml')) if ($app->{yamlfile} =~ m{metis\.yaml\z});
   $app->{yaml}->write($app->{yamlfile});
+
+  ## --- finally, update configuration in the HDF5 file
+  ##       Config
+  $app->{configuration}->attrSet($_ => $app->{base}->$_) foreach (qw(color energycounterwidth gaussian_kernel imagescale outimage
+								     polyfill_gaps polyfill_order splot_palette_name terminal
+								     tiffcounter xdi_metadata_file));
+  ##       Files
+  $app->{configuration}->attrSet(stub             => $app->{Files}->{stub}->GetValue);
+  $app->{configuration}->attrSet(element          => get_symbol($app->{Files}->{element}->GetSelection+1));
+  $app->{configuration}->attrSet(line             => $app->{Files}->{line}->GetStringSelection);
+  $app->{configuration}->attrSet(scan_folder      => $app->{Files}->{scan_dir}->GetValue);
+  $app->{configuration}->attrSet(image_folder     => $app->{Files}->{image_dir}->GetValue);
+  $app->{configuration}->attrSet(scan_template    => $app->{Files}->{scan_template}->GetValue);
+  $app->{configuration}->attrSet(elastic_template => $app->{Files}->{elastic_template}->GetValue);
+  $app->{configuration}->attrSet(image_template   => $app->{Files}->{image_template}->GetValue);
+  $app->{configuration}->attrSet(div10            => $app->{Files}->{div10}->GetValue);
+  ##       Mask
+  $app->{configuration}->attrSet(width_min	      => $app->{Mask}->{rangemin}->GetValue);
+  $app->{configuration}->attrSet(width_max	      => $app->{Mask}->{rangemax}->GetValue);
+  $app->{configuration}->attrSet(bad_pixel_value      => $app->{Mask}->{badvalue}->GetValue);
+  $app->{configuration}->attrSet(weak_pixel_value     => $app->{Mask}->{weakvalue}->GetValue);
+  $app->{configuration}->attrSet(exponent	      => $app->{Mask}->{exponentvalue}->GetValue);
+  $app->{configuration}->attrSet(gaussian_blur_value  => $val);
+  $app->{configuration}->attrSet(shield		      => $app->{Mask}->{shieldvalue}->GetValue);
+  $app->{configuration}->attrSet(social_pixel_value   => $app->{Mask}->{socialvalue}->GetValue);
+  $app->{configuration}->attrSet(vertical	      => $app->{Mask}->{socialvertical}->GetValue);
+  $app->{configuration}->attrSet(lonely_pixel_value   => $app->{Mask}->{lonelyvalue}->GetValue);
+  # $app->{configuration}->attrSet(scalemask           => $app->{Mask}->{multiplyvalue}->GetValue);
+  $app->{configuration}->attrSet(radius               => $app->{Mask}->{arealvalue}->GetValue);
+
+  my $ds = $app->{configuration}->dataset('steps');
+  my @steps = $app->{Mask}->{steps_list}->GetStrings;
+  $ds->set(PDL::Char->new(\@steps), unlimited=>1) if $#steps > -1;
+
+  $ds = $app->{configuration}->dataset('spots');
+  my @spots = $app->{Mask}->{spots_list}->GetStrings;
+  $ds->set(PDL::Char->new(\@spots), unlimited=>1) if $#spots > -1;
+
 
   return $app;
 };

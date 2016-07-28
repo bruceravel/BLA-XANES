@@ -8,8 +8,6 @@ use Chemistry::Elements qw(get_Z get_symbol);
 use File::Basename;
 use Xray::Absorption;
 
-use PDL::IO::HDF5;
-
 use Wx qw( :everything );
 use base 'Wx::Panel';
 use Wx::Event qw(EVT_LISTBOX_DCLICK EVT_BUTTON  EVT_KEY_DOWN EVT_CHECKBOX);
@@ -185,6 +183,7 @@ sub new {
 sub fetch {
   my ($self, $event, $app) = @_;
   my $busy = Wx::BusyCursor->new();
+  my $start = DateTime->now( time_zone => 'floating' );
 
   $app->{base}->Reset;
   $app->{base}->noscan(1) if ($app->{tool} eq 'xes');
@@ -239,12 +238,6 @@ sub fetch {
     $self->{image_list}->InsertItems(\@image_list,0);
   };
 
-  ## --- make an HDF5 file and begin to populate it
-  unlink("metis.hdf") if -e "metis.hdf";
-  my $hdf5          = new PDL::IO::HDF5("metis.hdf");
-  my $elastic_group = $hdf5->group("/elastic");
-  my $image_group   = $hdf5->group("/images");
-  $hdf5->attrSet(creator => 'Metis');
 
   $app->{main}->status("Setting up elastic files.  This may take some time....");
   my $count = 0;
@@ -260,7 +253,7 @@ sub fetch {
       $app->{bla_of}->{$this} = $app->{base}->clone;
       $app->{bla_of}->{$this}->elastic_file($this);
       $app->{bla_of}->{$this}->energy($this);
-      my $ds = $elastic_group->dataset($this);                 # make a data set in the elastic group in the hdf5 file
+      my $ds = $app->{elastic_group}->dataset($this);                 # make a data set in the elastic group in the hdf5 file
       my $ret = $app->{bla_of}->{$this}->check($e);
       if ($ret->status == 0) {
 	$app->{main}->status($ret->message, 'alert');
@@ -279,9 +272,10 @@ sub fetch {
   foreach my $i (@image_list) {
     if ($i =~ m{$image_re}) {
       my $this = $+{i} || $+{c};
-      my $ds = $image_group->dataset("$this");
+      my $ds = $app->{image_group}->dataset("$this");
       $ds->set($app->{base}->Read(File::Spec->catfile($self->{image_dir}->GetValue,$i)), unlimited=>1);
-      $ds->attrSet('file'   => File::Spec->catfile($self->{image_dir}->GetValue, $i));
+      $ds->attrSet('file'  => File::Spec->catfile($self->{image_dir}->GetValue, $i));
+      $ds->attrSet('skip'  => 0);
     };
   };
 
@@ -307,6 +301,9 @@ sub fetch {
     };
     $app->{Data}->{incident}->SetSelection(0);
   };
+
+  $app->{main}->status("Imported elastic and image files" .
+		       $app->{base}->howlong($start, '.  That'));
 
   if ($app->{tool} eq 'rxes') {
     $self->{element}->SetStringSelection('H');
@@ -338,21 +335,11 @@ sub fetch {
   };
   $app->set_parameters;
 
-  $hdf5->attrSet(stub             => $stub);
-  $hdf5->attrSet(element          => get_symbol($self->{element}->GetSelection+1));
-  $hdf5->attrSet(line             => $self->{line}->GetStringSelection);
-  $hdf5->attrSet(scan_folder      => $self->{scan_dir}->GetValue);
-  $hdf5->attrSet(image_folder     => $self->{image_dir}->GetValue);
-  $hdf5->attrSet(scan_template    => $self->{scan_template}->GetValue);
-  $hdf5->attrSet(elastic_template => $self->{elastic_template}->GetValue);
-  $hdf5->attrSet(image_template   => $self->{image_template}->GetValue);
-  $hdf5->attrSet(div10            => $self->{div10}->GetValue);
-
   $app->{Mask}->{stub} -> SetLabel("Stub is \"$stub\"");
   $app->{Mask}->{$_} -> Enable(1) foreach (qw(steps_list spots_list pluck restoresteps energy rangemin rangemax));
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
-  my $start = ($app->{tool} eq 'herfd') ? int(($#{$app->{base}->elastic_energies}+1)/2) : 0;
+  $start = ($app->{tool} eq 'herfd') ? int(($#{$app->{base}->elastic_energies}+1)/2) : 0;
   $app->{Mask}->{energy} -> SetSelection($start);
   $app->{Mask}->restore($app);
   $app->{Data}->restore;

@@ -183,11 +183,11 @@ has 'masktype'           => (is => 'rw', isa => 'MaskTypes', default => q{single
 
 
 has 'scan_file_template' => (is => 'rw', isa => 'Str', default => q{%s.001},
-			     documentation => "Template for constructing the scan file name.");
+			     documentation => "Template for constructing the scan file name.", alias => 'scan_template');
 has 'elastic_file_template' => (is => 'rw', isa => 'Str', default => q{%s_elastic_%e_%t.tif},
-				documentation => "Template for constructing the elastic file name.");
+				documentation => "Template for constructing the elastic file name.", alias => 'elastic_template');
 has 'image_file_template' => (is => 'rw', isa => 'Str', default => q{%s_%c.tif},
-			      documentation => "Template for constructing the image file name.");
+			      documentation => "Template for constructing the image file name.", alias => 'image_template');
 #print dirname($INC{"Xray/BLA.pm"}).'../../Demeter/share/bla.xdi.ini', $/;
 has 'xdi_metadata_file'   =>  (is => 'rw', isa => 'Str', default => sub{abs_path(File::Spec->canonpath(dirname($INC{"Xray/BLA.pm"}).'/../Demeter/share/bla.xdi.ini')) || q{}},
 			       documentation => "Path to .ini file with beamline specific XDI metadata.");

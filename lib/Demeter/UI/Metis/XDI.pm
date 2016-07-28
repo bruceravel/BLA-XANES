@@ -44,17 +44,17 @@ sub new {
   $hbox ->  Add($self->{save},    1, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{additem}, sub{$_[0]->edit_item(q{}, q{}, q{})});
   EVT_BUTTON($self, $self->{clear},   sub{$_[0]->clear});
-  EVT_BUTTON($self, $self->{import},  sub{$_[0]->Import});
+  EVT_BUTTON($self, $self->{import},  sub{$_[0]->Import($_[1], $app)});
   EVT_BUTTON($self, $self->{save},    sub{$_[0]->save});
 
-  $self->read_metadata(Demeter->co->default('metis', 'xdi_metadata_file'));
+  $self->read_metadata(Demeter->co->default('metis', 'xdi_metadata_file'), $app);
 
   $self -> SetSizerAndFit( $vbox );
   return $self;
 };
 
 sub Import {
-  my ($self, $event) = @_;
+  my ($self, $event, $app) = @_;
   my $fd = Wx::FileDialog->new($::app->{main}, "Import metadata file", cwd, q{},
 			       "INI (*.ini)|*.ini|All files (*)|*",
 			       wxFD_OPEN|wxFD_FILE_MUST_EXIST|wxFD_CHANGE_DIR,
@@ -64,12 +64,12 @@ sub Import {
     return;
   };
   my $file = $fd->GetPath;
-  $self->read_metadata($file);
+  $self->read_metadata($file, $app);
 };
 
 
 sub read_metadata {
-  my ($self, $file) = @_;
+  my ($self, $file, $app) = @_;
   $self->{tree}->DeleteChildren($self->{root});
   if ($file and (-e $file)) {
     tie my %metadata, 'Config::IniFiles', ( -file => $file );
@@ -77,12 +77,14 @@ sub read_metadata {
       my $leaf = $self->{tree}->AppendItem($self->{root}, $k);
       $self->{tree} -> SetItemTextColour($leaf, wxWHITE );
       $self->{tree} -> SetItemBackgroundColour($leaf, wxBLACK );
+      my $gp = $app->{metadata}->group(ucfirst(lc($k)));
       my $count = 0;
       foreach my $tag (sort keys %{$metadata{$k}}) {
 	my $value = $metadata{$k}->{$tag};
 	my $string = sprintf("%-20s = %-47s", lc($tag), $value);
 	my $item = $self->{tree}->AppendItem($leaf, $string);
 	$self->{tree} -> SetItemBackgroundColour($item,  ($count++ % 2) ? wxWHITE : wxLIGHT_GREY );
+	$gp->attrSet(lc($tag) => $value);
       };
       $self->{tree}->Expand($leaf);
     };
@@ -199,6 +201,7 @@ sub edit_item {
 	  $self->{tree}->SetItemText($nameitem, sprintf("%-20s = %-47s", lc($parameter), $value));
 	  $self->{tree}->Refresh;
 	  $found = 1;
+	  $self->hdf5_put($namespace, $parameter, $value);
 	  return;
 	};
 	($nameitem, $cookie2) = $self->{tree}->GetNextChild($famitem, $cookie2);
@@ -209,6 +212,7 @@ sub edit_item {
 	my $string = sprintf("%-20s = %-47s", lc($parameter), $value);
 	my $item = $self->{tree}->AppendItem($famitem, $string);
 	$self->{tree} -> SetItemBackgroundColour($item,  ($count % 2) ? wxWHITE : wxLIGHT_GREY );
+	$self->hdf5_put($namespace, $parameter, $value);
 	return;
       };
     };
@@ -223,6 +227,13 @@ sub edit_item {
   my $item = $self->{tree}->AppendItem($branch, $string);
   $self->{tree} -> SetItemBackgroundColour($item, wxLIGHT_GREY );
   $self->{tree}->Expand($branch);
+  $self->hdf5_put($namespace, $parameter, $value);
+};
+
+sub xdf5_put {
+  my ($self, $namespace, $parameter, $value) = @_;
+  my $gp = $::app->{metadata}->group(ucfirst(lc($namespace)));
+  $gp->attrSet(lc($parameter), $value);
 };
 
 sub remove {

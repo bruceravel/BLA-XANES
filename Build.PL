@@ -12,6 +12,7 @@ my $build = Module::Build
 	 requires           => {
 				'perl'                      => '5.10.0',
 				'PDL'                       => '0',
+				'PDL::IO::HDF5'             => '0.73',
 				'Moose'			    => '1.21',
 				'MooseX::Aliases'           => '0',
 				'Config::IniFiles'          =>  0,

@@ -51,5 +51,7 @@ appropriate to your analysis of that data.
    data.rst
    config.rst
    xdi.rst
+   hdf5.rst
+
 
 

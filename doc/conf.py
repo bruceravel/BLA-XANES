@@ -48,9 +48,13 @@ extensions.extend([
     'singletext',
     'sphinx_clatex',
     'demeterdocs',
+    'sphinxcontrib.blockdiag',
     'sphinxcontrib.bibtex',
     #'sphinxcontrib.images'
 ])
+
+# Fontpath for blockdiag (truetype font)
+blockdiag_fontpath = '/usr/share/fonts/truetype/ipafont/ipagp.ttf'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

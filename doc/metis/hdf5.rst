@@ -129,10 +129,11 @@ In ``HERFD`` mode, each dataset in this group will have an ``energy``
 attribute giving it's energy in the XANES scan.  In ``XES`` mode, the
 ``energy`` attribute is absent.  The ``filename`` attribute is set to
 the fully resolved filename of the tiff file.  The ``skip`` attribute
-is a flag which tells :demeter:`metis` whether to include an image
-into the analysis.  For example, in ``XES`` mode, setting this to a
+is a flag which tells :demeter:`metis` whether to exclude an image
+from the analysis.  For example, in ``XES`` mode, setting this to a
 false value for an image would exclude it from a merge of the
-resulting XES spectra.
+resulting XES spectra.  In ``HERFD`` mode it would be excluded from
+the XANES spectrum (not unlike deglitching).
 
 
 .. blockdiag::
@@ -155,7 +156,6 @@ resulting XES spectra.
        B;
      }
 
-
      BE [label = "(energy)"];
      BF [label = "file name"];
      BS [label = "skip"];
@@ -164,10 +164,9 @@ resulting XES spectra.
      B -> BS;
 
      group {
-       label = "attribute";
+       label = "attributes";
        BE, BF, BS;
      }
-
    }
 
 

@@ -49,3 +49,56 @@ Windows package
 Both are download and double-click installers.
 
 .. todo:: URLs and further instuctions
+
+Building the document
+---------------------
+
+Building the :demeter:`metis` document requires at least version 1.3
+of `Sphinx <http://www.sphinx-doc.org/en/stable/>`_.  If you have
+python already installed on your computer, you can do:
+
+.. code-block:: bash
+
+   sudo pip install sphinx
+
+Note that Ubuntu only recently began distributing 1.3.  If you have an
+earlier version, you will need to upgrade by doing
+
+.. code-block:: bash
+
+   sudo pip install --upgrade sphinx
+
+You can check the version of Sphinx with this command
+
+.. code-block:: bash
+
+   sphinx-build --version
+
+
+You will then need a number of sphinx extensions:
+
+.. code-block:: bash
+
+   sudo pip install sphinxcontrib-blockdiag
+   sudo pip install pybtex
+   sudo pip install sphinxcontrib-bibtex
+
+To build the html document, do the following
+
+.. code-block:: bash
+
+   cd doc/
+   make html
+
+This will use :program:`sphinx-build` to convert the source code into
+html pages.  The html pages will be placed in :file:`_build/html/`.
+This folder is a self-contained package.  The html/ folder can be
+copied and placed somewhere else.  The web pages can be accessed with
+full functionality in any location.
+
+You might want to edit the :file:`doc/conf.py` document to change the
+``blockdiag_fontpath`` parameter to point to a TrueType font that
+exists on your computer.  The default font used in the block diagrams
+in the `HDF5 save file <../metis/hdf5.html>`_ section is rather ugly.
+
+Building the document to a PDF file is not yet supported.

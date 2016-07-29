@@ -40,16 +40,27 @@ sub new {
   my ($class, $page, $app) = @_;
   my $self = $class->SUPER::new($page, -1, wxDefaultPosition, wxDefaultSize, wxMAXIMIZE_BOX );
 
-  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  my $bigbox = Wx::BoxSizer->new( wxVERTICAL );
 
-  my $vbox = Wx::BoxSizer->new( wxVERTICAL );
-  $hbox -> Add($vbox, 2, wxGROW|wxALL);
+  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $bigbox -> Add($hbox, 0, wxGROW|wxALL, 5);
 
   $self->{title} = Wx::StaticText->new($self, -1, "Create mask");
   $self->{title}->SetForegroundColour( $app->{main}->{header_color} );
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
-  $vbox ->  Add($self->{title}, 0, wxGROW|wxALL, 5);
+  $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
+  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  $hbox ->  Add($self->{save}, 0, wxTOP|wxBOTTOM|wxLEFT, 5);
+  EVT_BUTTON($self, $self->{save}, sub{Demeter::UI::Metis->save_hdf5(@_, $app)});
+  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+
+
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $bigbox -> Add($hbox, 1, wxGROW|wxALL);
+
+  my $vbox = Wx::BoxSizer->new( wxVERTICAL );
+  $hbox -> Add($vbox, 2, wxGROW|wxALL);
 
   my $sbox = Wx::BoxSizer->new( wxVERTICAL );
 
@@ -312,7 +323,7 @@ sub new {
   };
   EVT_CHECKBOX($self, $self->{socialvertical}, sub{$app->{base}->vertical($self->{socialvertical}->GetValue)});
 
-  $self -> SetSizerAndFit( $hbox );
+  $self -> SetSizerAndFit( $bigbox );
 
   foreach my $k (@all_widgets) { # , qw(animation)
     $self->{$k} -> Enable(0);

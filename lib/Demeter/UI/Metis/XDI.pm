@@ -18,10 +18,21 @@ sub new {
 
   my $vbox = Wx::BoxSizer->new( wxVERTICAL );
 
+
+  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
+
   $self->{title} = Wx::StaticText->new($self, -1, "Metadata");
   $self->{title}->SetForegroundColour( $app->{main}->{header_color} );
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
-  $vbox ->  Add($self->{title}, 0, wxGROW|wxALL, 5);
+  $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
+
+  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  $hbox ->  Add($self->{save}, 0, wxALL, 5);
+  EVT_BUTTON($self, $self->{save}, sub{Demeter::UI::Metis->save_hdf5(@_, $app)});
+  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+
+
 
   $self->{tree} = Wx::TreeCtrl->new($self, -1, wxDefaultPosition, [-1,300],
 				    wxTR_HIDE_ROOT|wxTR_SINGLE|wxTR_HAS_BUTTONS);
@@ -31,7 +42,7 @@ sub new {
   my $size = Wx::SystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT)->GetPointSize;
   $self->{tree}->SetFont( Wx::Font->new( $size - 1, wxTELETYPE, wxNORMAL, wxNORMAL, 0, "" ) );
 
-  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxALL, 0);
 
   $self->{additem} = Wx::Button->new($self, -1, "Add item");
@@ -230,10 +241,11 @@ sub edit_item {
   $self->hdf5_put($namespace, $parameter, $value);
 };
 
-sub xdf5_put {
+sub hdf5_put {
   my ($self, $namespace, $parameter, $value) = @_;
   my $gp = $::app->{metadata}->group(ucfirst(lc($namespace)));
   $gp->attrSet(lc($parameter), $value);
+  $::app->indicate_state(0);
 };
 
 sub remove {

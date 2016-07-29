@@ -18,14 +18,21 @@ sub new {
 
   my $vbox = Wx::BoxSizer->new( wxVERTICAL );
 
+  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
+
   $self->{title} = Wx::StaticText->new($self, -1, "Import files");
   $self->{title}->SetForegroundColour( $app->{main}->{header_color} );
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
+  $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
-  $vbox ->  Add($self->{title}, 0, wxGROW|wxALL, 5);
+  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  $hbox ->  Add($self->{save}, 0, wxALL, 5);
+  EVT_BUTTON($self, $self->{save}, sub{Demeter::UI::Metis->save_hdf5(@_, $app)});
+  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
 
   ## ------ stub, element, line ----------------------------------------
-  my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
 
   my @elements = map {sprintf "%s: %s", $_, get_symbol($_)} (1 .. 96);
@@ -346,6 +353,8 @@ sub fetch {
 
   $self->{elastic_list}->SetFocus;
   $self->{elastic_list}->SetSelection(0);
+
+  $app->indicate_state(0);
 
   $app->{main}->status("Found elastic and image files for $stub");
   undef $busy;

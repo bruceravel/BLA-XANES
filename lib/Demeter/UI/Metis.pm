@@ -23,7 +23,7 @@ use Wx qw(:everything);
 use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
 		 EVT_ENTER_WINDOW EVT_LEAVE_WINDOW
 		 EVT_RIGHT_UP EVT_LISTBOX EVT_RADIOBOX EVT_LISTBOX_DCLICK
-		 EVT_CHOICEBOOK_PAGE_CHANGED EVT_CHOICEBOOK_PAGE_CHANGING
+		 EVT_TOOLBOOK_PAGE_CHANGED EVT_TOOLBOOK_PAGE_CHANGING
 		 EVT_RIGHT_DOWN EVT_LEFT_DOWN EVT_CHECKLISTBOX
 		 EVT_MENU EVT_CLOSE);
 use base 'Wx::App';
@@ -64,6 +64,7 @@ const my $Lastplot => Wx::NewId();
 
 const my $INCREMENT_ENERGY   => Wx::NewId();
 const my $DECREMENT_ENERGY   => Wx::NewId();
+const my $SAVE               => Wx::NewId();
 
 sub OnInit {
   my ($app, $tool) = @_;
@@ -85,6 +86,9 @@ sub OnInit {
   my $icon = Wx::Icon->new( $iconfile, wxBITMAP_TYPE_ANY );
   $app->{main} -> SetIcon($icon);
   #EVT_CLOSE($app->{main}, sub{$app->on_close($_[1])});
+
+  $app->{save_icon}  = Wx::Bitmap->new(File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "Save.png"), wxBITMAP_TYPE_PNG);
+  $app->{saved} = 0;
 
   $app->{main}->{Status} = Demeter::UI::Athena::Status->new($app->{main});
   $app->{main}->{Status}->SetTitle("Metis [Status Buffer]");
@@ -135,8 +139,10 @@ sub OnInit {
   $app->{bla_of}->{aggregate} -> masktype('aggregate');
 
   ## --- make an HDF5 file and begin to populate it
-  unlink("metis.hdf") if -e "metis.hdf";
-  $app->{hdf5}          = new PDL::IO::HDF5("metis.hdf");
+  my $hdfile = File::Spec->catfile($app->{base}->outfolder, "metis.hdf");
+  unlink($hdfile) if -e $hdfile;
+  $app->{hdf5file}      = $hdfile;
+  $app->{hdf5}          = new PDL::IO::HDF5($hdfile);
   $app->{elastic_group} = $app->{hdf5}->group("/elastic");
   $app->{image_group}   = $app->{hdf5}->group("/images");
   $app->{scan}          = $app->{hdf5}->group("/scan");
@@ -183,10 +189,12 @@ sub OnInit {
     $app->{$utility."_sizer"} = $box;
     $page -> SetSizer($box);
 
-    my $this = "Demeter::UI::Metis::$utility";
-    require "Demeter/UI/Metis/$utility.pm";
-    $app->{$utility} = $this -> new($page, $app);
-    $box->Add($app->{$utility}, 1, wxGROW|wxALL, 0);
+    if ($utility ne 'Save') {
+      my $this = "Demeter::UI::Metis::$utility";
+      require "Demeter/UI/Metis/$utility.pm";
+      $app->{$utility} = $this -> new($page, $app);
+      $box->Add($app->{$utility}, 1, wxGROW|wxALL, 0);
+    }
 
     my $lab = $utility;
     $lab = uc($app->{tool}) if $utility eq 'Data';
@@ -201,6 +209,8 @@ sub OnInit {
   $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3") if $app->{tool} ne q{mask};
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4");
   $filemenu->Append($XDI,      "Show XDI (metadata) tool\tCtrl+5");
+  $filemenu->AppendSeparator;
+  $filemenu->Append($SAVE,     "Save HDF5 file\tCtrl+s");
   $filemenu->AppendSeparator;
   $filemenu->Append($Import,   "Import configuration\tCtrl+i");
   $filemenu->AppendSeparator;
@@ -276,6 +286,51 @@ sub on_close {
   $app->Destroy;
 };
 
+sub save_hdf5 {
+  my ($self, $event, $app) = @_;
+
+  my $spectrum = $::app->{base};
+  my $fname = sprintf("%s.hdf", $spectrum->stub);
+  my $fd = Wx::FileDialog->new( $::app->{main}, "Save HDF5 file", cwd, $fname,
+				"HDF5 files (*.hdf)|*.hdf|All files (*)|*",
+				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
+				wxDefaultPosition);
+  if ($fd->ShowModal == wxID_CANCEL) {
+    $::app->{main}->status("Saving HDF5 file canceled.");
+    return;
+  };
+  my $save_file = $fd->GetPath;
+  #$::app->{hdf5}->DESTROY;
+  move($::app->{hdf5file}, $save_file);
+
+  $::app->{hdf5file}      = $save_file;
+  $::app->{hdf5}          = new PDL::IO::HDF5($save_file);
+  $::app->{elastic_group} = $::app->{hdf5}->group("/elastic");
+  $::app->{image_group}   = $::app->{hdf5}->group("/images");
+  $::app->{scan}          = $::app->{hdf5}->group("/scan");
+  $::app->{metadata}      = $::app->{hdf5}->group("/metadata");
+  $::app->{configuration} = $::app->{hdf5}->group("/configuration");
+  $::app->{application}   = $::app->{hdf5}->group("/application");
+
+  $::app->indicate_state(1);
+
+  $::app->{main}->status("HDF file saved as $save_file and will be updated automatically going forward.");
+};
+
+
+## $state --  1 = saved  0 = needs saving
+sub indicate_state {
+  my ($self, $state) = @_;
+  $::app->{saved} = $state;
+  if ($state) {
+    $::app->{$_}->{save} -> SetBackgroundColour( $::app->{Files}->{fetch}->GetBackgroundColour ) foreach (qw(Files Mask Data Config XDI));
+    $::app->{$_}->{save} -> Enable(0) foreach (qw(Files Mask Data Config XDI));
+  } else {
+    $::app->{$_}->{save} -> SetBackgroundColour( Wx::Colour->new(255,206,215) ) foreach (qw(Files Mask Data Config XDI));
+  };
+};
+
+
 sub OnMenuClick {
   my ($self, $event, $app) = @_;
   my $id = (looks_like_number($event)) ? $event : $event->GetId;
@@ -330,6 +385,15 @@ sub OnMenuClick {
     ($id == $DECREMENT_ENERGY) and do {
       return if ($app->{book}->GetSelection != 1);
       $app->{Mask}->spin_energy('down', $app);
+      return;
+    };
+    ($id == $SAVE) and do {
+      if ($::app->{Files}->{save} -> IsEnabled) {
+	$app->save_hdf5;
+	$app->indicate_state(1);
+      } else {
+	$app->{main}->status("HDF file ".$app->{hdf5file}." is being automatically updated.", 'alert');
+      };
       return;
     };
     ($id == wxID_EXIT) and do {
@@ -449,6 +513,8 @@ sub set_parameters {
   $ds = $app->{configuration}->dataset('spots');
   my @spots = $app->{Mask}->{spots_list}->GetStrings;
   $ds->set(PDL::Char->new(\@spots), unlimited=>1) if $#spots > -1;
+
+  $app->indicate_state(0);
 
 
   return $app;

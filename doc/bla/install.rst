@@ -39,6 +39,23 @@ three programs into your execution path:
    https://github.com/bruceravel/Graphics-Gnuplot-Palettes and follow
    its build instructions.
 
+.. Note:: The requisite package `PDL::IO::HDF5
+   <https://metacpan.org/pod/distribution/PDL-IO-HDF5/GENERATED/PDL/IO/HDF5.pm>`_
+   was difficult to install correctly on my Ubuntu machines.  There is
+   a package called ``libpdl-io-hdf5-perl``, but it seems to be built
+   incorrectly, at least in Ubuntu 16.04.  Building it by hand is not
+   hard.  It requires that the HDF5 development package,
+   ``libhdf5-dev`` be installed.  Then download PDL::IO::HDF5 by
+   clicking on the download link at `the PDL::IO::HDF5 page
+   <https://metacpan.org/pod/distribution/PDL-IO-HDF5/GENERATED/PDL/IO/HDF5.pm>`_.
+   Unpack it and do the normal ``perl Makefile.pl; make; sudo make
+   install`` incantation.  You may need to edit the
+   :file:`Makefile.pl` so it can find :file:`libhdf5.so` and
+   :file:`hdf5.h`.
+
+.. Note:: The ``hdf5-tools`` package is very handy for `examining HDF5
+   files from the command line <https://www.hdfgroup.org/products/hdf5_tools/#cmd>`_.
+
 
 Windows package
 ---------------
@@ -46,9 +63,9 @@ Windows package
 - Install the :demeter:`demeter` installer package,  then
 - Install the :demeter:`metis` installer package
 
-Both are download and double-click installers.
+Both are download-and-double-click installer packages.
 
-.. todo:: URLs and further instuctions
+.. todo:: URLs and further instructions
 
 Building the document
 ---------------------

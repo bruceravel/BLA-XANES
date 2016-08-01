@@ -66,16 +66,20 @@ The elastic group
 -----------------
 
 The elastic group contains the sequence of elastic images, each image
-as a dataset in the group.  The name of the data set is the energy
+in a subgroup in the group.  The name of the data set is the energy
 portion of the filename of the measured tiff image.  In the case of
 one of the Nb K\ |beta|\ :sub:`2,4` measurements seen throughout this
 manual, the filename of an elastic image might be something like
 :file:`NbF5_Kb2_elastic_189555_0001.tif`.  That image was measured
 with the incident energy at 18955.5 eV.  The decimal was removed to
-make the filename.  The name of the dataset containing this image is
+make the filename.  The name of the group containing this image is
 ``189555``.
 
-Each dataset has two attributes associated with it, called ``energy``
+The subgroups each contain three datasets.  These datasets contain the
+original image (``image``), the shield if used (``shield``), and the
+final mask (``mask``).
+
+Each subgroup has two attributes associated with it, called ``energy``
 and ``filename``.  In the case of dataset ``189555``, the ``energy``
 attribute is set to the energy value, 18955.5 eV, and the ``filename``
 is set to the fully resolved filename of the tiff file.
@@ -89,16 +93,31 @@ is set to the fully resolved filename of the tiff file.
      default_fontsize = 14;
 
      A [label = "elastic group"];
-     B [label = "image", stacked];
-     BP [style = "dotted", label = "195x487 arrays of shorts", shape = "note"];
+     B [label = "energy label", stacked];
+     CP [style = "dotted", label = "195x487 arrays of shorts", shape = "note"];
+     DP [style = "dotted", label = "195x487 arrays of bytes", shape = "note"];
+     C [label = "image"];
+     D [label = "shield"];
+     E [label = "mask"];
 
      A -> B;
-     B -- BP [style = dotted];
+     B -> C;
+     B -> D;
+     B -> E;
+     C -- CP [style = dotted];
+     D -- DP [style = dotted];
+     E -- DP [style = dotted];
+
+     group {
+       label = "groups";
+       color = "#7777FF";
+       B;
+     }
 
      group {
        label = "datasets";
        color = "#FF3377";
-       B;
+       C, D, E;
      }
 
 

@@ -714,6 +714,10 @@ sub do_step {
   my $tab = ($energy == $self->{energy}->GetStringSelection) ? q{} : q{    };
   $self->{toggle}->SetValue(0);
   $self->plot($app, $spectrum, $quiet||$nostatus, $tab);
+  ## save masks and shields to HDF5 file
+  my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('mask');
+  $ds -> set($spectrum->elastic_image->byte, unlimited => 1);
+
   if (not $nostatus) {
     if ($success) {
       $app->{main}->status(sprintf("%s%s step, energy=%s, %d illuminated pixels.", $tab, $which, $energy, $spectrum->elastic_image->gt(0,0)->sum));

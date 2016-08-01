@@ -35,6 +35,7 @@ attributes_only($hdf5, 'configuration') if $conf;
 metadata($hdf5)                         if $metadata;
 elastic($hdf5)                          if $elastic;
 images($hdf5)                           if $images;
+#scan($hdf5)                             if $scan;
 
 
 sub attributes_only {
@@ -125,7 +126,7 @@ lsbla [options] [hdf5_file]
    -i            show measurement images
    -s            show scan file content
    -c            show configuration parameters
-   -e            show metadata parameters
+   -m            show metadata parameters
    -a            show application parameters
    --all         show everything
 

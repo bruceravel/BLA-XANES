@@ -637,6 +637,7 @@ sub scan {
   my %args = @args;
   $args{verbose} ||= 0;
   $args{xdiini}  ||= $self->xdi_metadata_file || q{};
+  $args{noxanes} ||= 0;
   my $ret = Xray::BLA::Return->new;
   local $|=1;
   $self->clear_xdata;
@@ -656,11 +657,11 @@ sub scan {
     my @list = split(" ", $_);
 
     $self->call_sentinal($list[-1]) if not ($i % 30);
-    my $loop = $self->apply_mask($list[11], verbose=>$args{verbose});
+    my $loop = $self->apply_mask($list[11], verbose=>$args{verbose}) if not $args{noxanes};
     push @point, $list[0];
-    push @point, sprintf("%.10f", $loop->status/$list[3]);
+    if ($args{noxanes}) {push @point, 1} else {push @point, sprintf("%.10f", $loop->status/$list[3])};
     push @point, @list[3..6];
-    push @point, $loop->status;
+    if ($args{noxanes}) { push @point, 0} else { push @point, $loop->status};
     push @point, @list[1..2];
     push @data, [@point];
     $self->push_xdata($point[0]);

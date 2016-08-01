@@ -430,6 +430,11 @@ sub all_masks {
       $app->{bla_of}->{$key}->cbmax(1);
       $app->{bla_of}->{$key}->plot_mask;
     };
+    ## save masks and shields to HDF5 file
+    my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('mask');
+    $ds -> set($spectrum->elastic_image->byte, unlimited => 1);
+    $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('shield');
+    $ds -> set($spectrum->shield_image->byte, unlimited => 1);
   };
   #my $max = max(@n);
   #@n = map {$max / $_} @n;

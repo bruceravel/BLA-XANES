@@ -276,13 +276,13 @@ sub save_indicator {
 
 sub on_close {
   my ($app) = @_;
-  if ($::app->{save}) {
-    my $md = Wx::MessageDialog->new($app->{main}, "Save mask creation steps?", "Save mask creation steps?",
-				    wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
-    if ($md->ShowModal == wxID_YES) {
-      Demeter::UI::Metis::Mask::save_steps($::app->{Mask}, q{}, $::app)
-      };
-  };
+  # if ($::app->{save}) {
+  #   my $md = Wx::MessageDialog->new($app->{main}, "Save mask creation steps?", "Save mask creation steps?",
+  # 				    wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+  #   if ($md->ShowModal == wxID_YES) {
+  #     Demeter::UI::Metis::Mask::save_steps($::app->{Mask}, q{}, $::app)
+  #     };
+  # };
   $app->Destroy;
 };
 

@@ -1,0 +1,132 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use File::Basename;
+use List::MoreUtils qw(any none);
+use PDL::Lite;
+use PDL::IO::HDF5;
+use Pod::Usage;
+use Term::ANSIColor;
+
+use Getopt::Long;
+my ($app, $conf, $elastic, $images, $metadata, $scan, $all) = (0,0,0,0,0,0,0);
+GetOptions ("application|a"   => \$app,
+            "configuration|c" => \$conf,
+	    "elastic|e"       => \$elastic,
+	    "images|i"        => \$images,
+	    "metadata|m"      => \$metadata,
+	    "scan|s"          => \$scan,
+	    "all"             => \$all,);
+
+($app, $conf, $elastic, $images, $metadata, $scan, $all) = (1,1,1,1,1,1,1) if $all;
+
+my $file = $ARGV[0];
+
+my $hdf5 = new PDL::IO::HDF5($file);
+
+if (none {$_} ($app, $conf, $elastic, $images, $metadata, $scan, $all)) {
+  pod2usage(-exitval => 0);
+};
+
+attributes_only($hdf5, 'application')   if $app;
+attributes_only($hdf5, 'configuration') if $conf;
+metadata($hdf5)                         if $metadata;
+elastic($hdf5)                          if $elastic;
+images($hdf5)                           if $images;
+
+
+sub attributes_only {
+  my ($hdf5,$group,$tab) = @_;
+  $tab ||= q{};
+  print $tab, colored($group, 'bold green'), $/;
+  $tab .= "\t";
+  foreach my $a (sort $hdf5->group($group)->attrs) {
+    print $tab, colored($a, 'yellow'), ': ', $hdf5->group($group)->attrGet($a), $/;
+  };
+};
+
+
+sub metadata {
+  my ($hdf5) = @_;
+  my $tab = q{};
+  print $tab, colored('metadata', 'bold green'), $/;
+  $tab .= "\t";
+  foreach my $gp (sort $hdf5->group('metadata')->groups) {
+    foreach my $a (sort $hdf5->group('metadata')->group($gp)->attrs) {
+      print $tab, colored(join('.',$gp,$a), 'yellow'), ': ', $hdf5->group('metadata')->group($gp)->attrGet($a), $/;
+    };
+  };
+};
+
+
+sub elastic {
+  my ($hdf5) = @_;
+  my $tab = q{};
+  printf("%s  (%s = %s)\n", colored('elastic', 'bold green'), colored('image_folder', 'yellow'), $hdf5->group('configuration')->attrGet('image_folder'));
+  $tab .= "\t";
+  foreach my $gp (sort $hdf5->group('elastic')->groups) {
+    print $tab, colored($gp, 'bold magenta');
+    printf("\t%s%.1f (%s)   ",
+	   'energy = ',
+	   $hdf5->group('elastic')->group($gp)->attrGet('energy'),
+	   colored(basename($hdf5->group('elastic')->group($gp)->attrGet('file')), 'bright_black'));
+    print $tab,'[';
+    yesno($hdf5, $gp, $_) foreach(qw(image shield mask));
+    print $/;
+  };
+};
+
+
+sub yesno {
+  my ($hdf5, $gp, $which) = @_;
+  my @datasets =  $hdf5->group('elastic')->group($gp)->datasets;
+  my $yn = (any {$_ eq $which} @datasets) ? 'bold green' : 'red';
+  my $term = ($which eq 'mask') ? ']' : '|';
+  printf "%s%s", colored($which, $yn), $term;
+};
+
+
+sub images {
+  my ($hdf5) = @_;
+  my $tab = q{};
+  printf("%s  (%s = %s)\n", colored('images', 'bold green'), colored('image_folder', 'yellow'), $hdf5->group('configuration')->attrGet('image_folder'));
+  $tab .= "\t";
+  foreach my $ds (sort $hdf5->group('images')->datasets) {
+    my @atts = $hdf5->group('images')->dataset($ds)->attrs;
+    print $tab, colored($ds, 'bold magenta');
+    printf("\t (%s)",
+    	   colored(basename($hdf5->group('images')->dataset($ds)->attrGet('file')), 'bright_black'));
+    if (any {$_ eq 'energy'} @atts) {
+      printf("\tenergy = %.1f", $hdf5->group('images')->dataset($ds)->attrGet('energy'))
+    };
+    if (($hdf5->group('images')->dataset($ds)->attrGet('skip'))[0]) {
+      print "\t", colored('skip', 'bold green');
+    };
+    print "\n";
+  };
+};
+
+1;
+
+__END__
+
+=head1 NAME
+
+lsbla - list contents of a Metis HDF5 file
+
+=head1 SYNOPSIS
+
+lsbla [options] [hdf5_file]
+
+ Options:
+   -e            show elastic images
+   -i            show measurement images
+   -s            show scan file content
+   -c            show configuration parameters
+   -e            show metadata parameters
+   -a            show application parameters
+   --all         show everything
+
+=cut

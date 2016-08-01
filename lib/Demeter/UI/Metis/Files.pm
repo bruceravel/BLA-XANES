@@ -260,7 +260,8 @@ sub fetch {
       $app->{bla_of}->{$this} = $app->{base}->clone;
       $app->{bla_of}->{$this}->elastic_file($this);
       $app->{bla_of}->{$this}->energy($this);
-      my $ds = $app->{elastic_group}->dataset($this);                 # make a data set in the elastic group in the hdf5 file
+      my $gp = $app->{elastic_group}->group($this);     # make a subgroup in the elastic group
+      my $ds = $gp->dataset('image');                   # make a data set in the subgroup for this energy
       my $ret = $app->{bla_of}->{$this}->check($e);
       if ($ret->status == 0) {
 	$app->{main}->status($ret->message, 'alert');
@@ -268,8 +269,8 @@ sub fetch {
       };
       $ds->set($app->{bla_of}->{$this}->elastic_image, unlimited => 1); # put elastic image into hdf5 file
       my $denom = ($app->{bla_of}->{$this}->div10) ? 10. : 1.;
-      $ds->attrSet('energy' => $this/$denom);
-      $ds->attrSet('file'   => File::Spec->catfile($self->{image_dir}->GetValue, $e));
+      $gp->attrSet('energy' => $this/$denom);
+      $gp->attrSet('file'   => File::Spec->catfile($self->{image_dir}->GetValue, $e));
     };
   };
   $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
@@ -278,11 +279,12 @@ sub fetch {
 
   foreach my $i (@image_list) {
     if ($i =~ m{$image_re}) {
-      my $this = $+{i} || $+{c};
+      my $this = $+{i} || $+{c} || $+{T};
       my $ds = $app->{image_group}->dataset("$this");
       $ds->set($app->{base}->Read(File::Spec->catfile($self->{image_dir}->GetValue,$i)), unlimited=>1);
       $ds->attrSet('file'  => File::Spec->catfile($self->{image_dir}->GetValue, $i));
       $ds->attrSet('skip'  => 0);
+      #$ds->attrSet('energy'  => 0);
     };
   };
 
@@ -298,8 +300,15 @@ sub fetch {
 
   $app->{Data}->{incident}->Clear;
   if ($app->{tool} eq 'herfd') {
+    #my $ret = $app->{base} -> scan(verbose=>0, noxanes=>1);
+    my $count = 1;
     foreach my $en (@$rlist) {
+      #print join("|", $en, $count, $app->{base}->xdata->[$count]), $/;
       $app->{Data}->{incident}->Append($en);
+      #printf("%3.3d\n", $count);
+      my $ds = $app->{image_group}->dataset(sprintf("%3.3d", $count));
+      $ds->attrSet(energy=>$en);
+      ++$count;
     };
     $app->{Data}->{incident}->SetSelection(int($#{$rlist}/2));
   } else {

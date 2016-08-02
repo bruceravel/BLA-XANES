@@ -28,7 +28,7 @@ sub new {
 
   $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
   $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{Demeter::UI::Metis->save_hdf5(@_, $app)});
+  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
   $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
 
   ## ------ stub, element, line ----------------------------------------
@@ -175,9 +175,9 @@ sub new {
     $app->{base}->scanfolder(q{});
     $self->{scan_dir}->SetValue(q{});
     $self->{$_}->Enable(0) foreach (qw(scan scan_dir scan_template scan_template_label
-				       elastic_template elastic_template_label
 				       image_template image_template_label image image_dir
 				       div10 stub stub_label element element_label line line_label add));
+				       #elastic_template elastic_template_label
     $self->{fetch}->SetLabel("Import image");
     EVT_BUTTON($self, $self->{fetch}, sub{single(@_, $app)});
   };
@@ -277,6 +277,7 @@ sub fetch {
   $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
 
 
+  ## set the contents of the images group in the HDF5 file
   foreach my $i (@image_list) {
     if ($i =~ m{$image_re}) {
       my $this = $+{i} || $+{c} || $+{T};
@@ -288,24 +289,37 @@ sub fetch {
     };
   };
 
+  ## set the list of incident energies, snarfed from the scan file
   $app->{base}->get_incident_energies;
   my $rlist = $app->{base}->incident_energies;
   $app->{base}->incident_energies($rlist);
-  #$app->{base}->elastic_energies($rlist) if ($app->{tool} eq 'rxes');
   foreach my $key (keys %{$app->{bla_of}}) {
     $app->{bla_of}->{$key}->incident_energies($rlist);
-    #$app->{bla_of}->{$key}->elastic_energies($rlist) if ($app->{tool} eq 'rxes');
+  };
+
+
+  if ($app->{tool} eq 'rxes') {
+    ## Now that the elastic list is filled AND we have the list of
+    ## incident energies, set the energy attributes in the HDF5 files.
+    ## In an RXES measurement, the filenames typically have integers
+    ## which must be correlated with energy in the scan file.
+    my $count = 0;
+    foreach my $e (@elastic_list) {
+      if ($e =~ m{$elastic_re}) {
+	my $this = $+{e} || $+{c};
+	my $gp = $app->{elastic_group}->group($this);     # get the right subgroup in the elastic group
+	$gp->attrSet('energy' => $rlist->[$count]);
+      };
+      ++$count;
+    };
   };
 
 
   $app->{Data}->{incident}->Clear;
   if ($app->{tool} eq 'herfd') {
-    #my $ret = $app->{base} -> scan(verbose=>0, noxanes=>1);
     my $count = 1;
-    foreach my $en (@$rlist) {
-      #print join("|", $en, $count, $app->{base}->xdata->[$count]), $/;
+    foreach my $en (@$rlist) {	# set the energy attribute for the images in a HERFD measurement
       $app->{Data}->{incident}->Append($en);
-      #printf("%3.3d\n", $count);
       my $ds = $app->{image_group}->dataset(sprintf("%3.3d", $count));
       $ds->attrSet(energy=>$en);
       ++$count;
@@ -405,10 +419,25 @@ sub single {
     return;
   };
 
+  $app->{base} -> clear_elastic_energies;
   $self->{elastic_list}->Clear;
+  $self->{image_list}->Clear;
+  $app->set_parameters;
 
   my $dir = $fd->GetDirectory;
   my $file = $fd->GetFilename;
+
+  my $elastic_re = $app->{base}->file_template($self->{elastic_template}->GetValue, {re=>1});
+  if ($file =~ m{(\w+)$elastic_re}) {
+    my $this = $1;
+    $self->{stub}->Enable(1);
+    $self->{stub}->SetValue($this);
+    $app->{base}->stub($this);
+    $self->{stub}->Enable(0);
+    print "here\n";
+    $app->{Mask}->{stub} -> SetLabel("Stub is \"$this\"");
+  };
+
   $self->{image_dir}->Enable(1);
   $self->{image_dir}->SetValue($dir);
   $app->{base}->tifffolder($dir);
@@ -427,11 +456,23 @@ sub single {
 
   $app->{base}->push_elastic_energies('0001');
 
+  my $gp = $app->{elastic_group}->group('0001');
+  my $ds = $gp->dataset('image');
+  my $ret = $app->{bla_of}->{'0001'}->check($file);
+  if ($ret->status == 0) {
+    $app->{main}->status($ret->message, 'alert');
+    return;
+  };
+  $ds->set($app->{bla_of}->{'0001'}->elastic_image, unlimited => 1);
+  $gp->attrSet('file'   => File::Spec->catfile($dir, $file));
+
   $app->{Mask}->{$_} -> Enable(1) foreach (qw(steps_list spots_list pluck restoresteps energy rangemin rangemax));
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> Append('0001');
   $app->{Mask}->{energy} -> SetStringSelection('0001');
   $app->{Mask}->restore($app);
+
+  $app->set_parameters;
 
   $app->{book}->SetSelection(1);
 

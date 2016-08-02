@@ -39,7 +39,7 @@ sub new {
 
   $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
   $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{Demeter::UI::Metis->save_hdf5(@_, $app)});
+  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
   $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
 
 

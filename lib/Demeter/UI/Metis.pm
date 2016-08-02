@@ -5,6 +5,7 @@ use Xray::BLA;
 use Demeter::UI::Artemis::ShowText;
 use Demeter::UI::Athena::Status;
 use Demeter::UI::Metis::LastPlot;
+use Demeter::UI::Metis::HDF5;
 
 use Chemistry::Elements qw(get_Z get_symbol);
 use Cwd;
@@ -64,6 +65,7 @@ const my $Lastplot => Wx::NewId();
 
 const my $INCREMENT_ENERGY   => Wx::NewId();
 const my $DECREMENT_ENERGY   => Wx::NewId();
+const my $OPEN               => Wx::NewId();
 const my $SAVE               => Wx::NewId();
 
 sub OnInit {
@@ -139,32 +141,7 @@ sub OnInit {
   $app->{bla_of}->{aggregate} -> masktype('aggregate');
 
   ## --- make an HDF5 file and begin to populate it
-  my $hdfile = File::Spec->catfile($app->{base}->outfolder, "metis.hdf");
-  unlink($hdfile) if -e $hdfile;
-  $app->{hdf5file}      = $hdfile;
-  $app->{hdf5}          = new PDL::IO::HDF5($hdfile);
-  $app->{elastic_group} = $app->{hdf5}->group("/elastic");
-  $app->{image_group}   = $app->{hdf5}->group("/images");
-  $app->{scan}          = $app->{hdf5}->group("/scan");
-  $app->{metadata}      = $app->{hdf5}->group("/metadata");
-  $app->{configuration} = $app->{hdf5}->group("/configuration");
-  $app->{application}   = $app->{hdf5}->group("/application");
-  $app->{hdf5}         -> attrSet(name     => 'Metis');
-  $app->{configuration}-> attrSet(mode     => $app->{tool});
-  $app->{application}  -> attrSet(created  => DateTime->now);
-  $app->{application}  -> attrSet(platform => $^O);
-  if (($^O eq 'MSWin32') or ($^O eq 'cygwin')) {
-    $app->{application} -> attrSet(platform => join(', ', Win32::GetOSName(), Win32::GetOSVersion()));
-  };
-  $app->{application}  -> attrSet(Moose		   => $Moose::VERSION);
-  $app->{application}  -> attrSet(PDL		   => $PDL::VERSION);
-  $app->{application}  -> attrSet('PDL::IO::HDF5'  => $PDL::IO::HDF5::VERSION);
-  $app->{application}  -> attrSet(Wx		   => $Wx::VERSION);
-  $app->{application}  -> attrSet(wxWidgets	   => $Wx::wxVERSION_STRING);
-  $app->{application}  -> attrSet(Perl		   => $]);
-  $app->{application}  -> attrSet(Demeter	   => $Demeter::VERSION);
-  $app->{application}  -> attrSet('Xray::BLA'	   => $Xray::BLA::VERSION);
-
+  $app->init_hdf5(File::Spec->catfile($app->{base}->outfolder, "metis.hdf"));
 
   ## -------- status bar
   $app->{main}->{statusbar} = $app->{main}->CreateStatusBar;
@@ -204,13 +181,14 @@ sub OnInit {
 
   my $bar = Wx::MenuBar->new;
   my $filemenu   = Wx::Menu->new;
+  $filemenu->Append($OPEN,     "Open HDF5 file\tCtrl+o");
+  $filemenu->Append($SAVE,     "Save HDF5 file\tCtrl+s");
+  $filemenu->AppendSeparator;
   $filemenu->Append($Files,    "Show Files tool\tCtrl+1");
   $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
   $filemenu->Append($Data,     "Show ".uc($app->{tool})." tool\tCtrl+3") if $app->{tool} ne q{mask};
   $filemenu->Append($Config,   "Show Configuration tool\tCtrl+4");
   $filemenu->Append($XDI,      "Show XDI (metadata) tool\tCtrl+5");
-  $filemenu->AppendSeparator;
-  $filemenu->Append($SAVE,     "Save HDF5 file\tCtrl+s");
   $filemenu->AppendSeparator;
   $filemenu->Append($Import,   "Import configuration\tCtrl+i");
   $filemenu->AppendSeparator;
@@ -286,47 +264,20 @@ sub on_close {
   $app->Destroy;
 };
 
-sub save_hdf5 {
-  my ($self, $event, $app) = @_;
-
-  my $spectrum = $::app->{base};
-  my $fname = sprintf("%s.hdf", $spectrum->stub);
-  my $fd = Wx::FileDialog->new( $::app->{main}, "Save HDF5 file", cwd, $fname,
-				"HDF5 files (*.hdf)|*.hdf|All files (*)|*",
-				wxFD_OVERWRITE_PROMPT|wxFD_SAVE|wxFD_CHANGE_DIR,
-				wxDefaultPosition);
-  if ($fd->ShowModal == wxID_CANCEL) {
-    $::app->{main}->status("Saving HDF5 file canceled.");
-    return;
-  };
-  my $save_file = $fd->GetPath;
-  #$::app->{hdf5}->DESTROY;
-  move($::app->{hdf5file}, $save_file);
-
-  $::app->{hdf5file}      = $save_file;
-  $::app->{hdf5}          = new PDL::IO::HDF5($save_file);
-  $::app->{elastic_group} = $::app->{hdf5}->group("/elastic");
-  $::app->{image_group}   = $::app->{hdf5}->group("/images");
-  $::app->{scan}          = $::app->{hdf5}->group("/scan");
-  $::app->{metadata}      = $::app->{hdf5}->group("/metadata");
-  $::app->{configuration} = $::app->{hdf5}->group("/configuration");
-  $::app->{application}   = $::app->{hdf5}->group("/application");
-
-  $::app->indicate_state(1);
-
-  $::app->{main}->status("HDF file saved as $save_file and will be updated automatically going forward.");
-};
-
-
 ## $state --  1 = saved  0 = needs saving
 sub indicate_state {
   my ($self, $state) = @_;
   $::app->{saved} = $state;
   if ($state) {
-    $::app->{$_}->{save} -> SetBackgroundColour( $::app->{Files}->{fetch}->GetBackgroundColour ) foreach (qw(Files Mask Data Config XDI));
-    $::app->{$_}->{save} -> Enable(0) foreach (qw(Files Mask Data Config XDI));
+    $::app->{$_}->{save} -> SetBackgroundColour( $::app->{Files}->{fetch}->GetBackgroundColour ) foreach (qw(Files Mask Config XDI));
+    $::app->{$_}->{save} -> Enable(0) foreach (qw(Files Mask Config XDI));
+    if ($::app->{tool} ne 'mask') {
+      $::app->{Data}->{save} -> SetBackgroundColour( $::app->{Files}->{fetch}->GetBackgroundColour );
+      $::app->{Data}->{save} -> Enable(0);
+    };
   } else {
-    $::app->{$_}->{save} -> SetBackgroundColour( Wx::Colour->new(255,206,215) ) foreach (qw(Files Mask Data Config XDI));
+    $::app->{$_}->{save} -> SetBackgroundColour( Wx::Colour->new(255,206,215) ) foreach (qw(Files Mask Config XDI));
+    $::app->{Data}->{save} -> SetBackgroundColour( Wx::Colour->new(255,206,215) ) if ($::app->{tool} ne 'mask');
   };
 };
 
@@ -385,6 +336,10 @@ sub OnMenuClick {
     ($id == $DECREMENT_ENERGY) and do {
       return if ($app->{book}->GetSelection != 1);
       $app->{Mask}->spin_energy('down', $app);
+      return;
+    };
+    ($id == $OPEN) and do {
+      $app->open_hdf5;
       return;
     };
     ($id == $SAVE) and do {

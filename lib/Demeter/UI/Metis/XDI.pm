@@ -29,7 +29,7 @@ sub new {
 
   $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
   $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{Demeter::UI::Metis->save_hdf5(@_, $app)});
+  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
   $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
 
 
@@ -81,26 +81,34 @@ sub Import {
 
 sub read_metadata {
   my ($self, $file, $app) = @_;
-  $self->{tree}->DeleteChildren($self->{root});
   if ($file and (-e $file)) {
     tie my %metadata, 'Config::IniFiles', ( -file => $file );
-    foreach my $k (sort keys %metadata) {
-      my $leaf = $self->{tree}->AppendItem($self->{root}, $k);
-      $self->{tree} -> SetItemTextColour($leaf, wxWHITE );
-      $self->{tree} -> SetItemBackgroundColour($leaf, wxBLACK );
-      my $gp = $app->{metadata}->group(ucfirst(lc($k)));
-      my $count = 0;
-      foreach my $tag (sort keys %{$metadata{$k}}) {
-	my $value = $metadata{$k}->{$tag};
-	my $string = sprintf("%-20s = %-47s", lc($tag), $value);
-	my $item = $self->{tree}->AppendItem($leaf, $string);
-	$self->{tree} -> SetItemBackgroundColour($item,  ($count++ % 2) ? wxWHITE : wxLIGHT_GREY );
-	$gp->attrSet(lc($tag) => $value);
-      };
-      $self->{tree}->Expand($leaf);
-    };
+    $self->place_metadata(\%metadata, $app);
   };
 };
+
+sub place_metadata {
+  my ($self, $rhash, $app) = @_;
+  my %metadata = %$rhash;
+  $self->{tree}->DeleteChildren($self->{root});
+  foreach my $k (sort keys %metadata) {
+    my $leaf = $self->{tree}->AppendItem($self->{root}, $k);
+    $self->{tree} -> SetItemTextColour($leaf, wxWHITE );
+    $self->{tree} -> SetItemBackgroundColour($leaf, wxBLACK );
+    my $gp = $app->{metadata}->group(ucfirst(lc($k)));
+    my $count = 0;
+    foreach my $tag (sort keys %{$metadata{$k}}) {
+      my $value = $metadata{$k}->{$tag};
+      my $string = sprintf("%-20s = %-47s", lc($tag), $value);
+      my $item = $self->{tree}->AppendItem($leaf, $string);
+      $self->{tree} -> SetItemBackgroundColour($item,  ($count++ % 2) ? wxWHITE : wxLIGHT_GREY );
+      $gp->attrSet(lc($tag) => $value);
+      #printf("%s:%s = %s\n", $k, lc($tag), $value)
+    };
+    $self->{tree}->Expand($leaf);
+  };
+};
+
 
 
 const my $EDIT   => Wx::NewId();

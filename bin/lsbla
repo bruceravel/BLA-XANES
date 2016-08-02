@@ -44,7 +44,7 @@ sub attributes_only {
   print $tab, colored($group, 'bold green'), $/;
   $tab .= "\t";
   foreach my $a (sort $hdf5->group($group)->attrs) {
-    print $tab, colored($a, 'yellow'), ': ', $hdf5->group($group)->attrGet($a), $/;
+    print $tab, colored($a, 'yellow'), ': ', ($hdf5->group($group)->attrGet($a))[0], $/;
   };
 };
 
@@ -69,9 +69,10 @@ sub elastic {
   $tab .= "\t";
   foreach my $gp (sort $hdf5->group('elastic')->groups) {
     print $tab, colored($gp, 'bold magenta');
-    printf("\t%s%.1f (%s)   ",
-	   'energy = ',
-	   $hdf5->group('elastic')->group($gp)->attrGet('energy'),
+    if (any {$_ eq 'energy'} $hdf5->group('elastic')->group($gp)->attrs ) { # no energy in mask mode
+      printf("\tenergy = %.1f", $hdf5->group('elastic')->group($gp)->attrGet('energy'));
+    };
+    printf("\t(%s)   ",
 	   colored(basename($hdf5->group('elastic')->group($gp)->attrGet('file')), 'bright_black'));
     print $tab,'[';
     yesno($hdf5, $gp, $_) foreach(qw(image shield mask));

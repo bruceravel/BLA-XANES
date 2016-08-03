@@ -141,7 +141,7 @@ sub OnInit {
   $app->{bla_of}->{aggregate} -> masktype('aggregate');
 
   ## --- make an HDF5 file and begin to populate it
-  $app->init_hdf5(File::Spec->catfile($app->{base}->outfolder, "metis.hdf"));
+  $app->init_hdf5(File::Spec->catfile($app->{base}->outfolder, "metis.mpj"));
 
   ## -------- status bar
   $app->{main}->{statusbar} = $app->{main}->CreateStatusBar;
@@ -174,6 +174,7 @@ sub OnInit {
     }
 
     my $lab = $utility;
+    $lab = 'Images'         if $utility eq 'Files';
     $lab = uc($app->{tool}) if $utility eq 'Data';
     $tb->AddPage($page, $lab, 0, $count);
   };
@@ -181,8 +182,8 @@ sub OnInit {
 
   my $bar = Wx::MenuBar->new;
   my $filemenu   = Wx::Menu->new;
-  $filemenu->Append($OPEN,     "Open HDF5 file\tCtrl+o");
-  $filemenu->Append($SAVE,     "Save HDF5 file\tCtrl+s");
+  $filemenu->Append($OPEN,     "Open Metis project file\tCtrl+o");
+  $filemenu->Append($SAVE,     "Save Metis project file\tCtrl+s");
   $filemenu->AppendSeparator;
   $filemenu->Append($Files,    "Show Files tool\tCtrl+1");
   $filemenu->Append($Mask,     "Show Mask tool\tCtrl+2" );
@@ -233,6 +234,14 @@ sub OnInit {
   $app->{configuration}->attrSet($_ => $app->{base}->$_) foreach (qw(color energycounterwidth gaussian_kernel imagescale outimage
 								     polyfill_gaps polyfill_order splot_palette_name terminal
 								     tiffcounter xdi_metadata_file));
+
+  my $busy = Wx::BusyCursor->new();
+  $app->{book}->Enable(0);	# some visual feedback, wait for HDF5 import
+  $app->{book}->Refresh;
+  $app->open_hdf5($::hdf5file) if $::hdf5file;
+  $app->{book}->Enable(1);
+  undef $busy;
+
   return 1;
 };
 
@@ -243,10 +252,10 @@ sub save_indicator {
   $current =~ s{ \*\z}{};
   if ($should_save) {
     $app->{main}->SetTitle('* ' . $current . ' *');
-    $app->{Mask}->{savesteps}->SetBackgroundColour(Wx::Colour->new(255,206,215));
+    #$app->{Mask}->{savesteps}->SetBackgroundColour(Wx::Colour->new(255,206,215));
   } else {
     $app->{main}->SetTitle($current);
-    $app->{Mask}->{savesteps}->SetBackgroundColour($app->{Mask}->{restoresteps}->GetBackgroundColour);
+    #$app->{Mask}->{savesteps}->SetBackgroundColour($app->{Mask}->{restoresteps}->GetBackgroundColour);
   };
   $app->{save} = $should_save;
 };
@@ -254,13 +263,13 @@ sub save_indicator {
 
 sub on_close {
   my ($app) = @_;
-  # if ($::app->{save}) {
-  #   my $md = Wx::MessageDialog->new($app->{main}, "Save mask creation steps?", "Save mask creation steps?",
-  # 				    wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
-  #   if ($md->ShowModal == wxID_YES) {
-  #     Demeter::UI::Metis::Mask::save_steps($::app->{Mask}, q{}, $::app)
-  #     };
-  # };
+  if ($::app->{save}) {
+    my $md = Wx::MessageDialog->new($app->{main}, "Save project?", "Save project?",
+  				    wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+    if ($md->ShowModal == wxID_YES) {
+      $::app->save_hdf5;
+    };
+  };
   $app->Destroy;
 };
 
@@ -343,12 +352,12 @@ sub OnMenuClick {
       return;
     };
     ($id == $SAVE) and do {
-      if ($::app->{Files}->{save} -> IsEnabled) {
+      #if ($::app->{Files}->{save} -> IsEnabled) {
 	$app->save_hdf5;
-	$app->indicate_state(1);
-      } else {
-	$app->{main}->status("HDF file ".$app->{hdf5file}." is being automatically updated.", 'alert');
-      };
+	$app->save_indicator(0);
+      #} else {
+	#$app->{main}->status("Metis project file ".$app->{hdf5file}." is being automatically updated.", 'alert');
+      #};
       return;
     };
     ($id == wxID_EXIT) and do {
@@ -469,7 +478,7 @@ sub set_parameters {
   my @spots = $app->{Mask}->{spots_list}->GetStrings;
   $ds->set(PDL::Char->new(\@spots), unlimited=>1) if $#spots > -1;
 
-  $app->indicate_state(0);
+  $app->save_indicator(1);
 
 
   return $app;

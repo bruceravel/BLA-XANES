@@ -37,10 +37,10 @@ sub new {
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
   $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
-  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
-  $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
-  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+  # $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  # $hbox ->  Add($self->{save}, 0, wxALL, 5);
+  # EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
+  # $app->mouseover($self->{save}, "Save this project to a Metis project file.");
 
 
 
@@ -103,7 +103,10 @@ sub new {
   $xbox -> Add($self->{incident}, 0, wxGROW|wxALL, 5);
   $xbox -> Add($self->{reuse}, 0, wxGROW|wxALL, 5);
 #  $app->mouseover($self->{incident}, "Select the ".lc($lab)." for which to compute the XES.");
-  EVT_COMBOBOX($self, $self->{incident}, sub{ $self->{replot_xes}->Enable(0); $self->{save_xes} -> Enable(0); $self->{save_xes_all} -> Enable(0); });
+  EVT_COMBOBOX($self, $self->{incident}, sub{ $self->{replot_xes}   -> Enable(0);
+					      $self->{save_xes}     -> Enable(0);
+					      $self->{save_xes_all} -> Enable(0);
+					    });
 
   $xbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $xesboxsizer -> Add($xbox, 0, wxGROW|wxALL, 0);
@@ -369,8 +372,9 @@ sub plot_xes {
   my $spectrum  = $app->{bla_of}->{$self->{energy}};
   my $incident  = $self->{incident}->GetValue;
 
-  my $file = $self->determine_xes_image($app);
-  my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
+  #my $file = $self->determine_xes_image($app);
+  #my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
+  my $point = $self->{incident}->GetClientData($self->{incident}->GetCurrentSelection)->get; #);
 
   $self->{showmasks}->SetValue(0) if $self->{reuse}->GetValue;
 
@@ -432,9 +436,9 @@ sub all_masks {
     };
     ## save masks and shields to HDF5 file
     my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('mask');
-    $ds -> set($spectrum->elastic_image->byte, unlimited => 1);
+    $ds -> set($app->{bla_of}->{$key}->elastic_image->byte, unlimited => 1);
     $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('shield');
-    $ds -> set($spectrum->shield_image->byte, unlimited => 1);
+    $ds -> set($app->{bla_of}->{$key}->shield_image->byte, unlimited => 1);
   };
   #my $max = max(@n);
   #@n = map {$max / $_} @n;

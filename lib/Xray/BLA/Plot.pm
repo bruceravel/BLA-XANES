@@ -169,11 +169,19 @@ sub plot_plane {
 
 
 sub plot_energy_point {
-  my ($self, $file) = @_;
-  my $point = $self->Read($file);
+  my ($self, $file, $title) = @_;
+  my $point;
+  if (ref($file) =~ m{PDL}) {
+    $point = $file;
+  } elsif (-e $file) {
+    $title ||= basename($file);
+    $point = $self->Read($file);
+  } else {
+    return;
+  };
+  $title = $self->escape_us($title);
   my $cbm = min($point->max, 100);
   #my $cbm = $self->bad_pixel_value/$self->imagescale;
-  my $title = $self->escape_us(basename($file));
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
   $self->pdlplot->image({cbrange=>[0, $cbm], palette=>$self->palette, title=>$title, # cbrange=>[0,$cbm],
 			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},

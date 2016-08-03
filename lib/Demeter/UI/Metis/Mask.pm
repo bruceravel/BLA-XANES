@@ -50,10 +50,10 @@ sub new {
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
   $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
-  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
-  $hbox ->  Add($self->{save}, 0, wxTOP|wxBOTTOM|wxLEFT, 5);
-  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
-  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+  # $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  # $hbox ->  Add($self->{save}, 0, wxTOP|wxBOTTOM|wxLEFT, 5);
+  # EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
+  # $app->mouseover($self->{save}, "Save this project to a Metis project file.");
 
 
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
@@ -468,10 +468,16 @@ sub SelectEnergy {
     $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   };
   $self->{energy}->SetFocus;
-  Demeter::UI::Metis::save_indicator($app, 0);
+  Demeter::UI::Metis::save_indicator($app, 1);
   undef $busy;
 };
 
+sub most {
+  my ($self, $onoff) = @_;
+  foreach my $k (@most_widgets) {
+    $self->{$k}->Enable($onoff);
+  };
+};
 
 sub Reset {
   my ($self, $event, $app) = @_;
@@ -765,13 +771,13 @@ sub replot {
 
 sub toggle {
   my ($self, $event, $app) = @_;
+  my $energy = $self->{energy}->GetStringSelection;
+  my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
+  my $spectrum = $app->{bla_of}->{$key};
   if ($self->{toggle}->GetValue) {
-    my $energy = $self->{energy}->GetStringSelection;
-    my $key = $energy; #($self->{rbox}->GetStringSelection =~ m{Single}) ? $energy : 'aggregate';
-    my $spectrum = $app->{bla_of}->{$key};
-    $spectrum->plot_energy_point($spectrum->elastic_file);
+    $spectrum->plot_energy_point($spectrum->raw_image, "energy = ".$energy);
   } else {
-    $self->replot($event, $app, 0);
+    $spectrum->plot_energy_point($spectrum->elastic_image, "energy = ".$energy);
   };
 };
 

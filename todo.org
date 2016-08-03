@@ -25,7 +25,7 @@
    3. Re-run mask creation with shields
    4. Make XES with shielded masks
 
-** Issues with Xray::BLA [5/18]
+** Issues with Xray::BLA [10/18]
 
  - [ ] More robust error handling.
 
@@ -53,11 +53,11 @@
  - [X] Drop current crop of gnuplot+Text::Template methods in favor of
    PDL::Graphics::Gnuplot.  ~or not -- it's handy to write out the .gp file.~
 
- - [ ] gnuplot file for rixs map -- how is this done in PDL?  PDL has
+ - [X] gnuplot file for rixs map -- how is this done in PDL?  PDL has
    linear axis transforms, but can it do non-linear transforms
    specified point-by-point?
 
- - [ ] Other energy map output formats.  A gif would be useful.  (Much
+ - [X] Other energy map output formats.  A gif would be useful.  (Much
    easier using PDL)
 
  - [ ] consider using MooseX::GetSet
@@ -72,7 +72,7 @@
  - [X] Use of XDI is undocumented.  And incomplete.  And, frankly,
    Xray::XDI needs attention.
 
- - [ ] Think about how to use HDF5 to store images, scans, scan
+ - [X] Think about how to use HDF5 to store images, scans, scan
    metadata, and Xray::BLA metadata.
 
  - [ ] Configurable data columns -- need to be more flexible about
@@ -80,11 +80,11 @@
    with conventional XAFS for mu(E) plot.  See Xray/BLA.pm line 568,
    loop over energy points in ~scan~ method.
 
- - [ ] Maybe use object oriented plotting interface ....
+ - [X] Maybe use object oriented plotting interface ....
 
- - [ ] Athena project output from rixs task
+ - [X] Athena project output from rixs task
 
-** Issues with Metis [9/17]
+** Issues with Metis [11/17]
 
  - [X] Version 2 will have Xray::BLA objects for each emission energy
    and one for the aggregate object.  That will make XES and RIXS much
@@ -126,7 +126,7 @@
    still ambiguous, a file selection dialog can be used to select
    content for the lists.
 
- - [ ] Persistance. Need to save group of masks.  Need to save
+ - [X] Persistance. Need to save group of masks.  Need to save
    aggregate mask.  Need to reimport them.
 
  - [ ] how are element and line used?  (answer: they are used to set
@@ -135,7 +135,7 @@
  - [ ] Click on image list, show incident energy of that image in the
    status bar
 
- - [ ] Save metadata from .ini file to RIXS prj file
+ - [X] Save metadata from .ini file to RIXS prj file
 
 ** Mask algorithm possibilities
 
@@ -144,8 +144,10 @@
 
 ** Rough milestones
 
+Out of order!
+
  - [X] *Version 2* : XES and RIXS working in Metis
- - [ ] *Version 3* : Whatever is required of Feb 2016 beamtime, write a document for use at BL
+ - [X] *Version 3* : Whatever is required of Feb 2016 beamtime, write a document for use at BL
  - [ ] *Version 4* : proper test suite, test for and handle edge cases (what did I mean by this?)
  - [ ] *Version 5* : map and mapmask working in Metis
- - [ ] *Version 6* : persistance in Metis, save and recover to current position
+ - [X] *Version 6* : persistance in Metis, save and recover to current position

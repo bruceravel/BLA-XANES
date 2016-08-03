@@ -188,9 +188,11 @@ has 'elastic_file_template' => (is => 'rw', isa => 'Str', default => q{%s_elasti
 				documentation => "Template for constructing the elastic file name.", alias => 'elastic_template');
 has 'image_file_template' => (is => 'rw', isa => 'Str', default => q{%s_%c.tif},
 			      documentation => "Template for constructing the image file name.", alias => 'image_template');
-#print dirname($INC{"Xray/BLA.pm"}).'../../Demeter/share/bla.xdi.ini', $/;
+
 has 'xdi_metadata_file'   =>  (is => 'rw', isa => 'Str', default => sub{abs_path(File::Spec->canonpath(dirname($INC{"Xray/BLA.pm"}).'/../Demeter/share/bla.xdi.ini')) || q{}},
 			       documentation => "Path to .ini file with beamline specific XDI metadata.");
+
+
 
 has 'elastic_file'       => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "The fully resolved file name containing the measured elastic image.");
@@ -202,6 +204,9 @@ has 'eimax'              => (is => 'rw', isa => 'LaxNum', default => 1,
 
 has 'shield_image'       => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			     documentation => "The PDL object containing the shield image.");
+has 'raw_image'          => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			     documentation => "The PDL object containing the raw image.");
+
 
 
 has 'bad_pixel_mask'   => (is => 'rw', isa => 'PDL', default => sub {PDL::null},

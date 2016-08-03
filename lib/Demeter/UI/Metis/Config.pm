@@ -29,10 +29,10 @@ sub new {
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
   $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
-  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
-  $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
-  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+  # $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  # $hbox ->  Add($self->{save}, 0, wxALL, 5);
+  # EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
+  # $app->mouseover($self->{save}, "Save this project to a Metis project file.");
 
 
   my $config = Demeter::UI::Wx::Config->new($self, \&target, $::app->{main});

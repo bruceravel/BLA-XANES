@@ -27,10 +27,10 @@ sub new {
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
   $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
-  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
-  $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
-  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+  # $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  # $hbox ->  Add($self->{save}, 0, wxALL, 5);
+  # EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
+  # $app->mouseover($self->{save}, "Save this project to a Metis file.");
 
 
 
@@ -48,15 +48,15 @@ sub new {
   $self->{additem} = Wx::Button->new($self, -1, "Add item");
   $self->{clear}   = Wx::Button->new($self, -1, "Delete all");
   $self->{import}  = Wx::Button->new($self, -1, "Import metadata");
-  $self->{save}    = Wx::Button->new($self, -1, "Save metadata");
+  $self->{savexdi}    = Wx::Button->new($self, -1, "Save metadata");
   $hbox ->  Add($self->{additem}, 1, wxGROW|wxALL, 5);
   $hbox ->  Add($self->{clear},   1, wxGROW|wxALL, 5);
   $hbox ->  Add($self->{import},  1, wxGROW|wxALL, 5);
-  $hbox ->  Add($self->{save},    1, wxGROW|wxALL, 5);
+  $hbox ->  Add($self->{savexdi},    1, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{additem}, sub{$_[0]->edit_item(q{}, q{}, q{})});
   EVT_BUTTON($self, $self->{clear},   sub{$_[0]->clear});
   EVT_BUTTON($self, $self->{import},  sub{$_[0]->Import($_[1], $app)});
-  EVT_BUTTON($self, $self->{save},    sub{$_[0]->save});
+  EVT_BUTTON($self, $self->{savexdi}, sub{$_[0]->save_xdi});
 
   $self->read_metadata(Demeter->co->default('metis', 'xdi_metadata_file'), $app);
 
@@ -253,7 +253,7 @@ sub hdf5_put {
   my ($self, $namespace, $parameter, $value) = @_;
   my $gp = $::app->{metadata}->group(ucfirst(lc($namespace)));
   $gp->attrSet(lc($parameter), $value);
-  $::app->indicate_state(0);
+  $::app->save_indicator(1);
 };
 
 sub remove {
@@ -280,7 +280,7 @@ sub clear {
   $::app->{main}->status("Removed all metadata.");
 };
 
-sub save {
+sub save_xdi {
   my ($self, $menu, $event) = @_;
 
   my $spectrum = $::app->{base};

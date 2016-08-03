@@ -22,12 +22,29 @@ BEGIN {
   };
 };
 
-use List::MoreUtils qw(none);
+use List::MoreUtils qw(any none);
 use Wx;
 Wx::InitAllImageHandlers();
 use Demeter::UI::Metis;
 use vars qw($app);
-our $tool = $ARGV[0] || 'herfd';
-$tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes mask);
+
+our $tool;
+our $hdf5file;
+use PDL::IO::HDF5;
+if (-e $ARGV[0]) {
+  my $toss = new PDL::IO::HDF5($ARGV[0]);
+  $tool = ($toss->group('configuration')->attrGet('mode'))[0];
+  if (any {$tool eq $_} qw(herfd xes rxes mask)) {
+    $hdf5file = $ARGV[0];
+  } else {
+    $tool = q{};
+  };
+  undef $toss;
+};
+
+if ((not $tool) or (none {$tool eq $_} qw(herfd xes rxes mask))) {
+  $tool = $ARGV[0] || 'herfd';
+  $tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes mask);
+};
 $app  = Demeter::UI::Metis->new;
 $app -> MainLoop;

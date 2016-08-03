@@ -21,15 +21,15 @@ sub new {
   my $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($hbox, 0, wxGROW|wxTOP|wxBOTTOM, 5);
 
-  $self->{title} = Wx::StaticText->new($self, -1, "Import files");
+  $self->{title} = Wx::StaticText->new($self, -1, "Import images");
   $self->{title}->SetForegroundColour( $app->{main}->{header_color} );
   $self->{title}->SetFont( Wx::Font->new( 16, wxDEFAULT, wxNORMAL, wxBOLD, 0, "" ) );
   $hbox ->  Add($self->{title}, 1, wxGROW|wxALL, 5);
 
-  $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
-  $hbox ->  Add($self->{save}, 0, wxALL, 5);
-  EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
-  $app->mouseover($self->{save}, "Save this project to an HDF5 file.");
+  # $self->{save} = Wx::BitmapButton->new($self, -1, $app->{save_icon});
+  # $hbox ->  Add($self->{save}, 0, wxALL, 5);
+  # EVT_BUTTON($self, $self->{save}, sub{$app->save_hdf5});
+  # $app->mouseover($self->{save}, "Save this project to a Metis file.");
 
   ## ------ stub, element, line ----------------------------------------
   $hbox = Wx::BoxSizer->new( wxHORIZONTAL );
@@ -267,6 +267,7 @@ sub fetch {
 	$app->{main}->status($ret->message, 'alert');
 	return;
       };
+      $app->{bla_of}->{$this}->raw_image($app->{bla_of}->{$this}->elastic_image);
       $ds->set($app->{bla_of}->{$this}->elastic_image, unlimited => 1); # put elastic image into hdf5 file
       my $denom = ($app->{bla_of}->{$this}->div10) ? 10. : 1.;
       $gp->attrSet('energy' => $this/$denom);
@@ -278,6 +279,7 @@ sub fetch {
 
 
   ## set the contents of the images group in the HDF5 file
+  $count = 0;
   foreach my $i (@image_list) {
     if ($i =~ m{$image_re}) {
       my $this = $+{i} || $+{c} || $+{T};
@@ -286,6 +288,8 @@ sub fetch {
       $ds->attrSet('file'  => File::Spec->catfile($self->{image_dir}->GetValue, $i));
       $ds->attrSet('skip'  => 0);
       #$ds->attrSet('energy'  => 0);
+      $self->{image_list}->SetClientData($count, $ds);
+      ++$count;
     };
   };
 
@@ -326,10 +330,13 @@ sub fetch {
     };
     $app->{Data}->{incident}->SetSelection(int($#{$rlist}/2));
   } else {
-    foreach my $im (@image_list) {
-      $app->{Data}->{incident}->Append($im);
+    foreach my $im (0 .. $#image_list) {
+      my $str = $self->{image_list}->GetString($im);
+      my $ds  = $self->{image_list}->GetClientData($im);
+      $app->{Data}->{incident}->Append($str, $ds);
     };
     $app->{Data}->{incident}->SetSelection(0);
+    $app->{Data}->{energy} = $app->{Data}->{incident}->GetStringSelection;
   };
 
   $app->{main}->status("Imported elastic and image files" .
@@ -377,7 +384,7 @@ sub fetch {
   $self->{elastic_list}->SetFocus;
   $self->{elastic_list}->SetSelection(0);
 
-  $app->indicate_state(0);
+  $app->save_indicator(1);
 
   $app->{main}->status("Found elastic and image files for $stub");
   undef $busy;
@@ -485,44 +492,20 @@ sub view {
   my $img    = $self->{$which."_list"} -> GetStringSelection;
   my $file   = File::Spec->catfile($folder, $img);
 
-  #  if ($which eq 'image') {
-  $app->{base}->plot_energy_point($file);
-  $app->{main}->status("Plotted energy point $file");
+  my $i = $self->{$which."_list"} -> GetSelection;
+  my $e = $app->{base}->elastic_energies->[$i];
+
+  if ($which eq 'image') {
+    my $ds = $self->{image_list}->GetClientData($i);
+    $app->{base}->plot_energy_point($ds->get, $self->{"image_list"} -> GetStringSelection);
+    $app->{main}->status("Plotted image file $file");
+  } else {
+    $app->{base}->plot_energy_point($app->{bla_of}->{$e}->raw_image, "energy = ".$app->{bla_of}->{$e}->energy);
+    $app->{main}->status("Plotted energy point ".$app->{bla_of}->{$e}->energy);
+  };
   return;
-  #  };
 }
-  
-#   my $elastic_re = $app->{base}->file_template($self->{elastic_template}->GetValue, {re=>1});
-#   my $spectrum;
-#   if ($img =~ m{$elastic_re}) {
-#     my $this = $+{e} || $+{c};
-#     $spectrum = $app->{bla_of}->{$this};
-#   } else {
-#     $app->{main}->status("Can't find the file you just clicked on...", 'error');
-#   };
 
-#   $spectrum -> tifffolder($folder);
-#   $spectrum -> stub($stub);
-#   if ($file =~ m{$elastic_re}) {
-#     my $this = $+{e} || $+{c};
-#     $spectrum -> energy($this);
-#   } else {
-#     $app->{main}->status("Can't figure out energy...", 'alert');
-#     return;
-#   };
-
-#   my $cbm = int($spectrum->elastic_image->max);
-#   if ($cbm < 1) {
-#     $cbm = 1;
-#   } elsif ($cbm > $spectrum->bad_pixel_value/$spectrum->imagescale) {
-#     $cbm = $spectrum->bad_pixel_value/$spectrum->imagescale;
-#   };
-#   $spectrum->cbmax($cbm);# if $step =~ m{social};
-#   $spectrum->plot_mask;
-#   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
-#   $app->{main}->status("Plotted ".$spectrum->elastic_file);
-
-# };
 
 
 sub SelectFolder {

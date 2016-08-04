@@ -7,17 +7,19 @@ use File::Basename;
 use List::MoreUtils qw(any none);
 use PDL::Lite;
 use PDL::IO::HDF5;
+use PDL::Graphics::Gnuplot qw(image);
 use Pod::Usage;
 use Term::ANSIColor;
 
 use Getopt::Long;
-my ($app, $conf, $elastic, $images, $metadata, $scan, $all) = (0,0,0,0,0,0,0);
+my ($app, $conf, $elastic, $images, $metadata, $scan, $all, $plot) = (0,0,0,0,0,0,0,0);
 GetOptions ("application|a"   => \$app,
             "configuration|c" => \$conf,
 	    "elastic|e"       => \$elastic,
 	    "images|i"        => \$images,
 	    "metadata|m"      => \$metadata,
 	    "scan|s"          => \$scan,
+	    "plot|p=s"        => \$plot,
 	    "all"             => \$all,);
 
 ($app, $conf, $elastic, $images, $metadata, $scan, $all) = (1,1,1,1,1,1,1) if $all;
@@ -26,17 +28,18 @@ my $file = $ARGV[0];
 
 my $hdf5 = new PDL::IO::HDF5($file);
 
-if (none {$_} ($app, $conf, $elastic, $images, $metadata, $scan, $all)) {
+if (none {$_} ($app, $conf, $elastic, $images, $metadata, $scan, $all, $plot)) {
   pod2usage(-exitval => 0);
 };
 
 attributes_only($hdf5, 'application')   if $app;
 attributes_only($hdf5, 'configuration') if $conf;
+steps_spots($hdf5)                      if $conf;
 metadata($hdf5)                         if $metadata;
 elastic($hdf5)                          if $elastic;
 images($hdf5)                           if $images;
 #scan($hdf5)                             if $scan;
-
+plot($hdf5, $plot)                      if $plot;
 
 sub attributes_only {
   my ($hdf5,$group,$tab) = @_;
@@ -45,6 +48,27 @@ sub attributes_only {
   $tab .= "\t";
   foreach my $a (sort $hdf5->group($group)->attrs) {
     print $tab, colored($a, 'yellow'), ': ', ($hdf5->group($group)->attrGet($a))[0], $/;
+  };
+};
+
+
+sub steps_spots {
+  my ($hdf5) = @_;
+  my $co = $hdf5->group('configuration');
+  my @datasets = $co->datasets;
+  if (any {$_ eq 'steps'} @datasets) {
+    my $steps = $co->dataset('steps')->get;
+    printf "\t%s\t%s\n", colored('steps', 'cyan'), $steps->atstr(0);
+    foreach my $i (1 .. $steps->dim(1) - 1) {
+      printf "\t\t%s\n", $steps->atstr($i);
+    };
+  };
+  if (any {$_ eq 'spots'} @datasets) {
+    my $spots = $co->dataset('spots')->get;
+    printf "\t%s\t%s\n", colored('spots', 'cyan'), $spots->atstr(0);
+    foreach my $i (1 .. $spots->dim(1) - 1) {
+      printf "\t\t%s\n", $spots->atstr($i);
+    };
   };
 };
 
@@ -110,13 +134,39 @@ sub images {
   };
 };
 
+
+sub plot {
+  my ($hdf5, $how) = @_;
+  my ($image, $which) = split(',', $how);
+  $which = 'mask' if not defined($which);
+  $which = 'mask' if (none {$_ eq $which} (qw(image mask shield)));
+
+  my $el = $hdf5->group('elastic');
+  my @groups = $el->groups;
+  if (none {$_ eq $image} @groups) {
+    print colored("No elastic group called $image", 'bold red'), $/;
+    return;
+  };
+  my @datasets = $el->group($image)->datasets;
+  if (none {$_ eq $which} @datasets) {
+    print colored("No $which image in the $image group", 'bold red'), $/;
+    return;
+  };
+
+  my $im = $el->group($image)->dataset($which)->get;
+  my $palette = "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )";
+  image({cbrange=>[0,], palette=>$palette, ymin=>194, ymax=>0, size=>'ratio 0.4'}, $im);
+  print "\n(type \"q\" in the plot window to dismiss it)\n\n";
+};
+
+
 1;
 
 __END__
 
 =head1 NAME
 
-lsbla - list contents of a Metis project file
+lsbla - query contents of a Metis project file
 
 =head1 SYNOPSIS
 
@@ -130,5 +180,8 @@ lsbla [options] [hdf5_file]
    -m            show metadata parameters
    -a            show application parameters
    --all         show everything
+   -p=<string>   plot an elastic image (<string> = energy,type)
+                 type = (image|mask|shield)
+
 
 =cut

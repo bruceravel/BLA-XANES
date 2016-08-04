@@ -264,11 +264,11 @@ sub save_indicator {
 sub on_close {
   my ($app) = @_;
   if ($::app->{save}) {
-    my $md = Wx::MessageDialog->new($app->{main}, "Save project?", "Save project?",
-  				    wxYES_NO|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
-    if ($md->ShowModal == wxID_YES) {
-      $::app->save_hdf5;
-    };
+    my $md = Wx::MessageDialog->new($app->{main}, "Save project before leaving?", "Save project before leaving?",
+  				    wxYES_NO|wxCANCEL|wxYES_DEFAULT|wxICON_QUESTION|wxSTAY_ON_TOP);
+    my $answer = $md->ShowModal;
+    return            if $answer == wxID_CANCEL;
+    $::app->save_hdf5 if $answer == wxID_YES;
   };
   $app->Destroy;
 };
@@ -469,6 +469,9 @@ sub set_parameters {
   $app->{configuration}->attrSet(lonely_pixel_value   => $app->{Mask}->{lonelyvalue}->GetValue);
   # $app->{configuration}->attrSet(scalemask           => $app->{Mask}->{multiplyvalue}->GetValue);
   $app->{configuration}->attrSet(radius               => $app->{Mask}->{arealvalue}->GetValue);
+
+  $app->{configuration}->attrSet(energy               => $app->{Data}->{energy});
+  $app->{configuration}->attrSet(scanfile             => $app->{base}->scanfile);
 
   my $ds = $app->{configuration}->dataset('steps');
   my @steps = $app->{Mask}->{steps_list}->GetStrings;

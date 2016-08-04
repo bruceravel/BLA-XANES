@@ -6,6 +6,8 @@ use warnings;
 use Cwd;
 use Chemistry::Elements qw(get_Z get_symbol);
 use File::Basename;
+use File::Copy;
+use File::Slurper qw(read_text);
 use Xray::Absorption;
 
 use Wx qw( :everything );
@@ -207,10 +209,15 @@ sub fetch {
   $app->set_parameters;
 
   if (not $app->{base}->noscan) {
-    if (not -e File::Spec->catfile($app->{base}->scanfolder, $app->{base}->file_template($app->{base}->scan_file_template))) {
+    my $scanfile = File::Spec->catfile($app->{base}->scanfolder, $app->{base}->file_template($app->{base}->scan_file_template));
+    if (not -e $scanfile) {
       $app->{main}->status(sprintf("Scan file for %s not found in %s.", $app->{base}->stub, $app->{base}->scanfolder) , 'alert');
       return;
     };
+    $app->{hdf5}->group('scan')->attrSet(file=>$scanfile);
+    $app->{hdf5}->group('scan')->attrSet(contents=>read_text($scanfile));
+    copy($scanfile, File::Spec->catfile($app->{base}->outfolder, "scanfile"));
+    $app->{hdf5}->group('scan')->attrSet(temporary=>File::Spec->catfile($app->{base}->outfolder, "scanfile"));
   };
 
   if (not $app->{base}->noscan) {

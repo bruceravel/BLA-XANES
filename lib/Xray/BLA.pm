@@ -586,6 +586,15 @@ sub apply_mask {
   } else {
     $image = File::Spec->catfile($self->tiffolder, $self->file_template($self->image_file_template, {counter=>$tif}));
   };
+  if (ref($args{image}) =~ m{PDL}) {		# explicitly provide a PDL containing the image
+    printf("  %3d", $tif) if ($args{verbose} and (not $tif % 10));
+    my $masked = $self->elastic_image * $args{image};
+    my $sum = int($masked->sum / $self->eimax);
+    printf("  %7d\n", $sum) if ($args{verbose} and (not $tif % 10));
+    $ret->status($sum);
+    return $ret;
+  };
+  ## otherwise we are getting the image from a file
   if (not -e $image) {
     warn "\tskipping $image, file not found\n" if not $args{silence};
     $ret->message("skipping $image, file not found\n");
@@ -637,12 +646,21 @@ sub get_incident_energies {
 ##    it
 ##    ifl
 ##    ir
+
+## the bit beginning with "if ($args{coderef})" demands some eplanation
+## this is a way of providing the XES measurement at each energy point from a PDL
+## without breaking the ability of this routine to read from a list of files.
+## this is used in Metis to pass PDLs from the HDF5 file into the "while (<$SCAN>)"
+## loop.  See Demeter::UI::Metis::Data::plot_herfd, 'round abouts line 305
+## the coderef takes the energy index (column 11) as its argument
 sub scan {
   my ($self, @args) = @_;
   my %args = @args;
-  $args{verbose} ||= 0;
-  $args{xdiini}  ||= $self->xdi_metadata_file || q{};
-  $args{noxanes} ||= 0;
+  $args{verbose}  ||= 0;
+  $args{xdiini}   ||= $self->xdi_metadata_file || q{};
+  $args{noxanes}  ||= 0;
+  $args{scanfile} ||= $self->scanfile;
+  $args{coderef}  ||= 0;
   my $ret = Xray::BLA::Return->new;
   local $|=1;
   $self->clear_xdata;
@@ -652,8 +670,8 @@ sub scan {
   my (@data, @point);
 
   my $i = 1;
-  print $self->report("Reading scan from ".$self->scanfile, 'yellow') if $args{verbose};
-  open(my $SCAN, "<", $self->scanfile);
+  print $self->report("Reading scan from ".$args{scanfile}, 'yellow') if $args{verbose};
+  open(my $SCAN, "<", $args{scanfile});
   while (<$SCAN>) {
     next if m{\A\#};
     next if m{\A\s*\z};
@@ -662,7 +680,11 @@ sub scan {
     my @list = split(" ", $_);
 
     $self->call_sentinal($list[-1]) if not ($i % 30);
-    my $loop = $self->apply_mask($list[11], verbose=>$args{verbose}) if not $args{noxanes};
+    my $image = 0;
+    if ($args{coderef}) {
+      $image = &{$args{coderef}}($list[11]-1);
+    };
+    my $loop = $self->apply_mask($list[11], image=>$image, verbose=>$args{verbose}) if not $args{noxanes};
     push @point, $list[0];
     if ($args{noxanes}) {push @point, 1} else {push @point, sprintf("%.10f", $loop->status/$list[3])};
     push @point, @list[3..6];

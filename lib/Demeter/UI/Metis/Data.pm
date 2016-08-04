@@ -270,6 +270,7 @@ sub plot_herfd {
   my $start = DateTime->now( time_zone => 'floating' );
 
   my $np = $app->{Files}->{image_list}->GetCount;
+  $app->{base}->energy($self->{energy});
   my $spectrum = $app->{bla_of}->{$self->{energy}};
   $spectrum->sentinal(sub{$app->{main}->status("Processing point ".$_[0]." of $np", 'wait')});
 
@@ -278,7 +279,7 @@ sub plot_herfd {
   $args{verbose} = 0;
   $args{unity}   = 0;
   ## make sure the AND mask step has been done.  doing it twice has no impact
-  $spectrum -> do_step('andmask', %args);
+  #$spectrum -> do_step('andmask', %args);
   $spectrum -> npixels($spectrum->elastic_image->sum);
   my $rsteps = $self->fetch_steps($spectrum, $app);
 
@@ -298,7 +299,18 @@ sub plot_herfd {
   };
 
   my $metadata = $app->{XDI}->fetch;
-  my $ret = $spectrum -> scan(verbose=>0, xdiini=>$metadata); #xdiini=>$spectrum->xdi_metadata_file);
+  my $scanfile = ($app->{hdf5}->group('scan')->attrGet('temporary'))[0];
+
+  ## the coderef is a way of passing a PDL containing the XES image
+  ## from the HDF5 file into the scan method in Xray::BLA
+  ## the code ref takes an integer argument, which is from the scanfile, and indicates
+  ## the index of the data point in the scan.  the XES images are stored in energy
+  ## order in the HDF5 file.  whew!
+  my $ret = $spectrum -> scan(verbose=>0, xdiini=>$metadata, scanfile=>"$scanfile",
+			      coderef=>sub{my $i = ($app->{hdf5}->group('images')->datasets)[$_[0]];
+					   return $app->{hdf5}->group('images')->dataset($i)->get;
+					 }
+			     );
   $self->{herfd_file} = $ret->message;
   my $title = $spectrum->stub . ' at ' . $spectrum->energy;
 
@@ -375,7 +387,7 @@ sub plot_xes {
   #my $file = $self->determine_xes_image($app);
   #my $point = $app->{bla_of}->{$self->{energy}}->Read($file);
   my $point = $self->{incident}->GetClientData($self->{incident}->GetCurrentSelection)->get; #);
-
+  
   $self->{showmasks}->SetValue(0) if $self->{reuse}->GetValue;
 
   my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $self->{reuse}->GetValue);
@@ -435,10 +447,14 @@ sub all_masks {
       $app->{bla_of}->{$key}->plot_mask;
     };
     ## save masks and shields to HDF5 file
-    my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('mask');
-    $ds -> set($app->{bla_of}->{$key}->elastic_image->byte, unlimited => 1);
-    $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('shield');
-    $ds -> set($app->{bla_of}->{$key}->shield_image->byte, unlimited => 1);
+    if (not $app->{bla_of}->{$key}->elastic_image->isempty) {
+      my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('mask');
+      $ds -> set($app->{bla_of}->{$key}->elastic_image->byte, unlimited => 1);
+    };
+    if (not $app->{bla_of}->{$key}->shield_image->isempty) {
+      my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('shield');
+      $ds -> set($app->{bla_of}->{$key}->shield_image->byte, unlimited => 1);
+    };
   };
   #my $max = max(@n);
   #@n = map {$max / $_} @n;
@@ -446,7 +462,8 @@ sub all_masks {
     next if ($key eq 'aggregate');
     $app->{bla_of}->{$key}->normpixels($max/$app->{bla_of}->{$key}->npixels);
   };
-
+  $self->{incident}->SetFocus;
+  
   return \@xes;
 };
 
@@ -682,7 +699,19 @@ sub plot_rixs {
     $app->{main}->status(sprintf("Computing HERFD for emission energy %.1f (%d of %d)",
 				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
 			 'wait');
-    my $ret = $app->{bla_of}->{$key} -> scan(verbose=>0, xdiini=>q{});
+
+    my $scanfile = ($app->{hdf5}->group('scan')->attrGet('temporary'))[0];
+
+    ## the coderef is a way of passing a PDL containing the XES image
+    ## from the HDF5 file into the scan method in Xray::BLA
+    ## the code ref takes an integer argument, which is from the scanfile, and indicates
+    ## the index of the data point in the scan.  the XES images are stored in energy
+    ## order in the HDF5 file.  whew!
+    my $ret = $app->{bla_of}->{$key} -> scan(verbose=>0, xdiini=>q{}, scanfile=>"$scanfile",
+					     coderef=>sub{my $i = ($app->{hdf5}->group('images')->datasets)[$_[0]];
+							  return $app->{hdf5}->group('images')->dataset($i)->get;
+							}
+					    );
     push @sorted_list, $app->{bla_of}->{$key};
 
     my $toss = Demeter::Data->new();
@@ -787,6 +816,7 @@ sub plot_plane {
   $app->{base}->plot_plane($holol);
   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $self->{replot_rxes}->Enable(1);
+  $self->{replot_rxes}->SetFocus;
   $self->{save_rxes}->Enable(1);
   $app->{main}->status("Plotted RXES plane for " . $app->{base}->stub . Xray::BLA->howlong($start, '.  That'));
   $app->{plane_file} = $ret->message;

@@ -132,6 +132,8 @@ sub open_hdf5 {
   $app->save_indicator(0);
   $app->{main}->status("Imported Metis project file $::hdf5file" .
 		       $app->{base}->howlong($start, '.  That'));
+
+  push_scan($app);
 };
 
 
@@ -168,6 +170,7 @@ sub push_configuration {
   $app->{base}->$_(attribute($co, $_)) foreach (qw(color energycounterwidth gaussian_kernel imagescale outimage
 						   polyfill_gaps polyfill_order splot_palette_name terminal
 						   tiffcounter xdi_metadata_file));
+  $app->{base}->scanfile(attribute($co, 'scanfile'));
 
   ##       Files
   $app->{Files}->{stub}             -> SetValue(attribute($co, "stub")               );
@@ -194,6 +197,9 @@ sub push_configuration {
   $app->{Mask}->{arealvalue}        -> SetValue(attribute($co, 'radius'));
   # $app->{Mask}->{multiplyvalue}    -> GetValue(attribute($co, 'scalemask')          );
 
+  $app->{Data}->{energy} = attribute($co, 'energy');
+  $app->{Data}->{energylabel}->SetLabel('Current mask energy is '.attribute($co, 'energy'));
+
   $app->{Mask}->{stub}->SetLabel("Stub is ".attribute($co, "stub"));
   $app->set_parameters;
 };
@@ -216,7 +222,7 @@ sub push_steps_spots {
 
     if ($app->{tool} ne 'mask') {
       $app->{Data}->{stub}->SetLabel("Stub is ".attribute($co, "stub"));
-      $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$app->{Mask}->{energy}->GetStringSelection);
+      #$app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$app->{Mask}->{energy}->GetStringSelection);
       #$app->{Data}->{energy} = $spectrum->energy;
       foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
 	$app->{Data}->{$k}->Enable(1);
@@ -270,7 +276,7 @@ sub push_elastic {
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
   my $start = ($app->{tool} eq 'herfd') ? int(($#{$app->{base}->elastic_energies}+1)/2) : 0;
   $app->{Mask}->{energy} -> SetSelection($start);
-  $app->{Data}->{energy}  = $app->{bla_of}->{$groups[0]}->energy;
+  #$app->{Data}->{energy}  = $app->{bla_of}->{$groups[0]}->energy;
 
   $app->{main}->status("Imported elastic images from Metis project file.");
 };
@@ -289,6 +295,20 @@ sub push_images {
   };
   $app->{Data}->{incident}->SetSelection(0);
   $app->{main}->status("Imported measurements from Metis project file.");
+};
+
+
+sub push_scan {
+  my ($app) = @_;
+  my $sc = $app->{hdf5}->group('scan');
+  my @attributes = $sc->attrs;
+  if (any {$_ eq 'contents'} @attributes) {
+    open(my $SCAN, '>', File::Spec->catfile($app->{base}->outfolder, "scanfile"));
+    print $SCAN attribute($sc, 'contents');
+    close $SCAN;
+    $sc->attrSet(temporary=>File::Spec->catfile($app->{base}->outfolder, "scanfile"));
+  };
+
 };
 
 1;

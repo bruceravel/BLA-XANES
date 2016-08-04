@@ -177,6 +177,7 @@ sub plot_energy_point {
     $title ||= basename($file);
     $point = $self->Read($file);
   } else {
+    print "What are we doing here?\n";
     return;
   };
   $title = $self->escape_us($title);
@@ -283,6 +284,7 @@ sub plot_xes {
 
 sub escape_us {
   my ($self, $string) = @_;
+  $string ||= q{};
   if ($self->is_windows) {
     $string =~ s{_}{\\_}g;
   } else {

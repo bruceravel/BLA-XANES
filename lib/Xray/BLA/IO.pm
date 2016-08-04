@@ -169,11 +169,13 @@ sub xdi_xes_head {
   $text .= sprintf "# %s.%s: %s\n", "Element", "line", $self->line;
   if ($xesimage) {
     my $pilatus = $self->fetch_metadata($xesimage);
-    $text .= sprintf "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
-    $text .= sprintf "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_setting};
-    $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
-    $text .= sprintf "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
-    $text .= sprintf "# %s.%s: %s\n", "BLA", "xesimage", $xesimage if $xesimage;
+    if (%$pilatus) {
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_setting};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
+      $text .= sprintf "# %s.%s: %s\n", "BLA", "xesimage", $xesimage if $xesimage;
+    };
   };
   $text .= "# /////////////////////////\n";
   return $text;

@@ -687,8 +687,8 @@ sub plot_rixs {
 				 $app->{bla_of}->{$key}->energy/$denom, $count, $nemission),
 			 'wait');
     $app->{bla_of}->{$key}->steps($rsteps); # bring all the masks up to date
-    $app->{bla_of}->{$key}->mask(elastic=>basename($app->{bla_of}->{$key}->elastic_file),
-				 aggregate=>$app->{bla_of}->{aggregate});
+    $app->{bla_of}->{$key}->elastic_image($app->{bla_of}->{$key}->raw_image);
+    $app->{bla_of}->{$key}->mask();
     if ($self->{rshowmasks}->GetValue) {
       $app->{bla_of}->{$key}->cbmax(1);
       $app->{bla_of}->{$key}->plot_mask;
@@ -803,7 +803,8 @@ sub plot_plane {
     my $energy = $app->{bla_of}->{$key}->incident;
     ++$count;
     $spectrum  = $app->{bla_of}->{$key};
-    $point = $app->{bla_of}->{$self->{energy}}->Read($app->{bla_of}->{$key}->elastic_file);
+    $point = $app->{bla_of}->{$key}->raw_image;
+    #$point = $app->{bla_of}->{$self->{energy}}->Read($app->{bla_of}->{$key}->elastic_file);
 
     my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $reuse);
     $holol->{$energy} = $r_xes;	# $ret is a list-of-lists

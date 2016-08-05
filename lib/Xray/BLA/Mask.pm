@@ -46,9 +46,11 @@ sub mask {
   $self->bad_pixel_mask(PDL::null);
   $self->npixels(0);
 
-  my $ret = $self->check($args{elastic});
-  if ($ret->status == 0) {
-    die $self->report($ret->message, 'bold red');
+  if ($args{elastic}) {
+    my $ret = $self->check($args{elastic});
+    if ($ret->status == 0) {
+      die $self->report($ret->message, 'bold red');
+    };
   };
 
   ## import elastic image and store basic properties
@@ -191,7 +193,6 @@ sub check {
   my ($self, $elastic) = @_;
 
   my $ret = Xray::BLA::Return->new;
-  
   ## does elastic file exist?
   $elastic ||= $self->file_template($self->elastic_file_template);
   ##$elastic ||= join("_", $self->stub, 'elastic', $self->energy, $self->tiffcounter).'.tif';
@@ -215,7 +216,7 @@ sub check {
       $ret->message($sf->message);
     };
   };
-  $self->elastic_image($self->Read($self->elastic_file));
+  $self->elastic_image($self->Read($self->elastic_file)) if ($self->elastic_image->isnull or $self->elastic_image->isempty);
 
   return $ret;
 };

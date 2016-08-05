@@ -15,6 +15,8 @@ use base 'Wx::Panel';
 use Wx::Event qw(EVT_COMBOBOX EVT_BUTTON EVT_RADIOBOX EVT_CHECKBOX EVT_RIGHT_DOWN EVT_MENU EVT_TOGGLEBUTTON);
 use Wx::Perl::TextValidator;
 
+use PDL::NiceSlice;
+
 use Demeter::UI::Metis::PluckPoint;
 
 my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
@@ -401,12 +403,12 @@ sub SelectEnergy {
     };
   };
 
-  my $ret = $spectrum->check($elastic_file);
-  if ($ret->status == 0) {
-     $app->{main}->status($ret->message, 'alert');
-      undef $busy;
-     return;
-  };
+  # my $ret = $spectrum->check($elastic_file);
+  # if ($ret->status == 0) {
+  #    $app->{main}->status($ret->message, 'alert');
+  #     undef $busy;
+  #    return;
+  # };
 
   if ($interactive) {
     foreach my $k (@most_widgets) {
@@ -488,15 +490,16 @@ sub Reset {
 
   $self->{steps_list}->Clear;
   $spectrum->energy($energy) if $energy;
-
-  my $elastic_file;
-  if ($spectrum->masktype eq 'single') {
-    my $ret = $spectrum->check(basename($spectrum->elastic_file));
-    if ($ret->status == 0) {
-      $app->{main}->status($ret->message, 'alert');
-      return;
-    };
-  };
+  $spectrum->elastic_image($spectrum->raw_image);
+  
+  # my $elastic_file;
+  # if ($spectrum->masktype eq 'single') {
+  #   my $ret = $spectrum->check(basename($spectrum->elastic_file));
+  #   if ($ret->status == 0) {
+  #     $app->{main}->status($ret->message, 'alert');
+  #     return;
+  #   };
+  # };
   foreach my $k (@most_widgets) {
     $self->{$k}->Enable(0);
   };
@@ -820,7 +823,7 @@ sub savemask {
   };
   my $file = $fd->GetPath;
   my $args = ($spectrum->is_windows) ? {FORMAT=>'TIFF'} : {};
-  $spectrum->elastic_image->wim($file, $args);
+  $spectrum->elastic_image->(0:-1,-1:0)->wim($file, $args);
   if (($spectrum->is_windows) and ($file !~ m{tif\z})) {
     $app->{main}->status("TIFF is the only output format for Windows.  A TIFF file was written regardless of the filename.");
   } else {
@@ -943,6 +946,9 @@ sub undo_last_step {
   if ($last == 1) {
     $self->Reset($event, $app);
   } else {
+    my $energy = $self->{energy}->GetStringSelection;
+    my $spectrum = $app->{bla_of}->{$energy};
+    $spectrum->elastic_image($spectrum->raw_image);
     $self->SelectEnergy(q{}, $app);
     #$self->replot($event, $app);
   };

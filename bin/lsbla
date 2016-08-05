@@ -12,7 +12,7 @@ use Pod::Usage;
 use Term::ANSIColor;
 
 use Getopt::Long;
-my ($app, $conf, $elastic, $images, $metadata, $scan, $all, $plot) = (0,0,0,0,0,0,0,0);
+my ($app, $conf, $elastic, $images, $metadata, $scan, $all, $mode, $plot) = (0,0,0,0,0,0,0,0,0);
 GetOptions ("application|a"   => \$app,
             "configuration|c" => \$conf,
 	    "elastic|e"       => \$elastic,
@@ -20,6 +20,7 @@ GetOptions ("application|a"   => \$app,
 	    "metadata|m"      => \$metadata,
 	    "scan|s"          => \$scan,
 	    "plot|p=s"        => \$plot,
+	    "mode"            => \$mode,
 	    "all"             => \$all,);
 
 ($app, $conf, $elastic, $images, $metadata, $scan, $all) = (1,1,1,1,1,1,1) if $all;
@@ -28,10 +29,11 @@ my $file = $ARGV[0];
 
 my $hdf5 = new PDL::IO::HDF5($file);
 
-if (none {$_} ($app, $conf, $elastic, $images, $metadata, $scan, $all, $plot)) {
+if (none {$_} ($app, $conf, $elastic, $images, $metadata, $scan, $all, $mode, $plot)) {
   pod2usage(-exitval => 0);
 };
 
+mode($hdf5)                            if $mode;
 attributes_only($hdf5, 'application')   if $app;
 attributes_only($hdf5, 'configuration') if $conf;
 steps_spots($hdf5)                      if $conf;
@@ -40,6 +42,12 @@ elastic($hdf5)                          if $elastic;
 images($hdf5)                           if $images;
 #scan($hdf5)                             if $scan;
 plot($hdf5, $plot)                      if $plot;
+
+sub mode {
+  my ($hdf5) = @_;
+  printf "%s: mode is %s\n", $file,
+    colored(($hdf5->group('configuration')->attrGet('mode'))[0], 'bold cyan');
+};
 
 sub attributes_only {
   my ($hdf5,$group,$tab) = @_;

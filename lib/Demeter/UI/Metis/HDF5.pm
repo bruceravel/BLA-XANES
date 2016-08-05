@@ -69,7 +69,7 @@ sub topof_hdf5 {
   $app->{hdf5file}      = $hdfile;
   $app->{elastic_group} = $app->{hdf5}->group("/elastic");
   $app->{image_group}   = $app->{hdf5}->group("/images");
-  $app->{scan}          = $app->{hdf5}->group("/scan");
+  $app->{scan}          = $app->{hdf5}->group("/scan") if ($app->{tool} !~ m{\A(?:xes|mask)\z});
   $app->{metadata}      = $app->{hdf5}->group("/metadata");
   $app->{configuration} = $app->{hdf5}->group("/configuration");
   $app->{application}   = $app->{hdf5}->group("/application");
@@ -133,7 +133,7 @@ sub open_hdf5 {
   $app->{main}->status("Imported Metis project file $::hdf5file" .
 		       $app->{base}->howlong($start, '.  That'));
 
-  push_scan($app);
+  push_scan($app) if ($app->{tool} !~ m{\A(?:xes|mask)\z});
 };
 
 
@@ -164,13 +164,13 @@ sub push_metadata {
 sub push_configuration {
   my ($app) = @_;
   my $co = $app->{hdf5}->group('configuration');
-
+  my @attributes = $co->attrs;
   $app->{tool} = attribute($co, "mode");
 
   $app->{base}->$_(attribute($co, $_)) foreach (qw(color energycounterwidth gaussian_kernel imagescale outimage
 						   polyfill_gaps polyfill_order splot_palette_name terminal
 						   tiffcounter xdi_metadata_file));
-  $app->{base}->scanfile(attribute($co, 'scanfile'));
+  $app->{base}->scanfile(attribute($co, 'scanfile')) if ($app->{tool} !~ m{\A(?:xes|mask)\z});;
 
   ##       Files
   $app->{Files}->{stub}             -> SetValue(attribute($co, "stub")               );
@@ -197,8 +197,12 @@ sub push_configuration {
   $app->{Mask}->{arealvalue}        -> SetValue(attribute($co, 'radius'));
   # $app->{Mask}->{multiplyvalue}    -> GetValue(attribute($co, 'scalemask')          );
 
-  $app->{Data}->{energy} = attribute($co, 'energy');
-  $app->{Data}->{energylabel}->SetLabel('Current mask energy is '.attribute($co, 'energy'));
+  if ($app->{tool} ne 'mask') {
+    if (any {$_ = 'energy'} @attributes) {
+      $app->{Data}->{energy} = attribute($co, 'energy');
+      $app->{Data}->{energylabel}->SetLabel('Current mask energy is '.attribute($co, 'energy'));
+    };
+  };
 
   $app->{Mask}->{stub}->SetLabel("Stub is ".attribute($co, "stub"));
   $app->set_parameters;
@@ -213,7 +217,8 @@ sub push_steps_spots {
     $steps = $co->dataset('steps')->get;
     $app->{Mask}->{steps_list}->Clear;
     foreach my $i (0 .. $steps->dim(1) - 1) {
-      $app->{Mask}->{steps_list}->Append( $steps->atstr($i) );
+      my $this = $steps->atstr($i);
+      $app->{Mask}->{steps_list}->Append( "$this" );
     };
     $app->{Mask}->most(1);
     $app->{Mask}->{replot}->Enable(1);
@@ -233,7 +238,8 @@ sub push_steps_spots {
     $spots = $co->dataset('spots')->get;
     $app->{Mask}->{spots_list}->Clear;
     foreach my $i (0 .. $spots->dim(1) - 1) {
-      $app->{Mask}->{spots_list}->Append( $spots->atstr($i) );
+      my $this = $spots->atstr($i);
+      $app->{Mask}->{spots_list}->Append( $this );
     };
   };
 
@@ -291,9 +297,9 @@ sub push_images {
     my $fname = ($ds -> attrGet('file'))[0];
     $fname = "$fname";
     $app->{Files}->{image_list}->Append(basename($fname),$ds);
-    $app->{Data}->{incident}->Append(basename($fname),$ds);
+    $app->{Data}->{incident}->Append(basename($fname),$ds) if ($app->{tool} ne 'mask');
   };
-  $app->{Data}->{incident}->SetSelection(0);
+  $app->{Data}->{incident}->SetSelection(0) if ($app->{tool} ne 'mask');
   $app->{main}->status("Imported measurements from Metis project file.");
 };
 

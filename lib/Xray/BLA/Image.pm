@@ -25,6 +25,7 @@ sub Read {
   my ($self, $file) = @_;
   my $bytes =  -s $file;
   my $longs = $bytes / 4;
+  print join("|", 'Read: ', caller), $/;
 
   my $img  = readflex($file, [ { Type=>'long', NDims=>1, Dims=>[$longs] } ]);
   $img /= $self->tifscale;

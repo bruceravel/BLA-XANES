@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Scalar::Util qw(looks_like_number);
-use Time::HiRes qw(usleep);
+#use Time::HiRes qw(usleep);
 
 use Wx qw( :everything );
 use Wx::DND;

@@ -307,11 +307,50 @@ the user will be exported into their own subgroups.
 
    }
 
+.. todo:: ``BLA`` and ``Pilatus`` metadata families
+
 
 The scan group
 --------------
 
-Something about the scan file...
+The scan file is simply slurped into the HDF5 file and stored as the
+``contents`` attribute of the scan group.
+
+.. blockdiag::
+
+   blockdiag {
+
+     node_width = 200;
+     default_fontsize = 14;
+
+     A [label = "scan group"];
+     B [label = "contents"];
+     BP [label = "slurped-in scan file", style=dotted, shape=note];
+     C [label = "file"];
+     CP [label = "path to scan file", style=dotted, shape=note];
+     D [label = "temporary"];
+     DP [label = "scan file temporary location", style=dotted, shape=note];
+
+     A -> B;
+     A -> C;
+     A -> D;
+     B -- BP [style=dotted];
+     C -- CP [style=dotted];
+     D -- DP [style=dotted];
+
+     group {
+       label = "attributes";
+       B, C, D;
+     }
+
+   }
+
+The ``file`` attribute contains the full path to the slurped-in file.
+The ``temporary`` attribute holds the full path to the location where
+:demeter:`metis` writes out the stash file temporarily for use in
+``HERFD`` and ``RXES`` modes.  That changes between instances of the
+program.
+
 
 
 The application group

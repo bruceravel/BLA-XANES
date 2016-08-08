@@ -1,0 +1,288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The HDF5 save file &mdash; Xray::BLA and Metis 4 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../_static/metis_icon.ico"/>
+    <link rel="top" title="Xray::BLA and Metis 4 documentation" href="../index.html" />
+    <link rel="up" title="The Metis program" href="index.html" />
+    <link rel="next" title="Plotting and visualization" href="../plotting.html" />
+    <link rel="prev" title="The XDI (metadata) tool" href="xdi.html" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/demeter.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/keys.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/program.css" />
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../plotting.html" title="Plotting and visualization"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="xdi.html" title="The XDI (metadata) tool"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">The Metis program</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-hdf5-save-file">
+<h1>The HDF5 save file<a class="headerlink" href="#the-hdf5-save-file" title="Permalink to this headline">¶</a></h1>
+<p>The top level structure of the save file looks like the diagram below.
+The root has a single attribute which identifies the creator of the
+HDF5 file. This is likely to be &quot;Metis&quot;, although if we ever get
+around to packing the images into an HDF5 file at the beamline, then
+the creator attribute might be something else.</p>
+<p>The “elastic” and “images” groups contain the actual
+content of the various images made during the measurement.  The
+“elastic” group contains the sequence of elastic images, while
+the “images” groups contains the set of resonant or
+non-resonant XES images.</p>
+<p>The other groups are a way of organizing the many parameters of the
+<font size=-1 color="#8C4112">METIS</font> analysis project, including the various attributes of
+the <a class="reference external" href="../lib/Xray/BLA.html">Xray::BLA object</a>, <a class="reference external" href="https://github.com/XraySpectroscopy/XAS-Data-Interchange">the XDI metadata</a>, and the
+contents of the scan file.</p>
+<p>The “application” group contains debugging information –
+mostly version numbers of major packages used by <font size=-1 color="#8C4112">METIS</font>, a
+string identifying the computer platform used to create the file, and
+a timestamp.</p>
+<div><img height="600" src="../_images/blockdiag-73d535d980291eeabf35389cd4e37dc671b3c710.png" width="592" /></div><table border="1" class="docutils">
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>root</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>name</td>
+<td>name of program creating file</td>
+</tr>
+<tr class="row-even"><td>application</td>
+<td>Version numbers, timestamp</td>
+</tr>
+<tr class="row-odd"><td>configuration</td>
+<td>Xray::BLA attributes</td>
+</tr>
+<tr class="row-even"><td>elastic</td>
+<td>collection of elastic images</td>
+</tr>
+<tr class="row-odd"><td>images</td>
+<td>collection of XES images</td>
+</tr>
+<tr class="row-even"><td>metadata</td>
+<td>XDI metadata</td>
+</tr>
+<tr class="row-odd"><td>scan</td>
+<td>information from scan file</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="the-elastic-group">
+<h2>The elastic group<a class="headerlink" href="#the-elastic-group" title="Permalink to this headline">¶</a></h2>
+<p>The elastic group contains the sequence of elastic images, each image
+in a subgroup in the group.  The name of the data set is the energy
+portion of the filename of the measured tiff image.  In the case of
+one of the Nb Kβ<sub>2,4</sub> measurements seen throughout this
+manual, the filename of an elastic image might be something like
+<code class="file docutils literal"><span class="pre">NbF5_Kb2_elastic_189555_0001.tif</span></code>.  That image was measured
+with the incident energy at 18955.5 eV.  The decimal was removed to
+make the filename.  The name of the group containing this image is
+<code class="docutils literal"><span class="pre">189555</span></code>.</p>
+<p>The subgroups each contain three datasets.  These datasets contain the
+original image (<code class="docutils literal"><span class="pre">image</span></code>), the shield if used (<code class="docutils literal"><span class="pre">shield</span></code>), and the
+final mask (<code class="docutils literal"><span class="pre">mask</span></code>).</p>
+<p>Each subgroup has two attributes associated with it, called <code class="docutils literal"><span class="pre">energy</span></code>
+and <code class="docutils literal"><span class="pre">filename</span></code>.  In the case of dataset <code class="docutils literal"><span class="pre">189555</span></code>, the <code class="docutils literal"><span class="pre">energy</span></code>
+attribute is set to the energy value, 18955.5 eV, and the <code class="docutils literal"><span class="pre">filename</span></code>
+is set to the fully resolved filename of the tiff file.</p>
+<div><img height="440" src="../_images/blockdiag-74842320926e9e9655dd3d7cdb6c1b06d2af040c.png" width="1120" /></div></div>
+<div class="section" id="the-images-group">
+<h2>The images group<a class="headerlink" href="#the-images-group" title="Permalink to this headline">¶</a></h2>
+<p>The images group contains all of the resonant or non-resonant XES
+images made as part of the measurement.  In <code class="docutils literal"><span class="pre">XES</span></code> mode, this will
+typically be some number of repetitions made at an energy well above
+the edge.  In <code class="docutils literal"><span class="pre">HERFD</span></code> mode, this will be sequence of images made at
+each point in the XANES scan.  In <code class="docutils literal"><span class="pre">RXES</span></code> and <code class="docutils literal"><span class="pre">Mask</span></code> modes, this
+group will be empty.</p>
+<p>In <code class="docutils literal"><span class="pre">HERFD</span></code> mode, each dataset in this group will have an <code class="docutils literal"><span class="pre">energy</span></code>
+attribute giving it's energy in the XANES scan.  In <code class="docutils literal"><span class="pre">XES</span></code> mode, the
+<code class="docutils literal"><span class="pre">energy</span></code> attribute is absent.  The <code class="docutils literal"><span class="pre">filename</span></code> attribute is set to
+the fully resolved filename of the tiff file.  The <code class="docutils literal"><span class="pre">skip</span></code> attribute
+is a flag which tells <font size=-1 color="#8C4112">METIS</font> whether to exclude an image
+from the analysis.  For example, in <code class="docutils literal"><span class="pre">XES</span></code> mode, setting this to a
+false value for an image would exclude it from a merge of the
+resulting XES spectra.  In <code class="docutils literal"><span class="pre">HERFD</span></code> mode it would be excluded from
+the XANES spectrum (not unlike deglitching).</p>
+<div><img height="360" src="../_images/blockdiag-281015f1ddb6e970d34519b322bebde5b1d505c5.png" width="856" /></div></div>
+<div class="section" id="the-configuration-group">
+<h2>The configuration group<a class="headerlink" href="#the-configuration-group" title="Permalink to this headline">¶</a></h2>
+<p>This group has no datasets, just a lot of attributes for capturing
+much of the structure of the <a class="reference external" href="../lib/Xray/BLA.html">Xray::BLA object</a> in the context of <font size=-1 color="#8C4112">METIS</font>, this
+group captures the values of most of the controls on <a class="reference external" href="files.html">the Files</a> and <a class="reference external" href="mask.html">Mask pages</a> as well as all of the
+contents of <a class="reference external" href="config.html">the Configuration page</a>.</p>
+<div><img height="600" src="../_images/blockdiag-997ee18ea0cc3b2fa77f5a61ff01c17bdffb42bc.png" width="856" /></div><p>Use the <code class="docutils literal"><span class="pre">configuration/mode</span></code> attribute to determine what
+<font size=-1 color="#8C4112">METIS</font> mode this HDF5 file was created in.</p>
+</div>
+<div class="section" id="the-metadata-group">
+<h2>The metadata group<a class="headerlink" href="#the-metadata-group" title="Permalink to this headline">¶</a></h2>
+<p>This group has no datasets, just a bunch of groups for the XDI
+metadata families.  Each subgroup has a lot of attributes which
+capture everything from <a class="reference external" href="xdi.html">the XDI page</a>.</p>
+<p>There is a subgroup for each of the <a class="reference external" href="https://github.com/XraySpectroscopy/XAS-Data-Interchange/blob/master/specification/dictionary.md#name-spaces">defined semantic groupings</a>
+used in an XES measurement.  There is another subgroup called
+<code class="docutils literal"><span class="pre">Xescolumns</span></code> which is used when exporting a column data file
+containing an XES spectrum.  Any other metadata families defined by
+the user will be exported into their own subgroups.</p>
+<div><img height="680" src="../_images/blockdiag-c13d70019320437dd95c393f793221290905cd5d.png" width="856" /></div><div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last"><code class="docutils literal"><span class="pre">BLA</span></code> and <code class="docutils literal"><span class="pre">Pilatus</span></code> metadata families</p>
+</div>
+</div>
+<div class="section" id="the-scan-group">
+<h2>The scan group<a class="headerlink" href="#the-scan-group" title="Permalink to this headline">¶</a></h2>
+<p>The scan file is simply slurped into the HDF5 file and stored as the
+<code class="docutils literal"><span class="pre">contents</span></code> attribute of the scan group.</p>
+<div><img height="280" src="../_images/blockdiag-1634b36d7c30680001e2947fe1e069f536a3396b.png" width="856" /></div><p>The <code class="docutils literal"><span class="pre">file</span></code> attribute contains the full path to the slurped-in file.
+The <code class="docutils literal"><span class="pre">temporary</span></code> attribute holds the full path to the location where
+<font size=-1 color="#8C4112">METIS</font> writes out the stash file temporarily for use in
+<code class="docutils literal"><span class="pre">HERFD</span></code> and <code class="docutils literal"><span class="pre">RXES</span></code> modes.  That changes between instances of the
+program.</p>
+</div>
+<div class="section" id="the-application-group">
+<h2>The application group<a class="headerlink" href="#the-application-group" title="Permalink to this headline">¶</a></h2>
+<p>This groups contains attributes explaining the state of the program,
+including a timestamp, the platform on which it was run, and the
+version numbers of many of the software components.  This is mostly
+useful for diagnostic purposes.</p>
+<div><img height="520" src="../_images/blockdiag-1dbac5fecbc99e141fd43b42ea21540f6af92d83.png" width="856" /></div>
+<br>
+
+<br>
+<hr class="docutils" />
+<p><strong class="program">Xray::BLA</strong> and <font size=-1 color="#8C4112">METIS</font> are copyright ©
+2011-2014, 2016 Bruce Ravel and Jeremy Kropf – This document is
+copyright © 2016 Bruce Ravel</p>
+<p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
+<p>If this software and its documentation are useful to you, please
+consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/metis.png" alt="Logo"/>
+            </a></p>
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">The Metis program</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#menu-bar">Menu bar</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting and visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
+</ul>
+<h3>Helpful Links</h3>
+<p>Current version: <b>4</b></p>
+
+<ul>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/BLA-XANES/">BLA @ github</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/">Demeter homepage</a>
+  <li>&nbsp; &nbsp; <a href="https://github.com/bruceravel/demeter/">Demeter @ github</a>
+</ul>
+<ul>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/bugs.html">Bug reporting hints</a>
+  <li>&nbsp; &nbsp; <a href="http://bruceravel.github.io/demeter/documents/SinglePage/help.html">How to ask a good question</a>
+</ul>
+<p>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/metis/hdf5.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../plotting.html" title="Plotting and visualization"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="xdi.html" title="The XDI (metadata) tool"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Xray::BLA and Metis 4 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Metis program</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Bruce Ravel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.3.
+    </div>
+  </body>
+</html>

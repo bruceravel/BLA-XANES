@@ -141,6 +141,13 @@ pixels to left of the lower value of <span class="guilabel">Horizontal range</sp
 to the right of the upper value will be set to zero, thus eliminating
 any spurious points from any mask that might make it through any of
 the mask creation steps.</p>
+<p>Finally, the <span class="guilabel">Exponent</span> control is used to set the value for
+the exponent used to raise the elastic image to some power.  This is
+done after the bad and weak pixels are removed.  The point of this is
+to enhance the contrast in the case of weak elastic scattering.  When
+you have a strong elastic signal, an exponent of 1 should suffice.
+Note that changing the changing the exponent value will have an effect
+on the appropriate value of the Gaussian threshold, described below.</p>
 </div>
 <div class="section" id="the-gaussian-blur-step">
 <h2>The Gaussian blur step<a class="headerlink" href="#the-gaussian-blur-step" title="Permalink to this headline">¶</a></h2>
@@ -327,8 +334,9 @@ creation recipe.  Each of them is similar to the Gaussian blur, but
 with certain differences.</p>
 <ol class="arabic">
 <li><p class="first">The <strong>areal mean step</strong> takes a “radius” parameter.  It
-uses an n-by-n (where n twice the parameter value +1, thus radius 2
-is a 5x5 kernel) uniform kernel to make a convolution of the image.</p>
+uses an n-by-n (where n is twice the parameter value +1, thus
+radius 2 is a 5x5 kernel) uniform kernel to make a convolution of
+the image.</p>
 </li>
 <li><p class="first">The <strong>lonely pixel step</strong> removes any pixels from the mask that do
 not have enough illuminated neighbors.</p>
@@ -437,8 +445,8 @@ than the background, manual spot removal might be your only choice.</p>
 can be used to edit or remove individual points from the list or to
 clear the list entirely.</p>
 </div>
-<div class="section" id="all-the-rest-of-the-button">
-<h2>All the rest of the button<a class="headerlink" href="#all-the-rest-of-the-button" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="all-the-rest-of-the-buttons">
+<h2>All the rest of the buttons<a class="headerlink" href="#all-the-rest-of-the-buttons" title="Permalink to this headline">¶</a></h2>
 <p><kbd class="light">Finish mask</kbd></p>
 <blockquote>
 <div>Some mask creation steps may leave pixels with values other than 0
@@ -504,7 +512,7 @@ of <a class="reference external" href="files.html">the Files tool</a>.</p>
 <a class="reference external image-reference" href="../_images/pt_rxes_mask3.png"><img alt="../_images/pt_rxes_mask3.png" src="../_images/pt_rxes_mask3.png" /></a>
 <p class="caption"><span class="caption-text">The corresponding mask for the Pt RXES image at the end of the image sequence.</span></p>
 </div>
-</div><p id="_fig-ptrxes">The recipe for these masks is bad/weak with parameters 400/1, a
+</div><p id="_fig-ptrxes">The recipe for these masks is bad/weak with parameters 400/1/1, a
 Gaussian blur filter with a threshold of 6.0, and a shield step with a
 parameter of 5.  That is, the masks from 5 steps back and prior are
 used to construct the shield which removes the fluorescence signal
@@ -515,6 +523,20 @@ a fair representation of the stripe that corresponds to the elastic
 signal.</p>
 <p>This sequence of masks will then be applied to the same sequence of
 images to extract the resonant XES signal at each energy.</p>
+</div>
+<div class="section" id="examining-a-single-file">
+<h2>Examining a single file<a class="headerlink" href="#examining-a-single-file" title="Permalink to this headline">¶</a></h2>
+<p>When started in <code class="docutils literal"><span class="pre">mask</span></code> mode, the Mask tool is mostly the same as in
+other modes.</p>
+<div class="figure align-center" id="id24">
+<a class="reference external image-reference" href="../_images/metis_maskmask.png"><img alt="../_images/metis_maskmask.png" src="../_images/metis_maskmask.png" /></a>
+<p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>'s mask creation tool in <code class="docutils literal"><span class="pre">mask</span></code> mode.</span></p>
+</div>
+<p>The <span class="guilabel">Emission energy</span> list has only a single entry and the
+shield step is disabled.  Otherwise, everything works the same.  The
+big difference is that the Data tool is not shown in <code class="docutils literal"><span class="pre">mask</span></code> mode.
+The purpose of <code class="docutils literal"><span class="pre">mask</span></code> mode is to play around with the mask creation
+algorithm using an individual file.</p>
 
 <br>
 
@@ -543,13 +565,11 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">The Metis program</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="files.html">The Files tool</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="">The Mask tool</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html">The Data tool</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html">The Configuration tool</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#menu-bar">Menu bar</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Options for plotting and visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting and visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>

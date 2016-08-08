@@ -202,3 +202,28 @@ image files.
    :width: 0.3
    :label: _fig-ptrxes
 
+
+Processing individual files
+---------------------------
+
+You can use :demeter:`metis` to examine individual elastic image files
+by starting in ``mask`` mode.
+
+.. figure:: ../_images/metis_files_mask.png
+   :target: ../_images/metis_files_mask.png
+   :align: center
+
+   :demeter:`metis`'s files tool in individual image mode.
+
+Most of the controls are disabled in ``mask`` mode and the
+:guilabel:`Fetch file lists` button is, instead, labeled
+:guilabel:`Import image`.  Pressing this button will post a file
+selection dialog allowing you to import a single image file from the
+Pilatus.  This will be displayed in the :guilabel:`Elastic files`
+list.
+
+Note that the file naming templates are not used in ``mask`` mode, so
+the image file to be examined can have any name.
+
+Also note that the Data tool is not available in this mode and that
+the Mask tool will likewise only consider one image file at a time.

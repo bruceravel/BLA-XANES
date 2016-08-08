@@ -10,17 +10,16 @@ Plotting and visualization
 Plotting raw images and masks
 -----------------------------
 
-:demeter:`metis` only uses single tone color palettes for plotting raw
+:demeter:`metis` only uses single-tone color palettes for plotting raw
 images and masks.  Given that the raw images depict photon counts and
-in masks all the pixels are either 1 or 0, there is not a lot of need
-for fancy color options.  It is easiest to interpret these images with
-monotone palettes.
+that, in masks, all the pixels are either 1 or 0, there is not a lot
+of need for fancy color options.  It is easiest to interpret these
+images with monotone palettes.
 
 The color scheme for raw image and mask plots is set using the
 :configparam:`metis,color` configuration parameter.  If you set
 :configparam:`metis,color` to :quoted:`surprise`, :demeter:`metis`
 will pick a color at random when you start the program.
-
 
 Here are your color choices:
 
@@ -30,17 +29,17 @@ Here are your color choices:
    :target: _images/color_grey_raw.png
    :align: center
 
-   A raw image in grey.
+   A raw image in gray.
 
 .. figure:: _images/color_grey_mask.png
    :target: _images/color_grey_mask.png
    :align: center
 
-   A mask in grey.
+   A mask in gray.
 
 .. subfigend::
    :width: 0.3
-   :label: _fig-grey
+   :label: _fig-gray
 
 .. subfigstart::
 

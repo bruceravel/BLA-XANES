@@ -87,17 +87,75 @@ step.  Download this package from
 <a class="reference external" href="https://github.com/bruceravel/Graphics-Gnuplot-Palettes">https://github.com/bruceravel/Graphics-Gnuplot-Palettes</a> and follow
 its build instructions.</p>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The requisite package <a class="reference external" href="https://metacpan.org/pod/distribution/PDL-IO-HDF5/GENERATED/PDL/IO/HDF5.pm">PDL::IO::HDF5</a>
+was difficult to install correctly on my Ubuntu machines.  There is
+a package called <code class="docutils literal"><span class="pre">libpdl-io-hdf5-perl</span></code>, but it seems to be built
+incorrectly, at least in Ubuntu 16.04.  Building it by hand is not
+hard.  It requires that the HDF5 development package,
+<code class="docutils literal"><span class="pre">libhdf5-dev</span></code> be installed.  Then download PDL::IO::HDF5 by
+clicking on the download link at <a class="reference external" href="https://metacpan.org/pod/distribution/PDL-IO-HDF5/GENERATED/PDL/IO/HDF5.pm">the PDL::IO::HDF5 page</a>.
+Unpack it and do the normal <code class="docutils literal"><span class="pre">perl</span> <span class="pre">Makefile.pl;</span> <span class="pre">make;</span> <span class="pre">sudo</span> <span class="pre">make</span>
+<span class="pre">install</span></code> incantation.  You may need to edit the
+<code class="file docutils literal"><span class="pre">Makefile.pl</span></code> so it can find <code class="file docutils literal"><span class="pre">libhdf5.so</span></code> and
+<code class="file docutils literal"><span class="pre">hdf5.h</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <code class="docutils literal"><span class="pre">hdf5-tools</span></code> package is very handy for <a class="reference external" href="https://www.hdfgroup.org/products/hdf5_tools/#cmd">examining HDF5
+files from the command line</a>.</p>
+</div>
 <div class="section" id="windows-package">
 <h2>Windows package<a class="headerlink" href="#windows-package" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Install the <font size=-1 color="#8C4112">DEMETER</font> installer package,  then</li>
 <li>Install the <font size=-1 color="#8C4112">METIS</font> installer package</li>
 </ul>
-<p>Both are download and double-click installers.</p>
+<p>Both are download-and-double-click installer packages.</p>
 <div class="admonition-todo admonition" id="index-0">
 <p class="first admonition-title">Todo</p>
-<p class="last">URLs and further instuctions</p>
+<p class="last">URLs and further instructions</p>
 </div>
+</div>
+<div class="section" id="building-the-document">
+<h2>Building the document<a class="headerlink" href="#building-the-document" title="Permalink to this headline">¶</a></h2>
+<p>Building the <font size=-1 color="#8C4112">METIS</font> document requires at least version 1.3
+of <a class="reference external" href="http://www.sphinx-doc.org/en/stable/">Sphinx</a>.  If you have
+python already installed on your computer, you can do:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sudo pip install sphinx
+</pre></div>
+</div>
+<p>Note that Ubuntu only recently began distributing 1.3.  If you have an
+earlier version, you will need to upgrade by doing</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sudo pip install --upgrade sphinx
+</pre></div>
+</div>
+<p>You can check the version of Sphinx with this command</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sphinx-build --version
+</pre></div>
+</div>
+<p>You will then need a number of sphinx extensions:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sudo pip install sphinxcontrib-blockdiag
+sudo pip install pybtex
+sudo pip install sphinxcontrib-bibtex
+</pre></div>
+</div>
+<p>To build the html document, do the following</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="nb">cd</span> doc/
+make html
+</pre></div>
+</div>
+<p>This will use <strong class="program">sphinx-build</strong> to convert the source code into
+html pages.  The html pages will be placed in <code class="file docutils literal"><span class="pre">_build/html/</span></code>.
+This folder is a self-contained package.  The html/ folder can be
+copied and placed somewhere else.  The web pages can be accessed with
+full functionality in any location.</p>
+<p>You might want to edit the <code class="file docutils literal"><span class="pre">doc/conf.py</span></code> document to change the
+<code class="docutils literal"><span class="pre">blockdiag_fontpath</span></code> parameter to point to a TrueType font that
+exists on your computer.  The default font used in the block diagrams
+in the <a class="reference external" href="../metis/hdf5.html">HDF5 save file</a> section is rather ugly.</p>
+<p>Building the document to a PDF file is not yet supported.</p>
 
 <br>
 
@@ -130,7 +188,7 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../metis/index.html">The Metis program</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Options for plotting and visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting and visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>

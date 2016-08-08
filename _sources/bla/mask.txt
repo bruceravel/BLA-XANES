@@ -24,10 +24,14 @@ Recommended steps
 
 **Bad and weak pixel removal**
 
-   The syntax is ``bad # weak #``. The first number indicates the
-   value above which a pixel is assumed to be a bad pixel.  The second
-   number is the value below which a pixel is considered weak.  Both
-   bad and weak pixels are removed from the mask.
+   The syntax is ``bad # weak # power #``. The first number indicates
+   the value above which a pixel is assumed to be a bad pixel.  The
+   second number is the value below which a pixel is considered weak.
+   Both bad and weak pixels are removed from the mask.  The third
+   number is the power to which the mask will be raised before
+   continuing with the mask processing.  This step happens *after* the
+   bad and weak pixels are removed.  The point of the exponential is
+   to enhance contrast when the elastic scattering is weak. 
 
 **Gaussian blur**
 
@@ -104,7 +108,7 @@ A recipe using these steps might be:
 
    [steps]
    steps = <<END
-   bad 400 weak 0
+   bad 400 weak 0 power 1
    gaussian 1.3
    useshield 18
    polyfill
@@ -155,7 +159,7 @@ A recipe using these might be:
 
    [steps]
    steps = <<END
-   bad 400 weak 2
+   bad 400 weak 2 power 1
    lonely 3
    social 2
    END

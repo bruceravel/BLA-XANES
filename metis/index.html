@@ -58,9 +58,34 @@
   <div class="section" id="the-metis-program">
 <h1>The Metis program<a class="headerlink" href="#the-metis-program" title="Permalink to this headline">¶</a></h1>
 <p>The <font size=-1 color="#8C4112">METIS</font> program is modal, providing slightly different
-functionality for HERFD, XES, and RXES data sets.  At the command
-line, it is invoked with a command line argument to put it into the
-correct mode.</p>
+functionality for HERFD, XES, and RXES data sets or for individual
+images.  At the command line, it is invoked with a command line
+argument to put it into the correct mode.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="89%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Mode</th>
+<th class="head">purpose</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>xes</td>
+<td>non-resonant emission spectroscopy</td>
+</tr>
+<tr class="row-odd"><td>herfd</td>
+<td>high resolution XANES</td>
+</tr>
+<tr class="row-even"><td>rxes</td>
+<td>RIXS plane</td>
+</tr>
+<tr class="row-odd"><td>mask</td>
+<td>process an individual elastic image</td>
+</tr>
+</tbody>
+</table>
 <p>To start <font size=-1 color="#8C4112">METIS</font> in XES mode, provide the <code class="docutils literal"><span class="pre">xes</span></code> argument:</p>
 <div class="highlight-shell"><div class="highlight"><pre><span></span>metis xes
 </pre></div>
@@ -69,44 +94,51 @@ correct mode.</p>
 <a class="reference external image-reference" href="../_images/metis_startup.png"><img alt="../_images/metis_startup.png" src="../_images/metis_startup.png" /></a>
 <p class="caption"><span class="caption-text"><font size=-1 color="#8C4112">METIS</font>, at startup, invoked in XES mode</span></p>
 </div>
-<p>Similarly, to begin <font size=-1 color="#8C4112">METIS</font> in <code class="docutils literal"><span class="pre">hrfd</span></code> or <code class="docutils literal"><span class="pre">rxes</span></code> mode, do</p>
+<p>Similarly, to begin <font size=-1 color="#8C4112">METIS</font> in <code class="docutils literal"><span class="pre">hrfd</span></code>, <code class="docutils literal"><span class="pre">rxes</span></code>, or
+<code class="docutils literal"><span class="pre">mask</span></code> mode, do</p>
 <div class="highlight-shell"><div class="highlight"><pre><span></span>metis herfd
 metis rxes
+metis mask
 </pre></div>
 </div>
-<p>The state of your data analysis is maintained separately for the three
-experimental modes.  Along with providing functionality specific to
-the three experimental data sets, you can recover parameters
-appropriate to your analysis of that data.</p>
+<div class="section" id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="files.html">The Files tool</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="files.html#visualizing-individual-images">Visualizing individual images</a></li>
-<li class="toctree-l2"><a class="reference internal" href="files.html#herfd-measurements">HERFD measurements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="files.html#rxes-measurements">RXES measurements</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="mask.html">The Mask tool</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#the-bad-weak-step">The bad/weak step</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#the-gaussian-blur-step">The Gaussian blur step</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#shield-step">Shield step</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#the-polyfill-step">The polyfill step</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#other-mask-creation-steps">Other mask creation steps</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#the-mask-building-steps-list">The mask building steps list</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#defining-spots-in-images">Defining spots in images</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#all-the-rest-of-the-button">All the rest of the button</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html#rxes-measurements">RXES measurements</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="data.html">The Data tool</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data.html#scaling-the-xes-measurement">Scaling the XES measurement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html#herfd-measurements">HERFD measurements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html#rxes-measurements">RXES measurements</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="files.html">The Files tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">The Mask tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data.html">The Data tool</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">The Configuration tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xdi.html">The XDI (metadata) tool</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hdf5.html">The HDF5 save file</a></li>
 </ul>
 </div>
+</div>
+<div class="section" id="menu-bar">
+<h2>Menu bar<a class="headerlink" href="#menu-bar" title="Permalink to this headline">¶</a></h2>
+<div class="figure align-center" id="id2">
+<a class="reference external image-reference" href="../_images/metis_menu.png"><img alt="../_images/metis_menu.png" src="../_images/metis_menu.png" /></a>
+<p class="caption"><span class="caption-text">The <span class="guilabel">Metis</span> menu.</span></p>
+</div>
+<p>The <span class="guilabel">Metis</span> menu allows you to import and export project
+save files and provides alternative ways – including keyboard
+shortcuts – to move between the tools listed in the toolbar.  There
+is also an option for importing configuration information from a
+<a class="reference external" href="../bla/config.html">configuration file</a> used by the command line
+program.</p>
+<p>The <font size=-1 color="#8C4112">METIS</font> project save file is a normal <a class="reference external" href="hdf5.html">HDF5 file</a> with the <code class="file docutils literal"><span class="pre">.mpj</span></code> file extension.  It can be read
+using any HDF5-sware tool.  It contains some simple semantics to make
+it recognizable to <font size=-1 color="#8C4112">METIS</font>.</p>
+<p>The <span class="guilabel">Help</span> menu allows you to probe the state of the current
+analysis project.</p>
+<div class="figure align-center" id="id3">
+<a class="reference external image-reference" href="../_images/metis_helpmenu.png"><img alt="../_images/metis_helpmenu.png" src="../_images/metis_helpmenu.png" /></a>
+<p class="caption"><span class="caption-text">The <span class="guilabel">Help</span> menu.</span></p>
+</div>
+<p>The first item in the menu presents a simple text display showing the
+state of the Perl object used to organize the analysis.  The second
+item shows a history of status bar messages.  The third item shows the
+Gnuplot commands for the most recently made plot.</p>
 
 <br>
 
@@ -118,6 +150,7 @@ copyright © 2016 Bruce Ravel</p>
 <p>This document is licensed under <a class="reference external" href="http://creativecommons.org/licenses/by-sa/3.0/">The Creative Commons Attribution-ShareAlike License</a>.</p>
 <p>If this software and its documentation are useful to you, please
 consider <a class="reference external" href="http://creativecommons.org/support/">supporting The Creative Commons</a>.</p>
+</div>
 </div>
 
 
@@ -134,13 +167,11 @@ consider <a class="reference external" href="http://creativecommons.org/support/
 <li class="toctree-l1"><a class="reference internal" href="../exp/index.html">The bent Laue experiment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../bla/index.html">The bla program</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">The Metis program</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="files.html">The Files tool</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mask.html">The Mask tool</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html">The Data tool</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config.html">The Configuration tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#menu-bar">Menu bar</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Options for plotting and visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting and visualization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../lib/index.html">Programming documentation</a></li>
 </ul>
 <h3>Helpful Links</h3>

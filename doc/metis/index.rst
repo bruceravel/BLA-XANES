@@ -12,6 +12,15 @@ functionality for HERFD, XES, and RXES data sets or for individual
 images.  At the command line, it is invoked with a command line
 argument to put it into the correct mode.
 
+======  ================================================
+Mode    purpose
+======  ================================================
+xes     non-resonant emission spectroscopy
+herfd   high resolution XANES
+rxes    RIXS plane
+mask    process an individual elastic image
+======  ================================================
+
 
 To start :demeter:`metis` in XES mode, provide the ``xes`` argument:
 
@@ -26,8 +35,6 @@ To start :demeter:`metis` in XES mode, provide the ``xes`` argument:
 
    :demeter:`metis`, at startup, invoked in XES mode
 
-.. attention:: Many of the screenshots in this document were made
-   before the addition of the XDI button in the sidebar.
 
 Similarly, to begin :demeter:`metis` in ``hrfd``, ``rxes``, or
 ``mask`` mode, do
@@ -38,13 +45,13 @@ Similarly, to begin :demeter:`metis` in ``hrfd``, ``rxes``, or
    metis rxes
    metis mask
 
-The state of your data analysis is maintained separately for the three
-experimental modes.  Along with providing functionality specific to
-the three experimental data sets, you can recover parameters
-appropriate to your analysis of that data.
+
+
+Table of Contents
+-----------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    files.rst
    mask.rst
@@ -55,3 +62,38 @@ appropriate to your analysis of that data.
 
 
 
+
+Menu bar
+--------
+
+.. figure:: ../_images/metis_menu.png
+   :target: ../_images/metis_menu.png
+   :align: center
+
+   The :guilabel:`Metis` menu.
+
+The :guilabel:`Metis` menu allows you to import and export project
+save files and provides alternative ways |nd| including keyboard
+shortcuts |nd| to move between the tools listed in the toolbar.  There
+is also an option for importing configuration information from a
+`configuration file <../bla/config.html>`_ used by the command line
+program.
+
+The :demeter:`metis` project save file is a normal `HDF5 file
+<hdf5.html>`_ with the :file:`.mpj` file extension.  It can be read
+using any HDF5-sware tool.  It contains some simple semantics to make
+it recognizable to :demeter:`metis`.
+
+The :guilabel:`Help` menu allows you to probe the state of the current
+analysis project.
+
+.. figure:: ../_images/metis_helpmenu.png
+   :target: ../_images/metis_helpmenu.png
+   :align: center
+
+   The :guilabel:`Help` menu.
+
+The first item in the menu presents a simple text display showing the
+state of the Perl object used to organize the analysis.  The second
+item shows a history of status bar messages.  The third item shows the
+Gnuplot commands for the most recently made plot.

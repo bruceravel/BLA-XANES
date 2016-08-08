@@ -592,4 +592,7 @@ other modes.
    :demeter:`metis`'s mask creation tool in ``mask`` mode.
 
 The :guilabel:`Emission energy` list has only a single entry and the
-shield step is disabled.  Otherwise, everything works the same.
+shield step is disabled.  Otherwise, everything works the same.  The
+big difference is that the Data tool is not shown in ``mask`` mode.
+The purpose of ``mask`` mode is to play around with the mask creation
+algorithm using an individual file.

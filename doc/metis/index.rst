@@ -47,9 +47,6 @@ Similarly, to begin :demeter:`metis` in ``hrfd``, ``rxes``, or
 
 
 
-Table of Contents
------------------
-
 .. toctree::
    :maxdepth: 1
 
@@ -63,8 +60,6 @@ Table of Contents
 
 
 
-Menu bar
---------
 
 .. figure:: ../_images/metis_menu.png
    :target: ../_images/metis_menu.png

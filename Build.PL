@@ -36,5 +36,6 @@ my $build = Module::Build
 	);
 $build->add_build_element('png');
 $build->add_build_element('ico');
+$build->add_build_element('demeter_conf');
 $build->create_build_script;
 

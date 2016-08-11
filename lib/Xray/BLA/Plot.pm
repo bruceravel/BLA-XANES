@@ -24,7 +24,8 @@ use List::MoreUtils qw(all none any);
 use Math::Random;
 use Scalar::Util qw(looks_like_number);
 
-my $pdl_plot_object = gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait'));
+use vars qw($pdl_plot_object);
+$pdl_plot_object = gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait'));
 
 has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20,
 		  documentation => "Forced upper bound to the color range of the surface plot.");
@@ -33,7 +34,7 @@ has 'color'   => (is => 'rw', isa => 'Str', default => 'grey',
 has 'palette' => (is => 'rw', isa => 'Str', ## greys
 		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
 		  documentation => 'The Gnuplot definition of the image plot palette.');
-has 'pdlplot' => (is => 'rw', isa => 'Any', default => sub{ $pdl_plot_object } );
+has 'pdlplot' => (is => 'rw', isa => 'Any' );
 
 use Graphics::Gnuplot::Palettes qw(palette palette_names);
 has 'splot_palette_name' => (is => 'rw', isa => 'Str', default => 'Parula', #trigger => &set_splot_palette,
@@ -60,6 +61,7 @@ my %color_choices = (
 
 sub initialize_plot {
   my ($self) = @_;
+  $self->pdlplot($pdl_plot_object);
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
   return $self;
 };
@@ -185,7 +187,6 @@ sub plot_energy_point {
   $title = $self->escape_us($title);
   my $cbm = min($point->max, 100);
   #my $cbm = $self->bad_pixel_value/$self->imagescale;
-  print '>>>', $self->pdlplot->{wait}, $/;
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
   $self->pdlplot->image({cbrange=>[0, $cbm], palette=>$self->palette, title=>$title, # cbrange=>[0,$cbm],
 			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},

@@ -151,3 +151,13 @@ description
   When true, fill gaps in the fitted polynomial functions, making the
   mask continuous.  The gaps are usually due either to Soller slits or
   the processing of a section with weak signal.
+
+variable=gnuplot_wait
+type=positive integer
+default=10
+minint=10
+maxint=100
+description
+  Gnuplot response timeout.  10 is usually adequate, but increasing
+  this can help if using Metis over a slow network connection.
+

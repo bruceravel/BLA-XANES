@@ -59,6 +59,7 @@ my %color_choices = (
 sub initialize_plot {
   my ($self) = @_;
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  $self->pdlplot->{wait} = Demeter->co->default('metis', 'gnuplot_wait');
   return $self;
 };
 

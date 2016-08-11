@@ -31,7 +31,7 @@ use vars qw($app);
 our $tool;
 our $hdf5file;
 use PDL::IO::HDF5;
-if (-e $ARGV[0]) {
+if ((-e $ARGV[0])  and (not -d $ARGV[0])) {
   my $toss = new PDL::IO::HDF5($ARGV[0]);
   $tool = ($toss->group('configuration')->attrGet('mode'))[0];
   if (any {$tool eq $_} qw(herfd xes rxes mask)) {

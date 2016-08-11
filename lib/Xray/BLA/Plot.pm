@@ -24,6 +24,8 @@ use List::MoreUtils qw(all none any);
 use Math::Random;
 use Scalar::Util qw(looks_like_number);
 
+my $pdl_plot_object = gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait'));
+
 has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20,
 		  documentation => "Forced upper bound to the color range of the surface plot.");
 has 'color'   => (is => 'rw', isa => 'Str', default => 'grey',
@@ -31,7 +33,7 @@ has 'color'   => (is => 'rw', isa => 'Str', default => 'grey',
 has 'palette' => (is => 'rw', isa => 'Str', ## greys
 		  default => "defined ( 0 '#252525', 1 '#525252', 2 '#737373', 3 '#969696', 4 '#BDBDBD', 5 '#D9D9D9', 6 '#F0F0F0', 7 '#FFFFFF' )",
 		  documentation => 'The Gnuplot definition of the image plot palette.');
-has 'pdlplot' => (is => 'rw', isa => 'Any', default => sub{ gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait')) } );
+has 'pdlplot' => (is => 'rw', isa => 'Any', default => sub{ $pdl_plot_object } );
 
 use Graphics::Gnuplot::Palettes qw(palette palette_names);
 has 'splot_palette_name' => (is => 'rw', isa => 'Str', default => 'Parula', #trigger => &set_splot_palette,

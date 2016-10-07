@@ -25,7 +25,8 @@ use Math::Random;
 use Scalar::Util qw(looks_like_number);
 
 use vars qw($pdl_plot_object);
-$pdl_plot_object = gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait'));
+$pdl_plot_object = new PDL::Graphics::Gnuplot(); #gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait'));
+$pdl_plot_object->{wait} = Demeter->co->default('metis', 'gnuplot_wait');
 
 has 'cbmax'   => (is => 'rw', isa => 'Int', default => 20,
 		  documentation => "Forced upper bound to the color range of the surface plot.");
@@ -187,8 +188,6 @@ sub plot_energy_point {
   $title = $self->escape_us($title);
   my $cbm = min($point->max, 100);
   #my $cbm = $self->bad_pixel_value/$self->imagescale;
-  $self->pdlplot->{wait} = Demeter->co->default('metis', 'gnuplot_wait');
-  print '>>>',$self->pdlplot->{wait}, $/;
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
   $self->pdlplot->image({cbrange=>[0, $cbm], palette=>$self->palette, title=>$title, # cbrange=>[0,$cbm],
 			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},

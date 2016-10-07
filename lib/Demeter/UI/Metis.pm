@@ -2,7 +2,7 @@ package Demeter::UI::Metis;
 
 use Demeter qw(:hephaestus);
 use Xray::BLA;
-use Demeter::UI::Artemis::ShowText;
+use Demeter::UI::Common::ShowText;
 use Demeter::UI::Athena::Status;
 use Demeter::UI::Metis::LastPlot;
 use Demeter::UI::Metis::HDF5;
@@ -589,7 +589,7 @@ sub view_attributes {
   $text .= "Elastic energies:\n";
   $text .= wrap("    ", "    ", join(" ", @{$app->{base}->elastic_energies})). $/;
 
-  my $dialog = Demeter::UI::Artemis::ShowText
+  my $dialog = Demeter::UI::Common::ShowText
     -> new($app->{main}, $text, "Structure of \"$id\" object")
       -> Show;
 };

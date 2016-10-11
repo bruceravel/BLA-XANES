@@ -39,7 +39,7 @@ sub new {
   $config->{echo} = $app->{main}->{statusbar};
   Demeter->co->set_options('metis', 'splot_palette_name', [palette_names()], 1);
   $config->populate(['metis', 'gnuplot']);
-#  $config->{params}->Expand($self->{params}->GetRootItem);
+  $config->{params}->Expand($config->{params}->GetRootItem);
   $vbox->Add($config, 1, wxGROW|wxALL, 5);
 
   $self -> SetSizerAndFit( $vbox );

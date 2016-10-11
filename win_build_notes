@@ -1,0 +1,58 @@
+#+TITLE: HDF5 and PDL::IO::HDF5 with MinGW and Strawberry Perl
+#+AUTHOR: Bruce Ravel
+
+* Steps
+
+1. This was done with HDF5 1.8.17 and PDL::IO::HDF5 0.73 with
+   mingw-w64-crt-v4.0.2 and gcc 4.9.2 from Strawberry 5.22.2.1-64bit.
+
+2. Unpack. file ~src/H5config.h.in~ must be run through d2u.  Both
+   7Zip and the built-in zip extracter convert end-of-line characters
+   to CRLF.  This confuses an awk script embedded in the
+   ~config.status~ generated during the ~./configure~ stage.
+
+3. Do ~./configure~.  Follow Tom Schonnjan's [[https://tschoonj.github.io/blog/2014/01/29/building-a-64-bit-version-of-hdf5-with-mingw-w64/][example]]:
+
+   #+BEGIN_SRC sh
+   ./configure --host=x86_64-w64-mingw32 --build=x86_64-w64-mingw32 --disable-hl --prefix=/c/Strawberry/c/hdf5
+   #+END_SRC
+
+   Note that I sent ~--prefix~ to the place I needed it to be to
+   include HDF5 in the Demeter installation tree.  You might need it
+   to be elsewhere.
+
+4. Apply Tom Schonnjan's fix for ~src/H5pubconf.h~ [[https://tschoonj.github.io/blog/2014/11/06/hdf5-on-windows-utf-8-filenames-support/][explained here]].
+
+5. The file ~test/external.c~ will not compile for the reason
+   [[https://tschoonj.github.io/blog/2014/11/06/hdf5-on-windows-utf-8-filenames-support/][explained here]].  The best solution would be to redefine the
+   function ~H5setenv~ to use the MinGW ~putenv~ function, changing
+   the arguments appropriately.  I was lazy and simply edited
+   ~test/external.c~ in 5 places like so:
+
+   #+BEGIN_SRC C
+   /* if(HDsetenv("HDF5_EXTFILE_PREFIX", "", 1) < 0) */
+   if(putenv("HDF5_EXTFILE_PREFIX=") < 0)
+       TEST_ERROR
+   #+END_SRC
+
+   4 of the five are just like this.  The last one, around line 1340
+   is only slightly different.
+
+6. ~make && make check && make install~
+
+   I had one of the tests fail, but I installed anayway.
+
+7. Unpack PDL::IO::HDF5.
+
+8. the ~make install~ phase for the HDF5 library does not install the
+   file ~src/H5config.h~.  That file will, however, be needed to
+   build PDL::IO::HDF5.  So copy it over by hand.
+
+9. Edit ~Makefile.PL~.  Add the installation locations for HDF5 to
+   ~@libdirs~ near line 42 and for ~@incdirs~ near line 83.  Note
+   that you must use Windows-y notation rather than MinGW notation
+   for the path.  In my example, ~C:\Strawberry\c\hdf5\lib~ is
+   correct, while ~/c/Strawberry/c/hdf5/lib~ is incorrect.
+
+10. ~perl Build && perl Build install~.  Everything should work.  One
+    hopes.

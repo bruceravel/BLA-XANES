@@ -393,7 +393,7 @@ sub plot_xes {
   my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $self->{reuse}->GetValue);
   $app->{main}->status('Finished making masks, plotting XES spectrum', 'wait');
   $self->{xesout} = $app->{bla_of}->{$self->{energy}}->plot_xes(pause=>0, incident=>$incident, xes=>$r_xes, replot=>$replot);
-  print $PDL::Graphics::Gnuplot::last_plotcmd;
+  #print $PDL::Graphics::Gnuplot::last_plotcmd;
   $app->{main}->{Lastplot}->put_text($PDL::Graphics::Gnuplot::last_plotcmd);
   $self->{xesdata} = $r_xes;
 

@@ -291,7 +291,7 @@ sub escape_us {
   my ($self, $string) = @_;
   $string ||= q{};
   if ($self->is_windows) {
-    $string =~ s{_}{\\_}g;
+    $string =~ s{_}{\\\_}g;
   } else {
     $string =~ s{_}{\\\\_}g;
   };

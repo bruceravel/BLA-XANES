@@ -50,9 +50,6 @@ ChangesEnvironment=yes
 
 [Run]
 Filename: "{app}\relocation.pl.bat";
-;Filename: "{app}\modify_path.pl.bat"; Parameters: """{app}"""
-;Filename: "{app}\munge_pathenv.pl.bat"; Parameters: """{app}"""
-
 
 [Dirs]
 Name: "{userappdata}\demeter"
@@ -71,16 +68,22 @@ Source: perl\site\lib\Xray\BLA.pm; DestDir: {app}\perl\site\lib\Xray; Flags: rec
 Source: perl\site\lib\Xray\BLA\*; DestDir: {app}\perl\site\lib\Xray\BLA; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 Source: perl\site\lib\Demeter\UI\Metis.pm; DestDir: {app}\perl\site\lib\Demeter\UI; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; Excludes: *.prj,*.stan,*~,artug\*,aug\*,UI\Metis.pm,UI\Metis\*; 
 Source: perl\site\lib\Demeter\UI\Metis\*; DestDir: {app}\perl\site\lib\Demeter\UI\Metis; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; Excludes: *.prj,*.stan,*~,artug\*,aug\*,UI\Metis.pm,UI\Metis\*; 
+Source: c\hdf5\*; DestDir: {app}\c\hdf5; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
+Source: perl\site\lib\PDL\IO\HDF5.pm; DestDir: {app}\perl\site\lib\PDL\IO\HDF5.pm; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
+Source: perl\site\lib\PDL\IO\HDF5\*; DestDir: {app}\perl\site\lib\PDL\IO\HDF5; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
+Source: perl\site\lib\auto\PDL\IO\HDF5\HDF5.xs.dll; DestDir: {app}\perl\site\lib\auto\PDL\IO\HDF5\HDF5.xs.dll; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 
 [Tasks]
 Name: "desktopicon"; Description: "Create &desktop icons"; GroupDescription: "Additional shortcuts:";
 
 [Icons]
 ;;; Demeter applications
-Name: "{group}\Metis"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "BLA Data Processing"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_icon.ico"
+Name: "{group}\Metis - HERFD"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "HERFD Data Processing"; Parameters: "herfd"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_herfd.ico"
+Name: "{group}\Metis - XES"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "XES Data Processing"; Parameters: "xes"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_xes.ico"
 
 ;;; Application desktop icons
-Name: "{commondesktop}\Metis"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "BLA Data Processing"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_icon.ico"; Tasks: desktopicon
+Name: "{commondesktop}\Metis - HERFD"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "HERFD Data Processing"; Parameters: "herfd"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_herfd.ico"; Tasks: desktopicon
+Name: "{commondesktop}\Metis - XES"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "XES Data Processing"; Parameters: "xes"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_xes.ico"; Tasks: desktopicon
 
 [Code]
 function getPath(Param: String): string;

@@ -448,7 +448,7 @@ sub single {
     $self->{stub}->SetValue($this);
     $app->{base}->stub($this);
     $self->{stub}->Enable(0);
-    print "here\n";
+    #print "here\n";
     $app->{Mask}->{stub} -> SetLabel("Stub is \"$this\"");
   };
 

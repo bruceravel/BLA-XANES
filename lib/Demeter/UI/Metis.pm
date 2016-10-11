@@ -89,7 +89,7 @@ sub OnInit {
   $app->{main} -> SetIcon($icon);
   #EVT_CLOSE($app->{main}, sub{$app->on_close($_[1])});
 
-  $app->{save_icon}  = Wx::Bitmap->new(File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "Save.png"), wxBITMAP_TYPE_PNG);
+  #$app->{save_icon}  = Wx::Bitmap->new(File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "Save.png"), wxBITMAP_TYPE_PNG);
   $app->{saved} = 0;
 
   $app->{main}->{Status} = Demeter::UI::Athena::Status->new($app->{main});
@@ -149,13 +149,16 @@ sub OnInit {
 
   my $vbox = Wx::BoxSizer->new( wxVERTICAL);
 
-  my $tb = Wx::Toolbook->new( $app->{main}, -1, wxDefaultPosition, wxDefaultSize, wxBK_LEFT );
+  my $tb = Wx::Toolbook->new( $app->{main}, -1, wxDefaultPosition, wxDefaultSize, wxBK_LEFT|wxTB_NO_TOOLTIPS );
   $app->{book} = $tb;
 
   my $imagelist = Wx::ImageList->new( $icon_dimension, $icon_dimension );
   foreach my $utility (@utilities) {
-    my $icon = File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "$utility.png");
-    $imagelist->Add( Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG) );
+    {
+      local $SIG{__WARN__} = sub{1;};
+      my $icon = File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "$utility.png");
+      $imagelist->Add( Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG) );
+    };
   };
 
   $tb->AssignImageList( $imagelist );

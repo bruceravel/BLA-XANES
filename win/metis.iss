@@ -1,7 +1,7 @@
 ; -- demeter_and_strawberry_perl.iss --
 
 #define MyInstName "Metis_Installer_for_Windows"
-#define MyAppVersion "2.2"
+#define MyAppVersion "4"
 #define MyAppPublisher "Bruce Ravel"
 #define MyAppURL "https://github.io/bruceravel/BLA-XANES"
 #define Metis "Metis"

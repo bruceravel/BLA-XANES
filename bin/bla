@@ -5,6 +5,8 @@ BEGIN {
     my $fname='C:\strawberry\c\bin\etc\fonts\fonts.conf';
     $ENV{FONTCONFIG_FILE}=$fname if -e $fname;
   };
+  # leaving Larch out of it for now
+  $ENV{DEMETER_FORCE_IFEFFIT} = 1;
 }
 
 use Xray::BLA; # automatically turns on strict and warnings

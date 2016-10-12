@@ -13,14 +13,13 @@ BEGIN {
     require Win32;
     use File::Basename;
     use File::Spec;
-    my @list = split(/\/|\\/, $0);
-    $ENV{GNUPLOT_BINARY} = File::Spec->catfile($list[0],$list[1],'c','bin','gnuplot','bin','gnuplot.exe');
+    $ENV{GNUPLOT_BINARY} = File::Spec->catfile($ENV{DEMETER_BASE},'c','bin','gnuplot','bin','gnuplot.exe');
 
-    my (@not, @mingw);
-    foreach my $folder (split(/;/, $ENV{PATH})) {
-      if ($folder =~ m{mingw}i) { push @mingw, $folder } else { push @not, $folder };
-    };
-    $ENV{PATH} = join(";", @not, @mingw);
+    #my (@not, @mingw);
+    #foreach my $folder (split(/;/, $ENV{PATH})) {
+    #  if ($folder =~ m{mingw}i) { push @mingw, $folder } else { push @not, $folder };
+    #};
+    #$ENV{PATH} = join(";", @not, @mingw);
   };
 };
 

@@ -21,7 +21,7 @@
 AppId={{714B39D5-58E8-4545-877C-D89A238C4B23}
 AppName={#Metis} {#MyAppVersion}
 AppVersion={#MyAppVersion}
-DefaultDirName=\strawberry
+DefaultDirName={userappdata}\DemeterPerl
 DefaultGroupName={#Demeter}
 ; UninstallDisplayIcon={app}\MyProg.exe
 Compression=lzma2
@@ -37,6 +37,8 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
+
+PrivilegesRequired = lowest
 
 ChangesAssociations=yes
 ChangesEnvironment=yes
@@ -55,23 +57,33 @@ Filename: "{app}\relocation.pl.bat";
 Name: "{userappdata}\demeter"
 
 [Registry]
-Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
+Root: HKCU; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; \
     ValueName: "Path"; ValueType: expandsz; ValueData: "{olddata};{code:getPath}"; \
     Check: NeedsAddPath('\perl\site\bin');
 ; TODO: don't add the leading semi-colon to the Path if there is already a trailing one
-Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueName: "GNUPLOT_BINARY"; ValueType: expandsz; ValueData: "{app}\c\bin\gunplot\bin\gnuplot.exe";
+Root: HKCU; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueName: "PGPLOT_FONT"; ValueType: expandsz; ValueData: "{app}\c\lib\pgplot\grfont.dat";
+Root: HKCU; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueName: "FONTCONFIG_FILE"; ValueType: expandsz; ValueData: "{app}\c\bin\etc\fonts\fonts.conf";
+Root: HKCU; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueName: "GNUPLOT_BINARY"; ValueType: expandsz; ValueData: "{app}\c\bin\gunplot\bin\gnuplot.exe";
+
+Root: HKCU; Subkey: ".mpj"; ValueType: string; ValueName: ""; ValueData: "Metis"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Metis"; ValueType: string; ValueName: ""; ValueData: "Metis project"; Flags: uninsdeletekey 
+Root: HKCU; Subkey: "Metis\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\perl\site\lib\Demeter\UI\Artemis\share\metis_icon.ico"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Metis\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\perl\site\bin\metis.bat"" ""%1"""; Flags: uninsdeletekey 
 
 [Files]
 Source: perl\site\bin\metis; DestDir: {app}\perl\site\bin; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 Source: perl\site\bin\metis.bat; DestDir: {app}\perl\site\bin; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 Source: perl\site\lib\Xray\BLA.pm; DestDir: {app}\perl\site\lib\Xray; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 Source: perl\site\lib\Xray\BLA\*; DestDir: {app}\perl\site\lib\Xray\BLA; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
+Source: perl\site\lib\PDL\Graphics\Gnuplot.pm; DestDir: {app}\perl\site\lib\PDL\Graphics; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; Excludes: *.prj,*.stan,*~,artug\*,aug\*,UI\Metis.pm,UI\Metis\*; 
 Source: perl\site\lib\Demeter\UI\Metis.pm; DestDir: {app}\perl\site\lib\Demeter\UI; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; Excludes: *.prj,*.stan,*~,artug\*,aug\*,UI\Metis.pm,UI\Metis\*; 
 Source: perl\site\lib\Demeter\UI\Metis\*; DestDir: {app}\perl\site\lib\Demeter\UI\Metis; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; Excludes: *.prj,*.stan,*~,artug\*,aug\*,UI\Metis.pm,UI\Metis\*; 
+Source: perl\site\lib\Demeter\configuration\*; DestDir: {app}\perl\site\lib\Demeter\configuration; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; 
+Source: perl\site\lib\Demeter\share\bla.xdi.ini; DestDir: {app}\perl\site\lib\Demeter\share; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion; 
 Source: c\hdf5\*; DestDir: {app}\c\hdf5; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
-Source: perl\site\lib\PDL\IO\HDF5.pm; DestDir: {app}\perl\site\lib\PDL\IO\HDF5.pm; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
+Source: perl\site\lib\PDL\IO\HDF5.pm; DestDir: {app}\perl\site\lib\PDL\IO; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 Source: perl\site\lib\PDL\IO\HDF5\*; DestDir: {app}\perl\site\lib\PDL\IO\HDF5; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
-Source: perl\site\lib\auto\PDL\IO\HDF5\HDF5.xs.dll; DestDir: {app}\perl\site\lib\auto\PDL\IO\HDF5\HDF5.xs.dll; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
+Source: perl\site\lib\auto\PDL\IO\HDF5\HDF5.xs.dll; DestDir: {app}\perl\site\lib\auto\PDL\IO\HDF5; Flags: recursesubdirs overwritereadonly ignoreversion replacesameversion;
 
 [Tasks]
 Name: "desktopicon"; Description: "Create &desktop icons"; GroupDescription: "Additional shortcuts:";
@@ -80,10 +92,14 @@ Name: "desktopicon"; Description: "Create &desktop icons"; GroupDescription: "Ad
 ;;; Demeter applications
 Name: "{group}\Metis - HERFD"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "HERFD Data Processing"; Parameters: "herfd"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_herfd.ico"
 Name: "{group}\Metis - XES"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "XES Data Processing"; Parameters: "xes"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_xes.ico"
+Name: "{group}\Metis - RXES"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "RXES Data Processing"; Parameters: "rxes"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_rxes.ico"
+Name: "{group}\Metis - Mask"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "BLA mask processing"; Parameters: "mask"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_mask.ico"
 
 ;;; Application desktop icons
 Name: "{commondesktop}\Metis - HERFD"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "HERFD Data Processing"; Parameters: "herfd"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_herfd.ico"; Tasks: desktopicon
 Name: "{commondesktop}\Metis - XES"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "XES Data Processing"; Parameters: "xes"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_xes.ico"; Tasks: desktopicon
+Name: "{commondesktop}\Metis - RXES"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "RXES Data Processing"; Parameters: "rxes"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_rxes.ico"; Tasks: desktopicon
+Name: "{commondesktop}\Metis - Mask"; Filename: "{app}\perl\site\bin\metis.bat"; Comment: "BLA mask processing"; Parameters: "mask"; WorkingDir: "{app}"; IconFilename: "{app}\perl\site\lib\Demeter\UI\Metis\share\metis_mask.ico"; Tasks: desktopicon
 
 [Code]
 function getPath(Param: String): string;

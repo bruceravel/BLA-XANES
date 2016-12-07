@@ -292,9 +292,9 @@ sub fetch {
       my $this = $+{i} || $+{c} || $+{T};
       my $ds = $app->{image_group}->dataset("$this");
       $ds->set($app->{base}->Read(File::Spec->catfile($self->{image_dir}->GetValue,$i)), unlimited=>1);
-      $ds->attrSet('file'  => File::Spec->catfile($self->{image_dir}->GetValue, $i));
-      $ds->attrSet('skip'  => 0);
-      #$ds->attrSet('energy'  => 0);
+      $ds->attrSet('file'   => File::Spec->catfile($self->{image_dir}->GetValue, $i));
+      $ds->attrSet('skip'   => 0);
+      $ds->attrSet('energy' => $this);
       $self->{image_list}->SetClientData($count, $ds);
       ++$count;
     };
@@ -331,8 +331,8 @@ sub fetch {
     my $count = 1;
     foreach my $en (@$rlist) {	# set the energy attribute for the images in a HERFD measurement
       $app->{Data}->{incident}->Append($en);
-      my $ds = $app->{image_group}->dataset(sprintf("%3.3d", $count));
-      $ds->attrSet(energy=>$en);
+      #my $ds = $app->{image_group}->dataset(sprintf("%3.3d", $count));
+      #$ds->attrSet(energy=>$en) if $ds->get();
       ++$count;
     };
     $app->{Data}->{incident}->SetSelection(int($#{$rlist}/2));

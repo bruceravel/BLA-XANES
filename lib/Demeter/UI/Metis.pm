@@ -100,7 +100,6 @@ sub OnInit {
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
   $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
-  $app->{base} -> initialize_plot;
   my $task = ($app->{tool} eq 'rxes') ? 'plane' : $app->{tool};
   $app->{base} -> task($task);
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
@@ -183,6 +182,7 @@ sub OnInit {
     $tb->AddPage($page, $lab, 0, $count);
   };
   $vbox -> Add($tb, 1, wxEXPAND|wxALL, 0);
+  $app->{base} -> initialize_plot;
 
   my $bar = Wx::MenuBar->new;
   my $filemenu   = Wx::Menu->new;

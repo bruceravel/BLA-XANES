@@ -123,8 +123,8 @@ sub new {
   EVT_BUTTON($self, $self->{energy_up},   sub{$self->spin_energy('up',   $app)});
   EVT_BUTTON($self, $self->{energy_down}, sub{$self->spin_energy('down', $app)});
   $app->mouseover($self->{energy}, "Select the emission energy at which to prepare a mask.");
-  $app->mouseover($self->{energy_up},   "Increment the emission energy.");
-  $app->mouseover($self->{energy_down}, "Decrement the emission energy.");
+  $app->mouseover($self->{energy_up},   "Increment the emission energy (Ctrl-k)");
+  $app->mouseover($self->{energy_down}, "Decrement the emission energy (Ctrl-j)");
 
   $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxLEFT, 5);
@@ -391,6 +391,7 @@ sub SelectEnergy {
   my $quiet     = $args->{quiet}     || 0;
 
   my $spectrum = $app->{bla_of}->{$energy};
+  $spectrum->elastic_image($spectrum->raw_image);
   my $busy = Wx::BusyCursor->new();
 
   my $elastic_file;
@@ -859,7 +860,7 @@ sub spin_energy {
   ++ $id if ($direction eq 'up');
   -- $id if ($direction eq 'down');
   $self->{energy}->SetSelection($id);
-  SelectEnergy($self, q(), $app)
+  $self->SelectEnergy(q(), $app)
 };
 
 sub pluck {

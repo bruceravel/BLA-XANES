@@ -206,7 +206,7 @@ sub plot_xanes {
   my $mu = ($self->is_windows) ? 'mu' : '{/Symbol m}';
   $self->pdlplot->output($self->terminal, size=>[640,480,'px']);
   if ($args{mue}) {
-    $self->pdlplot->gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box',},
+    $self->pdlplot->gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on inside right bottom box', grid=>1,},
 
 			  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
 			  PDL->new($self->herfd_demeter->ref_array('energy')),
@@ -217,7 +217,7 @@ sub plot_xanes {
 			  PDL->new($self->mue_demeter->ref_array('flat'))
 	 );
   } else {
-    $self->pdlplot->gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD',},
+    $self->pdlplot->gplot({xlabel=>'Energy (eV)', ylabel=>'HERFD', grid=>1,},
 			  with=>'lines', lc=>'rgb blue', lt=>1, lw=>1, legend=>$legend,
 			  PDL->new($self->xdata),
 			  PDL->new($self->ydata));
@@ -230,9 +230,9 @@ sub plot_rixs {
   my ($emin, $emax) = ($spectra[0]->xdata->[0], $spectra[0]->xdata->[-1]);
   my @args;
   if ($#spectra > 40) {
-    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off'});
+    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'off', grid=>1});
   } else {
-    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box'});
+    @args = ({xrange=>[$emin, $emax], xlabel=>'Energy (eV)', ylabel=>'HERFD', key=>'on outside right top box', grid=>1});
   };
   ## see lib/Demeter/configuration/gnuplot.demeter_conf from Demeter for color list
   my @thiscolor = qw(blue red dark-green dark-violet yellow4 brown dark-pink gold dark-cyan spring-green);
@@ -275,7 +275,7 @@ sub plot_xes {
   my $energypdl = PDL->new(\@e);
   my $xespdl = PDL->new(\@xes);
   if ($args{replot} == 0) {
-    $self->pdlplot->gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES'},
+    $self->pdlplot->gplot({xlabel=>'Emission energy (eV)', ylabel=>'XES', grid=>1},
 			  with=>'lines', lc=>'rgb '.$color, lt=>1, lw=>1, legend=>$legend,
 			  $energypdl, $xespdl);
   } else {

@@ -289,6 +289,8 @@ sub fetch {
   $count = 0;
   foreach my $i (@image_list) {
     if ($i =~ m{$image_re}) {
+      $app->{main}->status(sprintf("Preparing %s (%d of %d)", $i, $count+1, $#image_list),
+			   'wait|nobuffer') if (not $count%5);
       my $this = $+{i} || $+{c} || $+{T};
       my $ds = $app->{image_group}->dataset("$this");
       $ds->set($app->{base}->Read(File::Spec->catfile($self->{image_dir}->GetValue,$i)), unlimited=>1);
@@ -301,6 +303,7 @@ sub fetch {
   };
 
   ## set the list of incident energies, snarfed from the scan file
+  $app->{main}->status("Fetching incident energy values", 'wait|nobuffer');
   $app->{base}->get_incident_energies;
   my $rlist = $app->{base}->incident_energies;
   $app->{base}->incident_energies($rlist);
@@ -328,11 +331,12 @@ sub fetch {
 
   $app->{Data}->{incident}->Clear;
   if ($app->{tool} eq 'herfd') {
-    my $count = 1;
+    my $count = 0;
     foreach my $en (@$rlist) {	# set the energy attribute for the images in a HERFD measurement
       $app->{Data}->{incident}->Append($en);
       #my $ds = $app->{image_group}->dataset(sprintf("%3.3d", $count));
       #$ds->attrSet(energy=>$en) if $ds->get();
+      $app->{Data}->{incident}->SetClientData($count, $self->{image_list}->GetClientData($count));
       ++$count;
     };
     $app->{Data}->{incident}->SetSelection(int($#{$rlist}/2));

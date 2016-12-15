@@ -728,9 +728,10 @@ sub plot_rixs {
     undef $toss;
 
   };
-  foreach my $key (keys %{$app->{bla_of}}) {
+  foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
     $app->{bla_of}->{$key}->normpixels($max / $app->{bla_of}->{$key}->npixels);
+    printf "  %s   %6.6d   %.3f\n", $key, $app->{bla_of}->{$key}->npixels, $app->{bla_of}->{$key}->normpixels;
   };
 
   $spectrum->plot_rixs(@sorted_list);

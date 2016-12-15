@@ -83,6 +83,13 @@ sub read_metadata {
   my ($self, $file, $app) = @_;
   if ($file and (-e $file)) {
     tie my %metadata, 'Config::IniFiles', ( -file => $file );
+    if (exists $metadata{facility}->{source}) {
+      if ($metadata{facility}->{source} =~ m{APS}) {
+	$metadata{facility}->{name} = 'APS';
+      };
+      $metadata{facility}->{xray_source} = $metadata{facility}->{source};
+      delete $metadata{facility}->{source};
+    };
     $self->place_metadata(\%metadata, $app);
   };
 };

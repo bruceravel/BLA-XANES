@@ -98,6 +98,10 @@ sub xdi_out {
     push @units,  $this[1] || q{};
   };
 
+  if (exists $self->scan_file_list->[0] and -e $self->scan_file_list->[0]) {
+    $pilatus = $self->fetch_metadata($self->scan_file_list->[0]);
+    printf $O "# %s.%s: %s\n", "Scan", "start_time", $pilatus->{DateTime};
+  };
   printf $O "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model}                       if $pilatus->{Model};
   printf $O "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_energy} if $pilatus->{Threshold_energy};
   printf $O "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height}                     if $pilatus->{height};
@@ -170,6 +174,7 @@ sub xdi_xes_head {
   if ($xesimage) {
     my $pilatus = $self->fetch_metadata($xesimage);
     if (%$pilatus) {
+      $text .= sprintf "# %s.%s: %s\n", "Scan", "start_time", $pilatus->{DateTime};
       $text .= sprintf "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
       $text .= sprintf "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_setting};
       $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};

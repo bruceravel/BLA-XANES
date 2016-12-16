@@ -102,12 +102,14 @@ sub xdi_out {
     $pilatus = $self->fetch_metadata($self->scan_file_list->[0]);
     printf $O "# %s.%s: %s\n", "Scan", "start_time", $pilatus->{DateTime};
   };
-  printf $O "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model}                       if $pilatus->{Model};
-  printf $O "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_energy} if $pilatus->{Threshold_energy};
-  printf $O "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height}                     if $pilatus->{height};
-  printf $O "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width}                       if $pilatus->{width};
-  printf $O "# %s.%s: %s\n", "BLA", "illuminated_pixels", $self->npixels;
-  printf $O "# %s.%s: %s\n", "BLA", "total_pixels", $self->columns*$self->rows;
+  printf $O "# %s.%s: %s\n", "PILATUS", "model",              $pilatus->{Model}             if $pilatus->{Model};
+  printf $O "# %s.%s: %s\n", "PILATUS", "threshold_energy",   $pilatus->{Threshold_setting} if $pilatus->{Threshold_setting};
+  printf $O "# %s.%s: %s\n", "PILATUS", "height",             $pilatus->{height}            if $pilatus->{height};
+  printf $O "# %s.%s: %s\n", "PILATUS", "width",              $pilatus->{width}             if $pilatus->{width};
+  printf $O "# %s.%s: %s\n", "PILATUS", "bitdepth",           $pilatus->{BitsPerSample}     if $pilatus->{BitsPerSample};
+  printf $O "# %s.%s: %s\n", "PILATUS", "pixel_size",         $pilatus->{Pixel_size}        if $pilatus->{Pixel_size};
+  printf $O "# %s.%s: %s\n", "BLA",     "illuminated_pixels", $self->npixels;
+  printf $O "# %s.%s: %s\n", "BLA",     "total_pixels",       $self->columns*$self->rows;
   if ($self->task eq 'rixs') {
     printf $O "# %s.%s: %s\n", "BLA", "pixel_ratio", "\%pixel_ratio\%";
   };
@@ -174,12 +176,14 @@ sub xdi_xes_head {
   if ($xesimage) {
     my $pilatus = $self->fetch_metadata($xesimage);
     if (%$pilatus) {
-      $text .= sprintf "# %s.%s: %s\n", "Scan", "start_time", $pilatus->{DateTime};
-      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "model", $pilatus->{Model};
+      $text .= sprintf "# %s.%s: %s\n", "Scan",    "start_time",       $pilatus->{DateTime};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "model",            $pilatus->{Model};
       $text .= sprintf "# %s.%s: %s\n", "PILATUS", "threshold_energy", $pilatus->{Threshold_setting};
-      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height", $pilatus->{height};
-      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "width", $pilatus->{width};
-      $text .= sprintf "# %s.%s: %s\n", "BLA", "xesimage", $xesimage if $xesimage;
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "height",           $pilatus->{height};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "width",            $pilatus->{width};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "bitdepth",         $pilatus->{BitsPerSample};
+      $text .= sprintf "# %s.%s: %s\n", "PILATUS", "pixel_size",       $pilatus->{Pixel_size} ;
+      $text .= sprintf "# %s.%s: %s\n", "BLA",     "xesimage",         $xesimage if $xesimage;
     };
   };
   $text .= "# /////////////////////////\n";

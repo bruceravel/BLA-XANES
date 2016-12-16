@@ -21,6 +21,108 @@ const my $IMAGE_WIDTH => 487;
 ## A million thanks to Chris Marshall for his help on the problem
 ## of reading signed 32 bit tiff files!
 ## see http://mailman.jach.hawaii.edu/pipermail/perldl/2014-March/008623.html
+##
+## The server at U Hawaii no longer exists.  Here is the exchange as
+## preserved on the Internet Archive Wayback Machine at
+## https://web.archive.org/web/20141030084128/http://mailman.jach.hawaii.edu/pipermail/perldl/2014-March/008623.html
+## (accessed 16 Dec 2016)
+
+# [Perldl] signed 32-bit tiff files
+#
+# Chris Marshall devel.chm.01 at gmail.com
+# Sun Mar 23 09:39:26 HST 2014
+#
+#     Previous message: [Perldl] signed 32-bit tiff files
+#     Next message: [Perldl] signed 32-bit tiff files
+#     Messages sorted by: [ date ] [ thread ] [ subject ] [ author ]
+#
+# Hi Bruce-
+#
+# I'm not sure how to fix the TIFF IO issue but looking at your
+# sensor docs there is a raw image file format that could be
+# used.  I also saw a note that the data in the TIFF file is
+# uncompressed following a 4096 byte header so it is possible
+# to us PDL::IO::FlexRaw to read the data files.  (I don't know
+# the best way to determine the image size and sensor info
+# which, presumably, is in the header of the .tif file).
+#
+# I used the ImageMagic identify command to determine the
+# dimensions of the image then the follow session in pdl shows
+# using PDL::IO::FlexRaw to read the data.  I've attached the
+# log of the image data image to prove that the file was loaded
+# correctly.  Note the use of badvalues to avoid log(0) problems.
+#
+# Hope this helps,
+# Chris
+#
+# pdl> $bytes =  -s 'example-s32.tif';
+#
+# pdl> $longs = $bytes / 4;
+#
+# pdl> $img = readflex('example-s32.tif', [ { Type=>'long', NDims=>1,
+# Dims=>[$longs] } ]);
+#
+# pdl> $im2d = $img(1024:-1)->splitdim(0,487);
+#
+# pdl> $im2d->badflag(1);
+#
+# pdl> $im2d->inplace->setvaltobad(0);
+#
+# pdl> imag2d $im2d->log/$im2d->log->max;
+# glutCloseFunc: not implemented
+# Type Q or q to stop twiddling...
+# Stop twiddling command, key 'q', detected.
+# Stopped twiddle-ing!
+#
+# pdl> ?vars
+# PDL variables in package main::
+#
+# Name         Type   Dimension       Flow  State          Mem
+# ----------------------------------------------------------------
+# $im2d          Long D [487,195]            PB           0.36MB
+# $img           Long D [95989]              P            0.37MB
+#
+# pdl> wpic($im2d->log->setbadtoval(0)/$im2d->log->max, 'log-example-s32.tif')
+#
+#
+#
+# On Thu, Mar 20, 2014 at 7:14 PM, Bruce Ravel <bravel at bnl.gov> wrote:
+# >
+# > Hi,
+# >
+# > This gizmo -- https://www.dectris.com/pilatus_overview.html -- is a
+# > wonderful X-ray detector with an awkward feature.  It saves its images
+# > as signed 32 bit tiff files, which is a valid, if unusual, form of a
+# > tiff file.
+# >
+# > Here is an example of an image from this detector:
+# > https://github.com/bruceravel/BLA-XANES/blob/master/share/example-s32.tif
+# >
+# > It seems as though this does not get imported correctly:
+# >
+# >   pdl> $a = rim 'example-s32.tif'
+# >   pdl> imag $a
+# >   Use of uninitialized value $_[0] in pattern match (m//) at
+# > /usr/local/share/perl/5.14.2/PDL/Graphics/Simple.pm line 854.
+# >
+# > Doing things like "p $a->dims" or "p $a->max" returns nothing.  So it
+# > would seem that the read is silently failing.
+# >
+# >
+# > My understanding is that PDL relies upon netpbm, which in turn relies
+# > upon whatever version of libtiff it is compiled against.  So, it seems
+# > that I would need to rebuild libtiff, then netpbm, then that part of
+# > PDL.
+# >
+# > Is there something I am missing?  Is there another way of reading an
+# > s32 tiff directly?
+# >
+# > (I am currently using https://metacpan.org/pod/Imager to preprocess
+# > the tiff file.  It's a significant bottleneck.)
+# >
+# > Thanks!
+# > Bruce
+
 sub Read {
   my ($self, $file) = @_;
   my $bytes =  -s $file;
@@ -49,7 +151,8 @@ sub fetch_metadata {
   $text =~ s{\r}{}g;
   my @lines = split($/, $text);
 
-  foreach my $key (qw(Model DateTime BitsPerSample width height)) {
+  foreach my $key (qw(Model DateTime BitsPerSample width height Threshold_setting Pixel_size)) {
+    next if not exists $info->{$key};
     $info->{$key} =~ s{\0}{}g;
     $pilatus->{$key} = $info->{$key};
   };

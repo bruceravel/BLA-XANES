@@ -1,6 +1,36 @@
 #+STARTUP: showall
 * Bugs and limitations in Xray::BLA and Metis
 
+
+** Top of the TODO list [1/10]
+
+1. [X] Capture BLA and Pilatus metadata, display on XDI page
+   capture BLA.xesimage
+
+2. [ ] Take a project to a fresh location which lacks the image files,
+   verify that it works
+
+3. [ ] Flag images for not including in an XES merge or for excluding from
+   a HERFD (i.e. deglitching)
+
+4. [ ] Reuse masks button for RXES Data page
+
+5. [ ] Reuse masks buttons and better checks for up-to-date-ness.  Better
+   back calculating of needed masks
+
+6. [ ] weak mask can lead to 0 illuminated pixels.  Need a good check for
+   this.  See NbN
+
+7. [ ] Don't save shield to HDF5 file if not using shield in recipe
+
+8. [ ] gzip the project file, it's a factor of 10 to 20
+
+9. [ ] Change mode, for example start in HERFD mode, import an XES project
+   file
+
+10. [ ] In Config, "apply" and "apply+save" do the same thing
+
+
 ** From Feb 2016 experiment
 
  - [X] Need to generalize how XES spectrum is made in terms of how the
@@ -104,7 +134,7 @@
 
  - [X] implement aggregate mask from set of elastic images
 
- - [ ] separate stubs for elastic and data images (partially addressed
+ - [ ] +separate stubs for elastic and data images+ (partially addressed
    by file name templates)
 
  - [X] widgets for selecting folders.  Wx::FileDialog was causing
@@ -142,12 +172,3 @@
  - proper edge detection
  - Fourier filtering
 
-** Rough milestones
-
-Out of order!
-
- - [X] *Version 2* : XES and RIXS working in Metis
- - [X] *Version 3* : Whatever is required of Feb 2016 beamtime, write a document for use at BL
- - [ ] *Version 4* : proper test suite, test for and handle edge cases (what did I mean by this?)
- - [ ] *Version 5* : map and mapmask working in Metis
- - [X] *Version 6* : persistance in Metis, save and recover to current position

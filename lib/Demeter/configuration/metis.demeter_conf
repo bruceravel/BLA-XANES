@@ -1,6 +1,6 @@
 ## -*- config -*-
 ###########################################################################
-## This configuration file is for Metis version 4.
+## This configuration file is for Metis version 5.
 ##
 ##     Metis is Copyright (c) 2006-2014,2016 Bruce Ravel and Jeremy Kropf.
 ##
@@ -30,7 +30,7 @@
 ###########################################################################
 
 
-## This file contains the Hephaestus configuration group
+## This file contains the Metis configuration group
 
 
 ######################################################################

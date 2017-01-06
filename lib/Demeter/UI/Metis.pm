@@ -667,7 +667,7 @@ Demeter::UI::Metis - BLA data processing
 
 =head1 VERSION
 
-This documentation refers to Xray::BLA version 2.
+This documentation refers to Xray::BLA version 5.
 
 =head1 DESCRIPTION
 

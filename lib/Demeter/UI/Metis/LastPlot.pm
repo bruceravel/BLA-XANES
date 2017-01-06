@@ -128,7 +128,7 @@ Demeter::UI::Metis::LastPlot - A simple text buffer for Metis
 
 =head1 VERSION
 
-This documentation refers to Demeter version 0.9.24.
+This documentation refers to Metis version 5.
 
 =head1 SYNOPSIS
 

@@ -4,7 +4,7 @@
 * Steps
 
 1. This was done with HDF5 1.8.17 and PDL::IO::HDF5 0.73 with
-   mingw-w64-crt-v4.0.2 and gcc 4.9.2 from Strawberry 5.22.2.1-64bit.
+   mingw-w64-crt-v4.0.2 and gcc 4.9.2 from Strawberry 5.24.0.1-64bit.
 
 2. Unpack. file ~src/H5config.h.in~ must be run through d2u.  Both
    7Zip and the built-in zip extracter convert end-of-line characters
@@ -40,13 +40,13 @@
 
 6. ~make && make check && make install~
 
-   I had one of the tests fail, but I installed anayway.
+   I had some of the tests fail, but I installed anayway.
 
 7. Unpack PDL::IO::HDF5.
 
 8. the ~make install~ phase for the HDF5 library does not install the
-   file ~src/H5config.h~.  That file will, however, be needed to
-   build PDL::IO::HDF5.  So copy it over by hand.
+   file ~src/H5config.h~.  That file will, however, be needed to build
+   PDL::IO::HDF5.  So copy it over by hand.  Also ~H5FDwindows.h~.
 
 9. Edit ~Makefile.PL~.  Add the installation locations for HDF5 to
    ~@libdirs~ near line 42 and for ~@incdirs~ near line 83.  Note
@@ -54,5 +54,5 @@
    for the path.  In my example, ~C:\Strawberry\c\hdf5\lib~ is
    correct, while ~/c/Strawberry/c/hdf5/lib~ is incorrect.
 
-10. ~perl Build && perl Build install~.  Everything should work.  One
+10. ~dmake && dmake install~.  Everything should work.  One
     hopes.

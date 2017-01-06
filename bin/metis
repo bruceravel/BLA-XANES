@@ -13,7 +13,7 @@ BEGIN {
     require Win32;
     use File::Basename;
     use File::Spec;
-    $ENV{GNUPLOT_BINARY} = File::Spec->catfile($ENV{DEMETER_BASE},'c','bin','gnuplot','bin','gnuplot.exe');
+    $ENV{GNUPLOT_BINARY} ||= File::Spec->catfile($ENV{DEMETER_BASE},'c','bin','gnuplot','bin','gnuplot.exe');
 
     #my (@not, @mingw);
     #foreach my $folder (split(/;/, $ENV{PATH})) {

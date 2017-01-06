@@ -30,7 +30,7 @@ my $build = BLABuilder
 	 recommends         => {
 				'PDL::Graphics::Simple'     =>  0,
 				'PDL::Graphics::Gnuplot'    =>  '2.006',
-				'Pod::POM::View::Restructured' => 0,
+				#'Pod::POM::View::Restructured' => 0,
 	 		       },
 	 sign               => 1,
 	);

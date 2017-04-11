@@ -26,6 +26,7 @@ use PDL::Fit::Polynomial qw(fitpoly1d);
 
 use File::Basename;
 use List::MoreUtils qw(onlyidx);
+use Math::Rounf qw(round);
 
 sub mask {
   my ($self, @args) = @_;
@@ -69,7 +70,7 @@ sub mask {
     if ($cbm < 1) {
       $cbm = 1;
     } elsif ($cbm > $self->bad_pixel_value/$self->imagescale) {
-      $cbm = $self->bad_pixel_value/$self->imagescale;
+      $cbm = round($self->bad_pixel_value/$self->imagescale);
     };
     $self->cbmax($cbm);
     $self->plot_mask;
@@ -283,7 +284,7 @@ sub do_step {
     if ($cbm < 1) {
       $cbm = 1;
     } elsif ($cbm > $self->bad_pixel_value/$self->imagescale) {
-      $cbm = $self->bad_pixel_value/$self->imagescale;
+      round($cbm = $self->bad_pixel_value/$self->imagescale);
     };
     $self->cbmax($cbm);# if $step =~ m{social};
     $self->plot_mask;

@@ -22,6 +22,7 @@ use File::Basename;
 use List::Util qw(min);
 use List::MoreUtils qw(all none any);
 use Math::Random;
+use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 
 use vars qw($pdl_plot_object);
@@ -187,7 +188,7 @@ sub plot_energy_point {
   };
   $title = $self->escape_us($title);
   my $cbm = min($point->max, 100);
-  #my $cbm = $self->bad_pixel_value/$self->imagescale;
+  #my $cbm = round($self->bad_pixel_value/$self->imagescale);
   $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
   $self->pdlplot->image({cbrange=>[0, $cbm], palette=>$self->palette, title=>$title, # cbrange=>[0,$cbm],
 			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},

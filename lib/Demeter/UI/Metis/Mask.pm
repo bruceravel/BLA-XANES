@@ -8,6 +8,7 @@ use Config::IniFiles;
 use Const::Fast;
 use File::Basename;
 use File::Spec;
+use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 
 use Wx qw( :everything );
@@ -748,7 +749,7 @@ sub plot {
   if ($cbm < 1) {
     $cbm = 1;
   } elsif ($cbm > $spectrum->bad_pixel_value/$spectrum->imagescale) {
-    $cbm = $spectrum->bad_pixel_value/$spectrum->imagescale;
+    $cbm = round($spectrum->bad_pixel_value/$spectrum->imagescale);
   };
   $spectrum->cbmax($cbm);
   if ($spectrum->masktype eq 'single') {

@@ -26,7 +26,7 @@ use PDL::Fit::Polynomial qw(fitpoly1d);
 
 use File::Basename;
 use List::MoreUtils qw(onlyidx);
-use Math::Rounf qw(round);
+use Math::Round qw(round);
 
 sub mask {
   my ($self, @args) = @_;

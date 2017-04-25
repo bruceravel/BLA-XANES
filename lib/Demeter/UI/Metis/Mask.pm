@@ -128,6 +128,26 @@ sub new {
   $app->mouseover($self->{energy_down}, "Decrement the emission energy (Ctrl-j)");
 
   $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
+  $vbox ->  Add($ebox, 0, wxGROW|wxBottom|wxLEFT, 5);
+  $self->{usermasklabel} = Wx::StaticText->new($self, -1, "User mask:");
+  $self->{usermask}      = Wx::FilePickerCtrl->new($self, -1, cwd, 'Select a user mask', "gif files (*.gif)|*.gif|TIF files (*.tif)|*.tif|All files|*.*", [-1,-1], [270,-1]);
+  $self->{usermaskonoff} = Wx::CheckBox->new($self, -1, 'skip user mask');
+  $ebox->Add($self->{usermasklabel}, 0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{usermask},      0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{usermaskonoff}, 0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $app->mouseover($self->{usermask}, "Import a user-defined mask to help refine the mask recipe.");
+  EVT_CHECKBOX($self, $self->{usermaskonoff},
+	       sub{
+		 if ($self->{usermaskonoff}->GetValue) {
+		   $self->{usermasklabel} -> Enable(0);
+		   $self->{usermask}      -> Enable(0);
+		 } else {
+		   $self->{usermasklabel} -> Enable(1);
+		   $self->{usermask}      -> Enable(1);
+		 };
+	       });
+
+  $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxLEFT, 5);
   $self->{rangelabel} = Wx::StaticText->new($self, -1, "Horizontal range (pixels):");
   $self->{rangemin}   = Wx::SpinCtrl->new($self, -1, $app->{base}->width_min, wxDefaultPosition, [70,-1], wxSP_ARROW_KEYS, 0, 487);
@@ -574,6 +594,11 @@ sub do_step {
       my $string = $self->{spots_list}->GetString($i);
       $spectrum->push_spots([split(" ",$string)]);
     };
+    if ($self->{usermaskonoff}->GetValue == 0) {
+      $spectrum->user_mask_file($self->{usermask}->GetPath);
+      $success = $spectrum -> do_step('apply_user_mask', %args);
+      $self->{steps_list}->Append(sprintf("user %s", $self->{usermask}->GetPath));
+    };
     $success = $spectrum -> do_step('bad_pixels', %args);
     $self->{steps_list}->Append(sprintf("bad %d weak %d power %d",
 					$spectrum -> bad_pixel_value,
@@ -724,6 +749,7 @@ sub do_step {
   $spectrum->remove_bad_pixels;
   my $tab = ($energy == $self->{energy}->GetStringSelection) ? q{} : q{    };
   $self->{toggle}->SetValue(0);
+  #$spectrum->plot_usermask;
   $self->plot($app, $spectrum, $quiet||$nostatus, $tab);
   ## save masks and shields to HDF5 file
   my $ds = $::app->{hdf5}->group('elastic')->group($key)->dataset('mask');

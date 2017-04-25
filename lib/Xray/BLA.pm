@@ -114,6 +114,11 @@ has 'columns'            => (is => 'rw', isa => 'Int', default => 0, alias => 'w
 has 'rows'               => (is => 'rw', isa => 'Int', default => 0, alias => 'height',
 			     documentation => "The height of the images in pixels.");
 
+has 'user_mask_file'     => (is => 'rw', isa => 'Str', default => q{},
+			     documentation => "Fully resolved file name of the user-supplied mask.");
+has 'usermask'           => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
+			     documentation => "The PDL object containing the user-supplied mask image.");
+
 has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400,
 			     documentation => "The value above which a pixel is considered to be a bad pixel.");
 has 'weak_pixel_value'	 => (is => 'rw', isa => 'Int', default => 3,

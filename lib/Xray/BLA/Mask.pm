@@ -90,6 +90,12 @@ sub mask {
     $args{unity}   = $set_npixels;
 
   STEPS: {
+      ($args[0] eq 'user') and do {
+	$self->user_mask_file($args[1]);
+	$self->do_step('apply_user_mask', %args);
+	last STEPS;
+      };
+
       ($args[0] eq 'bad') and do {
 	$self->bad_pixel_value($args[1]);
 	$self->weak_pixel_value($args[3]);
@@ -271,7 +277,7 @@ sub do_step {
   } else {
     print $ret->message if $args{verbose};
   };
-  $self->remove_bad_pixels;
+  $self->remove_bad_pixels  if ($step ne 'apply_user_mask');
   ## wim: see PDL::IO::Pic
   $self->elastic_image->wim($args{write}) if $args{write};
   $self->eimax($self->elastic_image->flat->max);
@@ -317,6 +323,39 @@ sub import_elastic_image {
 };
 
 
+sub apply_user_mask {
+  my ($self, $rargs) = @_;
+  my %args = %$rargs;
+  my $ret = Xray::BLA::Return->new;
+
+  my ($on, $off) = (0,0);
+  my $ei     = $self->elastic_image;
+  my ($w,$h) = $self->elastic_image->dims;
+
+  my $usermask = zeros($self->elastic_image->dims);
+  if (-e $self->user_mask_file) {
+    #print $self->user_mask_file, $/;
+    $usermask = rim($self->user_mask_file);
+    $usermask->inplace->eq(0,0);
+    my $foo = $usermask->slice('0:-1,-1:0');
+    $usermask = $foo;
+    #print $usermask->dims, $/;
+    $self->usermask($usermask);
+  };
+
+  $ei *= $usermask;
+  $self->elastic_image($ei);
+  $on  = $ei->gt(0,0)->sum;
+  $off = $ei->eq(0,0)->sum;
+
+  my $str = $self->report("Usermask step", 'cyan');
+  $str   .= sprintf "\tUser mask removes %d pixels and leaves %d good pixels\n", $w * $h - $usermask->sum, $usermask->sum;
+  $str   .= sprintf "\t%d illuminated pixels, %d dark pixels, %d total pixels\n",
+    $on, $off, $on+$off;
+  $ret->status($ei->gt(0,0)->sum);
+  $ret->message($str);
+  return $ret;
+};
 
 sub bad_pixels {
   my ($self, $rargs) = @_;

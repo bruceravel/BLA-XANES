@@ -126,6 +126,18 @@ sub plot_shield {
 			$self->shield_image);
 };
 
+sub plot_usermask {
+  my ($self) = @_;
+  return if $self->usermask->isnull;
+  return if $self->usermask->getndims == 1;
+  my $title = "user mask for ".basename($self->elastic_file);
+  $title = $self->escape_us($title);
+  $self->pdlplot->output($self->terminal, size=>[675,408,'px']);
+  $self->pdlplot->image({cbrange=>[0,1], palette=>$self->palette, title=>$title,
+			 xlabel=>'pixels (width)', ylabel=>'pixels (height)', cblabel=>'counts', ymin=>194, ymax=>0, size=>'ratio 0.4'},
+			$self->usermask);
+};
+
 
 sub plot_plane {
   my ($self, $holol) = @_;

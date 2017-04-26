@@ -466,7 +466,8 @@ sub andmask {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
-  if (not $self->usermask->isnull) {
+  my $unusable = $self->usermask->isnull || $self->usermask->isempty;
+  if (not $unusable) {
     $self->elastic_image->inplace->mult($self->usermask, 0);
   };
   $self->elastic_image->inplace->gt(0,0);

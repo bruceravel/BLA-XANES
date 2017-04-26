@@ -486,7 +486,7 @@ sub SelectEnergy {
       $self->{badvalue}->SetValue($words[1]);
       $self->{weakvalue}->SetValue($words[3]);
       $self->{exponentvalue}->SetValue($words[5] || 1);
-      $self->{usermaskfile}->SetValue($words[7]) if (-f $words[7]);
+      $self->{usermaskfile}->SetValue($words[7]) if (defined $words[7] and -f $words[7]);
     } elsif ($st =~ m{\Agaussian}) {
       $self->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Auseshield}) {

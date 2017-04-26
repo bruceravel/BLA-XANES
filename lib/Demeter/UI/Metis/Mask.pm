@@ -19,6 +19,7 @@ use Wx::Perl::TextValidator;
 use PDL::NiceSlice;
 
 use Demeter::UI::Metis::PluckPoint;
+use Demeter::UI::Metis::UserMask;
 
 my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
 		       do_shield shieldlabel shieldvalue
@@ -32,7 +33,9 @@ my @most_widgets = (qw(do_gaussian gaussianlabel gaussianvalue
                        #do_multiply multiplyvalue do_entire
 		       #do_fluo fluolabel fluolevel fluoenergylabel fluoenergy
 
-my @all_widgets = (qw(do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue), @most_widgets);
+my @all_widgets = (qw(usermaskbutton usermaskfile usermaskonoff
+		      do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue),
+		   @most_widgets);
 
 my $icon = File::Spec->catfile(dirname($INC{"Demeter/UI/Metis.pm"}), 'Metis', 'share', "up.png");
 my $up   = Wx::Bitmap->new($icon, wxBITMAP_TYPE_PNG);
@@ -67,7 +70,7 @@ sub new {
 
   my $sbox = Wx::BoxSizer->new( wxVERTICAL );
 
-  my $stepsbox       = Wx::StaticBox->new($self, -1, 'Mask building steps', wxDefaultPosition, wxDefaultSize);
+  my $stepsbox       = Wx::StaticBox->new($self, -1, 'Mask building recipe', wxDefaultPosition, wxDefaultSize);
   my $stepsboxsizer  = Wx::StaticBoxSizer->new( $stepsbox, wxVERTICAL );
 
   $self->{steps_list} = Wx::ListBox->new($self, -1, wxDefaultPosition, wxDefaultSize);
@@ -127,24 +130,26 @@ sub new {
   $app->mouseover($self->{energy_up},   "Increment the emission energy (Ctrl-k)");
   $app->mouseover($self->{energy_down}, "Decrement the emission energy (Ctrl-j)");
 
+
   $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
   $vbox ->  Add($ebox, 0, wxGROW|wxBottom|wxLEFT, 5);
-  $self->{usermasklabel} = Wx::StaticText->new($self, -1, "User mask:");
-  $self->{usermask}      = Wx::FilePickerCtrl->new($self, -1, cwd, 'Select a user mask', "gif files (*.gif)|*.gif|TIF files (*.tif)|*.tif|All files|*.*", [-1,-1], [270,-1]);
-  $self->{usermaskonoff} = Wx::CheckBox->new($self, -1, 'skip user mask');
-  $ebox->Add($self->{usermasklabel}, 0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
-  $ebox->Add($self->{usermask},      0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
-  $ebox->Add($self->{usermaskonoff}, 0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
-  $app->mouseover($self->{usermask}, "Import a user-defined mask to help refine the mask recipe.");
-  EVT_CHECKBOX($self, $self->{usermaskonoff},
+  $self->{usermaskbutton} = Wx::Button->new($self, -1, "Import user mask:");
+  $self->{usermaskfile}   = Wx::TextCtrl->new($self, -1, $app->{base}->user_mask_file, wxDefaultPosition, [250,-1], wxTE_READONLY);
+  $self->{usermaskonoff}  = Wx::Button->new($self, -1, 'Discard user mask');
+  $ebox->Add($self->{usermaskbutton}, 0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{usermaskfile},   0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $ebox->Add($self->{usermaskonoff},  0, wxLEFT|wxRIGHT|wxALIGN_CENTRE_VERTICAL, 5);
+  $app->mouseover($self->{usermaskbutton}, "Import a user-defined mask to help refine the mask recipe.");
+  EVT_BUTTON($self, $self->{usermaskbutton}, sub{SelectUserMask(@_, $app)});
+  EVT_BUTTON($self, $self->{usermaskonoff},
 	       sub{
-		 if ($self->{usermaskonoff}->GetValue) {
-		   $self->{usermasklabel} -> Enable(0);
-		   $self->{usermask}      -> Enable(0);
-		 } else {
-		   $self->{usermasklabel} -> Enable(1);
-		   $self->{usermask}      -> Enable(1);
+		 foreach my $k (keys %{$app->{bla_of}} ) {
+		   $app->{bla_of}->{$k}->user_mask_file(q{});
+		   $app->{bla_of}->{$k}->usermask(PDL->null);
 		 };
+		 $app->{base}->user_mask_file(q{});
+		 $app->{base}->usermask(PDL->null);
+		 $_[0]->{usermaskfile}->SetValue(q{});
 	       });
 
   $ebox = Wx::BoxSizer->new( wxHORIZONTAL );
@@ -359,7 +364,8 @@ sub new {
 sub restore {
   my ($self, $app) = @_;
   $self->{steps_list}->Clear;
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue energylabel
+  foreach my $k (qw(usermaskbutton usermaskfile usermaskonoff
+		    do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue energylabel
 		    rangelabel rangemin rangeto rangemax energy stub)) { #  rbox
     $self->{$k}->Enable(1);
   };
@@ -389,7 +395,8 @@ sub MaskType {
     undef $busy;
   };
 
-  foreach my $k (qw(do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue)) {
+  foreach my $k (qw(usermaskbutton usermaskfile usermaskonoff
+		    do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue)) {
     $self->{$k}->Enable(1);
   };
   foreach my $k (@most_widgets) {
@@ -398,6 +405,34 @@ sub MaskType {
   $self->{steps_list}->Clear;
 };
 
+
+sub SelectUserMask {
+  my ($self, $event, $app) = @_;
+
+  my $energy = $self->{energy}->GetStringSelection;
+  my $spectrum = $app->{bla_of}->{$energy};
+
+  my $dialog = Demeter::UI::Metis::UserMask->new($self, $spectrum, $self->{usermaskfile}->GetValue);
+  my $result = $dialog -> ShowModal;
+  if ($result == wxID_CANCEL) {
+    $app->{main}->status("Canceled user mask import.");
+    $spectrum->usermask(PDL::null);
+    return;
+  };
+
+  #$spectrum->user_mask_file($dialog->{file}->GetPath);
+  foreach my $k (keys %{$app->{bla_of}} ) {
+    $app->{bla_of}->{$k}->user_mask_file($dialog->{file}->GetPath);
+    $app->{bla_of}->{$k}->user_mask_zero_one($dialog->{rbox}->GetSelection);
+    $app->{bla_of}->{$k}->user_mask_flip($dialog->{flip}->GetValue || 0);
+    $app->{bla_of}->{$k}->usermask($spectrum->usermask);
+  };
+  $app->{base}->user_mask_file($dialog->{file}->GetPath);
+  $app->{base}->user_mask_zero_one($dialog->{rbox}->GetSelection);
+  $app->{base}->user_mask_flip($dialog->{flip}->GetValue || 0);
+  $app->{base}->usermask($spectrum->usermask);
+  $self->{usermaskfile}->SetValue($dialog->{file}->GetPath);
+};
 
 sub SelectEnergy {
   my ($self, $event, $app, $args) = @_;
@@ -451,6 +486,7 @@ sub SelectEnergy {
       $self->{badvalue}->SetValue($words[1]);
       $self->{weakvalue}->SetValue($words[3]);
       $self->{exponentvalue}->SetValue($words[5] || 1);
+      $self->{usermaskfile}->SetValue($words[7]) if (-f $words[7]);
     } elsif ($st =~ m{\Agaussian}) {
       $self->{gaussianvalue}->SetValue($words[1]);
     } elsif ($st =~ m{\Auseshield}) {
@@ -594,16 +630,24 @@ sub do_step {
       my $string = $self->{spots_list}->GetString($i);
       $spectrum->push_spots([split(" ",$string)]);
     };
-    if ($self->{usermaskonoff}->GetValue == 0) {
-      $spectrum->user_mask_file($self->{usermask}->GetPath);
+    if (-f $self->{usermaskfile}->GetValue) {
+      $spectrum->user_mask_file($self->{usermaskfile}->GetValue);
       $success = $spectrum -> do_step('apply_user_mask', %args);
-      $self->{steps_list}->Append(sprintf("user %s", $self->{usermask}->GetPath));
     };
     $success = $spectrum -> do_step('bad_pixels', %args);
-    $self->{steps_list}->Append(sprintf("bad %d weak %d power %d",
-					$spectrum -> bad_pixel_value,
-					$spectrum -> weak_pixel_value,
-					$spectrum -> exponent)) if ($success and $append);
+    if (-f $self->{usermaskfile}->GetValue) {
+      $self->{steps_list}->Append(sprintf("bad %d weak %d power %d user %s",
+					  $spectrum -> bad_pixel_value,
+					  $spectrum -> weak_pixel_value,
+					  $spectrum -> exponent,
+					  $spectrum -> user_mask_file,
+					 )) if ($success and $append);
+    } else {
+      $self->{steps_list}->Append(sprintf("bad %d weak %d power %d",
+					  $spectrum -> bad_pixel_value,
+					  $spectrum -> weak_pixel_value,
+					  $spectrum -> exponent)) if ($success and $append);
+    }
     foreach my $k (@most_widgets) { # animation
       $self->{$k}->Enable(1);
       $self->{plotshield}->Enable(0);
@@ -739,7 +783,13 @@ sub do_step {
 
   } elsif ($which eq 'andmask') {
     $success = $spectrum -> do_step('andmask', %args);
-    $self->{steps_list}->Append("andmask") if ($success and $append);
+    if ($success and $append) {
+      if (-f $self->{usermaskfile}->GetValue) {
+	$self->{steps_list}->Append("andmask ".$self->{usermaskfile}->GetValue);
+      } else {
+	$self->{steps_list}->Append("andmask");
+      };
+    };
     $spectrum->clear_steps;
     foreach my $n (0 .. $self->{steps_list}->GetCount-1) {
       $spectrum->push_steps($self->{steps_list}->GetString($n));

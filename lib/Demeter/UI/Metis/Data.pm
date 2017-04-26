@@ -250,8 +250,12 @@ sub fetch_steps {
   my ($self, $spectrum, $app) = @_;
   ## read step list, add andmask if needed
   my $steplist = $app->{Mask}->{steps_list};
-  if ($steplist->GetString($steplist->GetCount-1) ne 'andmask') {
-    $steplist->Append("andmask");
+  if ($steplist->GetString($steplist->GetCount-1) !~ m{andmask}) {
+    if (-f $app->{Mask}->{usermaskfile}->GetValue) {
+      $steplist->Append("andmask ".$app->{Mask}->{usermaskfile}->GetValue);
+    } else {
+      $steplist->Append("andmask");
+    };
   };
   $spectrum->clear_steps;
   foreach my $n (0 .. $steplist->GetCount-1) {
@@ -739,7 +743,9 @@ sub plot_rixs {
 
   $self->{replot_rixs} -> Enable(1);
   $self->{save_rixs}   -> Enable(1);
+  $app->set_parameters;	    # save config file because, presumably, we like the current mask creation values
   $app->{main}->status("Plotted RIXS as XAFS-like data" . Xray::BLA->howlong($start, '.  That'));
+  undef $busy;
 };
 
 sub replot_rixs {
@@ -821,6 +827,7 @@ sub plot_plane {
   $self->{replot_rxes}->Enable(1);
   $self->{replot_rxes}->SetFocus;
   $self->{save_rxes}->Enable(1);
+  $app->set_parameters;	    # save config file because, presumably, we like the current mask creation values
   $app->{main}->status("Plotted RXES plane for " . $app->{base}->stub . Xray::BLA->howlong($start, '.  That'));
   $app->{plane_file} = $ret->message;
   #$app->{main}->status(sprintf("Wrote %s (max value = %d)", $ret->message, $ret->status));

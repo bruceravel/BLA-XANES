@@ -118,6 +118,12 @@ has 'user_mask_file'     => (is => 'rw', isa => 'Str', default => q{},
 			     documentation => "Fully resolved file name of the user-supplied mask.");
 has 'usermask'           => (is => 'rw', isa => 'PDL', default => sub {PDL::null},
 			     documentation => "The PDL object containing the user-supplied mask image.");
+has 'user_mask_zero_one' => (is => 'rw', isa => 'Int', default => 0, alias => 'height',
+			     documentation => "Choose between the high or low value in the user mask.");
+has 'user_mask_flip'     => (is => 'rw', isa => 'Bool', default => 1, alias => 'height',
+			     documentation => "Flip the user vertically before use.");
+
+
 
 has 'bad_pixel_value'	 => (is => 'rw', isa => 'Int', default => 400,
 			     documentation => "The value above which a pixel is considered to be a bad pixel.");

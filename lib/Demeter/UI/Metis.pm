@@ -125,7 +125,8 @@ sub OnInit {
 		      xdi_metadata_file)) {
       $app->{base}->$c($app->{yaml}->[0]->{$c}) if defined $app->{yaml}->[0]->{$c};
     };
-    foreach my $m (qw(bad_pixel_value weak_pixel_value exponent social_pixel_value
+    foreach my $m (qw(user_mask_file user_mask_zero_one user_mask_flip
+		      bad_pixel_value weak_pixel_value exponent social_pixel_value
 		      lonely_pixel_value scalemask radius gaussian_blur_value shield)) {
       $app->{base}->$m($app->{yaml}->[0]->{$m}) if defined $app->{yaml}->[0]->{$m};
     };
@@ -414,6 +415,7 @@ sub set_parameters {
 
   $app->{base} -> width_min($app->{Mask}->{rangemin}->GetValue);
   $app->{base} -> width_max($app->{Mask}->{rangemax}->GetValue);
+  $app->{base} -> user_mask_file($app->{Mask}->{usermaskfile}->GetValue);
   $app->{base} -> bad_pixel_value($app->{Mask}->{badvalue}->GetValue);
   $app->{base} -> weak_pixel_value($app->{Mask}->{weakvalue}->GetValue);
   $app->{base} -> exponent($app->{Mask}->{exponentvalue}->GetValue);
@@ -431,6 +433,7 @@ sub set_parameters {
 		    imagescale outimage terminal energycounterwidth tiffcounter
 		    scan_file_template elastic_file_template image_file_template xdi_metadata_file
 		    gaussian_kernel
+		    user_mask_file user_mask_zero_one user_mask_flip
 		    bad_pixel_value gaussian_blur_value shield weak_pixel_value exponent social_pixel_value
 		    lonely_pixel_value scalemask radius div10 shield width_min width_max
 		  )) {
@@ -466,6 +469,7 @@ sub set_parameters {
   $app->{configuration}->attrSet(bad_pixel_value      => $app->{Mask}->{badvalue}->GetValue);
   $app->{configuration}->attrSet(weak_pixel_value     => $app->{Mask}->{weakvalue}->GetValue);
   $app->{configuration}->attrSet(exponent	      => $app->{Mask}->{exponentvalue}->GetValue);
+  $app->{configuration}->attrSet(user_mask_file	      => $app->{Mask}->{usermaskfile}->GetValue);
   $app->{configuration}->attrSet(gaussian_blur_value  => $val);
   $app->{configuration}->attrSet(shield		      => $app->{Mask}->{shieldvalue}->GetValue);
   $app->{configuration}->attrSet(social_pixel_value   => $app->{Mask}->{socialvalue}->GetValue);

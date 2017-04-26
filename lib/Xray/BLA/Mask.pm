@@ -158,6 +158,7 @@ sub mask {
       };
 
       ($args[0] eq 'andmask') and do {
+	$self->user_mask_file($args[1]);
 	$self->do_step('andmask', %args);
 	last STEPS;
       };
@@ -333,7 +334,7 @@ sub apply_user_mask {
   my ($w,$h) = $self->elastic_image->dims;
 
   my $usermask = zeros($self->elastic_image->dims);
-  if (-e $self->user_mask_file) {
+  if (($self->usermask->isnull) and (-f $self->user_mask_file)) {
     #print $self->user_mask_file, $/;
     $usermask = rim($self->user_mask_file);
     $usermask->inplace->eq(0,0);
@@ -343,7 +344,7 @@ sub apply_user_mask {
     $self->usermask($usermask);
   };
 
-  $ei *= $usermask;
+  $ei *= $self->usermask;
   $self->elastic_image($ei);
   $on  = $ei->gt(0,0)->sum;
   $off = $ei->eq(0,0)->sum;
@@ -465,6 +466,9 @@ sub andmask {
   my %args = %$rargs;
   my $ret = Xray::BLA::Return->new;
 
+  if (not $self->usermask->isnull) {
+    $self->elastic_image->inplace->mult($self->usermask, 0);
+  };
   $self->elastic_image->inplace->gt(0,0);
   $self->npixels($self->elastic_image->sum);
   my $str = $self->report("Making AND mask", 'cyan');

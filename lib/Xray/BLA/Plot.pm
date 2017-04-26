@@ -306,7 +306,7 @@ sub escape_us {
   if ($self->is_windows) {
     $string =~ s{_}{\\\_}g;
   } else {
-    $string =~ s{_}{\\\\_}g;
+    $string =~ s{_}{\\_}g;
   };
   return $string;
 };

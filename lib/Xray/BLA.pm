@@ -238,6 +238,10 @@ has 'width_min' => (is => 'rw', isa => 'LaxNum', default => 0,
 		    documentation => "The smallest coordinate in width to be considered as signal.");
 has 'width_max' => (is => 'rw', isa => 'LaxNum', default => 487,
 		    documentation => "The largest coordinate in width to be considered as signal.");
+has 'rxes_min'  => (is => 'rw', isa => 'Int', default => 1,
+		    documentation => 'The index of the first elastic image to process into the RXES plane.');
+has 'rxes_max'  => (is => 'rw', isa => 'Int', default => 100,
+		    documentation => 'The index of the last elastic image to process into the RXES plane.');
 
 
 has 'elastic_energies' => (

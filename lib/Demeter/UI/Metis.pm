@@ -19,6 +19,7 @@ use YAML::Tiny;
 
 use PDL::IO::HDF5;
 use PDL::Char;
+use PDL::IO::Pic qw(rim);
 
 use Wx qw(:everything);
 use Wx::Event qw(EVT_MENU EVT_CLOSE EVT_TOOL_ENTER EVT_CHECKBOX EVT_BUTTON
@@ -111,6 +112,9 @@ sub OnInit {
     $app->{base}->$p(Demeter->co->default('metis', $p));
   };
 
+  ## --- make an HDF5 file and begin to populate it
+  $app->init_hdf5(File::Spec->catfile($app->{base}->outfolder, "metis.mpj"));
+
   
   ## look for metis.<tool>.yaml or metis.yaml
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml'));
@@ -136,13 +140,28 @@ sub OnInit {
   $app->{base}->set_palette($app->{base}->color);
   $app->{base}->set_splot_palette($app->{base}->splot_palette_name);
 
+  if ((-f $app->{base}->user_mask_file) and ($app->{base}->usermask->isnull or $app->{base}->usermask->isempty)) {
+    my $usermask = rim($app->{base}->user_mask_file);
+    if ($app->{base}->user_mask_zero_one == 0) {
+      $usermask->inplace->eq(0,0);
+    } else {
+      $usermask->inplace->gt(0,0);
+    };
+    if ($app->{base}->user_mask_flip) {
+      my $foo = $usermask->slice('0:-1,-1:0');
+      $usermask = $foo;
+    };
+    $app->{base}->usermask($usermask);
+    my $ds = $app->{elastic_group}->dataset('usermask'); # make a data set in the elastic group for this energy
+    $ds->set($app->{base}->usermask, unlimited => 1);    # put elastic image into hdf5 file
+
+  };
+
+
   $app->{bla_of}= {};
   $app->{bla_of}->{aggregate}  = $app->{base}->clone();
   $app->{bla_of}->{aggregate} -> cleanup(1);
   $app->{bla_of}->{aggregate} -> masktype('aggregate');
-
-  ## --- make an HDF5 file and begin to populate it
-  $app->init_hdf5(File::Spec->catfile($app->{base}->outfolder, "metis.mpj"));
 
   ## -------- status bar
   $app->{main}->{statusbar} = $app->{main}->CreateStatusBar;

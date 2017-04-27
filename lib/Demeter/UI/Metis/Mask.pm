@@ -432,6 +432,10 @@ sub SelectUserMask {
   $app->{base}->user_mask_flip($dialog->{flip}->GetValue || 0);
   $app->{base}->usermask($spectrum->usermask);
   $self->{usermaskfile}->SetValue($dialog->{file}->GetPath);
+
+  my $ds = $app->{elastic_group}->dataset('usermask'); # make a data set in the elastic group for this energy
+  $ds->set($app->{base}->usermask, unlimited => 1);    # put elastic image into hdf5 file
+
 };
 
 sub SelectEnergy {
@@ -665,8 +669,9 @@ sub do_step {
       $app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$spectrum->energy);
       $app->{Data}->{energy} = $spectrum->energy;
       #if ($self->{rbox}->GetSelection == 0) {
-      foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
-	$app->{Data}->{$k}->Enable(1);
+      foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes
+			fromtext totext lower upper)) {
+	$app->{Data}->{$k}->Enable(1); #  xshowmasks
       };
       #};
       #if ($app->{tool} eq 'herfd') {

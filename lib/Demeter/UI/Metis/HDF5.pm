@@ -118,6 +118,7 @@ sub open_hdf5 {
   };
 
   my $start = DateTime->now( time_zone => 'floating' );
+  $::hdf5file = $file;
   $app->init_hdf5('>'.$file);
   push_metadata($app);
   push_configuration($app);
@@ -229,8 +230,8 @@ sub push_steps_spots {
       $app->{Data}->{stub}->SetLabel("Stub is ".attribute($co, "stub"));
       #$app->{Data}->{energylabel}->SetLabel("Current mask energy is ".$app->{Mask}->{energy}->GetStringSelection);
       #$app->{Data}->{energy} = $spectrum->energy;
-      foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes xshowmasks)) {
-	$app->{Data}->{$k}->Enable(1);
+      foreach my $k (qw(stub energylabel herfd mue xes xes_all reuse showmasks incident incident_label rixs rshowmasks rxes)) {
+	$app->{Data}->{$k}->Enable(1); #  xshowmasks
       };
     };
   };
@@ -250,6 +251,7 @@ sub push_elastic {
   my $el = $app->{hdf5}->group('elastic');
   my @groups = $el->groups;
 
+  $app->{base}->usermask($el->dataset('usermask')->get);
 
   my $count = 0;
   foreach my $gp (sort @groups) {
@@ -264,6 +266,7 @@ sub push_elastic {
     $app->{bla_of}->{$gp}->elastic_file(attribute($el->group($gp), 'file'));
     $app->{bla_of}->{$gp}->energy($gp);
     #$app->{bla_of}->{$gp}->energy(attribute($el->group($gp), 'energy'));
+    $app->{bla_of}->{$gp}->usermask($app->{base}->usermask);
 
     my @datasets = $el->group($gp)->datasets;
     $app->{bla_of}->{$gp}->raw_image($el->group($gp)->dataset('image')->get)     if any {$_ eq 'image'}  @datasets;
@@ -275,9 +278,11 @@ sub push_elastic {
     $app->{Files}->{elastic_list}->Append(basename($app->{bla_of}->{$gp}->elastic_file),0);
   };
 
+
   $app->{Mask}->{$_} -> Enable(1) foreach (qw(steps_list spots_list pluck restoresteps energy rangemin rangemax
 					      do_bad badvalue badlabel weaklabel weakvalue exponentlabel exponentvalue energylabel
-					      rangelabel rangemin rangeto rangemax energy stub)); #  rbox
+					      rangelabel rangemin rangeto rangemax energy stub
+					      usermaskbutton usermaskfile usermaskonoff)); #  rbox
   $app->{Mask}->{energy} -> Clear;
   $app->{Mask}->{energy} -> Append($_) foreach @{$app->{base}->elastic_energies};
   my $start = ($app->{tool} eq 'herfd') ? int(($#{$app->{base}->elastic_energies}+1)/2) : 0;

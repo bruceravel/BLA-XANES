@@ -189,9 +189,18 @@ sub new {
   $app->mouseover($self->{replot_rxes}, "Replot the last RXES data.");
   $app->mouseover($self->{save_rxes},   "Save the last RXES data.");
 
-  $self->{xshowmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
-  $planeboxsizer -> Add($self->{xshowmasks}, 0, wxGROW|wxALL, 0);
-  $self->{xshowmasks}->SetValue(1);
+  #$self->{xshowmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
+  #$planeboxsizer -> Add($self->{xshowmasks}, 0, wxGROW|wxALL, 0);
+  #$self->{xshowmasks}->SetValue(1);
+
+  $self->{fromtext} = Wx::StaticText -> new($self, -1, '  Compute RXES from  ');
+  $self->{lower}    = Wx::SpinCtrl   -> new($self, -1,   1, wxDefaultPosition, [-1,-1], wxSP_ARROW_KEYS, 1, 100);
+  $self->{totext}   = Wx::StaticText -> new($self, -1, '  to  ');
+  $self->{upper}    = Wx::SpinCtrl   -> new($self, -1, 100, wxDefaultPosition, [-1,-1], wxSP_ARROW_KEYS, 1, 100);
+  $planeboxsizer -> Add($self->{fromtext}, 0, wxTOP, 3);
+  $planeboxsizer -> Add($self->{lower}, 0, wxALL, 0);
+  $planeboxsizer -> Add($self->{totext}, 0, wxTOP, 3);
+  $planeboxsizer -> Add($self->{upper}, 0, wxALL, 0);
 
 
   if ($app->{tool} eq 'herfd') {
@@ -209,7 +218,7 @@ sub new {
     $self->{showmasks}->SetValue(0);
     #$self->{plotmerge}->SetValue(0);
     $self->{rshowmasks}->SetValue(0);
-    $self->{xshowmasks}->SetValue(0);
+    #$self->{xshowmasks}->SetValue(0);
     $vbox->Layout;
   };
 
@@ -221,8 +230,9 @@ sub new {
 		    incident incident_label
 		    xes replot_xes save_xes xes_all save_xes_all
 		    rixs replot_rixs save_rixs rshowmasks
-		    rxes replot_rxes save_rxes xshowmasks
-		  )) { # xes_rixs plotmerge
+		    rxes replot_rxes save_rxes
+		    fromtext totext lower upper
+		  )) { # xes_rixs plotmerge xshowmasks
     $self->{$k}->Enable(0);
   };
 
@@ -238,8 +248,8 @@ sub restore {
 		    incident incident_label
 		    xes replot_xes save_xes xes_all save_xes_all
 		    rixs replot_rixs save_rixs rshowmasks
-		    rxes replot_rxes save_rxes xshowmasks
-		  )) { # xes_rixs plotmerge
+		    rxes replot_rxes save_rxes
+		  )) { # xes_rixs plotmerge xshowmasks
     $self->{$k}->Enable(0);
   };
   $self->{herfdbox}->SetLabel(' HERFD');
@@ -805,11 +815,15 @@ sub plot_plane {
   my $nemission = $#{[keys %{$app->{bla_of}}]};
   my $count = 0;
   my ($spectrum, $file, $point);
+  $app->{base}->rxes_min($self->{lower}->GetValue);
+  $app->{base}->rxes_max($self->{upper}->GetValue);
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key =~ m{aggregate|base});
     $app->{bla_of}->{$key}->get_incident($key);
     my $energy = $app->{bla_of}->{$key}->incident;
     ++$count;
+    next if ($count < $app->{base}->rxes_min);
+    last if ($count > $app->{base}->rxes_max);
     $spectrum  = $app->{bla_of}->{$key};
     $point = $app->{bla_of}->{$key}->raw_image;
     #$point = $app->{bla_of}->{$self->{energy}}->Read($app->{bla_of}->{$key}->elastic_file);

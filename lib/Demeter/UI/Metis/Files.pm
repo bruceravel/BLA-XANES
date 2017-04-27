@@ -275,6 +275,7 @@ sub fetch {
 	return;
       };
       $app->{bla_of}->{$this}->raw_image($app->{bla_of}->{$this}->elastic_image);
+      $app->{bla_of}->{$this}->usermask($app->{base}->usermask);
       $ds->set($app->{bla_of}->{$this}->elastic_image, unlimited => 1); # put elastic image into hdf5 file
       my $denom = ($app->{bla_of}->{$this}->div10) ? 10. : 1.;
       $gp->attrSet('energy' => $this/$denom);
@@ -283,6 +284,15 @@ sub fetch {
   };
   $app->{bla_of}->{aggregate}->elastic_energies($app->{base}->elastic_energies);
   $app->{bla_of}->{aggregate}->elastic_file_list($app->{base}->elastic_file_list);
+
+  $app->{Data}->{lower}->SetRange(1,$#elastic_list+1);
+  $app->{Data}->{lower}->SetValue(1);
+  $app->{Data}->{upper}->SetRange(1,$#elastic_list+1);
+  $app->{Data}->{upper}->SetValue($#elastic_list+1);
+  $app->{base}->rxes_min(1);
+  $app->{base}->rxes_max($#elastic_list+1);
+
+
 
 
   ## set the contents of the images group in the HDF5 file

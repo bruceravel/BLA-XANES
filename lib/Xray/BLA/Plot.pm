@@ -151,7 +151,14 @@ sub plot_plane {
     my $inc = $self->incident;
     push @x, $inc;
     my (@thisy, @thisz);
+    my $count = 0;
     foreach my $line (@{$holol->{$incident}}) {
+      $count++;
+      next if ($count < $self->rxes_min); # exclude points from beginning and end of rxes plane
+      last if ($count > $self->rxes_max); # presumably, the number of items in the outer hash
+                                          # has already been truncated accordingly
+                                          # This make the data table square.
+
       $self->get_incident($line->[0]);
       my $exc = $self->incident;
       ##                  incident energy  emission en.     energy loss              intensity

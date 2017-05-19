@@ -647,7 +647,7 @@ sub xes_rixs {
       $n = $app->{bla_of}->{$key}->npixels;
       $x = $r/$n;
       $rixs->[$ne]->[$ni] = $x;
-      printf $RIXS "%.3f   %.3f   %.8g\n", $key, $inc, $x;
+      #printf $RIXS "%.3f   %.3f   %.8g\n", $key, $inc, $x;
       $ne++;
     };
     $ni ++;

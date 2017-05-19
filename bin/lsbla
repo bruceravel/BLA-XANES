@@ -12,24 +12,25 @@ use Pod::Usage;
 use Term::ANSIColor;
 
 use Getopt::Long;
-my ($app, $conf, $elastic, $images, $metadata, $scan, $all, $mode, $plot) = (0,0,0,0,0,0,0,0,0);
+my ($app, $conf, $elastic, $images, $metadata, $scan, $usermask, $all, $mode, $plot) = (0,0,0,0,0,0,0,0,0,0);
 GetOptions ("application|a"   => \$app,
             "configuration|c" => \$conf,
 	    "elastic|e"       => \$elastic,
 	    "images|i"        => \$images,
 	    "metadata|m"      => \$metadata,
 	    "scan|s"          => \$scan,
+	    "usermask|u"      => \$usermask,
 	    "plot|p=s"        => \$plot,
 	    "mode"            => \$mode,
 	    "all"             => \$all,);
 
-($app, $conf, $elastic, $images, $metadata, $scan, $all) = (1,1,1,1,1,1,1) if $all;
+($app, $conf, $elastic, $images, $metadata, $usermask, $scan, $all) = (1,1,1,1,1,1,1,1) if $all;
 
 my $file = $ARGV[0];
 
 my $hdf5 = new PDL::IO::HDF5($file);
 
-if (none {$_} ($app, $conf, $elastic, $images, $metadata, $scan, $all, $mode, $plot)) {
+if (none {$_} ($app, $conf, $elastic, $images, $metadata, $usermask, $scan, $all, $mode, $plot)) {
   pod2usage(-exitval => 0);
 };
 
@@ -40,6 +41,7 @@ steps_spots($hdf5)                      if $conf;
 metadata($hdf5)                         if $metadata;
 elastic($hdf5)                          if $elastic;
 images($hdf5)                           if $images;
+usermask($hdf5)                         if $usermask;
 #scan($hdf5)                             if $scan;
 plot($hdf5, $plot)                      if $plot;
 
@@ -112,6 +114,17 @@ sub elastic {
   };
 };
 
+sub usermask {
+  my ($hdf5) = @_;
+  my $tab = q{};
+  printf("%s  (%s = %s)\n", colored('user mask', 'bold green'), colored('image_folder', 'yellow'), $hdf5->group('configuration')->attrGet('image_folder'));
+  $tab .= "\t";
+  foreach my $ds (sort $hdf5->group('elastic')->datasets) {
+    print $tab, colored($ds, 'bold magenta');
+    printf("\t (%s)\n",
+    	   colored(basename($hdf5->group('elastic')->dataset($ds)->attrGet('file')), 'bright_black'));
+  };
+};
 
 sub yesno {
   my ($hdf5, $gp, $which) = @_;
@@ -183,7 +196,7 @@ lsbla [options] [hdf5_file]
  Options:
    -e            show elastic images
    -i            show measurement images
-   -s            show scan file content
+   -u            show user mask
    -c            show configuration parameters
    -m            show metadata parameters
    -a            show application parameters

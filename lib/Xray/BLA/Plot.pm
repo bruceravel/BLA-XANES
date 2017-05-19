@@ -25,6 +25,7 @@ use Math::Random;
 use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 
+use Demeter qw(:hephaestus);
 use vars qw($pdl_plot_object);
 $pdl_plot_object = new PDL::Graphics::Gnuplot(); #gpwin(wait=>Demeter->co->default('metis', 'gnuplot_wait'));
 $pdl_plot_object->{wait} = Demeter->co->default('metis', 'gnuplot_wait');

@@ -158,7 +158,7 @@ sub mask {
       };
 
       ($args[0] eq 'andmask') and do {
-	$self->user_mask_file($args[1]);
+	$self->user_mask_file($args[1]) if (-f $args[-1]);
 	$self->do_step('andmask', %args);
 	last STEPS;
       };

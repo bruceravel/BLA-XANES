@@ -435,7 +435,7 @@ sub SelectUserMask {
 
   my $ds = $app->{elastic_group}->dataset('usermask'); # make a data set in the elastic group for this energy
   $ds->set($app->{base}->usermask, unlimited => 1);    # put elastic image into hdf5 file
-
+  $ds->attrSet(file=>$app->{base}->user_mask_file);
 };
 
 sub SelectEnergy {

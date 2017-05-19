@@ -131,6 +131,7 @@ sub open_hdf5 {
   push_images($app);
 
   $app->save_indicator(0);
+  $app->{from_project} = 1;
   $app->{main}->status("Imported Metis project file $::hdf5file" .
 		       $app->{base}->howlong($start, '.  That'));
 

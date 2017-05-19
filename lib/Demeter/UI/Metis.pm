@@ -92,6 +92,7 @@ sub OnInit {
 
   #$app->{save_icon}  = Wx::Bitmap->new(File::Spec->catfile(dirname($INC{'Demeter/UI/Metis.pm'}), 'Metis', 'share', "Save.png"), wxBITMAP_TYPE_PNG);
   $app->{saved} = 0;
+  $app->{from_project} = 0;
 
   $app->{main}->{Status} = Demeter::UI::Athena::Status->new($app->{main});
   $app->{main}->{Status}->SetTitle("Metis [Status Buffer]");
@@ -105,6 +106,7 @@ sub OnInit {
   $app->{base} -> task($task);
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
+  $app->{base} -> usermask(q{});
 
   foreach my $p (qw(polyfill_order imagescale xdi_metadata_file tiffcounter terminal
 		    energycounterwidth gaussian_kernel splot_palette_name color outimage
@@ -115,7 +117,6 @@ sub OnInit {
   ## --- make an HDF5 file and begin to populate it
   $app->init_hdf5(File::Spec->catfile($app->{base}->outfolder, "metis.mpj"));
 
-  
   ## look for metis.<tool>.yaml or metis.yaml
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml'));
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'yaml')) if not -e $app->{yamlfile};

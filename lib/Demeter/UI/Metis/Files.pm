@@ -262,6 +262,7 @@ sub fetch {
     $app->{base}->push_elastic_file_list($e);
     if ($e =~ m{$elastic_re}) {
       my $this = $+{e} || $+{c};
+      next if not $this;
 
       $app->{base}->push_elastic_energies($this);
       $app->{bla_of}->{$this} = $app->{base}->clone;

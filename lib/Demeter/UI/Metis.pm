@@ -106,7 +106,7 @@ sub OnInit {
   $app->{base} -> task($task);
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
-  $app->{base} -> usermask(q{});
+  $app->{base} -> usermask(PDL::null);
 
   foreach my $p (qw(polyfill_order imagescale xdi_metadata_file tiffcounter terminal
 		    energycounterwidth gaussian_kernel splot_palette_name color outimage

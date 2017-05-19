@@ -218,8 +218,14 @@ sub push_steps_spots {
   if (any {$_ eq 'steps'} @datasets) { # set steps list and enable widgets if present
     $steps = $co->dataset('steps')->get;
     $app->{Mask}->{steps_list}->Clear;
+    my $null_empty = $app->{base}->usermask->isnull or $app->{base}->usermask->isempty;
     foreach my $i (0 .. $steps->dim(1) - 1) {
       my $this = $steps->atstr($i);
+      if ($this =~ m{\Aandmask}) {
+	$this = "andmask 1" if not $null_empty;
+      } elsif ($this =~ m{\Abad}) {
+	$this =~ s{user .+\z}{user 1} if not $null_empty;
+      };
       $app->{Mask}->{steps_list}->Append( "$this" );
     };
     $app->{Mask}->most(1);

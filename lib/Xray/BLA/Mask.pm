@@ -334,14 +334,18 @@ sub apply_user_mask {
   my ($w,$h) = $self->elastic_image->dims;
 
   my $usermask = zeros($self->elastic_image->dims);
-  if (($self->usermask->isnull) and (-f $self->user_mask_file)) {
-    #print $self->user_mask_file, $/;
-    $usermask = rim($self->user_mask_file);
-    $usermask->inplace->eq(0,0);
-    my $foo = $usermask->slice('0:-1,-1:0');
-    $usermask = $foo;
-    #print $usermask->dims, $/;
-    $self->usermask($usermask);
+  if ($self->user_mask_file eq '1') {
+    1;				# presumably, $self->usermask is set from the HDF5 file
+  } else {
+    if (($self->usermask->isnull) and (-f $self->user_mask_file)) {
+      #print $self->user_mask_file, $/;
+      $usermask = rim($self->user_mask_file);
+      $usermask->inplace->eq(0,0);
+      my $foo = $usermask->slice('0:-1,-1:0');
+      $usermask = $foo;
+      #print $usermask->dims, $/;
+      $self->usermask($usermask);
+    };
   };
 
   $ei *= $self->usermask;

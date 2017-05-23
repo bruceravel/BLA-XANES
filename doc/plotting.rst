@@ -135,10 +135,10 @@ Here are your color choices:
 
 
 
-Surface plots of RXES
----------------------
+Surface plots of VRXES
+----------------------
 
-Here is a summary of all the options for visualizing the RXES surface
+Here is a summary of all the options for visualizing the VRXES surface
 plot.  :demeter:`metis` does not provide tools for fine tuning the
 color distribution, but there are an awful lot of built-in options.
 The palette name is the value of the
@@ -148,10 +148,10 @@ There is more information about the palettes, where they come from,
 and what the names mean at `the Graphics::Gnuplot::Palettes github
 page <https://github.com/bruceravel/Graphics-Gnuplot-Palettes>`_.
 
-These figures are all of an XES image rather than an RXES plane, but
+These figures are all of an XES image rather than an VRXES plane, but
 serve well enough to show off each of the color palettes.
 
-Some of these palettes are completely inappropriate for RXES surface
+Some of these palettes are completely inappropriate for VRXES surface
 plots.  The :quoted:`Qualitative` and :quoted:`cyclical` palettes and
 the various kinds of :quoted:`rainbow` are all poor choices for this
 kind of data.  They are shown here for the sake of completeness.

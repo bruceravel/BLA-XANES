@@ -8,7 +8,7 @@ The Mask tool
 =============
 
 At the top of the mask creation tool is a drop-down menu showing the
-entire list of measured elastic energies.  In `xes` and `rxes` mode,
+entire list of measured elastic energies.  In `xes` and `vrxes` mode,
 the lowest elastic energy value is displayed initially.  In `herfd`
 mode, the energy closest to the energy of the element and line
 displayed on the Files tool is initially selected.
@@ -511,10 +511,10 @@ All the rest of the buttons
 
 
 
-RXES measurements
------------------
+VRXES measurements
+------------------
 
-The RXES measurement uses a single set of images both for making masks
+The VRXES measurement uses a single set of images both for making masks
 and as the measured data.  The trick is to distinguish the elastic
 portion of the image from the fluorescence portion.
 
@@ -528,37 +528,37 @@ of `the Files tool <files.html>`_.
    :target: ../_images/pt_rxes_1.png
    :align: center
 
-   A Pt RXES image at a low energy.
+   A Pt VRXES image at a low energy.
 
 .. figure:: ../_images/pt_rxes_2.png
    :target: ../_images/pt_rxes_2.png
    :align: center
 
-   A Pt RXES image in the middle of the image sequence.
+   A Pt VRXES image in the middle of the image sequence.
 
 .. figure:: ../_images/pt_rxes_3.png
    :target: ../_images/pt_rxes_3.png
    :align: center
 
-   A Pt RXES image at the end of the image sequence.
+   A Pt VRXES image at the end of the image sequence.
    
 .. figure:: ../_images/pt_rxes_mask1.png
    :target: ../_images/pt_rxes_mask1.png
    :align: center
 
-   The corresponding mask for the Pt RXES image at a low energy.
+   The corresponding mask for the Pt VRXES image at a low energy.
 
 .. figure:: ../_images/pt_rxes_mask2.png
    :target: ../_images/pt_rxes_mask2.png
    :align: center
 
-   The corresponding mask for the Pt RXES image in the middle of the image sequence.
+   The corresponding mask for the Pt VRXES image in the middle of the image sequence.
 
 .. figure:: ../_images/pt_rxes_mask3.png
    :target: ../_images/pt_rxes_mask3.png
    :align: center
 
-   The corresponding mask for the Pt RXES image at the end of the image sequence.
+   The corresponding mask for the Pt VRXES image at the end of the image sequence.
    
 
 .. subfigend::

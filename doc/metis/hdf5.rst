@@ -141,7 +141,7 @@ The images group contains all of the resonant or non-resonant XES
 images made as part of the measurement.  In ``XES`` mode, this will
 typically be some number of repetitions made at an energy well above
 the edge.  In ``HERFD`` mode, this will be sequence of images made at
-each point in the XANES scan.  In ``RXES`` and ``Mask`` modes, this
+each point in the XANES scan.  In ``VRXES`` and ``Mask`` modes, this
 group will be empty.
 
 In ``HERFD`` mode, each dataset in this group will have an ``energy``
@@ -208,7 +208,7 @@ contents of `the Configuration page <config.html>`_.
 
      A [label = "configuration group"];
      B [label = "mode"];
-     MODE [style = "dotted", label = "(XES|HERFD|RXES|MASK)", shape = "note"];
+     MODE [style = "dotted", label = "(XES|HERFD|VRXES|MASK)", shape = "note"];
      C [label = "files, folders, templates", stacked];
      D [label = "mask building parameters", stacked];
      E [label = "configuration parameters", stacked];
@@ -348,7 +348,7 @@ The scan file is simply slurped into the HDF5 file and stored as the
 The ``file`` attribute contains the full path to the slurped-in file.
 The ``temporary`` attribute holds the full path to the location where
 :demeter:`metis` writes out the stash file temporarily for use in
-``HERFD`` and ``RXES`` modes.  That changes between instances of the
+``HERFD`` and ``VRXES`` modes.  That changes between instances of the
 program.
 
 

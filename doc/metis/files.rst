@@ -53,7 +53,7 @@ i.e. 18928.0, 19828.5, and so on.  Clicking this button to the correct
 state helps :demeter:`metis` interpret the file names correctly.
 
 The templates used to recognize elastic and measurement images (as
-well as the scan file name for ``herfd`` and ``rxes`` modes) are
+well as the scan file name for ``herfd`` and ``vrxes`` modes) are
 simple substitution templates.
 
 +------------+-------------------------------------------------------+-----------------------------------------+
@@ -63,7 +63,7 @@ simple substitution templates.
 +------------+-------------------------------------------------------+-----------------------------------------+
 | ``%e``     | elastic energy value                                  |                                         |
 +------------+-------------------------------------------------------+-----------------------------------------+
-| ``%i``     | incident energy value (``rxes`` and ``herfd`` modes)  |                                         |
+| ``%i``     | incident energy value (``vrxes`` and ``herfd`` modes) |                                         |
 +------------+-------------------------------------------------------+-----------------------------------------+
 | ``%t``     | tiff counter string                                   | :configparam:`metis,tiffcounter`        |
 +------------+-------------------------------------------------------+-----------------------------------------+
@@ -82,7 +82,7 @@ The ``%t`` is, in practice, usually something like `0001` |nd| it is a
 counter that is used by EPICS :program:`areaDetector` to number
 repeated exposures of the camera.  The way the BLA spectrometer is
 used, this is rarely incremented, although the number of leading zeros
-might be changed.  The ``%c`` token is used in ``rxes`` and ``herfd``
+might be changed.  The ``%c`` token is used in ``vrxes`` and ``herfd``
 modes to relate an exposure during the energy scan to the index of
 that energy point in the scan file.  For ``xes`` mode, this is the
 counter used for repeated exposures of the non-resonant XES image.
@@ -150,11 +150,11 @@ that surrounds the L\ |alpha|\ :sub:`1` peak at 9442 eV.
 
 
 
-RXES measurements
------------------
+VRXES measurements
+------------------
 
-An RXES measurement is structured a little differently from the other
-measurement types.  In the case of RXES, the sequence of masks is the
+An VRXES measurement is structured a little differently from the other
+measurement types.  In the case of VRXES, the sequence of masks is the
 same set of files as the sequence of emission measurements.  That is,
 the elastic part of each image will be processed into a mask then
 applied to the same sequence of images.
@@ -164,7 +164,7 @@ applied to the same sequence of images.
    :target: ../_images/metis_files_rxes.png
    :align: center
 
-   :demeter:`metis`'s files tool in RXES mode.
+   :demeter:`metis`'s files tool in VRXES mode.
 
 In this case, a scan file is used to correlate image numbers with
 energies.  There is a list of elastic files, but no separate list of
@@ -176,14 +176,14 @@ image files.
    :target: ../_images/pt_rxes_1.png
    :align: center
 
-   A Pt RXES image at a low energy.  This looks much like a normal
+   A Pt VRXES image at a low energy.  This looks much like a normal
    elastic image.
 
 .. figure:: ../_images/pt_rxes_2.png
    :target: ../_images/pt_rxes_2.png
    :align: center
 
-   A Pt RXES image in the middle of the image sequence.  Here the
+   A Pt VRXES image in the middle of the image sequence.  Here the
    fluorescence and the elastic line are quite close in energy.  The
    processing must somehow distinguish between the elastic and
    fluorescence portions of the signal.
@@ -192,7 +192,7 @@ image files.
    :target: ../_images/pt_rxes_3.png
    :align: center
 
-   A Pt RXES image at the end of the image sequence.  Here the elastic
+   A Pt VRXES image at the end of the image sequence.  Here the elastic
    signal is again easily distinguished form the fluorescence signal.
    The mask processing chore is to reject the fluorescence portion and
    retain the elastic portion.

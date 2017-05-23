@@ -8,7 +8,7 @@ The Metis program
 =================
 
 The :demeter:`metis` program is modal, providing slightly different
-functionality for HERFD, XES, and RXES data sets or for individual
+functionality for HERFD, XES, and VRXES data sets or for individual
 images.  At the command line, it is invoked with a command line
 argument to put it into the correct mode.
 
@@ -17,7 +17,7 @@ Mode    purpose
 ======  ================================================
 xes     non-resonant emission spectroscopy
 herfd   high resolution XANES
-rxes    RIXS plane
+vrxes   valence band resonant emission plane
 mask    process an individual elastic image
 ======  ================================================
 
@@ -36,13 +36,13 @@ To start :demeter:`metis` in XES mode, provide the ``xes`` argument:
    :demeter:`metis`, at startup, invoked in XES mode
 
 
-Similarly, to begin :demeter:`metis` in ``hrfd``, ``rxes``, or
+Similarly, to begin :demeter:`metis` in ``hrfd``, ``vrxes``, or
 ``mask`` mode, do
 
 .. code-block:: shell
 
    metis herfd
-   metis rxes
+   metis vrxes
    metis mask
 
 

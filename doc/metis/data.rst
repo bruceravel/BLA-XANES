@@ -208,7 +208,7 @@ interest.  In the case of HERFD from a valence band or a K\ |beta|\
 :sub:`1,3` line, examining the XES at one or more energies might be a
 lot more interesting.
 
-The RIXS controls work differently in HERFD mode than in RXES mode.
+The RIXS controls work differently in HERFD mode than in VRXES mode.
 In the case of HERFD, measuring the :quoted:`RIXS` means to compute
 the HERFD spectrum at each measured elastic energy.  The
 :button:`Process RIXS,light` button will compute the mask at each
@@ -240,10 +240,10 @@ comparing with a conventional measurement.  They won't be identical,
 but they will be close.
 
 
-RXES measurements
------------------
+VRXES measurements
+------------------
 
-When starting :demeter:`metis` in RXES mode, the Data tool displays
+When starting :demeter:`metis` in VRXES mode, the Data tool displays
 controls for computing the RIXS plane.
 
 
@@ -251,20 +251,20 @@ controls for computing the RIXS plane.
    :target: ../_images/metis_data_rxes.png
    :align: center
 
-   :demeter:`metis`'s data processing tool in RXES mode.
+   :demeter:`metis`'s data processing tool in VRXES mode.
 
 This calculation is, in a certain sense, much like the RIXS
 calculation in HERFD mode, but the result is organized in a different
 way.  In the HERFD-mode RIXS calculation, the intent is to examine the
 HERFD with the spectrometer set to different emission energies.  In
-RXES-mode, the intent is to make a surface plot of the RIXS plane.
-Here is  the result of the RXES-mode calculation.
+VRXES-mode, the intent is to make a surface plot of the RIXS plane.
+Here is  the result of the VRXES-mode calculation.
 
 .. figure:: ../_images/pt_rixs_plane.png
    :target: ../_images/pt_rixs_plane.png
    :align: center
 
-   The result of the RXES calculation for the valence band emission
+   The result of the VRXES calculation for the valence band emission
    near the Pt L\ :sub:`3` edge.
 
 This is a visualization format that is common in the RIXS literature,
@@ -273,8 +273,8 @@ transfer is ``E_incident - E_emission``.  The stripe at 0 on the
 y-axis, then, is the elastic signal.  The RIXS signal is the diagonal
 stripe.
 
-The :button:`Replot RXES,light` button redisplays this surface plot.  The
-:button:`Save RXES,light`, saves the surface plot data as a
+The :button:`Replot VRXES,light` button redisplays this surface plot.  The
+:button:`Save VRXES,light`, saves the surface plot data as a
 `Gnuplot block data file
 <http://gnuplot.sourceforge.net/docs_4.2/node331.html>`_.
 

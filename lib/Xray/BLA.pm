@@ -833,7 +833,7 @@ sub rixs_plane {
       $self->get_incident($line->[0]);
       my $exc = $self->incident;
       ##                  incident energy  emission en.     energy loss              intensity
-      printf $OUT "  %9.2f   %9.2f   %7.2f   %10.5f\n", $inc/$scale, $exc/$scale, ($inc-$exc)/$scale, $line->[1];
+      printf $OUT "  %9.2f   %9.2f   %7.2f   %10.5f\n", $inc/$scale, $exc/$scale, ($inc-$exc)/$scale, $line->[1]/$line->[2];
       $max = $line->[1] if ($line->[1] > $max);
     };
     print $OUT $/;

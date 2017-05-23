@@ -78,7 +78,7 @@ sub OnInit {
     @utilities = qw(Files Mask Data Config XDI);
   } elsif ($app->{tool} eq 'xes') {
     @utilities = qw(Files Mask Data Config XDI);
-  } elsif ($app->{tool} eq 'rxes') {
+  } elsif ($app->{tool} =~ m{v?rxes}) {
     @utilities = qw(Files Mask Data Config XDI);
   } elsif ($app->{tool} eq 'mask') {
     @utilities = qw(Files Mask Config XDI);
@@ -102,7 +102,7 @@ sub OnInit {
 
   $app->{main}->{header_color} = Wx::Colour->new(68, 31, 156);
   $app->{base} = Xray::BLA->new(ui=>'wx', cleanup=>0, masktype=>'single');
-  my $task = ($app->{tool} eq 'rxes') ? 'plane' : $app->{tool};
+  my $task = ($app->{tool} =~ m{v?rxes}) ? 'plane' : $app->{tool}; # changed rxes-->vrxes 23 May 2017
   $app->{base} -> task($task);
   $app->{base} -> outfolder(File::Spec->catfile($app->{base}->stash_folder,
 						'metis-'.$app->{base}->randomstring(5)));
@@ -119,6 +119,17 @@ sub OnInit {
 
   ## look for metis.<tool>.yaml or metis.yaml
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', $app->{tool}, 'yaml'));
+  if ($app->{tool} eq 'rxes') {	# deal with rxes --> vrxes name change
+    my $vrxes = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'vrxes', 'yaml'));
+    move($app->{yamlfile}, $vrxes);
+    $app->{yamlfile} = $vrxes;
+    $app->{tool} = 'vrxes';
+    $app->{main}->SetTitle('Metis for VRXES');
+  };
+  if ($app->{tool} eq 'vrxes') {	# deal with rxes --> vrxes name change
+    my $rxes = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'rxes', 'yaml'));
+    move($rxes, $app->{yamlfile}) if (-e $rxes);
+  };
   $app->{yamlfile} = File::Spec->catfile($app->{base}->dot_folder, join('.', 'metis', 'yaml')) if not -e $app->{yamlfile};
   if (-e $app->{yamlfile}) {
     $app->{yaml} = YAML::Tiny -> read($app->{yamlfile});

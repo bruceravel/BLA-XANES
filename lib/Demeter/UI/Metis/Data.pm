@@ -172,22 +172,22 @@ sub new {
   $rixsboxsizer -> Add($self->{rshowmasks}, 0, wxGROW|wxALL, 0);
   $self->{rshowmasks}->SetValue(1);
 
-  my $planebox       = Wx::StaticBox->new($self, -1, ' RXES Plane ', wxDefaultPosition, wxDefaultSize);
+  my $planebox       = Wx::StaticBox->new($self, -1, ' VRXES Plane ', wxDefaultPosition, wxDefaultSize);
   my $planeboxsizer  = Wx::StaticBoxSizer->new( $planebox, wxHORIZONTAL );
   $vbox -> Add($planeboxsizer, 0, wxGROW|wxALL, 5);
 
-  $self->{rxes} = Wx::Button->new($self, -1, 'RXES Plane', wxDefaultPosition, [$button_width,-1]);
+  $self->{rxes} = Wx::Button->new($self, -1, 'VRXES Plane', wxDefaultPosition, [$button_width,-1]);
   $planeboxsizer -> Add($self->{rxes}, 0, wxGROW|wxALL, 5);
-  $self->{replot_rxes} = Wx::Button->new($self, -1, 'Replot RXES', wxDefaultPosition, [$button_width,-1]);
+  $self->{replot_rxes} = Wx::Button->new($self, -1, 'Replot VRXES', wxDefaultPosition, [$button_width,-1]);
   $planeboxsizer -> Add($self->{replot_rxes}, 0, wxGROW|wxALL, 5);
-  $self->{save_rxes} = Wx::Button->new($self, -1, 'Save RXES data', wxDefaultPosition, [$button_width,-1]);
+  $self->{save_rxes} = Wx::Button->new($self, -1, 'Save VRXES data', wxDefaultPosition, [$button_width,-1]);
   $planeboxsizer -> Add($self->{save_rxes}, 0, wxGROW|wxALL, 5);
   EVT_BUTTON($self, $self->{rxes},        sub{plot_plane(@_, $app)});
   EVT_BUTTON($self, $self->{replot_rxes}, sub{replot_plane(@_, $app)});
   EVT_BUTTON($self, $self->{save_rxes},   sub{save_plane(@_, $app)});
-  $app->mouseover($self->{rxes}, "Process resonant XES plane");
-  $app->mouseover($self->{replot_rxes}, "Replot the last RXES data.");
-  $app->mouseover($self->{save_rxes},   "Save the last RXES data.");
+  $app->mouseover($self->{rxes}, "Process valence resonant XES plane");
+  $app->mouseover($self->{replot_rxes}, "Replot the last VRXES data.");
+  $app->mouseover($self->{save_rxes},   "Save the last VRXES data.");
 
   #$self->{xshowmasks} = Wx::CheckBox->new($self, -1, "Show masks as they are created");
   #$planeboxsizer -> Add($self->{xshowmasks}, 0, wxGROW|wxALL, 0);
@@ -212,7 +212,7 @@ sub new {
     $vbox->Hide($rixsboxsizer, 1);
     $vbox->Hide($planeboxsizer, 1);
     $vbox->Layout;
-  } elsif ($app->{tool} eq 'rxes') {
+  } elsif ($app->{tool} =~ m{v?rxes}) {
     $vbox->Hide($xesboxsizer, 1);
     $vbox->Hide($rixsboxsizer, 1);
     $self->{showmasks}->SetValue(0);
@@ -426,7 +426,7 @@ sub plot_xes {
 sub all_masks {
   my ($self, $app, $event, $spectrum, $point, $reuse) = @_;
 
-  my ($r, $x, $n, @xes);
+  my ($r, $x, $n, @xes, @n);
   my $max = 0;
   my $denom = ($spectrum->div10) ? 10 : 1;
   my $nemission = $#{[keys %{$app->{bla_of}}]};
@@ -457,6 +457,7 @@ sub all_masks {
     $max = $n if ($n > $max);
     $x = $r/$n;
     push @xes, [$key, $x, $n, $r];
+    #push @n, $n;
     if ($self->{showmasks}->GetValue) {
       $app->{bla_of}->{$key}->cbmax(1);
       $app->{bla_of}->{$key}->plot_mask;
@@ -471,10 +472,13 @@ sub all_masks {
       $ds -> set($app->{bla_of}->{$key}->shield_image->byte, unlimited => 1);
     };
   };
-  #my $max = max(@n);
+  #$max = max(@n);
   #@n = map {$max / $_} @n;
-  foreach my $key (keys %{$app->{bla_of}}) {
+  #$count = 0;
+  foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key eq 'aggregate');
+    #++$count;
+    #$xes[$count]->[2] = $n[$count];
     $app->{bla_of}->{$key}->normpixels($max/$app->{bla_of}->{$key}->npixels);
   };
   $self->{incident}->SetFocus;

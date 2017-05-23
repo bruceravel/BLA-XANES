@@ -165,7 +165,7 @@ sub plot_plane {
       ##                  incident energy  emission en.     energy loss              intensity
       #push @xy, [ $inc/$scale, ($inc-$exc)/$scale, $line->[1] ];
       push @thisy, ($inc-$exc)/$scale;
-      push @thisz, $line->[1];
+      push @thisz, $line->[1]/$line->[2];
     };
     push @y, \@thisy;
     push @z, \@thisz;
@@ -181,7 +181,7 @@ sub plot_plane {
 
   my $xmin = 10 * int($x[0]/10 + 0.5);
   my $xmax = 10 * int($x[-1]/10 + 0.5);
-  my $title = "RXES plane for ".$self->stub;
+  my $title = "VRXES plane for ".$self->stub;
   $title = $self->escape_us($title);
   $self->pdlplot->output($self->terminal, size=>[500,520,'px']);
   $self->pdlplot->image({pm3d=>'map', view=>[0,0,1,1], size=>'0.8, 1', # origin=>'0.02,-0.2',
@@ -363,7 +363,7 @@ images and is monotone.
 =item C<palette>
 
 This contains the Gnuplot palette definition for surface plots such as
-the RXES plane.  This multi-tone palette.
+the VRXES plane.  This multi-tone palette.
 
 =item C<pdlplot>
 

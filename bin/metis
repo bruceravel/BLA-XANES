@@ -35,7 +35,7 @@ use PDL::IO::HDF5;
 if ((-e $ARGV[0])  and (not -d $ARGV[0])) {
   my $toss = new PDL::IO::HDF5($ARGV[0]);
   $tool = ($toss->group('configuration')->attrGet('mode'))[0];
-  if (any {$tool eq $_} qw(herfd xes rxes mask)) {
+  if (any {$tool eq $_} qw(herfd xes rxes vrxes mask)) {
     $hdf5file = $ARGV[0];
   } else {
     $tool = q{};
@@ -43,11 +43,12 @@ if ((-e $ARGV[0])  and (not -d $ARGV[0])) {
   undef $toss;
 };
 
-my %complete = (h=>'herfd', x=>'xes', r=>'rxes', m=>'mask');
-$tool = $complete{tool} if ($tool =~ m{\A[hmrx]\z});
-if ((not $tool) or (none {$tool eq $_} qw(herfd xes rxes mask))) {
+my %complete = (h=>'herfd', x=>'xes', v=>'vrxes', r=>'rxes', m=>'mask');
+$tool = $complete{tool} if ($tool =~ m{\A[hmrvx]\z});
+if ((not $tool) or (none {$tool eq $_} qw(herfd xes rxes vrxes mask))) {
   $tool = $ARGV[0] || 'herfd';
-  $tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes mask);
+  $tool = 'vrxes' if ($tool eq 'rxes');
+  $tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes vrxes mask);
 };
 $app  = Demeter::UI::Metis->new;
 $app -> MainLoop;

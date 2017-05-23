@@ -167,7 +167,7 @@ sub new {
     $app->{base}->scanfolder(q{});
     $self->{scan_dir}->SetValue(q{});
     $self->{$_}->Enable(0) foreach (qw(scan scan_dir scan_template scan_template_label));
-  } elsif ($app->{tool} eq 'rxes') {
+  } elsif ($app->{tool} =~ m{v?rxes}) {
     $app->{base}->noscan(0);
     $app->{base}->image_file_template(q{});
     $self->{image_template}->SetValue(q{});
@@ -323,7 +323,7 @@ sub fetch {
   };
 
 
-  if ($app->{tool} eq 'rxes') {
+  if ($app->{tool} =~ m{v?rxes}) {
     ## Now that the elastic list is filled AND we have the list of
     ## incident energies, set the energy attributes in the HDF5 files.
     ## In an RXES measurement, the filenames typically have integers
@@ -364,7 +364,7 @@ sub fetch {
   $app->{main}->status("Imported elastic and image files" .
 		       $app->{base}->howlong($start, '.  That'));
 
-  if ($app->{tool} eq 'rxes') {
+  if ($app->{tool} =~ m{v?rxes}) {
     $self->{element}->SetStringSelection('H');
     $self->{line}->SetStringSelection('Ka1');
     $self->{element}->Enable(0);

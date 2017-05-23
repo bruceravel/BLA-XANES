@@ -424,7 +424,7 @@ sub plot_xes {
 ## $point: PDL of current image
 ## $reuse: true --> don't compute masks, false --> compute masks
 sub all_masks {
-  my ($self, $app, $event, $spectrum, $point, $reuse) = @_;
+  my ($self, $app, $event, $spectrum, $point, $reuse, $r_i0) = @_;
 
   my ($r, $x, $n, @xes, @n);
   my $max = 0;
@@ -452,7 +452,8 @@ sub all_masks {
     #				 aggregate=>$app->{bla_of}->{aggregate});
     $app->{Mask}->SelectEnergy($event, $app, {energy=>$key, noplot=>1, quiet=>1})
       if ((not $reuse) or (not $app->{bla_of}->{$key}->npixels));
-    $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum;
+    my $i0 = (defined($r_i0)) ? $r_i0->[$count] : 1;
+    $r = $point -> mult($app->{bla_of}->{$key}->elastic_image, 0) -> sum / $i0;
     $n = $app->{bla_of}->{$key}->npixels;
     $max = $n if ($n > $max);
     $x = $r/$n;
@@ -821,6 +822,7 @@ sub plot_plane {
   my ($spectrum, $file, $point);
   $app->{base}->rxes_min($self->{lower}->GetValue);
   $app->{base}->rxes_max($self->{upper}->GetValue);
+  my $r_i0 = $app->{base}->fetch_i0(1);
   foreach my $key (sort keys %{$app->{bla_of}}) {
     next if ($key =~ m{aggregate|base});
     $app->{bla_of}->{$key}->get_incident($key);
@@ -832,7 +834,7 @@ sub plot_plane {
     $point = $app->{bla_of}->{$key}->raw_image;
     #$point = $app->{bla_of}->{$self->{energy}}->Read($app->{bla_of}->{$key}->elastic_file);
 
-    my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $reuse);
+    my $r_xes = $self->all_masks($app, $event, $spectrum, $point, $reuse, $r_i0);
     $holol->{$energy} = $r_xes;	# $ret is a list-of-lists
     $reuse = 1;
     $app->{main}->status(sprintf("Incident energy = %.1f (%d of %d)", $energy/$denom, $count, $nemission), 'wait') if not $count%5;

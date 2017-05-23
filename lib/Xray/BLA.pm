@@ -31,7 +31,7 @@ use File::Copy;
 use File::Path;
 use File::Spec;
 use List::Util qw(sum max);
-use List::MoreUtils qw(pairwise any);
+use List::MoreUtils qw(pairwise any firstidx);
 use Math::Round qw(round);
 use Scalar::Util qw(looks_like_number);
 use Statistics::Descriptive;
@@ -728,6 +728,30 @@ sub scan {
 };
 
 
+sub fetch_i0 {
+  my ($self, $rescale) = @_;
+  open(my $SCAN, "<", $self->scanfile);
+  my @i0 = ();
+  my $switch = 0;
+  my $column = 4;
+  my $max = 0;
+  while (<$SCAN>) {
+    if ($_ =~ m{\A\#}) {
+      $switch = 1, next if ($_ =~ m{----+});
+      next if not $switch;
+      $column = firstidx {lc($_) eq 'i0'} split(" ", $_);
+      $column -= 1;		# line starts with '# '
+    } else {
+      my @list = split(' ', $_);
+      push @i0, $list[$column];
+      $max = $list[$column] if ($list[$column] > $max);
+    };
+  };
+  close $SCAN;
+  @i0 = map {$_/$max} @i0 if $rescale;
+  return \@i0;
+};
+
 
 ##################################################################################
 ## RIXS functionality
@@ -833,7 +857,7 @@ sub rixs_plane {
       $self->get_incident($line->[0]);
       my $exc = $self->incident;
       ##                  incident energy  emission en.     energy loss              intensity
-      printf $OUT "  %9.2f   %9.2f   %7.2f   %10.5f\n", $inc/$scale, $exc/$scale, ($inc-$exc)/$scale, $line->[1]/$line->[2];
+      printf $OUT "  %9.2f   %9.2f   %7.2f   %10.5f\n", $inc/$scale, $exc/$scale, ($inc-$exc)/$scale, $line->[1];
       $max = $line->[1] if ($line->[1] > $max);
     };
     print $OUT $/;

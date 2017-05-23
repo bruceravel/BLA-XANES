@@ -43,10 +43,10 @@ if ((-e $ARGV[0])  and (not -d $ARGV[0])) {
   undef $toss;
 };
 
-my %complete = (h=>'herfd', x=>'xes', v=>'vrxes', r=>'rxes', m=>'mask');
-$tool = $complete{tool} if ($tool =~ m{\A[hmrvx]\z});
+my %complete = (h=>'herfd', x=>'xes', v=>'vrxes', r=>'vrxes', m=>'mask');
 if ((not $tool) or (none {$tool eq $_} qw(herfd xes rxes vrxes mask))) {
   $tool = $ARGV[0] || 'herfd';
+  $tool = $complete{$tool} if ($tool =~ m{\A[hmrvx]\z});
   $tool = 'vrxes' if ($tool eq 'rxes');
   $tool = 'herfd' if none {$tool eq $_} qw(herfd xes rxes vrxes mask);
 };

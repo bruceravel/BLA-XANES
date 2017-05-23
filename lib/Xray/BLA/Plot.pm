@@ -165,7 +165,7 @@ sub plot_plane {
       ##                  incident energy  emission en.     energy loss              intensity
       #push @xy, [ $inc/$scale, ($inc-$exc)/$scale, $line->[1] ];
       push @thisy, ($inc-$exc)/$scale;
-      push @thisz, $line->[1]/$line->[2];
+      push @thisz, $line->[1];
     };
     push @y, \@thisy;
     push @z, \@thisz;
@@ -174,6 +174,8 @@ sub plot_plane {
   my $px = PDL::Core::pdl(\@x);
   my $py = PDL::Core::pdl(\@y)->inplace->transpose;
   my $pz = PDL::Core::pdl(\@z)->inplace->transpose;
+  #my $order = -1*log($pz->max)/log(10);
+  #$pz->inplace->mult(10**$order,0);
 
   # print $px->shape, $/;
   # print $py->shape, $/;
